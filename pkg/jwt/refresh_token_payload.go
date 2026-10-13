@@ -106,4 +106,3 @@ func ParseRefreshTokenClaims(claims *authn.AuthClaims) (userId uint32, jti strin
 
 	return userId, jti, app, sid, nil
 }
-

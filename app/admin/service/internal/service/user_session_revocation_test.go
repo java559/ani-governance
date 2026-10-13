@@ -62,7 +62,7 @@ func TestUserService_AccountSessionRevocation(t *testing.T) {
 			target := e.client.User.Create().SetTenantID(tenantID).SetUsername("session-target").SetStatus(user.StatusNormal).SaveX(e.ctx)
 			other := e.client.User.GetX(e.ctx, 1) // protected operator; its sessions must survive
 			type session struct {
-				uid, ct              uint32
+				uid, ct                   uint32
 				jti, sid, access, refresh string
 			}
 			var sessions []session
