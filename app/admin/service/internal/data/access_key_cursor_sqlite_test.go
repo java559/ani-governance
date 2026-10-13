@@ -80,6 +80,7 @@ func TestAccessKeyRepoSqlite_ListCursorPaging(t *testing.T) {
 		for _, item := range resp.GetItems() {
 			got = append(got, item.GetId())
 			require.True(t, item.GetIsActive(), "内部 ON 状态应映射为公开 is_active=true")
+			require.Equal(t, "reader", item.GetRoleName(), "游标分页项也应回填绑定角色名称")
 			out, err := protojson.Marshal(item)
 			require.NoError(t, err)
 			require.NotContains(t, string(out), "secret", "凭证密文不得进入响应")

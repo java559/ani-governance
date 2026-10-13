@@ -1,6 +1,6 @@
 # 功能对接与接口风格改动登记
 
-总体状态：**进行中，未结项**。最后更新：2026-10-11。
+总体状态：**进行中，未结项**。最后更新：2026-10-13。
 
 本文件覆盖所有后续对接功能。每次用户对接一个新功能时，AI 先排查真实调用链，将涉及的接口、请求和响应、鉴权条件、现有问题追加到对应功能组。先累计登记，等用户指定某个批次后，再统一修改该批接口的路径、字段和响应风格；不能因排查或登记就自动改接口风格。
 
@@ -20,7 +20,7 @@
 | 租户管理员管理 | 复用 TENANT-06、ACCOUNT-01～ACCOUNT-09、ROLE-01～ROLE-05、AUTH-01/12；AUTH-15～AUTH-18（自助 /me） | 复用用户和租户角色；用户明确不做主管理员移交 | 待指定 |
 | 套餐管理 | PLAN-01～PLAN-14；复用 TENANT-04/08 | 模块限制已接线；配额按 quota_code 核对配置、账本和执行点，GPU 占额见专项合同 | 待指定 |
 | 平台运营账号管理 | 复用 ACCOUNT-01～ACCOUNT-09、ROLE-01～ROLE-05、AUTH-02/12；AUTH-15～AUTH-18；SESSION-01～SESSION-04；PERM-01～PERM-06、PERMGROUP-01～PERMGROUP-05 | 支持多个平台账号；运营/只读角色模板待 API 接入后再加；自助会话与权限点/权限组接口本轮补登，缺口见 MGMT-08～MGMT-15 | 待指定 |
-| API Key / AK-SK | AK-01～AK-07；AK-IDEM-01（创建幂等，2026-10-10） | 签名、角色绑定、加密与可信审计已完成，真实 VPC 闭环 PASS；创建幂等已在 ani-system 真实环境实测（HTTP 20/20 PASS + 8 并发 ALL PASS） | AKSK-VPC-20260922 已完成本批；幂等属即时修复，未并入风格批次 |
+| API Key / AK-SK | AK-01～AK-07；AK-IDEM-01（创建幂等，2026-10-10）；AK-ROLE-INFO-01（响应回填角色名称/描述，2026-10-13） | 签名、角色绑定、加密与可信审计已完成，真实 VPC 闭环 PASS；创建幂等已在 ani-system 真实环境实测（HTTP 20/20 PASS + 8 并发 ALL PASS）；AK-ROLE-INFO-01 已在 ani-system 实测 14/14 PASS 且既有三脚本回归不退化 | AKSK-VPC-20260922 已完成本批；幂等与角色信息回填属向后兼容增强，未并入风格批次 |
 | VPC 详情查询的机器调用 | NET-01；复用 AK-* | 必要 vpc-read 接收已整合，双 actor 与真实 mTLS 查询 PASS | AKSK-VPC-20260922 已完成本批 |
 | Network 租户面读写对接 | NET-01～NET-25；复用 AK-*、AUTH-* | 当前 25 方法支持 JWT/AK；NET-01～24 的历史三条主链验收和 NET-25 增量结果分批记录 | 当前合同见下方增量与 [AK/SK 合同](contracts/aksk-signature.md)；真实环境按批次验收 |
 | Gov → Resource 调用规范收敛 | S2S-RES-01；复用 NET-01～NET-25 与既有 Image 11 RPC | Network/Image 调用端与 Resource 接收端已修改；隔离真实业务链路通过，生产验收未执行 | 传输与可信上下文即时修复，见下方结果；不调整 HTTP 风格 |
@@ -63,6 +63,18 @@ Resource 的 full、governance、vpc-read 三种互斥模式共用一个受保�
 仅续跑被 make 中断的 `go vet ./...`、`go build -trimpath ./...`、`go mod verify` 与 `git diff --check`，全部通过，续跑整体退出 0（`publication/remaining-01.log`）；没有重跑已通过的联合业务验收。提交前已执行 Resource AGENTS 要求的 make verify；本批按用户明确的调用范围交付并保留失败。推送后的两仓 CI 需按该提交的实际运行结果判定，既有定向 PASS 不代表全仓 CI 已通过。
 
 Network 的 KC/Envoy/实例 owner 与 Image 的 Harbor 仅在外部边界使用测试替身；两个联合夹具也包含协议边界测试，不能将这些结果扩展为真实 Provider/数据面/生产验收。产品资源通过现有业务入口清理，独占 helper 数据库、PG/Redis 容器与进程清理通过。本轮未执行共享业务库变更或部署，不结项整体接口登记；源码发布不代表生产验收。
+
+<a id="lb-deferred-01"></a>
+
+## 2026-10-13：LB 延迟下发合同（LB-DEFERRED-01）
+
+复用 NET-19～NET-24 的 POST/GET/List/PATCH/DELETE/operation 和原 JWT/AK、NETWORK 套餐、权限及 mTLS 身份链。`listeners.items` 内普通监听器允许省略或清空 `backends`，先保存配置；添加后端才激活。PATCH 沿用 `data`、`update_mask`、`expected_version` 和 `idempotency_key`，监听器集合仍表示整体替换，空集合仍拒绝。
+
+Resource 与 Governance 的 `LoadBalancerConfigurationState` 在原 0～5 后追加 `WAITING_FOR_BACKENDS=6`。LB 响应追加只读 `provider_target_version`（字段31）；`desired_version` 是完整配置版本，`provider_target_version` 是改变下发投影的版本，`applied_version` 是经真实外部证据确认的目标或空投影清理版本。仅编辑待配置监听器可使 desired 前进而 target/applied 保持。首次全部待配置时 target/applied 为0、operation 表示配置已保存；混合 LB 的其他监听器继续使用已确认的投影。配置完成、operation 成功与流量健康仍分别表达。
+
+监听器响应追加只读 `deployment_state`（字段13）及 `reason`（字段14），包括 `waiting_for_backends`、`applying`、`configured`、`removing`、`degraded`、`unknown`；重定向等待既定 HTTPS 目标时返回 `WAITING_FOR_REDIRECT_TARGET`。从 GET 组装 PATCH 时只提取 [ListenerInput](../api/protos/catalog/service/v1/vpc.proto) 可写字段，不回填上述观察字段。新字段不进入客户端输入或旧幂等 fingerprint，已保存的受理回执原样重放。
+
+定向联合用例为现有 [Network HTTP 联调](../app/admin/service/internal/service/network_joint_http_test.go) 的 `deferred_load_balancer`：真实身份、mTLS、PG、worker 和 adapter，外部 K8s/controller/owner 协议边界沿用既有夹具；检查零 Provider mutation、三个版本、混合监听器、清空与新 Provider 身份、回执重放、版本冲突、只读输入拒绝和跨租户拒绝。实际结果与真实集群范围只记入 Resource 的 LB-DEFERRED-01 执行状态，不由本合同宣称通过。
 
 ## 2026-10-11：监听参数与子网 IP 观测
 
@@ -135,7 +147,7 @@ HTTP 方法、字段、签名与请求限制以 [Network 路由输入](../api/pr
 
 [Network Service](../app/admin/service/internal/service/network_service.go) 从认证主体取得本地租户，经持久 `resource_tenant_id` 映射后调用 [出站客户端](../app/admin/service/internal/data/network_client.go)。客户端整体重建单值 `x-ani-tenant-id/x-ani-actor/x-ani-request-id`，actor 区分 `governance:user:<id>` 与 `governance:access-key:<id>`；不转发公网身份或认证材料。Resource 继续负责真实租户过滤、父子归属、持久幂等、版本、占用和删除约束，Governance 核对返回对象的租户和资源关联。
 
-HTTP 成功表示 Resource 返回了持久资源或受理快照；资源生命周期与 operation 结果分别查询。SNAT 的 `desired_enabled` 与可选 `applied_enabled` 保留期望、实际观测和未知状态，解绑保留独立 EIP。LB 的 `state/configuration_state/data_plane_state` 与 `desired_version/applied_version`、观测时间分别保留，不能把受理、配置完成或 operation 成功解释为流量健康；删除结果仍含资源与 operation，并由 Resource 释放关联、保留独立 EIP 和工作负载。公开错误保留 Resource 的领域 reason 和适当 HTTP 码，不暴露下游私有错误详情。
+HTTP 成功表示 Resource 返回了持久资源或受理快照；资源生命周期与 operation 结果分别查询。SNAT 的 `desired_enabled` 与可选 `applied_enabled` 保留期望、实际观测和未知状态，解绑保留独立 EIP。LB 的 `state/configuration_state/data_plane_state` 与 `desired_version/provider_target_version/applied_version`、监听器只读部署事实、观测时间分别保留，不能把受理、配置完成或 operation 成功解释为流量健康；删除结果仍含资源与 operation，并由 Resource 释放关联、保留独立 EIP 和工作负载。公开错误保留 Resource 的领域 reason 和适当 HTTP 码，不暴露下游私有错误详情。
 
 平台 Network 27 方法、Attachment 四个方法、ImageRuntime 两个方法和实例 owner 的 GetSubmission 不属于此租户 HTTP/AK 接入范围。
 
@@ -714,12 +726,12 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 
 | 编号 | 当前方法和路径 | 当前合同与验证 |
 | --- | --- | --- |
-| AK-01 | `GET /api/v1/auth/api-keys` | 用户 JWT；`items/total`，无 SK；真实 HTTP PASS |
-| AK-02 | `GET /api/v1/auth/api-keys/{key_id}` | 用户 JWT；snake_case Key 信息、数字 id/role_id；跨租户 404，PASS |
-| AK-03 | `POST /api/v1/auth/api-keys` | `{data:{name,role_id,expires_at?,idempotency_key?}}` → **201** `{data,secret_key}`；真实 HTTP PASS；`idempotency_key` 语义见 AK-IDEM-01 |
+| AK-01 | `GET /api/v1/auth/api-keys` | 用户 JWT；`items/total`，无 SK；真实 HTTP PASS；响应含只读 `role_name`/`role_description`（见 AK-ROLE-INFO-01） |
+| AK-02 | `GET /api/v1/auth/api-keys/{key_id}` | 用户 JWT；snake_case Key 信息、数字 id/role_id；跨租户 404，PASS；响应含只读 `role_name`/`role_description`（见 AK-ROLE-INFO-01） |
+| AK-03 | `POST /api/v1/auth/api-keys` | `{data:{name,role_id,expires_at?,idempotency_key?}}` → **201** `{data,secret_key}`；真实 HTTP PASS；`idempotency_key` 语义见 AK-IDEM-01；响应 data 含只读 `role_name`/`role_description`（见 AK-ROLE-INFO-01） |
 | AK-04 | `PUT /api/v1/auth/api-keys/{key_id}` | 仅 name/role_id/is_active/expires_at；外层 update_mask，值为 FieldMask lowerCamel；清空到期、启停、改绑 PASS |
 | AK-05 | `DELETE /api/v1/auth/api-keys/{key_id}` | 200 `{status:"revoked"}`，后续签名 401，PASS |
-| AK-06 | `PUT /api/v1/auth/api-keys/{key_id}/secret` | `{}` → `{data,secret_key}`；AK 不变，旧 SK 立即拒绝、新 SK 成功，PASS |
+| AK-06 | `PUT /api/v1/auth/api-keys/{key_id}/secret` | `{}` → `{data,secret_key}`；AK 不变，旧 SK 立即拒绝、新 SK 成功，PASS；响应 data 含只读 `role_name`/`role_description`（见 AK-ROLE-INFO-01） |
 | AK-07 | 旧 `/admin/v1/access-keys/token` 已移除 | RPC/签发分支/白名单和 secret_hash 删除；旧路径 404，PASS |
 
 Key 绑定同租户启用 TENANT 角色，复用套餐和 Casbin。主密钥文件必填，SK 使用专用 AES-256-GCM 实例加密；仅创建/重置返回一次，列表、详情、日志和审计无 SK/完整签名。每请求查询 Key 和角色状态，主体为独立 `api_key`，不伪造 user_id。首次种子为租户管理员授予六条管理权限；目标专用套餐经 API 开放 DASHBOARD/OPM/SYSTEM/NETWORK。
@@ -732,6 +744,16 @@ Key 绑定同租户启用 TENANT 角色，复用套餐和 Casbin。主密钥文�
 - 存储为**独立表** `sys_access_key_idempotency`（迁移 `20261010131938_access_key_idempotency.sql`），**故意不对 `sys_access_keys` 建外键**：`sys_access_keys` 是物理删除，记录须活得更久，才能把「创建→删除→同键重放」判定为回放而非再建一把。串行化仅依赖唯一索引 `(tenant_id,actor_id,action,idempotency_key)`，未加 tenant 行锁（创建只写一张新行，无共享聚合被改）。
 - 实测（ani-system @ ani-01，PostgreSQL + HTTP，2026-10-10）：先补跑迁移（表原缺失，atlas 由 `20261003152319` 升至 `20261010131938`）→ `verify-idempotency.py` **20/20 PASS**（无键 201 带 SK；同键同意图重放同 `id` 且 SK 空；异意图 409；不同键两把；key>128/name 空/role_id 缺均 400；创建→删除→同键重放 **404 `ACCESS_KEY_NOT_FOUND`** 且库内同名 0 把）→ `verify-idempotency-concurrency.py` 8 并发同键 **ALL PASS**（全部 201、同一 `id`、恰好 1 个带明文 SK、库内仅 1 把）。测试数据已清理。
 - 边界：**前端联调未做**（前端尚未带 `idempotency_key` 调用）；重放拿不到明文 SK 属既定取舍（首次响应丢失需走 `ResetSecret`）。
+
+### 变更：AK 响应回填角色名称/描述（AK-ROLE-INFO-01，2026-10-13）
+
+`AccessKey` 读模型新增两个**只读**字段 `role_name`（字段 8）、`role_description`（字段 9），服务端按 `role_id` 在**请求租户内**回填。属**向后兼容的响应增强**：只增字段，不改路径、方法、权限、套餐关系，不触发 API 目录同步（沿用 AK-IDEM-01 结论）。
+
+- 生效范围：`List`（含游标与非游标两条分页路径）/ `Get` / `Create` / `ResetSecret` 四条 RPC 的 `AccessKey` 输出，以及幂等回放路径，全部一致。
+- 租户边界：角色名称/描述读取走请求上下文的 `TenantPrivacy` 注入谓词，跨租户不可读；未新建平台/系统级读取旁路，未用 `privacy.Allow`。
+- 角色缺失语义：角色被删除/停用导致查不到时**字段缺席**（不下发空串），Key 仍可正常列出与验签判定；前端需容忍可选字段。
+- 只读约束：两字段标注 `read_only`；`update_mask` 白名单保持 `name/role_id/is_active/expires_at`，客户端提交该两字段仍 **400**；不加入 `accessKeyCursorSortColumns`，不参与排序/筛选/游标载荷。
+- 实测（ani-system @ ani-01，2026-10-13）：`verify-api-key-role-info.py` **14/14 PASS**（创建/详情/列表/重置响应带回填、snake_case 无 `roleName`、无 SK、字段形态）；回归 `verify-cursor.py` 24/24、`verify-list-cursor.py` 38/38、`smoke-regression.py` fail=0 均不退化。probe 数据已清理。
 
 | 问题编号 | 本批结论 |
 | --- | --- |
@@ -1556,3 +1578,12 @@ Resource 通过新迁移 0013 增加可空 text 列，保留历史迁移与原 c
 同轮前缀调整复验 **pass**：Fedora 完整 `make api`，仅生成平台 HTTP/Proto 路由描述及 OpenAPI 路径变更；27 路由的 Proto、生成 HTTP、鉴权策略与权限 SQL 一致，OpenAPI 语义差异只有前缀。`go test -mod=readonly -count=1 -run "TestPlatformNetwork|TestNetwork" ./pkg/middleware/auth` 与 `scripts/network-joint-integration -run "^TestNetworkJointHTTP$/^platform_network$"` 均退出 0，新前缀的 27 平台方法及现有负向、分页和响应检查通过，任务自有 PG/Redis 已清理。沿用同一 Resource 夹具二进制与外部边界替身，不扩大为共享整批 Network 回归或真实数据面通过；前述 LB 未解失败保留。本轮命令、源码哈希、生成和复验日志在既有工件目录的 `gov/admin-prefix/`；该复验快照未提交、推送或部署，后续 main 发布不代表部署。
 
 main 发布使用 Resource `e7b5a8a3435996181bff62e025a21224c97d2464`，Gov 依赖固定为 `v0.0.0-20261012083359-e7b5a8a34359`。Fedora 新模块缓存已验证下载内容、模块/go.mod 校验和及 `Origin.Hash` 与发布提交一致，完整 `make api` 复验无生成差异。发布时保留最新 Governance main 的 ModelDev 和鉴权计划更新；源码发布不改变共享部署或此前 LB 回归未解结论。提交前 Resource 完整 `make verify` 已通过，前缀和平台方法的证据沿用上述入口；发布补充日志保留在同一工件目录的 `publication/`。
+## INSTANCE-MVP-V15（2026-10-13，后端接线实施中）
+
+新增固定 `INSTANCE=16`，独立于 INFERENCE/ACCELERATOR 的当前套餐和动作授权。输入、路由及安全查询视图以 `api/protos/instance/service/v1/instance.proto`、`api/protos/admin/service/v1/i_instance.proto` 为准；创建/变更保留 `{data:{...}}`，不允许公共 tenant、namespace、owner、GPU plan 或 charges。`instance_http.go` 严格解码写入，并校验路径和正文 ID 相同；终端响应 `no-store`。
+
+创建先执行当前角色/套餐授权及原公开请求幂等查找，新请求再解析 Image/preset/Namespace。占额、持久投递及全量附件沿用 Quota；启停调用原实例版本，不动原账。删除版本和幂等内容进入持久 DELETE，已接受删除阻止后续新启停/终端。Resource owner 固定 `ani-resource-service`，退额证书映射为 `ANI_QUOTA_RESOURCE_DNS_SAN`；合法 owner 原 GPU 全量累计声明不要求 Gov 持久 DELETE，更不查询 Notebook/Pod。Acc ENDED 保留实际 binding。
+
+列表协议登记为 `page_size/after_id`、`items/next_after_id`：默认 50、1～100、按实例 UUID 升序键集；无过滤/排序参数，查询每页重新当前授权并限定可信租户。不宣称 HMAC cursor、total 或跨页快照。前端本轮由用户指定专人接手。
+
+早期定向联调已使用真实授权、PG/Redis/mTLS 和生产业务代码，GPU/Kubernetes/exec 边界受控；真实 GPU 产品验收仍未完成。2026-10-13 用户授权先推送 main，剩余门禁由后续任务处理：已固定正式 Resource/Acc/SG API 版本并核对下载 SHA/sums，但新版 main 合入后的最终独立构建、定向组合用例及 CI 尚未完成，不声明通过。权威当前状态统一见 Resource `docs/execution/status.md#gpu-container-instance-mvp-v15`。`scripts/ops/sql/register-instance-permissions.sql` 只准备已同步的 API/permission 目录，未执行共享环境授权；本轮没有部署。

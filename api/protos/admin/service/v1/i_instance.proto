@@ -1,0 +1,16 @@
+syntax = "proto3";
+package admin.service.v1;
+import "google/api/annotations.proto";
+import "instance/service/v1/instance.proto";
+
+service InstanceService {
+ rpc CreateInstance(instance.service.v1.CreateInstanceRequest) returns(instance.service.v1.Acceptance) { option(google.api.http)={post:"/api/v1/instances" body:"*"}; }
+ rpc ListInstances(instance.service.v1.ListInstancesRequest) returns(instance.service.v1.ListInstancesResponse) { option(google.api.http)={get:"/api/v1/instances"}; }
+ rpc GetInstance(instance.service.v1.GetInstanceRequest) returns(instance.service.v1.Instance) { option(google.api.http)={get:"/api/v1/instances/{instance_id}"}; }
+ rpc StartInstance(instance.service.v1.ChangeInstanceRequest) returns(instance.service.v1.Acceptance) { option(google.api.http)={post:"/api/v1/instances/{data.instance_id}:start" body:"*"}; }
+ rpc StopInstance(instance.service.v1.ChangeInstanceRequest) returns(instance.service.v1.Acceptance) { option(google.api.http)={post:"/api/v1/instances/{data.instance_id}:stop" body:"*"}; }
+ rpc DeleteInstance(instance.service.v1.ChangeInstanceRequest) returns(instance.service.v1.Acceptance) { option(google.api.http)={delete:"/api/v1/instances/{data.instance_id}" body:"*"}; }
+ rpc GetInstanceOperation(instance.service.v1.GetOperationRequest) returns(instance.service.v1.Operation) { option(google.api.http)={get:"/api/v1/instance-operations/{operation_id}"}; }
+ rpc ListInstancePresets(instance.service.v1.ListPresetsRequest) returns(instance.service.v1.ListPresetsResponse) { option(google.api.http)={get:"/api/v1/instance-presets"}; }
+ rpc ExecInstance(instance.service.v1.ExecInstanceRequest) returns(instance.service.v1.ExecInstanceResponse) { option(google.api.http)={post:"/api/v1/instances/{data.instance_id}/exec" body:"*"}; }
+}

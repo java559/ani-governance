@@ -25,6 +25,16 @@ message AccessKey {
   optional google.protobuf.Timestamp expires_at = 5 [json_name = "expires_at"];
   optional google.protobuf.Timestamp last_used_at = 6 [json_name = "last_used_at"];
   optional uint32 role_id = 7 [json_name = "role_id"];
+  // 绑定角色名称/描述：只读，服务端按 role_id 在请求租户内回填。
+  // 角色不存在或被删除时字段缺席（不下发空串），前端需容忍可选字段。
+  optional string role_name = 8 [
+    json_name = "role_name",
+    (gnostic.openapi.v3.property) = {description: "绑定角色名称（只读，服务端回填）", read_only: true}
+  ];
+  optional string role_description = 9 [
+    json_name = "role_description",
+    (gnostic.openapi.v3.property) = {description: "绑定角色描述（只读，服务端回填）", read_only: true}
+  ];
   optional google.protobuf.Timestamp created_at = 200 [json_name = "created_at"];
 }
 message ListAccessKeyResponse {

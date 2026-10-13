@@ -143,6 +143,14 @@ func (m *AccessKey) validate(all bool) error {
 		// no validation rules for RoleId
 	}
 
+	if m.RoleName != nil {
+		// no validation rules for RoleName
+	}
+
+	if m.RoleDescription != nil {
+		// no validation rules for RoleDescription
+	}
+
 	if m.CreatedAt != nil {
 
 		if all {

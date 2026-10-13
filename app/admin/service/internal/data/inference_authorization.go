@@ -49,10 +49,19 @@ func InferenceModuleRegistered() bool {
 // Authorize requires the current tenant user's route grant AND the registered
 // Inference plan module in one RR snapshot, before any idempotency read.
 func (r *InferenceAuthorizationRepo) Authorize(ctx context.Context, tenantID, userID uint32, path string) (result error) {
+	if !InferenceModuleRegistered() || (path != InferenceCreatePath && path != InferenceDeletePath) {
+		return ErrInferenceAuthorizationDenied
+	}
+	return r.authorizeRoute(ctx, tenantID, userID, path, "INFERENCE", "POST")
+}
+
+// The two GPU owners share the current tenant/role/plan snapshot checks while
+// keeping their module and exact API actions distinct.
+func (r *InferenceAuthorizationRepo) authorizeRoute(ctx context.Context, tenantID, userID uint32, path, module, method string) (result error) {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if !InferenceModuleRegistered() || tenantID == 0 || userID == 0 || (path != InferenceCreatePath && path != InferenceDeletePath) {
+	if tenantID == 0 || userID == 0 {
 		return ErrInferenceAuthorizationDenied
 	}
 	if r == nil || r.entClient == nil || r.entClient.Client() == nil {
@@ -81,7 +90,7 @@ func (r *InferenceAuthorizationRepo) Authorize(ctx context.Context, tenantID, us
 	if current.PlanID == nil || *current.PlanID == 0 {
 		return ErrInferenceAuthorizationDenied
 	}
-	allowed, err := tx.PlanModule.Query().Where(planmodule.HasPlanWith(plan.IDEQ(*current.PlanID)), planmodule.ModuleEQ(planmodule.Module("INFERENCE")), planmodule.DeletedAtIsNil()).Exist(ctx)
+	allowed, err := tx.PlanModule.Query().Where(planmodule.HasPlanWith(plan.IDEQ(*current.PlanID)), planmodule.ModuleEQ(planmodule.Module(module)), planmodule.DeletedAtIsNil()).Exist(ctx)
 	if err != nil {
 		return ErrInferenceAuthorizationUnavailable
 	}
@@ -141,7 +150,7 @@ func (r *InferenceAuthorizationRepo) Authorize(ctx context.Context, tenantID, us
 	if len(apiIDs) == 0 {
 		return ErrInferenceAuthorizationDenied
 	}
-	allowed, err = tx.Api.Query().Where(api.IDIn(apiIDs...), api.StatusEQ(api.StatusOn), api.DeletedAtIsNil(), api.ScopeEQ(api.ScopeAdmin), api.BusinessModuleEQ(api.BusinessModule("INFERENCE")), api.PathEQ(path), api.MethodEQ("POST")).Exist(ctx)
+	allowed, err = tx.Api.Query().Where(api.IDIn(apiIDs...), api.StatusEQ(api.StatusOn), api.DeletedAtIsNil(), api.ScopeEQ(api.ScopeAdmin), api.BusinessModuleEQ(api.BusinessModule(module)), api.PathEQ(path), api.MethodEQ(method)).Exist(ctx)
 	if err != nil {
 		return ErrInferenceAuthorizationUnavailable
 	}

@@ -5,6 +5,7 @@ go 1.26.9
 require (
 	entgo.io/ent v0.14.6
 	github.com/alicebob/miniredis/v2 v2.39.0
+	github.com/coder/websocket v1.8.15
 	github.com/envoyproxy/protoc-gen-validate v1.3.3
 	github.com/getkin/kin-openapi v0.149.0
 	github.com/go-kratos/kratos/v2 v2.9.2
@@ -21,9 +22,11 @@ require (
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/stretchr/testify v1.12.1
 	github.com/xiaoqidun/entps v1.50.1
-	github.com/zhangzhe-ctrl/ani-accelerator-service v0.0.0-20260924030150-1d32dd9a9173
+	github.com/zhangzhe-ctrl/ani-accelerator-service v0.0.0-20261013081408-03765d169b07
 	github.com/zhangzhe-ctrl/ani-modeldev-service v0.0.0-20261005092412-218f5e5efedf
-	github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261012083359-e7b5a8a34359
+	github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261013082823-b4d87d8e2f0a
+	github.com/zhangzhe-ctrl/ani-resource-service/api/instance/terminal v0.0.0-20261013075021-0937f5aa9c6c
+	github.com/zhangzhe-ctrl/ani-session-gateway/api v0.1.1-0.20261013075651-d889f9490b84
 	go.opentelemetry.io/otel/trace v1.46.0
 	golang.org/x/net v0.60.0
 	google.golang.org/genproto v0.0.0-20260908043556-f8649ddbbfe6

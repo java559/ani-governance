@@ -22,7 +22,7 @@ ANI-HMAC-SHA256
 
 GET/DELETE 使用空 body；POST/PATCH 使用 JSON 对象及 `application/json`，Network 限 64 KiB。Network query 限 8 KiB，允许字段以对应列表 DTO 和策略为准，单个字段不重复；详情/写入不接受 query。未知字段、重复 JSON 字段、同一字段的两种 JSON 命名、非法 ID/版本/枚举和公网身份字段均拒绝。出站 metadata 从认证主体重新构建。
 
-签名本身不声明一次性请求。写入的重试安全由 Resource 持久幂等合同保证：创建、SNAT 切换和 LB 更新传 `idempotency_key`；需要并发控制的修改另传 `expected_version`。删除沿用 Resource 的幂等生命周期。受理快照和 operation 成功不同，调用方应查询资源及 operation；LB `desired_version` 与 `applied_version`、SNAT 期望与应用状态各自保留。
+签名本身不声明一次性请求。写入的重试安全由 Resource 持久幂等合同保证：创建、SNAT 切换和 LB 更新传 `idempotency_key`；需要并发控制的修改另传 `expected_version`。删除沿用 Resource 的幂等生命周期。受理快照和 operation 成功不同，调用方应查询资源及 operation；LB `desired_version`、只读 `provider_target_version` 与 `applied_version`、SNAT 期望与应用状态各自保留。LB 空后端保存及后续激活复用现有签名方法与权限；从 GET 组装监听器 PATCH 只复制输入 DTO 的可写字段，不回填 `deployment_state`/`reason`。旧受理回执重放保持原样，新增派生字段不改变原输入 fingerprint；延迟下发响应合同见 [LB-DEFERRED-01](../interface-integration-register.md#lb-deferred-01)。
 
 ## Python 调用
 

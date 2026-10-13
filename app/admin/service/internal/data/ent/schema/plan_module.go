@@ -48,6 +48,7 @@ func (PlanModule) Fields() []ent.Field {
 				"Accelerator", "ACCELERATOR",
 				"Image", "IMAGE",
 				"Inference", "INFERENCE",
+				"Instance", "INSTANCE",
 			).
 			Optional().
 			Nillable(),

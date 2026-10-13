@@ -174,7 +174,7 @@ func (w *GpuUsageSyncWorker) Step(ctx context.Context) error {
 }
 
 func deriveGpuProjection(op *ent.QuotaOperation, charges []*ent.QuotaCharge, hasDelete bool) (*acc.GpuUsageProjection, error) {
-	if op == nil || op.TenantID == nil || *op.TenantID == 0 || op.CreateOperationID != nil || op.CreatedAt == nil || op.OwnerService != "ani-inference" {
+	if op == nil || op.TenantID == nil || *op.TenantID == 0 || op.CreateOperationID != nil || op.CreatedAt == nil || !supportedGpuOwner(op.OwnerService) {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU projection source")
 	}
 	c, err := DecodeGpuCanonical([]byte(op.CanonicalRequest))
@@ -210,9 +210,6 @@ func deriveGpuProjection(op *ent.QuotaOperation, charges []*ent.QuotaCharge, has
 		p.EndReason = acc.UsageEndReason_GOVERNANCE_CANCELED_UNSENT
 		suffix = "canceled-unsent"
 	} else if gpuEnded {
-		if !hasDelete {
-			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "GPU release has no persistent delete intent")
-		}
 		p.Revision = 2
 		p.State = acc.UsageState_ENDED
 		p.EndReason = acc.UsageEndReason_OWNER_RESOURCE_RELEASED

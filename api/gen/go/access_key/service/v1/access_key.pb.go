@@ -28,17 +28,21 @@ const (
 
 // Public metadata only. Secret material is deliberately absent.
 type AccessKey struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            *uint32                `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`
-	Name          *string                `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
-	AccessKey     *string                `protobuf:"bytes,3,opt,name=access_key,proto3,oneof" json:"access_key,omitempty"`
-	IsActive      *bool                  `protobuf:"varint,4,opt,name=is_active,proto3,oneof" json:"is_active,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,proto3,oneof" json:"expires_at,omitempty"`
-	LastUsedAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_used_at,proto3,oneof" json:"last_used_at,omitempty"`
-	RoleId        *uint32                `protobuf:"varint,7,opt,name=role_id,proto3,oneof" json:"role_id,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,200,opt,name=created_at,proto3,oneof" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         *uint32                `protobuf:"varint,1,opt,name=id,proto3,oneof" json:"id,omitempty"`
+	Name       *string                `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	AccessKey  *string                `protobuf:"bytes,3,opt,name=access_key,proto3,oneof" json:"access_key,omitempty"`
+	IsActive   *bool                  `protobuf:"varint,4,opt,name=is_active,proto3,oneof" json:"is_active,omitempty"`
+	ExpiresAt  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,proto3,oneof" json:"expires_at,omitempty"`
+	LastUsedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=last_used_at,proto3,oneof" json:"last_used_at,omitempty"`
+	RoleId     *uint32                `protobuf:"varint,7,opt,name=role_id,proto3,oneof" json:"role_id,omitempty"`
+	// 绑定角色名称/描述：只读，服务端按 role_id 在请求租户内回填。
+	// 角色不存在或被删除时字段缺席（不下发空串），前端需容忍可选字段。
+	RoleName        *string                `protobuf:"bytes,8,opt,name=role_name,proto3,oneof" json:"role_name,omitempty"`
+	RoleDescription *string                `protobuf:"bytes,9,opt,name=role_description,proto3,oneof" json:"role_description,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,200,opt,name=created_at,proto3,oneof" json:"created_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *AccessKey) Reset() {
@@ -118,6 +122,20 @@ func (x *AccessKey) GetRoleId() uint32 {
 		return *x.RoleId
 	}
 	return 0
+}
+
+func (x *AccessKey) GetRoleName() string {
+	if x != nil && x.RoleName != nil {
+		return *x.RoleName
+	}
+	return ""
+}
+
+func (x *AccessKey) GetRoleDescription() string {
+	if x != nil && x.RoleDescription != nil {
+		return *x.RoleDescription
+	}
+	return ""
 }
 
 func (x *AccessKey) GetCreatedAt() *timestamppb.Timestamp {
@@ -649,7 +667,7 @@ var File_access_key_service_v1_access_key_proto protoreflect.FileDescriptor
 
 const file_access_key_service_v1_access_key_proto_rawDesc = "" +
 	"\n" +
-	"&access_key/service/v1/access_key.proto\x12\x15access_key.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\x1a\x1epagination/v1/pagination.proto\"\xd0\x03\n" +
+	"&access_key/service/v1/access_key.proto\x12\x15access_key.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/field_mask.proto\x1a\x1epagination/v1/pagination.proto\"\xbb\x05\n" +
 	"\tAccessKey\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\rH\x00R\x02id\x88\x01\x01\x12\x17\n" +
 	"\x04name\x18\x02 \x01(\tH\x01R\x04name\x88\x01\x01\x12#\n" +
@@ -661,9 +679,11 @@ const file_access_key_service_v1_access_key_proto_rawDesc = "" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampH\x04R\n" +
 	"expires_at\x88\x01\x01\x12C\n" +
 	"\flast_used_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampH\x05R\flast_used_at\x88\x01\x01\x12\x1d\n" +
-	"\arole_id\x18\a \x01(\rH\x06R\arole_id\x88\x01\x01\x12@\n" +
+	"\arole_id\x18\a \x01(\rH\x06R\arole_id\x88\x01\x01\x12[\n" +
+	"\trole_name\x18\b \x01(\tB8\xbaG5\x18\x01\x92\x020绑定角色名称（只读，服务端回填）H\aR\trole_name\x88\x01\x01\x12i\n" +
+	"\x10role_description\x18\t \x01(\tB8\xbaG5\x18\x01\x92\x020绑定角色描述（只读，服务端回填）H\bR\x10role_description\x88\x01\x01\x12@\n" +
 	"\n" +
-	"created_at\x18\xc8\x01 \x01(\v2\x1a.google.protobuf.TimestampH\aR\n" +
+	"created_at\x18\xc8\x01 \x01(\v2\x1a.google.protobuf.TimestampH\tR\n" +
 	"created_at\x88\x01\x01B\x05\n" +
 	"\x03_idB\a\n" +
 	"\x05_nameB\r\n" +
@@ -673,7 +693,10 @@ const file_access_key_service_v1_access_key_proto_rawDesc = "" +
 	"\v_expires_atB\x0f\n" +
 	"\r_last_used_atB\n" +
 	"\n" +
-	"\b_role_idB\r\n" +
+	"\b_role_idB\f\n" +
+	"\n" +
+	"_role_nameB\x13\n" +
+	"\x11_role_descriptionB\r\n" +
 	"\v_created_at\"\x87\x01\n" +
 	"\x15ListAccessKeyResponse\x126\n" +
 	"\x05items\x18\x01 \x03(\v2 .access_key.service.v1.AccessKeyR\x05items\x12\x14\n" +

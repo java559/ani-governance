@@ -25,7 +25,7 @@ type keyHTTPProbe struct {
 
 func (p *keyHTTPProbe) Create(_ context.Context, in *accesskeyV1.CreateAccessKeyRequest) (*accesskeyV1.CreateAccessKeyResponse, error) {
 	p.created = in
-	return &accesskeyV1.CreateAccessKeyResponse{Data: &accesskeyV1.AccessKey{Id: trans.Ptr(uint32(42)), RoleId: in.Data.RoleId, Name: in.Data.Name, AccessKey: trans.Ptr("ak-public-fixture"), IsActive: trans.Ptr(true)}, SecretKey: "sk-public-test-fixture"}, nil
+	return &accesskeyV1.CreateAccessKeyResponse{Data: &accesskeyV1.AccessKey{Id: trans.Ptr(uint32(42)), RoleId: in.Data.RoleId, Name: in.Data.Name, AccessKey: trans.Ptr("ak-public-fixture"), IsActive: trans.Ptr(true), RoleName: trans.Ptr("reader")}, SecretKey: "sk-public-test-fixture"}, nil
 }
 func (p *keyHTTPProbe) Update(_ context.Context, in *accesskeyV1.UpdateAccessKeyRequest) (*emptypb.Empty, error) {
 	p.updated = in
@@ -58,6 +58,8 @@ func TestAccessKeyHTTPCreateAndDeleteContract(t *testing.T) {
 	require.Equal(t, float64(12), data["role_id"])
 	require.Equal(t, "ak-public-fixture", data["access_key"])
 	require.Equal(t, true, data["is_active"])
+	require.Equal(t, "reader", data["role_name"])
+	require.NotContains(t, data, "roleName")
 	require.NotContains(t, data, "secret_key")
 	require.NotContains(t, data, "roleId")
 	w = fireKeyHTTP(s, "DELETE", "/api/v1/auth/api-keys/42", "")
@@ -91,6 +93,8 @@ func TestAccessKeyHTTPRejectsInvalidUpdateMasks(t *testing.T) {
 		`{"data":{"is_active":false},"update_mask":""}`,
 		`{"data":{},"update_mask":"roleId"}`,
 		`{"data":{"name":"reader"},"update_mask":"accessKey"}`,
+		`{"data":{"role_name":"reader"},"update_mask":"roleName"}`,
+		`{"data":{"role_description":"x"},"update_mask":"roleDescription"}`,
 		`{"update_mask":"name"}`,
 	} {
 		w := fireKeyHTTP(s, "PUT", "/api/v1/auth/api-keys/42", body)

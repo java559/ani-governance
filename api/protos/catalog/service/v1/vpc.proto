@@ -233,6 +233,7 @@ enum LoadBalancerConfigurationState {
   LOAD_BALANCER_CONFIGURATION_STATE_CONFIGURED = 3;
   LOAD_BALANCER_CONFIGURATION_STATE_DEGRADED = 4;
   LOAD_BALANCER_CONFIGURATION_STATE_UNKNOWN = 5;
+  LOAD_BALANCER_CONFIGURATION_STATE_WAITING_FOR_BACKENDS = 6;
 }
 enum LoadBalancerDataPlaneState {
   LOAD_BALANCER_DATA_PLANE_STATE_UNSPECIFIED = 0;
@@ -281,6 +282,10 @@ message LoadBalancerListener {
   optional uint32 max_connections = 10 [json_name = "max_connections"];
   bool gzip_enabled = 11 [json_name = "gzip_enabled"];
   uint32 https_redirect_status_code = 12 [json_name = "https_redirect_status_code"];
+  // Read-only: waiting_for_backends, applying, configured, removing, degraded
+  // or unknown. Waiting redirect listeners report WAITING_FOR_REDIRECT_TARGET.
+  string deployment_state = 13 [json_name = "deployment_state"];
+  string reason = 14 [json_name = "reason"];
 }
 message LoadBalancerBackendInput {
   string id = 1 [json_name = "id"];
@@ -341,6 +346,9 @@ message LoadBalancer {
   string public_address = 28 [json_name = "public_address"];
   google.protobuf.Timestamp data_plane_observed_at = 29 [json_name = "data_plane_observed_at"];
   repeated LoadBalancerListener listeners = 30 [json_name = "listeners"];
+  // Read-only; pure database edits may advance desired_version without changing
+  // this Provider target. Zero means no projection has ever been targeted.
+  int64 provider_target_version = 31 [json_name = "provider_target_version"];
 }
 message CreateLoadBalancerRequest {
   string name = 2 [json_name = "name"];

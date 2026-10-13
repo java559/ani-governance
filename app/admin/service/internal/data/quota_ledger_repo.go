@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -8,6 +9,8 @@ import (
 	"fmt"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"go-wind-admin/pkg/quotaerrors"
+	"io"
+	"reflect"
 	"sort"
 	"time"
 
@@ -345,13 +348,8 @@ func (r *QuotaLedgerRepo) Release(ctx context.Context, in *QuotaReleaseInput) (o
 					}
 				}
 			}
-			has, e := tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(tid), quotaoperation.CreateOperationIDEQ(in.OperationID), quotaoperation.OwnerServiceEQ(in.OwnerService)).Exist(ctx)
-			if e != nil {
-				return e
-			}
-			if !has {
-				return quotaerrors.ReleaseConflict("GPU release requires persisted DELETE intent")
-			}
+			// The authenticated owner declares release. Original charge ownership,
+			// full GPU vector and cumulative totals remain the accounting authority.
 			if in.Reason != "RESOURCE_RELEASED" && in.Reason != "ABORTED_CLEANED" {
 				return quotaerrors.ReleaseConflict("invalid GPU release reason")
 			}
@@ -537,8 +535,16 @@ func (r *QuotaLedgerRepo) CreateDeleteOperation(ctx context.Context, in *QuotaDe
 		if local {
 			state = "CANCELED_UNSENT"
 		}
-		// DELETE carries the exact original frozen request, never a newly resolved plan.
-		op, e := tx.QuotaOperation.Create().SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(tid).SetResourceTenantID(original.ResourceTenantID).SetResourceID(original.ResourceID).SetNillableCreateOperationID(&original.OperationID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(original.CanonicalRequest).SetDispatchState(quotaoperation.DispatchState(state)).Save(ctx)
+		// Preserve the original request/plan/charges. The fixed instance owner
+		// additionally freezes the validated deletion version for durable dispatch.
+		canonical := original.CanonicalRequest
+		if in.OwnerService == "ani-resource-service" {
+			canonical, e = instanceDeleteSnapshot(original.CanonicalRequest, in.CanonicalRequest)
+			if e != nil {
+				return e
+			}
+		}
+		op, e := tx.QuotaOperation.Create().SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(tid).SetResourceTenantID(original.ResourceTenantID).SetResourceID(original.ResourceID).SetNillableCreateOperationID(&original.OperationID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(canonical).SetDispatchState(quotaoperation.DispatchState(state)).Save(ctx)
 		if e != nil {
 			return e
 		}
@@ -555,6 +561,42 @@ func (r *QuotaLedgerRepo) CreateDeleteOperation(ctx context.Context, in *QuotaDe
 		return nil
 	})
 	return out, err
+}
+
+func instanceDeleteSnapshot(original, requested string) (string, error) {
+	decode := func(raw string) (map[string]any, error) {
+		var value map[string]any
+		d := json.NewDecoder(bytes.NewBufferString(raw))
+		d.UseNumber()
+		if e := d.Decode(&value); e != nil {
+			return nil, e
+		}
+		if d.Decode(new(any)) != io.EOF {
+			return nil, fmt.Errorf("invalid snapshot")
+		}
+		return value, nil
+	}
+	before, e := decode(original)
+	if e != nil {
+		return "", e
+	}
+	after, e := decode(requested)
+	if e != nil {
+		return "", e
+	}
+	version, ok := after["delete_expected_version"].(json.Number)
+	if !ok {
+		return "", quotapb.ErrorInvalidQuotaRequest("%s", "instance delete version missing")
+	}
+	v, e := version.Int64()
+	if e != nil || v < 1 {
+		return "", quotapb.ErrorInvalidQuotaRequest("%s", "invalid instance delete version")
+	}
+	delete(after, "delete_expected_version")
+	if !reflect.DeepEqual(before, after) {
+		return "", quotapb.ErrorInvalidQuotaRequest("%s", "instance deletion changed original frozen request")
+	}
+	return requested, nil
 }
 func deleteResult(op *ent.QuotaOperation, charges []*ent.QuotaCharge, replay bool) *QuotaDeleteResult {
 	result := &QuotaDeleteResult{OperationID: op.OperationID, ResourceID: op.ResourceID, ChargeIDs: chargeIDs(charges), Replayed: replay, LocalCanceled: op.DispatchState == "CANCELED_UNSENT"}

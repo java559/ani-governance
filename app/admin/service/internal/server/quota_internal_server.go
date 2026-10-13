@@ -41,9 +41,10 @@ type QuotaInternalServerConfig struct {
 
 // QuotaInternalConfigFromEnv 从环境变量解析：
 // ANI_QUOTA_ENABLED / ANI_QUOTA_INTERNAL_ADDR / ANI_QUOTA_CA_FILE /
-// ANI_QUOTA_CERT_FILE / ANI_QUOTA_KEY_FILE / ANI_QUOTA_INFERENCE_DNS_SAN。
-// Only the compiled ani-inference integration is registered. The environment
-// configures its exact deployed certificate name, never an owner or wildcard.
+// ANI_QUOTA_CERT_FILE / ANI_QUOTA_KEY_FILE /
+// ANI_QUOTA_INFERENCE_DNS_SAN / ANI_QUOTA_RESOURCE_DNS_SAN。
+// The environment configures exact deployed names for the two compiled owners,
+// never an arbitrary owner or wildcard.
 func QuotaInternalConfigFromEnv() QuotaInternalServerConfig {
 	config := QuotaInternalServerConfig{
 		Enabled:  os.Getenv("ANI_QUOTA_ENABLED") == "true",
@@ -54,6 +55,17 @@ func QuotaInternalConfigFromEnv() QuotaInternalServerConfig {
 	}
 	if name := os.Getenv("ANI_QUOTA_INFERENCE_DNS_SAN"); name != "" {
 		config.CertOwnerMap = map[string]string{name: "ani-inference"}
+	}
+	if name := os.Getenv("ANI_QUOTA_RESOURCE_DNS_SAN"); name != "" {
+		if config.CertOwnerMap == nil {
+			config.CertOwnerMap = map[string]string{}
+		}
+		if _, duplicate := config.CertOwnerMap[name]; duplicate {
+			// Preserve a configuration error for Validate rather than replacing an owner.
+			config.CertOwnerMap[name] = ""
+		} else {
+			config.CertOwnerMap[name] = "ani-resource-service"
+		}
 	}
 	return config
 }

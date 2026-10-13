@@ -6143,6 +6143,10 @@ func (m *LoadBalancerListener) validate(all bool) error {
 
 	// no validation rules for HttpsRedirectStatusCode
 
+	// no validation rules for DeploymentState
+
+	// no validation rules for Reason
+
 	if m.MaxConnections != nil {
 		// no validation rules for MaxConnections
 	}
@@ -6923,6 +6927,8 @@ func (m *LoadBalancer) validate(all bool) error {
 		}
 
 	}
+
+	// no validation rules for ProviderTargetVersion
 
 	if len(errors) > 0 {
 		return LoadBalancerMultiError(errors)

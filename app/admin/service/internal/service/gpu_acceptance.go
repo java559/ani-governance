@@ -36,6 +36,12 @@ type GpuPlanResolver interface {
 	ResolveGpuRequest(context.Context, *acc.ResolveGpuRequestRequest, ...grpc.CallOption) (*acc.ResolvedGpuPlan, error)
 }
 
+// Instance presets/images are external dependencies. Their resolution occurs
+// only after current authorization and the original public-request replay gate.
+type GpuBusinessResolver interface {
+	ResolveGpuBusiness(context.Context, *auth.Principal, string, proto.Message) (*acc.GpuRequest, proto.Message, error)
+}
+
 type GpuAcceptance struct {
 	ledger   *data.QuotaLedgerRepo
 	registry *QuotaAdapterRegistry
@@ -46,7 +52,7 @@ type GpuAcceptance struct {
 }
 
 func NewGpuAcceptance(ledger *data.QuotaLedgerRepo, registry *QuotaAdapterRegistry, resolver ResourceTenantResolver, plans GpuPlanResolver, binding GpuBusinessBinding, worker *QuotaDispatchWorker) (*GpuAcceptance, error) {
-	if ledger == nil || registry == nil || resolver == nil || binding == nil || binding.OwnerService() != "ani-inference" || binding.CreateAction() == "" || binding.DeleteAction() == "" || binding.CreateAction() == binding.DeleteAction() {
+	if ledger == nil || registry == nil || resolver == nil || binding == nil || !supportedGpuOwner(binding.OwnerService()) || binding.CreateAction() == "" || binding.DeleteAction() == "" || binding.CreateAction() == binding.DeleteAction() {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU business assembly")
 	}
 	return &GpuAcceptance{ledger: ledger, registry: registry, resolver: resolver, plans: plans, binding: binding, worker: worker}, nil
@@ -56,7 +62,7 @@ func (r *QuotaAdapterRegistry) GPUExecutionEnabled(owner string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	b, ok := r.byOwner[owner].(GpuBusinessBinding)
-	if !ok || owner != "ani-inference" || b.CreateAction() == "" || b.DeleteAction() == "" || b.CreateAction() == b.DeleteAction() {
+	if !ok || !supportedGpuOwner(owner) || b.CreateAction() == "" || b.DeleteAction() == "" || b.CreateAction() == b.DeleteAction() {
 		return false
 	}
 	return r.gpuActionsOwnedBy(b)
@@ -82,16 +88,23 @@ func (r *QuotaAdapterRegistry) EnforcesQuota(code string) bool {
 	}
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	b, ok := r.byOwner["ani-inference"].(GpuBusinessBinding)
-	if !ok || b.CreateAction() == "" || b.DeleteAction() == "" || b.CreateAction() == b.DeleteAction() || !r.gpuActionsOwnedBy(b) {
-		return false
-	}
-	for _, supported := range b.GpuQuotaCodes() {
-		if supported == code {
-			return true
+	for owner, adapter := range r.byOwner {
+		b, ok := adapter.(GpuBusinessBinding)
+		if !ok || !supportedGpuOwner(owner) || b.CreateAction() == "" || b.DeleteAction() == "" || b.CreateAction() == b.DeleteAction() || !r.gpuActionsOwnedBy(b) {
+			continue
+		}
+		for _, supported := range b.GpuQuotaCodes() {
+			if supported == code {
+				return true
+			}
 		}
 	}
 	return false
+}
+
+// Only the two explicitly integrated owners can enable GPU business admission.
+func supportedGpuOwner(owner string) bool {
+	return owner == "ani-inference" || owner == "ani-resource-service"
 }
 
 func gpuPrincipal(ctx context.Context) (*auth.Principal, error) {
@@ -113,7 +126,8 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	if err = s.binding.AuthorizeGpu(ctx, p, s.binding.CreateAction(), ""); err != nil {
 		return nil, err
 	}
-	if _, err = uuid.Parse(key); err != nil || gpu == nil || business == nil || !business.ProtoReflect().IsValid() {
+	_, resolvesBusiness := s.binding.(GpuBusinessResolver)
+	if _, err = uuid.Parse(key); err != nil || (gpu == nil && !resolvesBusiness) || business == nil || !business.ProtoReflect().IsValid() {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid create request")
 	}
 	tenant, err := s.resolver.ResourceTenantID(ctx, p.TenantID)
@@ -142,9 +156,12 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	if err != nil {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid business payload")
 	}
-	gpuObject, err := gpuCanonicalMessage(gpu.ProtoReflect())
-	if err != nil {
-		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU request")
+	var gpuObject map[string]any
+	if gpu != nil {
+		gpuObject, err = gpuCanonicalMessage(gpu.ProtoReflect())
+		if err != nil {
+			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU request")
+		}
 	}
 	requestHash, err := gpuHash(map[string]any{"schema": "gov-gpu-create-v1", "tenant_id": tenant, "actor_type": string(p.Type), "actor_id": actorID, "owner": s.binding.OwnerService(), "action": s.binding.CreateAction(), "gpu_request": gpuObject, "business_type": string(business.ProtoReflect().Descriptor().FullName()), "business": businessObject})
 	if err != nil {
@@ -179,6 +196,28 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	}
 	if !s.registry.GPUExecutionEnabled(s.binding.OwnerService()) || s.registry.Lookup(s.binding.OwnerService(), s.binding.CreateAction()) == nil || s.plans == nil {
 		return nil, quotapb.ErrorQuotaAdapterUnavailable("%s", "GPU business owner is not enabled")
+	}
+	if resolvesBusiness {
+		gpu, business, err = s.binding.(GpuBusinessResolver).ResolveGpuBusiness(ctx, p, tenant, business)
+		if err != nil {
+			return nil, err
+		}
+		if gpu == nil || business == nil || !business.ProtoReflect().IsValid() {
+			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid resolved GPU business")
+		}
+		if canonical, ok := s.binding.(interface {
+			CanonicalGpuBusiness(proto.Message) ([]byte, error)
+		}); ok {
+			businessBytes, err = canonical.CanonicalGpuBusiness(business)
+		} else {
+			businessObject, err = gpuCanonicalMessage(business.ProtoReflect())
+			if err == nil {
+				businessBytes, err = gpuCanonicalJSON(businessObject)
+			}
+		}
+		if err != nil {
+			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid resolved business payload")
+		}
 	}
 	extra, err := s.binding.ValidateGpuBusiness(ctx, business)
 	if err != nil {
@@ -226,6 +265,15 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 }
 
 func (s *GpuAcceptance) AcceptGpuDelete(ctx context.Context, key, resource string) (*attachment.GpuDeleteAcceptance, error) {
+	return s.acceptGpuDelete(ctx, key, resource, 0)
+}
+func (s *GpuAcceptance) AcceptGpuDeleteVersion(ctx context.Context, key, resource string, version int64) (*attachment.GpuDeleteAcceptance, error) {
+	if version < 1 {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "expected instance version required")
+	}
+	return s.acceptGpuDelete(ctx, key, resource, version)
+}
+func (s *GpuAcceptance) acceptGpuDelete(ctx context.Context, key, resource string, version int64) (*attachment.GpuDeleteAcceptance, error) {
 	p, err := gpuPrincipal(ctx)
 	if err != nil {
 		return nil, err
@@ -262,11 +310,39 @@ func (s *GpuAcceptance) AcceptGpuDelete(ctx context.Context, key, resource strin
 		return nil, err
 	}
 	actorID := strconv.FormatUint(uint64(p.ID), 10)
-	hash, err := gpuHash(map[string]any{"schema": "gov-gpu-delete-v1", "tenant_id": old.ResourceTenantID, "actor_type": string(p.Type), "actor_id": actorID, "owner": old.OwnerService, "action": s.binding.DeleteAction(), "resource_id": old.ResourceID, "create_operation_id": old.OperationID})
+	object := map[string]any{"schema": "gov-gpu-delete-v1", "tenant_id": old.ResourceTenantID, "actor_type": string(p.Type), "actor_id": actorID, "owner": old.OwnerService, "action": s.binding.DeleteAction(), "resource_id": old.ResourceID, "create_operation_id": old.OperationID}
+	if version > 0 {
+		object["expected_version"] = version
+	}
+	hash, err := gpuHash(object)
 	if err != nil {
 		return nil, err
 	}
-	result, err := s.ledger.CreateDeleteOperation(ctx, &data.QuotaDeleteInput{TenantID: p.TenantID, ActorType: string(p.Type), ActorID: actorID, OwnerService: old.OwnerService, Action: s.binding.DeleteAction(), IdempotencyKey: key, RequestHash: hash, CanonicalRequest: old.CanonicalRequest, ResourceID: resource})
+	canonical := old.CanonicalRequest
+	if version > 0 {
+		existing, e := s.ledger.FindIdempotentOperation(ctx, p.TenantID, string(p.Type), actorID, s.binding.DeleteAction(), key)
+		if e != nil && !ent.IsNotFound(e) {
+			return nil, e
+		}
+		if existing == nil {
+			validator, ok := s.binding.(interface {
+				ValidateGpuDelete(context.Context, *auth.Principal, string, string, int64) error
+			})
+			if !ok {
+				return nil, quotapb.ErrorInvalidQuotaRequest("%s", "versioned delete unsupported")
+			}
+			if e = validator.ValidateGpuDelete(ctx, p, old.ResourceTenantID, resource, version); e != nil {
+				return nil, e
+			}
+		}
+		c.DeleteExpectedVersion = version
+		raw, e := gpuCanonicalJSON(c)
+		if e != nil {
+			return nil, e
+		}
+		canonical = string(raw)
+	}
+	result, err := s.ledger.CreateDeleteOperation(ctx, &data.QuotaDeleteInput{TenantID: p.TenantID, ActorType: string(p.Type), ActorID: actorID, OwnerService: old.OwnerService, Action: s.binding.DeleteAction(), IdempotencyKey: key, RequestHash: hash, CanonicalRequest: canonical, ResourceID: resource})
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +362,7 @@ func (s *GpuAcceptance) ResolveGpuUsageRef(ctx context.Context, tenant uint32, o
 	return resolveGpuUsageRef(ctx, s.ledger, tenant, owner, resource)
 }
 func resolveGpuUsageRef(ctx context.Context, ledger *data.QuotaLedgerRepo, tenant uint32, owner, resource string) (*acc.GpuUsageRef, error) {
-	if tenant == 0 || owner != "ani-inference" {
+	if tenant == 0 || !supportedGpuOwner(owner) {
 		return nil, quotapb.ErrorQuotaNotFound("%s", "resource not found")
 	}
 	op, err := ledger.GetCreateOperationByResource(ctx, tenant, owner, resource)

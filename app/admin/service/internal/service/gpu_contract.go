@@ -253,6 +253,7 @@ type GpuCanonical struct {
 	BusinessPayloadDigest string               `json:"business_payload_digest"`
 	MeteringVersion       string               `json:"metering_version"`
 	QuotaItems            []GpuQuotaItem       `json:"quota_items"`
+	DeleteExpectedVersion int64                `json:"delete_expected_version,omitempty"`
 }
 
 func isGpuCanonical(raw []byte) bool {
@@ -265,7 +266,7 @@ func isGpuCanonical(raw []byte) bool {
 
 func DecodeGpuCanonical(raw []byte) (*GpuCanonical, error) {
 	var c GpuCanonical
-	if json.Unmarshal(raw, &c) != nil || c.SchemaVersion != 2 || c.MeteringVersion != GpuMeteringVersion || c.GpuRequest == nil || c.GpuPlan == nil || !proto.Equal(c.GpuRequest, c.GpuPlan.Request) || len(c.QuotaItems) == 0 {
+	if json.Unmarshal(raw, &c) != nil || c.SchemaVersion != 2 || c.DeleteExpectedVersion < 0 || c.MeteringVersion != GpuMeteringVersion || c.GpuRequest == nil || c.GpuPlan == nil || !proto.Equal(c.GpuRequest, c.GpuPlan.Request) || len(c.QuotaItems) == 0 {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU canonical")
 	}
 	item, err := GpuPlanQuota(c.GpuPlan)
@@ -324,7 +325,7 @@ func GpuChargeSubset(c *GpuCanonical, charges []QuotaChargeRef) ([]*attachment.G
 // BuildGpuOwnerAttachments is used only by a compiled, business-specific adapter.
 // It cannot select an RPC or owner supplied by a public caller.
 func BuildGpuOwnerAttachments(owner string, cmd *QuotaDispatchCommand) (*attachment.GpuOwnerCreateAttachment, *attachment.GpuOwnerDeleteAttachment, error) {
-	if cmd == nil || owner != "ani-inference" || cmd.Actor.Type == "" || cmd.Actor.ID == "" {
+	if cmd == nil || !supportedGpuOwner(owner) || cmd.Actor.Type == "" || cmd.Actor.ID == "" {
 		return nil, nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid owner command")
 	}
 	c, err := DecodeGpuCanonical(cmd.CanonicalRequest)

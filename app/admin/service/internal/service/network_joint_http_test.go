@@ -327,7 +327,7 @@ func TestNetworkJointHTTP(t *testing.T) {
 	})
 	jwtIdentity := identity{bearer: publisherToken}
 	akIdentity := identity{key: publisherAK, secret: publisherSK}
-	request := func(t *testing.T, id identity, method, path, body string, mutate func(*http.Request), want int) map[string]any {
+	send := func(t *testing.T, id identity, method, path, body string, mutate func(*http.Request)) (int, map[string]any) {
 		t.Helper()
 		req, err := http.NewRequest(method, host.URL+path, strings.NewReader(body))
 		require.NoError(t, err)
@@ -354,12 +354,17 @@ func TestNetworkJointHTTP(t *testing.T) {
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 && json.Unmarshal(payload, &admittedOutput) == nil {
 			track(id, method, req.URL.Path, admittedOutput)
 		}
-		require.Equal(t, want, resp.StatusCode, method+" "+path+" response="+string(payload))
 		require.NotContains(t, string(payload), "tenant_id")
 		require.NotContains(t, string(payload), "tenantId")
 		out := map[string]any{}
 		require.NoError(t, json.Unmarshal(payload, &out))
-		t.Logf("HTTP %s %s -> %d", method, path, want)
+		t.Logf("HTTP %s %s -> %d", method, path, resp.StatusCode)
+		return resp.StatusCode, out
+	}
+	request := func(t *testing.T, id identity, method, path, body string, mutate func(*http.Request), want int) map[string]any {
+		t.Helper()
+		status, out := send(t, id, method, path, body, mutate)
+		require.Equal(t, want, status, "%s %s response=%v", method, path, out)
 		return out
 	}
 	get := func(t *testing.T, id identity, path string) map[string]any {
@@ -399,6 +404,198 @@ func TestNetworkJointHTTP(t *testing.T) {
 		return count
 	}
 	const base = "/api/v1/networks"
+	t.Run("deferred_load_balancer", func(t *testing.T) {
+		jsonBody := func(v any) string {
+			raw, err := json.Marshal(v)
+			require.NoError(t, err)
+			return string(raw)
+		}
+		mutations := func() []string {
+			response, err := http.Get(peer.ProviderURL + "/network-joint/lb-requests")
+			require.NoError(t, err)
+			defer response.Body.Close()
+			require.Equal(t, 200, response.StatusCode)
+			var requests []string
+			require.NoError(t, json.NewDecoder(response.Body).Decode(&requests))
+			out := []string{}
+			for _, r := range requests {
+				if !strings.HasPrefix(r, "GET/") && !strings.Contains(r, "/secrets/") {
+					out = append(out, r)
+				}
+			}
+			return out
+		}
+		listenerInput := func(name string, port int) map[string]any {
+			return map[string]any{"name": name, "protocol": "LOAD_BALANCER_LISTENER_PROTOCOL_HTTP", "port": port}
+		}
+		createBody := func(key string) string {
+			return jsonBody(map[string]any{"name": key, "vpc_id": peer.ParentVPC, "subnet_id": peer.EntrySubnet, "exposure": "LOAD_BALANCER_EXPOSURE_PRIVATE", "private_ip": "10.42.1.100", "idempotency_key": key, "listeners": map[string]any{"items": []any{listenerInput("first", 80)}}})
+		}
+		waiting := func(v map[string]any) bool {
+			return v["configuration_state"] == "LOAD_BALANCER_CONFIGURATION_STATE_WAITING_FOR_BACKENDS" && v["provider_target_version"] == v["applied_version"]
+		}
+		configured := func(v map[string]any) bool {
+			return v["state"] == "available" && v["configuration_state"] == "LOAD_BALANCER_CONFIGURATION_STATE_CONFIGURED" && v["provider_target_version"] == v["applied_version"]
+		}
+		binding := func(lbID string) (string, string, string) {
+			var id, name, uid string
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT binding_id::text,provider_name,provider_uid FROM network_provider_bindings WHERE tenant_id=$1 AND lb_id=$2 AND resource_kind='load_balancer'`, peer.TenantID, lbID).Scan(&id, &name, &uid))
+			return id, name, uid
+		}
+		gateway := func(name string, status int) map[string]any {
+			response, err := http.Get(peer.ProviderURL + "/apis/gateway.networking.k8s.io/v1/namespaces/" + peer.Namespace + "/gateways/" + name)
+			require.NoError(t, err)
+			defer response.Body.Close()
+			require.Equal(t, status, response.StatusCode)
+			var obj map[string]any
+			require.NoError(t, json.NewDecoder(response.Body).Decode(&obj))
+			return obj
+		}
+		t.Run("never_activated_delete", func(t *testing.T) {
+			before := mutations()
+			body := createBody("deferred-never-activated")
+			accepted := request(t, jwtIdentity, "POST", base+"/load-balancers", body, nil, 200)
+			lbID := accepted["load_balancer"].(map[string]any)["id"].(string)
+			path := base + "/load-balancers/" + lbID
+			lb := get(t, akIdentity, path)
+			require.True(t, waiting(lb))
+			require.Equal(t, "0", lb["provider_target_version"])
+			require.Equal(t, "0", lb["applied_version"])
+			require.Nil(t, lb["observed_at"], "database-only acceptance must not manufacture an observation")
+			poll(t, jwtIdentity, base+"/load-balancers/operations/"+accepted["operation"].(map[string]any)["id"].(string), state("succeeded"))
+			request(t, akIdentity, "DELETE", path, "", nil, 200)
+			poll(t, jwtIdentity, path, state("deleted"))
+			require.Equal(t, before, mutations(), "never-activated save/delete must not mutate Provider")
+			require.Equal(t, accepted, request(t, akIdentity, "POST", base+"/load-balancers", body, nil, 200), "accepted receipt remains unchanged after deletion")
+			var retained, occupied int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_lb_configurations WHERE tenant_id=$1 AND lb_id=$2),(SELECT count(*) FROM network_lb_vip_intents WHERE tenant_id=$1 AND lb_id=$2 AND released_at IS NULL)+(SELECT count(*) FROM network_lb_subnet_refs WHERE tenant_id=$1 AND lb_id=$2 AND released_at IS NULL)`, peer.TenantID, lbID).Scan(&retained, &occupied))
+			require.Equal(t, 1, retained)
+			require.Zero(t, occupied)
+		})
+		t.Run("lifecycle", func(t *testing.T) {
+			before := mutations()
+			body := createBody("deferred-lifecycle")
+			accepted := request(t, jwtIdentity, "POST", base+"/load-balancers", body, nil, 200)
+			lbID := accepted["load_balancer"].(map[string]any)["id"].(string)
+			path := base + "/load-balancers/" + lbID
+			require.Equal(t, accepted, request(t, akIdentity, "POST", base+"/load-balancers", body, nil, 200))
+			request(t, akIdentity, "POST", base+"/load-balancers", strings.Replace(body, `"name":"deferred-lifecycle"`, `"name":"changed-intent"`, 1), nil, 409)
+			lb := get(t, jwtIdentity, path)
+			require.True(t, waiting(lb))
+			require.Equal(t, "1", lb["desired_version"])
+			require.Equal(t, "0", lb["provider_target_version"])
+			require.Equal(t, "0", lb["applied_version"])
+			require.Equal(t, "waiting_for_backends", lb["listeners"].([]any)[0].(map[string]any)["deployment_state"])
+			require.Nil(t, lb["observed_at"], "database-only acceptance must not manufacture an observation")
+			poll(t, akIdentity, base+"/load-balancers/operations/"+accepted["operation"].(map[string]any)["id"].(string), state("succeeded"))
+			oldBinding, oldName, uid := binding(lbID)
+			require.Empty(t, uid)
+			gateway(oldName, 404)
+			require.Equal(t, before, mutations())
+			// Build writable DTOs explicitly. GET deployment facts are never echoed
+			// back into PATCH or included in its persistent idempotency fingerprint.
+			first := listenerInput("first", 80)
+			first["id"] = lb["listeners"].([]any)[0].(map[string]any)["id"]
+			backend := func() map[string]any {
+				return map[string]any{"subnet_id": peer.BackendSubnet, "address": peer.BackendAddress, "port": 8080}
+			}
+			update := func(key string, items []any, ready func(map[string]any) bool) map[string]any {
+				var receipt map[string]any
+				var body string
+				for deadline := time.Now().Add(15 * time.Second); time.Now().Before(deadline); {
+					lb = get(t, jwtIdentity, path)
+					var beforeOperations int
+					require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT count(*) FROM network_operations WHERE tenant_id=$1 AND lb_id=$2`, peer.TenantID, lbID).Scan(&beforeOperations))
+					body = jsonBody(map[string]any{"expected_version": lb["version"], "idempotency_key": key, "data": map[string]any{"listeners": map[string]any{"items": items}}, "update_mask": "listeners"})
+					status, out := send(t, akIdentity, "PATCH", path, body, nil)
+					if status == 200 {
+						receipt = out
+						break
+					}
+					require.Equal(t, 412, status, "PATCH %s response=%v", path, out)
+					require.Equal(t, "VERSION_CONFLICT", out["reason"], "only an observation version race may refresh expected_version")
+					var operations, savedKey int
+					var desiredVersion string
+					require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_operations WHERE tenant_id=$1 AND lb_id=$2),(SELECT count(*) FROM network_idempotency WHERE tenant_id=$1 AND operation_kind='update_load_balancer' AND idempotency_key=$3),desired_version::text FROM network_load_balancers WHERE tenant_id=$1 AND lb_id=$2`, peer.TenantID, lbID, key).Scan(&operations, &savedKey, &desiredVersion))
+					require.Equal(t, beforeOperations, operations, "version conflict must not accept an operation")
+					require.Zero(t, savedKey, "version conflict must not persist an idempotency receipt")
+					require.Equal(t, lb["desired_version"], desiredVersion, "version conflict must not save configuration")
+					// Worker observations may advance version after GET, even when the
+					// prior operation and running configuration have already converged.
+					t.Logf("refresh expected_version after observation race: key=%s version=%v", key, lb["version"])
+					time.Sleep(40 * time.Millisecond)
+				}
+				require.NotNil(t, receipt, "PATCH must be accepted within the existing 15 second worker deadline")
+				require.Equal(t, receipt, request(t, jwtIdentity, "PATCH", path, body, nil, 200))
+				poll(t, jwtIdentity, base+"/load-balancers/operations/"+receipt["operation"].(map[string]any)["id"].(string), state("succeeded"))
+				lb = poll(t, akIdentity, path, ready)
+				return receipt
+			}
+			first["backends"] = []any{backend()}
+			update("deferred-activate", []any{first}, configured)
+			require.Equal(t, "2", lb["provider_target_version"])
+			_, _, oldUID := binding(lbID)
+			require.NotEmpty(t, oldUID)
+			originalGateway := gateway(oldName, 200)
+			first["backends"].([]any)[0].(map[string]any)["id"] = lb["listeners"].([]any)[0].(map[string]any)["backends"].([]any)[0].(map[string]any)["id"]
+			second := listenerInput("second", 8081)
+			beforeMixed := mutations()
+			update("deferred-add-empty", []any{first, second}, configured)
+			require.Equal(t, "3", lb["desired_version"])
+			require.Equal(t, "2", lb["provider_target_version"])
+			require.Equal(t, "2", lb["applied_version"])
+			require.Equal(t, beforeMixed, mutations(), "adding an empty listener must preserve running projection")
+			require.Equal(t, originalGateway["spec"], gateway(oldName, 200)["spec"])
+			second["id"] = lb["listeners"].([]any)[1].(map[string]any)["id"]
+			require.Equal(t, "waiting_for_backends", lb["listeners"].([]any)[1].(map[string]any)["deployment_state"])
+			second["backends"] = []any{backend()}
+			update("deferred-activate-second", []any{first, second}, configured)
+			require.Len(t, gateway(oldName, 200)["spec"].(map[string]any)["listeners"], 2)
+			second["backends"].([]any)[0].(map[string]any)["id"] = lb["listeners"].([]any)[1].(map[string]any)["backends"].([]any)[0].(map[string]any)["id"]
+			first["backends"] = []any{}
+			update("deferred-clear-first", []any{first, second}, configured)
+			_, _, partialUID := binding(lbID)
+			require.Equal(t, oldUID, partialUID)
+			require.Len(t, gateway(oldName, 200)["spec"].(map[string]any)["listeners"], 1)
+			var activeBackend int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT count(*) FROM network_lb_components WHERE tenant_id=$1 AND lb_id=$2 AND kind='backend' AND deleted_at IS NULL`, peer.TenantID, lbID).Scan(&activeBackend))
+			require.Positive(t, activeBackend, "second listener retains shared backend")
+			second["backends"] = []any{}
+			update("deferred-clear-all", []any{first, second}, waiting)
+			require.Equal(t, "6", lb["provider_target_version"])
+			gateway(oldName, 404)
+			var retired, generated, backendRefs, vipIntent int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_lb_retired_bindings WHERE tenant_id=$1 AND lb_id=$2 AND binding_id=$3 AND provider_uid=$4 AND cleanup_target_version=6),(SELECT count(*) FROM network_lb_generated_resources WHERE tenant_id=$1 AND lb_id=$2 AND gateway_uid=$4 AND released_at IS NULL),(SELECT count(*) FROM network_lb_subnet_refs WHERE tenant_id=$1 AND lb_id=$2 AND subnet_id=$5 AND released_at IS NULL),(SELECT count(*) FROM network_lb_vip_intents WHERE tenant_id=$1 AND lb_id=$2 AND released_at IS NULL)`, peer.TenantID, lbID, oldBinding, oldUID, peer.BackendSubnet).Scan(&retired, &generated, &backendRefs, &vipIntent))
+			require.Equal(t, 1, retired)
+			require.Zero(t, generated)
+			require.Zero(t, backendRefs)
+			require.Equal(t, 1, vipIntent, "configuration retains selected VIP reservation")
+			first["backends"] = []any{backend()}
+			update("deferred-reactivate", []any{first, second}, configured)
+			newBinding, newName, newUID := binding(lbID)
+			require.NotEqual(t, oldBinding, newBinding)
+			require.NotEqual(t, oldName, newName)
+			require.NotEqual(t, oldUID, newUID)
+			require.Equal(t, "7", lb["provider_target_version"])
+			require.Equal(t, first["id"], lb["listeners"].([]any)[0].(map[string]any)["id"])
+			gateway(newName, 200)
+			for _, foreign := range []identity{{bearer: otherToken}, {key: otherAK, secret: otherSK}} {
+				request(t, foreign, "GET", path, "", nil, 404)
+				request(t, foreign, "PATCH", path, jsonBody(map[string]any{"expected_version": lb["version"], "idempotency_key": "deferred-foreign", "data": map[string]any{"listeners": map[string]any{"items": []any{first, second}}}, "update_mask": "listeners"}), nil, 404)
+			}
+			request(t, jwtIdentity, "PATCH", path, `{"expected_version":"1","idempotency_key":"deferred-stale","data":{"listeners":{"items":[{"name":"first","port":80}]}},"update_mask":"listeners"}`, nil, 412)
+			request(t, akIdentity, "PATCH", path, jsonBody(map[string]any{"expected_version": lb["version"], "idempotency_key": "deferred-readonly", "data": map[string]any{"listeners": map[string]any{"items": []any{lb["listeners"].([]any)[0]}}}, "update_mask": "listeners"}), nil, 400)
+			request(t, akIdentity, "DELETE", path, "", nil, 200)
+			poll(t, jwtIdentity, path, state("deleted"))
+			gateway(newName, 404)
+			var occupied int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_lb_vip_intents WHERE tenant_id=$1 AND lb_id=$2 AND released_at IS NULL)+(SELECT count(*) FROM network_lb_subnet_refs WHERE tenant_id=$1 AND lb_id=$2 AND released_at IS NULL)+(SELECT count(*) FROM network_lb_components WHERE tenant_id=$1 AND lb_id=$2 AND deleted_at IS NULL)`, peer.TenantID, lbID).Scan(&occupied))
+			require.Zero(t, occupied)
+			require.Equal(t, "available", get(t, jwtIdentity, base+"/vpcs/"+peer.ParentVPC)["state"])
+			require.Equal(t, "available", get(t, akIdentity, base+"/subnets/"+peer.BackendSubnet)["state"])
+			require.Equal(t, accepted, request(t, akIdentity, "POST", base+"/load-balancers", body, nil, 200), "original receipt must remain stable through runtime incarnations")
+		})
+	})
 	t.Run("platform_network", func(t *testing.T) {
 		const platformBase = "/api/v1/admin/networks"
 		caller := identity{bearer: platformToken}

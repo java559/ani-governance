@@ -45,6 +45,7 @@ func quotaTLSFixture(t *testing.T) (string, *x509.CertPool) {
 	require.True(t, pool.AppendCertsFromPEM(caPEM))
 	issueQuotaCert(t, ca, key, []string{"ani-governance"}, x509.ExtKeyUsageServerAuth, dir, "server")
 	issueQuotaCert(t, ca, key, []string{"ani-inference"}, x509.ExtKeyUsageClientAuth, dir, "owner")
+	issueQuotaCert(t, ca, key, []string{"ani-resource-service"}, x509.ExtKeyUsageClientAuth, dir, "resource")
 	issueQuotaCert(t, ca, key, []string{"other-service"}, x509.ExtKeyUsageClientAuth, dir, "unknown")
 	issueQuotaCert(t, ca, key, []string{"ani-inference", "other-owner"}, x509.ExtKeyUsageClientAuth, dir, "mixed")
 	issueQuotaCert(t, ca, key, []string{"ani-inference", "ani-inference-alias"}, x509.ExtKeyUsageClientAuth, dir, "alias")

@@ -7487,6 +7487,189 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/instance-operations/{operation_id}:
+        get:
+            tags:
+                - InstanceService
+            operationId: InstanceService_GetInstanceOperation
+            parameters:
+                - name: operation_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Operation'
+    /api/v1/instance-presets:
+        get:
+            tags:
+                - InstanceService
+            operationId: InstanceService_ListInstancePresets
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListPresetsResponse'
+    /api/v1/instances:
+        get:
+            tags:
+                - InstanceService
+            operationId: InstanceService_ListInstances
+            parameters:
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: afterId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListInstancesResponse'
+        post:
+            tags:
+                - InstanceService
+            operationId: InstanceService_CreateInstance
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateInstanceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Acceptance'
+    /api/v1/instances/{data.instance_id}:
+        delete:
+            tags:
+                - InstanceService
+            operationId: InstanceService_DeleteInstance
+            parameters:
+                - name: data.instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeInstanceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Acceptance'
+    /api/v1/instances/{data.instance_id}/exec:
+        post:
+            tags:
+                - InstanceService
+            operationId: InstanceService_ExecInstance
+            parameters:
+                - name: data.instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ExecInstanceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExecInstanceResponse'
+    /api/v1/instances/{data.instance_id}:start:
+        post:
+            tags:
+                - InstanceService
+            operationId: InstanceService_StartInstance
+            parameters:
+                - name: data.instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeInstanceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Acceptance'
+    /api/v1/instances/{data.instance_id}:stop:
+        post:
+            tags:
+                - InstanceService
+            operationId: InstanceService_StopInstance
+            parameters:
+                - name: data.instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeInstanceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Acceptance'
+    /api/v1/instances/{instance_id}:
+        get:
+            tags:
+                - InstanceService
+            operationId: InstanceService_GetInstance
+            parameters:
+                - name: instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Instance'
     /api/v1/me/quota-accounts:
         get:
             tags:
@@ -8969,6 +9152,17 @@ components:
                 password:
                     type: string
             description: 令牌来自邀请邮件；身份、租户和角色均由服务端记录确定。
+        Acceptance:
+            type: object
+            properties:
+                operationId:
+                    type: string
+                resourceId:
+                    type: string
+                replayed:
+                    type: boolean
+                result:
+                    type: string
         AccessKey:
             type: object
             properties:
@@ -8990,6 +9184,14 @@ components:
                 role_id:
                     type: integer
                     format: uint32
+                role_name:
+                    readOnly: true
+                    type: string
+                    description: 绑定角色名称（只读，服务端回填）
+                role_description:
+                    readOnly: true
+                    type: string
+                    description: 绑定角色描述（只读，服务端回填）
                 created_at:
                     type: string
                     format: date-time
@@ -9109,6 +9311,7 @@ components:
                         - ACCELERATOR
                         - IMAGE
                         - INFERENCE
+                        - INSTANCE
                     type: string
                     description: 所属业务功能模块（用于套餐白名单过滤）
                     format: enum
@@ -9367,6 +9570,20 @@ components:
                     format: date-time
                 observation_stale:
                     type: boolean
+        ChangeInstanceData:
+            type: object
+            properties:
+                instanceId:
+                    type: string
+                idempotencyKey:
+                    type: string
+                expectedVersion:
+                    type: string
+        ChangeInstanceRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ChangeInstanceData'
         ChangePasswordRequest:
             type: object
             properties:
@@ -9686,6 +9903,26 @@ components:
             description: |-
                 Public user intent. Trusted attachments, charges, identity and destination
                  are assembled by Governance and have no representation in this DTO.
+        CreateInstanceData:
+            type: object
+            properties:
+                idempotencyKey:
+                    type: string
+                name:
+                    type: string
+                imageId:
+                    type: string
+                imageScope:
+                    type: string
+                presetId:
+                    type: string
+                presetVersion:
+                    type: string
+        CreateInstanceRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateInstanceData'
         CreateInternalMessageCategoryRequest:
             type: object
             properties:
@@ -10743,6 +10980,35 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/NamedExampleOrReference'
+        ExecInstanceData:
+            type: object
+            properties:
+                instanceId:
+                    type: string
+                idempotencyKey:
+                    type: string
+                expectedVersion:
+                    type: string
+                rows:
+                    type: integer
+                    format: int32
+                cols:
+                    type: integer
+                    format: int32
+        ExecInstanceRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ExecInstanceData'
+        ExecInstanceResponse:
+            type: object
+            properties:
+                sessionId:
+                    type: string
+                wsUrl:
+                    type: string
+                expiresAt:
+                    type: string
         ExecutionLogLine:
             type: object
             properties:
@@ -11269,6 +11535,39 @@ components:
                     format: uint32
                 created_at:
                     type: string
+        Instance:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                version:
+                    type: string
+                desiredState:
+                    type: string
+                observedState:
+                    type: string
+                reason:
+                    type: string
+                imageId:
+                    type: string
+                imageDigest:
+                    type: string
+                presetId:
+                    type: string
+                presetVersion:
+                    type: string
+                createOperationId:
+                    type: string
+                lastOperationId:
+                    type: string
+                computeCleaned:
+                    type: boolean
+                workspaceCleaned:
+                    type: boolean
+                quotaReturned:
+                    type: boolean
         InternalMessage:
             type: object
             properties:
@@ -11801,6 +12100,15 @@ components:
                         $ref: '#/components/schemas/InputVersionView'
                 next_page_token:
                     type: string
+        ListInstancesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Instance'
+                nextAfterId:
+                    type: string
         ListInternalMessageCategoryResponse:
             type: object
             properties:
@@ -12029,12 +12337,10 @@ components:
         ListPresetsResponse:
             type: object
             properties:
-                presets:
+                items:
                     type: array
                     items:
-                        $ref: '#/components/schemas/PresetView'
-                next_page_token:
-                    type: string
+                        $ref: '#/components/schemas/Preset'
         ListPublicAddressPoolsResponse:
             type: object
             properties:
@@ -12241,6 +12547,7 @@ components:
                         - LOAD_BALANCER_CONFIGURATION_STATE_CONFIGURED
                         - LOAD_BALANCER_CONFIGURATION_STATE_DEGRADED
                         - LOAD_BALANCER_CONFIGURATION_STATE_UNKNOWN
+                        - LOAD_BALANCER_CONFIGURATION_STATE_WAITING_FOR_BACKENDS
                     type: string
                     format: enum
                 data_plane_state:
@@ -12273,6 +12580,11 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/LoadBalancerListener'
+                provider_target_version:
+                    type: string
+                    description: |-
+                        Read-only; pure database edits may advance desired_version without changing
+                         this Provider target. Zero means no projection has ever been targeted.
         LoadBalancerBackendInput:
             type: object
             properties:
@@ -12396,6 +12708,13 @@ components:
                 https_redirect_status_code:
                     type: integer
                     format: uint32
+                deployment_state:
+                    type: string
+                    description: |-
+                        Read-only: waiting_for_backends, applying, configured, removing, degraded
+                         or unknown. Waiting redirect listeners report WAITING_FOR_REDIRECT_TARGET.
+                reason:
+                    type: string
         LoadBalancerListenerInput:
             type: object
             properties:
@@ -12803,6 +13122,7 @@ components:
                         - ACCELERATOR
                         - IMAGE
                         - INFERENCE
+                        - INSTANCE
                     type: string
                     description: 所属业务功能模块
                     format: enum
@@ -13594,25 +13914,6 @@ components:
                     $ref: '#/components/schemas/Parameter'
                 reference:
                     $ref: '#/components/schemas/Reference'
-        ParameterRule:
-            type: object
-            properties:
-                name:
-                    type: string
-                type:
-                    type: string
-                required:
-                    type: boolean
-                default_value:
-                    $ref: '#/components/schemas/GeneralParameter'
-                allowed_values:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/GeneralParameter'
-                minimum:
-                    $ref: '#/components/schemas/GeneralParameter'
-                maximum:
-                    $ref: '#/components/schemas/GeneralParameter'
         PasswordLoginRequest:
             type: object
             properties:
@@ -13973,6 +14274,7 @@ components:
                         - ACCELERATOR
                         - IMAGE
                         - INFERENCE
+                        - INSTANCE
                     type: string
                     description: 功能模块
                     format: enum
@@ -14327,29 +14629,19 @@ components:
                     description: 删除时间
                     format: date-time
             description: 职位
-        PresetView:
+        Preset:
             type: object
             properties:
-                preset_id:
+                id:
+                    type: string
+                version:
                     type: string
                 name:
                     type: string
-                kind:
+                cpu:
                     type: string
-                active_release_id:
+                memory:
                     type: string
-                image_version_ids:
-                    type: array
-                    items:
-                        type: string
-                parameter_rules:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/ParameterRule'
-                binding_generation:
-                    type: string
-                new_submissions_enabled:
-                    type: boolean
         Properties:
             type: object
             properties:
@@ -16575,6 +16867,7 @@ tags:
         Requires trusted tenant-user Principal, active tenant and the separately
          registered INFERENCE module/action/role/plan grants. Accelerator read grants
          cannot admit inference commands. CRUD retains the public data envelope.
+    - name: InstanceService
     - name: InternalMessageCategoryService
       description: 站内信消息分类管理服务
     - name: InternalMessageRecipientService

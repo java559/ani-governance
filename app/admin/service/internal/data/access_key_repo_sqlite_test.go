@@ -15,6 +15,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	accesskeyV1 "go-wind-admin/api/gen/go/access_key/service/v1"
+	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/accesskey"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/tests/testutil"
@@ -34,13 +35,15 @@ func TestAccessKeyRepoLifecycle(t *testing.T) {
 		return viewer.WithContext(context.Background(), appViewer.NewUserViewer(10, id, 0, "", []viewer.DataScope{{ScopeType: viewer.ScopeTypeAll}}))
 	}
 	a, b := tenant(7), tenant(8)
-	r, err := repo.entClient.Client().Role.Create().SetTenantID(7).SetName("reader").SetCode("tenant:reader").SetType(role.TypeTenant).SetStatus(role.StatusOn).Save(system)
+	r, err := repo.entClient.Client().Role.Create().SetTenantID(7).SetName("reader").SetCode("tenant:reader").SetDescription("只读角色").SetType(role.TypeTenant).SetStatus(role.StatusOn).Save(system)
 	require.NoError(t, err)
 	foreign, err := repo.entClient.Client().Role.Create().SetTenantID(8).SetName("other").SetCode("tenant:other").SetType(role.TypeTenant).SetStatus(role.StatusOn).Save(system)
 	require.NoError(t, err)
 	dto, err := repo.Create(a, &accesskeyV1.CreateAccessKeyData{Name: trans.Ptr("test"), RoleId: trans.Ptr(r.ID)}, 7, 10, "ak-test", "sk-example")
 	require.NoError(t, err)
 	require.True(t, dto.GetIsActive())
+	require.Equal(t, "reader", dto.GetRoleName(), "创建响应应回填绑定角色名称")
+	require.Equal(t, "只读角色", dto.GetRoleDescription(), "创建响应应回填绑定角色描述")
 	row, err := repo.entClient.Client().AccessKey.Get(system, dto.GetId())
 	require.NoError(t, err)
 	require.True(t, strings.HasPrefix(row.SecretCiphertext, "enc:"))
@@ -60,6 +63,8 @@ func TestAccessKeyRepoLifecycle(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, listed.Items, 1)
 	require.True(t, listed.Items[0].GetIsActive())
+	require.Equal(t, "reader", listed.Items[0].GetRoleName(), "列表项应回填绑定角色名称")
+	require.Equal(t, "只读角色", listed.Items[0].GetRoleDescription(), "列表项应回填绑定角色描述")
 	_, err = repo.Get(b, &accesskeyV1.GetAccessKeyRequest{KeyId: dto.GetId()})
 	require.Error(t, err)
 	require.Error(t, repo.Delete(b, dto.GetId(), 8))
@@ -101,4 +106,28 @@ func TestAccessKeyRepoLifecycle(t *testing.T) {
 	count, err := repo.entClient.Client().AccessKey.Query().Where(accesskey.IDEQ(dto.GetId())).Count(system)
 	require.NoError(t, err)
 	require.Zero(t, count)
+}
+
+// TestAccessKeyRepoRoleBriefMissing 验证角色缺失时的展示语义：
+// 角色查不到不报错、不回填（字段缺席），且空/为 0 的入参不发查询、不产生副作用。
+func TestAccessKeyRepoRoleBriefMissing(t *testing.T) {
+	cipher, err := appcrypto.NewAccessKeyCipher("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+	require.NoError(t, err)
+	repo := NewAccessKeyRepo(testutil.NewBootstrapContext(nil), testutil.NewEntClientForTest(t), cipher)
+	ctx := viewer.WithContext(context.Background(), appViewer.NewUserViewer(10, 7, 0, "", []viewer.DataScope{{ScopeType: viewer.ScopeTypeAll}}))
+
+	for _, ids := range [][]uint32{nil, {}, {0}} {
+		briefs, err := repo.roleBriefByIDs(ctx, ids)
+		require.NoError(t, err)
+		require.Empty(t, briefs, "空或全 0 的入参不应回填任何角色")
+	}
+
+	briefs, err := repo.roleBriefByIDs(ctx, []uint32{99999})
+	require.NoError(t, err, "角色不存在不应让读取失败")
+	require.Empty(t, briefs)
+	// 角色缺失时 DTO 上两个只读字段缺席，其余字段照常。
+	dto := accessKeyDTO(&ent.AccessKey{ID: 1, RoleID: 99999, AccessKey: "ak-x"}, briefs)
+	require.Nil(t, dto.RoleName)
+	require.Nil(t, dto.RoleDescription)
+	require.Equal(t, uint32(99999), dto.GetRoleId())
 }

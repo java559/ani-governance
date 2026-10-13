@@ -147,12 +147,18 @@ func (r *AccessKeyRepo) listAccessKeysWithCursor(ctx context.Context, req *pagin
 		return nil, keyRepoError(err)
 	}
 	byID := make(map[uint32]*ent.AccessKey, len(entities))
+	roleIDs := make([]uint32, 0, len(entities))
 	for _, e := range entities {
 		byID[e.ID] = e
+		roleIDs = append(roleIDs, e.RoleID)
+	}
+	roles, err := r.roleBriefByIDs(ctx, roleIDs)
+	if err != nil {
+		return nil, err
 	}
 	for _, id := range ids {
 		if e := byID[id]; e != nil {
-			result.Items = append(result.Items, accessKeyDTO(e))
+			result.Items = append(result.Items, accessKeyDTO(e, roles))
 		}
 	}
 	return result, nil

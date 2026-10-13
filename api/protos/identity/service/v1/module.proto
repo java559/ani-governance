@@ -22,4 +22,5 @@ enum Module {
   ACCELERATOR = 13;     // GPU supply and tenant read views
   IMAGE = 14;           // Registered container images and restricted publishing
   INFERENCE = 15;       // User-approved inference create/delete admission
+  INSTANCE = 16;        // GPU container instances, separate current action grants
 }

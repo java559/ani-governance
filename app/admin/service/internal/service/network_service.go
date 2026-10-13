@@ -641,19 +641,19 @@ func wireLoadBalancer(v *networkv1.LoadBalancer) *catalogv1.LoadBalancer {
 		Exposure: catalogv1.LoadBalancerExposure(v.Exposure), Flavor: v.Flavor, PublicEipId: v.PublicEipId, PrivateIp: v.PrivateIp,
 		HealthCheck: wireLBHealth(v.HealthCheck), Algorithm: catalogv1.LoadBalancerAlgorithm(v.Algorithm),
 		State: strings.ToLower(strings.TrimPrefix(v.State.String(), "RESOURCE_STATE_")), Reason: v.Reason, ReasonMessage: v.ReasonMessage,
-		Version: v.Version, DesiredVersion: v.DesiredVersion, AppliedVersion: v.AppliedVersion,
+		Version: v.Version, DesiredVersion: v.DesiredVersion, AppliedVersion: v.AppliedVersion, ProviderTargetVersion: v.ProviderTargetVersion,
 		ConfigurationState: catalogv1.LoadBalancerConfigurationState(v.ConfigurationState), DataPlaneState: catalogv1.LoadBalancerDataPlaneState(v.DataPlaneState),
 		ObservedAt: v.ObservedAt, ObservationStale: v.ObservationStale, CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt,
 		LastOperationId: v.LastOperationId, PublicAddress: v.PublicAddress, DataPlaneObservedAt: v.DataPlaneObservedAt,
 		Backends: make([]*catalogv1.LoadBalancerBackendMember, 0, len(v.Backends))}
 	if v.Listener != nil {
-		out.Listener = &catalogv1.LoadBalancerListener{Id: v.Listener.Id, Protocol: catalogv1.LoadBalancerListenerProtocol(v.Listener.Protocol), Port: v.Listener.Port}
+		out.Listener = &catalogv1.LoadBalancerListener{Id: v.Listener.Id, Protocol: catalogv1.LoadBalancerListenerProtocol(v.Listener.Protocol), Port: v.Listener.Port, DeploymentState: v.Listener.DeploymentState, Reason: v.Listener.Reason}
 	}
 	for _, b := range v.Backends {
 		out.Backends = append(out.Backends, &catalogv1.LoadBalancerBackendMember{Id: b.Id, SubnetId: b.SubnetId, Address: b.Address, Port: b.Port, Weight: b.Weight, AttachmentId: b.AttachmentId, State: b.State, Reason: b.Reason, ObservedAt: b.ObservedAt, ObservationStale: b.ObservationStale})
 	}
 	for _, l := range v.Listeners {
-		listener := &catalogv1.LoadBalancerListener{Id: l.Id, Name: l.Name, Protocol: catalogv1.LoadBalancerListenerProtocol(l.Protocol), Port: l.Port, HealthCheck: wireLBHealth(l.HealthCheck), Algorithm: catalogv1.LoadBalancerAlgorithm(l.Algorithm), MaxConnections: l.MaxConnections, GzipEnabled: l.GzipEnabled, HttpsRedirectStatusCode: l.HttpsRedirectStatusCode}
+		listener := &catalogv1.LoadBalancerListener{Id: l.Id, Name: l.Name, Protocol: catalogv1.LoadBalancerListenerProtocol(l.Protocol), Port: l.Port, HealthCheck: wireLBHealth(l.HealthCheck), Algorithm: catalogv1.LoadBalancerAlgorithm(l.Algorithm), MaxConnections: l.MaxConnections, GzipEnabled: l.GzipEnabled, HttpsRedirectStatusCode: l.HttpsRedirectStatusCode, DeploymentState: l.DeploymentState, Reason: l.Reason}
 		if l.CertificateRef != nil {
 			listener.CertificateRef = &catalogv1.LoadBalancerCertificateRef{Name: l.CertificateRef.Name, Namespace: l.CertificateRef.Namespace}
 		}

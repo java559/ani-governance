@@ -74,9 +74,67 @@ func NewAccessKeyRepo(_ *bootstrap.Context, client *entCrud.EntClient[*ent.Clien
 	m.AppendConverters(copierutil.NewTimeTimestamppbConverterPair())
 	return &AccessKeyRepo{entClient: client, cipher: cipher, repository: entCrud.NewRepository[ent.AccessKeyQuery, ent.AccessKeySelect, ent.AccessKeyCreate, ent.AccessKeyCreateBulk, ent.AccessKeyUpdate, ent.AccessKeyUpdateOne, ent.AccessKeyDelete, predicate.AccessKey, accesskeyV1.AccessKey, ent.AccessKey](m)}
 }
-func accessKeyDTO(e *ent.AccessKey) *accesskeyV1.AccessKey {
-	return &accesskeyV1.AccessKey{Id: trans.Ptr(e.ID), Name: e.Name, AccessKey: trans.Ptr(e.AccessKey), RoleId: trans.Ptr(e.RoleID), IsActive: trans.Ptr(e.Status != nil && *e.Status == accesskey.StatusOn), ExpiresAt: keyTimestamp(e.ExpiresAt), CreatedAt: keyTimestamp(e.CreatedAt), LastUsedAt: keyTimestamp(e.LastUsedAt)}
+
+// roleBrief 是回填到 AccessKey 读模型上的角色展示信息。
+type roleBrief struct {
+	name        *string
+	description *string
 }
+
+// roleBriefByIDs 在请求上下文内（租户边界由 TenantPrivacy 注入）批量读取角色名称/描述。
+// 找不到的角色不回填、不报错：Key 与角色的引用关系由创建/更新时的 validKeyRole 保证，
+// 读取侧只做展示，角色被停用或删除不应让列表整体失败。
+func (r *AccessKeyRepo) roleBriefByIDs(ctx context.Context, roleIDs []uint32) (map[uint32]roleBrief, error) {
+	briefs := make(map[uint32]roleBrief, len(roleIDs))
+	// 去重并剔除 0，保持查询参数干净；无有效 ID 时不发查询。
+	ids := make([]uint32, 0, len(roleIDs))
+	seen := make(map[uint32]struct{}, len(roleIDs))
+	for _, id := range roleIDs {
+		if id == 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return briefs, nil
+	}
+	roles, err := r.entClient.Client().Role.Query().Where(role.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return nil, keyRepoError(err)
+	}
+	for _, e := range roles {
+		briefs[e.ID] = roleBrief{name: e.Name, description: e.Description}
+	}
+	return briefs, nil
+}
+
+// accessKeyDTO 构造读模型 DTO，并按 role_id 回填角色名称/描述（角色缺失则字段缺席）。
+func accessKeyDTO(e *ent.AccessKey, roles map[uint32]roleBrief) *accesskeyV1.AccessKey {
+	dto := &accesskeyV1.AccessKey{Id: trans.Ptr(e.ID), Name: e.Name, AccessKey: trans.Ptr(e.AccessKey), RoleId: trans.Ptr(e.RoleID), IsActive: trans.Ptr(e.Status != nil && *e.Status == accesskey.StatusOn), ExpiresAt: keyTimestamp(e.ExpiresAt), CreatedAt: keyTimestamp(e.CreatedAt), LastUsedAt: keyTimestamp(e.LastUsedAt)}
+	if b, ok := roles[e.RoleID]; ok {
+		if b.name != nil {
+			dto.RoleName = b.name
+		}
+		if b.description != nil {
+			dto.RoleDescription = b.description
+		}
+	}
+	return dto
+}
+
+// buildAccessKeyDTO 供单条构造点使用：先按 RoleID 查角色名称/描述，再构造 DTO。
+func (r *AccessKeyRepo) buildAccessKeyDTO(ctx context.Context, e *ent.AccessKey) (*accesskeyV1.AccessKey, error) {
+	briefs, err := r.roleBriefByIDs(ctx, []uint32{e.RoleID})
+	if err != nil {
+		return nil, err
+	}
+	return accessKeyDTO(e, briefs), nil
+}
+
 func keyTimestamp(t *time.Time) *timestamppb.Timestamp {
 	if t == nil {
 		return nil
@@ -129,12 +187,18 @@ func (r *AccessKeyRepo) List(ctx context.Context, req *paginationV1.PagingReques
 		return nil, keyRepoError(err)
 	}
 	byID := make(map[uint32]*ent.AccessKey, len(entities))
+	roleIDs := make([]uint32, 0, len(entities))
 	for _, e := range entities {
 		byID[e.ID] = e
+		roleIDs = append(roleIDs, e.RoleID)
+	}
+	roles, err := r.roleBriefByIDs(ctx, roleIDs)
+	if err != nil {
+		return nil, err
 	}
 	for _, id := range ids {
 		if e := byID[id]; e != nil {
-			result.Items = append(result.Items, accessKeyDTO(e))
+			result.Items = append(result.Items, accessKeyDTO(e, roles))
 		}
 	}
 	return result, nil
@@ -147,7 +211,7 @@ func (r *AccessKeyRepo) Get(ctx context.Context, req *accesskeyV1.GetAccessKeyRe
 	if err != nil {
 		return nil, keyRepoError(err)
 	}
-	return accessKeyDTO(e), nil
+	return r.buildAccessKeyDTO(ctx, e)
 }
 func validKeyRole(ctx context.Context, client *ent.Client, tenantID, roleID uint32) error {
 	if tenantID == 0 || roleID == 0 {
@@ -187,7 +251,7 @@ func (r *AccessKeyRepo) Create(ctx context.Context, data *accesskeyV1.CreateAcce
 	if err = tx.Commit(); err != nil {
 		return nil, keyRepoError(err)
 	}
-	return accessKeyDTO(e), nil
+	return r.buildAccessKeyDTO(ctx, e)
 }
 
 // CreateIdempotent 在事务内实现输入侧幂等：
@@ -257,7 +321,11 @@ func (r *AccessKeyRepo) createIdempotentOnce(ctx context.Context, data *accesske
 	if err = tx.Commit(); err != nil {
 		return nil, false, keyRepoError(err)
 	}
-	return accessKeyDTO(e), false, nil
+	dto, err := r.buildAccessKeyDTO(ctx, e)
+	if err != nil {
+		return nil, false, err
+	}
+	return dto, false, nil
 }
 
 // replayTx 在已开启的事务内校验指纹并读回原凭证行，同意图时提交并标记回放。
@@ -276,7 +344,11 @@ func (r *AccessKeyRepo) replayTx(ctx context.Context, tx *ent.Tx, row *ent.Acces
 	if err = tx.Commit(); err != nil {
 		return nil, false, keyRepoError(err)
 	}
-	return accessKeyDTO(original), true, nil
+	dto, err := r.buildAccessKeyDTO(ctx, original)
+	if err != nil {
+		return nil, false, err
+	}
+	return dto, true, nil
 }
 
 func (r *AccessKeyRepo) replayIdempotent(ctx context.Context, tenantID, userID uint32, key, fingerprint string) (*accesskeyV1.AccessKey, bool, error) {
@@ -302,7 +374,11 @@ func (r *AccessKeyRepo) replayIdempotent(ctx context.Context, tenantID, userID u
 	if err != nil {
 		return nil, false, keyRepoError(err)
 	}
-	return accessKeyDTO(original), true, nil
+	dto, err := r.buildAccessKeyDTO(ctx, original)
+	if err != nil {
+		return nil, false, err
+	}
+	return dto, true, nil
 }
 
 func createAccessKeyRow(ctx context.Context, tx *ent.Tx, data *accesskeyV1.CreateAccessKeyData, tenantID, userID uint32, ak, ciphertext string) (*ent.AccessKey, error) {
@@ -385,7 +461,7 @@ func (r *AccessKeyRepo) ResetSecret(ctx context.Context, id, tenantID, userID ui
 	if err = tx.Commit(); err != nil {
 		return nil, keyRepoError(err)
 	}
-	return accessKeyDTO(e), nil
+	return r.buildAccessKeyDTO(ctx, e)
 }
 
 // LookupSigningKey makes only the credential lookup and its bound-role lookup

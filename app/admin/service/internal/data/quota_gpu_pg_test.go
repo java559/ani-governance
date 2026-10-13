@@ -200,7 +200,9 @@ func TestQuotaGpuDeleteReleaseAndProjectionRecovery(t *testing.T) {
 		}
 	}
 	_, e = r.Release(ctx, rel)
-	require.Error(t, e, "full GPU release without DELETE must fail")
+	require.NoError(t, e, "authenticated owner may return the complete GPU vector without DELETE")
+	// The same original event is replayed below after a separately persisted
+	// delete. It must not change the already returned GPU balance a second time.
 	claimed, e := r.ClaimDispatchable(ctx, "owner-worker", time.Minute, 1)
 	require.NoError(t, e)
 	require.Len(t, claimed, 1)
@@ -208,7 +210,7 @@ func TestQuotaGpuDeleteReleaseAndProjectionRecovery(t *testing.T) {
 	require.NoError(t, e)
 	require.False(t, deleted.LocalCanceled)
 	require.Len(t, deleted.ChargeIDs, 2)
-	// DELETE does not have to be ACKED, but prior failed callback changed nothing.
+	// DELETE does not have to be ACKED; the prior owner declaration already returned GPU.
 	_, e = r.Release(ctx, rel)
 	require.NoError(t, e)
 	rows, e := r.RecomputeInvariants(ctx, tid)

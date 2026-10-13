@@ -1,0 +1,32 @@
+version: v2
+clean: false
+managed:
+  enabled: true
+  disable:
+    - module: buf.build/googleapis/googleapis
+    - module: buf.build/gnostic/gnostic
+  override:
+    - file_option: go_package_prefix
+      value: go-wind-admin/api/gen/go
+    - file_option: go_package
+      path: admin/service/v1
+      value: go-wind-admin/api/gen/go/admin/service/v1;adminpb
+    - file_option: go_package
+      path: identity/service/v1
+      value: go-wind-admin/api/gen/go/identity/service/v1;identitypb
+inputs:
+  - directory: protos
+    paths:
+      - protos/admin/service/v1/i_instance.proto
+      - protos/instance/service/v1/instance.proto
+      - protos/identity/service/v1/module.proto
+plugins:
+  - local: [go, run, google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11]
+    out: gen/go
+    opt: paths=source_relative
+  - local: [go, run, google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2]
+    out: gen/go
+    opt: paths=source_relative
+  - local: [go, run, github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2@v2.0.0-20260404020628-f149714c1d54]
+    out: gen/go
+    opt: paths=source_relative

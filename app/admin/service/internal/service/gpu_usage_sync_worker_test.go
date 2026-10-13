@@ -49,8 +49,8 @@ func TestGpuProjectionOnlyGpuTerminal(t *testing.T) {
 	}
 	charges[0].ReleasedUnits = 12288
 	charges[1].ReleasedUnits = 0
-	if _, e = deriveGpuProjection(op, charges, false); e == nil {
-		t.Fatal("full GPU release without delete accepted")
+	if noDelete, err := deriveGpuProjection(op, charges, false); err != nil || noDelete.State != acc.UsageState_ENDED {
+		t.Fatal("authenticated owner release must end the ledger projection without DELETE", noDelete, err)
 	}
 	ended, e := deriveGpuProjection(op, charges, true)
 	if e != nil || ended.Revision != 2 || ended.EndReason != acc.UsageEndReason_OWNER_RESOURCE_RELEASED {

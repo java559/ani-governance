@@ -84,7 +84,7 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true, Comment: "描述"},
 		{Name: "module", Type: field.TypeString, Nullable: true, Comment: "所属业务模块"},
 		{Name: "module_description", Type: field.TypeString, Nullable: true, Comment: "业务模块描述"},
-		{Name: "business_module", Type: field.TypeEnum, Nullable: true, Comment: "所属业务功能模块（用于套餐白名单过滤）", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE"}},
+		{Name: "business_module", Type: field.TypeEnum, Nullable: true, Comment: "所属业务功能模块（用于套餐白名单过滤）", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE", "INSTANCE"}},
 		{Name: "operation", Type: field.TypeString, Nullable: true, Comment: "接口操作名"},
 		{Name: "path", Type: field.TypeString, Nullable: true, Comment: "接口路径"},
 		{Name: "method", Type: field.TypeString, Nullable: true, Comment: "请求方法"},
@@ -2072,7 +2072,7 @@ var (
 		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
 		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
 		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
-		{Name: "module", Type: field.TypeEnum, Nullable: true, Comment: "功能模块", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE"}},
+		{Name: "module", Type: field.TypeEnum, Nullable: true, Comment: "功能模块", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE", "INSTANCE"}},
 		{Name: "plan_id", Type: field.TypeUint32, Nullable: true},
 	}
 	// SysPlanModulesTable holds the schema information for the "sys_plan_modules" table.

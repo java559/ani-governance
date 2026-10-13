@@ -202,6 +202,23 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		inferenceClient = client
 	}
 	inferenceBinding := service.NewInferenceGpuBinding(inferenceClient, data.NewInferenceAuthorizationRepo(entClient))
+	instanceOwner, closeInstance, err := data.NewInstanceClientFromEnv()
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	cleanups = append(cleanups, closeInstance)
+	var instanceClient service.InstanceOwnerClient
+	if instanceOwner != nil {
+		instanceClient = instanceOwner
+	}
+	instanceBinding := service.NewInstanceGpuBinding(instanceClient, data.NewInstanceAuthorizationRepo(entClient))
+	if instanceClient != nil && data.InstanceModuleRegistered() {
+		if err = quotaRegistry.Register(instanceBinding); err != nil {
+			rollback()
+			return nil, nil, err
+		}
+	}
 	// A client configuration cannot invent the authoritative module registry.
 	// Historical replay still performs current authorization before reading.
 	if inferenceClient != nil && data.InferenceModuleRegistered() {
@@ -340,6 +357,22 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 	inferenceService := service.NewInferenceService(inferenceAcceptance)
+	instanceAcceptance, err := service.NewGpuAcceptance(quotaLedgerRepo, quotaRegistry, tenantRepo, gpuPlans, instanceBinding, quotaWorker)
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	instanceSession, closeInstanceSession, err := data.NewInstanceSessionClientFromEnv()
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	cleanups = append(cleanups, closeInstanceSession)
+	var instanceSessions service.InstanceSessionClient
+	if instanceSession != nil {
+		instanceSessions = instanceSession
+	}
+	instanceService := service.NewInstanceService(instanceAcceptance, instanceBinding, tenantRepo, quotaLedgerRepo, instanceSessions)
 	modeldevService := service.NewModelDevService(modeldevAuthorizationRepo, tenantRepo, modeldevAcceptanceRepo, modeldevBindingRepo, modeldevClient)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
@@ -379,6 +412,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		imageService,
 		modeldevService,
 		inferenceService,
+		instanceService,
 	)
 	if err != nil {
 		rollback()
