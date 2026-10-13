@@ -6979,6 +6979,30 @@ paths:
                                 $ref: '#/components/schemas/VerifyCaptchaResponse'
             security:
                 - {}
+    /api/v1/auth/csrf:
+        post:
+            tags:
+                - AuthenticationService
+            description: |-
+                获取 CSRF 证明（免鉴权，白名单内）
+                 非消费性读取：以所选应用的 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+                 不刷新、不轮换、不更换 Cookie。仅免 access token，仍由有效 RT + 来源校验保护。
+            operationId: AuthenticationService_Csrf
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CsrfRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CsrfResponse'
+            security:
+                - {}
     /api/v1/auth/forgot-password:
         post:
             tags:
@@ -7020,8 +7044,8 @@ paths:
             tags:
                 - AuthenticationService
             description: |-
-                登出：吊销当前用户的全部会话（非仅当前 jti）
-                 jti 仅随请求上报用于审计留痕，不改变吊销范围。需携带有效访问令牌。
+                登出：退出当前应用当前逻辑会话（按 RT Cookie 定位），不再全域吊销。
+                 无需有效 access token；请求体 application 选择应用，jti 仅随请求上报用于审计留痕。
             operationId: AuthenticationService_RevokeJti
             requestBody:
                 content:
@@ -9961,6 +9985,32 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
+        CsrfRequest:
+            type: object
+            properties:
+                application:
+                    enum:
+                        - APPLICATION_TYPE_UNSPECIFIED
+                        - console
+                        - boss
+                    type: string
+                    description: 应用会话选择参数，取值为 console 或 boss
+                    format: enum
+            description: |-
+                获取 CSRF 证明 - 请求
+
+                 用途：页面启动时以现有 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+                 供后续 refresh / logout 在 X-CSRF-Token 头中携带。本接口为**非消费性读取**：
+                 不刷新令牌、不轮换、不更换 Cookie、不消费 RT，多次调用对同一 sid 返回有效证明。
+        CsrfResponse:
+            required:
+                - csrf_token
+            type: object
+            properties:
+                csrf_token:
+                    type: string
+                    description: 绑定当前逻辑会话的 CSRF 证明，写请求时放入 X-CSRF-Token 头；不含身份授权
+            description: 获取 CSRF 证明 - 回应
         DashboardOverviewResponse:
             type: object
             properties:
@@ -14545,6 +14595,14 @@ components:
                 device_id:
                     type: string
                     description: 设备唯一标识，用于刷新后延续会话元数据
+                application:
+                    enum:
+                        - APPLICATION_TYPE_UNSPECIFIED
+                        - console
+                        - boss
+                    type: string
+                    description: 应用会话选择参数，取值为 console 或 boss
+                    format: enum
             description: |-
                 刷新访问令牌 - 请求
 
@@ -14706,7 +14764,15 @@ components:
             properties:
                 jti:
                     type: string
-                    description: 当前访问令牌的 JWT ID，用于审计留痕。注意：本实现的登出范围是吊销该用户全部会话，jti 不改变吊销范围
+                    description: 当前访问令牌的 JWT ID，仅用于审计留痕。本实现退出范围为当前应用当前逻辑会话，jti 不改变退出范围
+                application:
+                    enum:
+                        - APPLICATION_TYPE_UNSPECIFIED
+                        - console
+                        - boss
+                    type: string
+                    description: 应用会话选择参数，取值为 console 或 boss
+                    format: enum
             description: |-
                 登出 - 请求
 
@@ -14749,7 +14815,10 @@ components:
                     enum:
                         - revoked
                     type: string
-                    description: 吊销结果，固定为 revoked
+                    description: 吊销结果：revoked=本次确认吊销了远端会话；幂等语义与该值解耦，见 session_revoked
+                session_revoked:
+                    type: boolean
+                    description: 本次是否确实吊销了远端活动会话；false 为幂等命中（无会话可吊销）
             description: 登出 - 回应
         Role:
             type: object

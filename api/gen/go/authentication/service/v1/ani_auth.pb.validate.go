@@ -345,6 +345,10 @@ func (m *RefreshAccessTokenRequest) validate(all bool) error {
 		// no validation rules for DeviceId
 	}
 
+	if m.Application != nil {
+		// no validation rules for Application
+	}
+
 	if len(errors) > 0 {
 		return RefreshAccessTokenRequestMultiError(errors)
 	}
@@ -602,6 +606,10 @@ func (m *RevokeJtiRequest) validate(all bool) error {
 		// no validation rules for Jti
 	}
 
+	if m.Application != nil {
+		// no validation rules for Application
+	}
+
 	if len(errors) > 0 {
 		return RevokeJtiRequestMultiError(errors)
 	}
@@ -704,6 +712,10 @@ func (m *RevokeStatusResponse) validate(all bool) error {
 
 	// no validation rules for Status
 
+	if m.SessionRevoked != nil {
+		// no validation rules for SessionRevoked
+	}
+
 	if len(errors) > 0 {
 		return RevokeStatusResponseMultiError(errors)
 	}
@@ -783,3 +795,207 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = RevokeStatusResponseValidationError{}
+
+// Validate checks the field values on CsrfRequest with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *CsrfRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CsrfRequest with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in CsrfRequestMultiError, or
+// nil if none found.
+func (m *CsrfRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CsrfRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.Application != nil {
+		// no validation rules for Application
+	}
+
+	if len(errors) > 0 {
+		return CsrfRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CsrfRequestMultiError is an error wrapping multiple validation errors
+// returned by CsrfRequest.ValidateAll() if the designated constraints aren't met.
+type CsrfRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CsrfRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CsrfRequestMultiError) AllErrors() []error { return m }
+
+// CsrfRequestValidationError is the validation error returned by
+// CsrfRequest.Validate if the designated constraints aren't met.
+type CsrfRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CsrfRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CsrfRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CsrfRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CsrfRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CsrfRequestValidationError) ErrorName() string { return "CsrfRequestValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CsrfRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCsrfRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CsrfRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CsrfRequestValidationError{}
+
+// Validate checks the field values on CsrfResponse with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *CsrfResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CsrfResponse with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in CsrfResponseMultiError, or
+// nil if none found.
+func (m *CsrfResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CsrfResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for CsrfToken
+
+	if len(errors) > 0 {
+		return CsrfResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CsrfResponseMultiError is an error wrapping multiple validation errors
+// returned by CsrfResponse.ValidateAll() if the designated constraints aren't met.
+type CsrfResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CsrfResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CsrfResponseMultiError) AllErrors() []error { return m }
+
+// CsrfResponseValidationError is the validation error returned by
+// CsrfResponse.Validate if the designated constraints aren't met.
+type CsrfResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CsrfResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CsrfResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CsrfResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CsrfResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CsrfResponseValidationError) ErrorName() string { return "CsrfResponseValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CsrfResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCsrfResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CsrfResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CsrfResponseValidationError{}

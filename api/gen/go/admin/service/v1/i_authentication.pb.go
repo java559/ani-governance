@@ -28,13 +28,13 @@ var File_admin_service_v1_i_authentication_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_authentication_proto_rawDesc = "" +
 	"\n" +
-	"'admin/service/v1/i_authentication.proto\x12\x10admin.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a.authentication/service/v1/authentication.proto\x1a(authentication/service/v1/ani_auth.proto2\xf7\n" +
-	"\n" +
+	"'admin/service/v1/i_authentication.proto\x12\x10admin.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a.authentication/service/v1/authentication.proto\x1a(authentication/service/v1/ani_auth.proto2\xf3\v\n" +
 	"\x15AuthenticationService\x12\x9b\x01\n" +
 	"\rPasswordLogin\x12/.authentication.service.v1.PasswordLoginRequest\x1a,.authentication.service.v1.TokenPairResponse\"+\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/auth/password/login\x12\xb4\x01\n" +
 	"\x15PlatformPasswordLogin\x127.authentication.service.v1.PlatformPasswordLoginRequest\x1a,.authentication.service.v1.TokenPairResponse\"4\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/auth/platform/password/login\x12\x89\x01\n" +
 	"\tRevokeJti\x12+.authentication.service.v1.RevokeJtiRequest\x1a/.authentication.service.v1.RevokeStatusResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/logout\x12\x9e\x01\n" +
-	"\x12RefreshAccessToken\x124.authentication.service.v1.RefreshAccessTokenRequest\x1a,.authentication.service.v1.TokenPairResponse\"$\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/auth/refresh\x12\x88\x01\n" +
+	"\x12RefreshAccessToken\x124.authentication.service.v1.RefreshAccessTokenRequest\x1a,.authentication.service.v1.TokenPairResponse\"$\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/auth/refresh\x12z\n" +
+	"\x04Csrf\x12&.authentication.service.v1.CsrfRequest\x1a'.authentication.service.v1.CsrfResponse\"!\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/api/v1/auth/csrf\x12\x88\x01\n" +
 	"\x0eForgotPassword\x120.authentication.service.v1.ForgotPasswordRequest\x1a\x16.google.protobuf.Empty\",\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/api/v1/auth/forgot-password\x12\x99\x01\n" +
 	"\x13ResetPasswordByCode\x125.authentication.service.v1.ResetPasswordByCodeRequest\x1a\x16.google.protobuf.Empty\"3\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02(:\x01*\"#/api/v1/auth/reset-password-by-code\x12\x8f\x01\n" +
 	"\x10AcceptInvitation\x122.authentication.service.v1.AcceptInvitationRequest\x1a\x16.google.protobuf.Empty\"/\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/auth/invitations/accept\x12\x80\x01\n" +
@@ -47,37 +47,41 @@ var file_admin_service_v1_i_authentication_proto_goTypes = []any{
 	(*v1.PlatformPasswordLoginRequest)(nil), // 1: authentication.service.v1.PlatformPasswordLoginRequest
 	(*v1.RevokeJtiRequest)(nil),             // 2: authentication.service.v1.RevokeJtiRequest
 	(*v1.RefreshAccessTokenRequest)(nil),    // 3: authentication.service.v1.RefreshAccessTokenRequest
-	(*v1.ForgotPasswordRequest)(nil),        // 4: authentication.service.v1.ForgotPasswordRequest
-	(*v1.ResetPasswordByCodeRequest)(nil),   // 5: authentication.service.v1.ResetPasswordByCodeRequest
-	(*v1.AcceptInvitationRequest)(nil),      // 6: authentication.service.v1.AcceptInvitationRequest
-	(*emptypb.Empty)(nil),                   // 7: google.protobuf.Empty
-	(*v1.VerifyCaptchaRequest)(nil),         // 8: authentication.service.v1.VerifyCaptchaRequest
-	(*v1.TokenPairResponse)(nil),            // 9: authentication.service.v1.TokenPairResponse
-	(*v1.RevokeStatusResponse)(nil),         // 10: authentication.service.v1.RevokeStatusResponse
-	(*v1.GenerateCaptchaResponse)(nil),      // 11: authentication.service.v1.GenerateCaptchaResponse
-	(*v1.VerifyCaptchaResponse)(nil),        // 12: authentication.service.v1.VerifyCaptchaResponse
+	(*v1.CsrfRequest)(nil),                  // 4: authentication.service.v1.CsrfRequest
+	(*v1.ForgotPasswordRequest)(nil),        // 5: authentication.service.v1.ForgotPasswordRequest
+	(*v1.ResetPasswordByCodeRequest)(nil),   // 6: authentication.service.v1.ResetPasswordByCodeRequest
+	(*v1.AcceptInvitationRequest)(nil),      // 7: authentication.service.v1.AcceptInvitationRequest
+	(*emptypb.Empty)(nil),                   // 8: google.protobuf.Empty
+	(*v1.VerifyCaptchaRequest)(nil),         // 9: authentication.service.v1.VerifyCaptchaRequest
+	(*v1.TokenPairResponse)(nil),            // 10: authentication.service.v1.TokenPairResponse
+	(*v1.RevokeStatusResponse)(nil),         // 11: authentication.service.v1.RevokeStatusResponse
+	(*v1.CsrfResponse)(nil),                 // 12: authentication.service.v1.CsrfResponse
+	(*v1.GenerateCaptchaResponse)(nil),      // 13: authentication.service.v1.GenerateCaptchaResponse
+	(*v1.VerifyCaptchaResponse)(nil),        // 14: authentication.service.v1.VerifyCaptchaResponse
 }
 var file_admin_service_v1_i_authentication_proto_depIdxs = []int32{
 	0,  // 0: admin.service.v1.AuthenticationService.PasswordLogin:input_type -> authentication.service.v1.PasswordLoginRequest
 	1,  // 1: admin.service.v1.AuthenticationService.PlatformPasswordLogin:input_type -> authentication.service.v1.PlatformPasswordLoginRequest
 	2,  // 2: admin.service.v1.AuthenticationService.RevokeJti:input_type -> authentication.service.v1.RevokeJtiRequest
 	3,  // 3: admin.service.v1.AuthenticationService.RefreshAccessToken:input_type -> authentication.service.v1.RefreshAccessTokenRequest
-	4,  // 4: admin.service.v1.AuthenticationService.ForgotPassword:input_type -> authentication.service.v1.ForgotPasswordRequest
-	5,  // 5: admin.service.v1.AuthenticationService.ResetPasswordByCode:input_type -> authentication.service.v1.ResetPasswordByCodeRequest
-	6,  // 6: admin.service.v1.AuthenticationService.AcceptInvitation:input_type -> authentication.service.v1.AcceptInvitationRequest
-	7,  // 7: admin.service.v1.AuthenticationService.GenerateCaptcha:input_type -> google.protobuf.Empty
-	8,  // 8: admin.service.v1.AuthenticationService.VerifyCaptcha:input_type -> authentication.service.v1.VerifyCaptchaRequest
-	9,  // 9: admin.service.v1.AuthenticationService.PasswordLogin:output_type -> authentication.service.v1.TokenPairResponse
-	9,  // 10: admin.service.v1.AuthenticationService.PlatformPasswordLogin:output_type -> authentication.service.v1.TokenPairResponse
-	10, // 11: admin.service.v1.AuthenticationService.RevokeJti:output_type -> authentication.service.v1.RevokeStatusResponse
-	9,  // 12: admin.service.v1.AuthenticationService.RefreshAccessToken:output_type -> authentication.service.v1.TokenPairResponse
-	7,  // 13: admin.service.v1.AuthenticationService.ForgotPassword:output_type -> google.protobuf.Empty
-	7,  // 14: admin.service.v1.AuthenticationService.ResetPasswordByCode:output_type -> google.protobuf.Empty
-	7,  // 15: admin.service.v1.AuthenticationService.AcceptInvitation:output_type -> google.protobuf.Empty
-	11, // 16: admin.service.v1.AuthenticationService.GenerateCaptcha:output_type -> authentication.service.v1.GenerateCaptchaResponse
-	12, // 17: admin.service.v1.AuthenticationService.VerifyCaptcha:output_type -> authentication.service.v1.VerifyCaptchaResponse
-	9,  // [9:18] is the sub-list for method output_type
-	0,  // [0:9] is the sub-list for method input_type
+	4,  // 4: admin.service.v1.AuthenticationService.Csrf:input_type -> authentication.service.v1.CsrfRequest
+	5,  // 5: admin.service.v1.AuthenticationService.ForgotPassword:input_type -> authentication.service.v1.ForgotPasswordRequest
+	6,  // 6: admin.service.v1.AuthenticationService.ResetPasswordByCode:input_type -> authentication.service.v1.ResetPasswordByCodeRequest
+	7,  // 7: admin.service.v1.AuthenticationService.AcceptInvitation:input_type -> authentication.service.v1.AcceptInvitationRequest
+	8,  // 8: admin.service.v1.AuthenticationService.GenerateCaptcha:input_type -> google.protobuf.Empty
+	9,  // 9: admin.service.v1.AuthenticationService.VerifyCaptcha:input_type -> authentication.service.v1.VerifyCaptchaRequest
+	10, // 10: admin.service.v1.AuthenticationService.PasswordLogin:output_type -> authentication.service.v1.TokenPairResponse
+	10, // 11: admin.service.v1.AuthenticationService.PlatformPasswordLogin:output_type -> authentication.service.v1.TokenPairResponse
+	11, // 12: admin.service.v1.AuthenticationService.RevokeJti:output_type -> authentication.service.v1.RevokeStatusResponse
+	10, // 13: admin.service.v1.AuthenticationService.RefreshAccessToken:output_type -> authentication.service.v1.TokenPairResponse
+	12, // 14: admin.service.v1.AuthenticationService.Csrf:output_type -> authentication.service.v1.CsrfResponse
+	8,  // 15: admin.service.v1.AuthenticationService.ForgotPassword:output_type -> google.protobuf.Empty
+	8,  // 16: admin.service.v1.AuthenticationService.ResetPasswordByCode:output_type -> google.protobuf.Empty
+	8,  // 17: admin.service.v1.AuthenticationService.AcceptInvitation:output_type -> google.protobuf.Empty
+	13, // 18: admin.service.v1.AuthenticationService.GenerateCaptcha:output_type -> authentication.service.v1.GenerateCaptchaResponse
+	14, // 19: admin.service.v1.AuthenticationService.VerifyCaptcha:output_type -> authentication.service.v1.VerifyCaptchaResponse
+	10, // [10:20] is the sub-list for method output_type
+	0,  // [0:10] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

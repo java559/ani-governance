@@ -44,8 +44,17 @@ type UserTokenPayload struct {
 	// 例如"重置他人密码"/"替他人重置 MFA"应各自独立授权，
 	// 才能支撑平台只读、平台运维等多平台角色。
 	// 注意：权限码随定制化增长会推高 JWT 体积，当前请求不区分场景全量携带。
-	Permissions   []string `protobuf:"bytes,22,rep,name=permissions,json=pms,proto3" json:"permissions,omitempty"` // 权限码列表
-	Jti           *string  `protobuf:"bytes,100,opt,name=jti,proto3,oneof" json:"jti,omitempty"`                   // 令牌唯一标识(JWT ID)
+	Permissions []string `protobuf:"bytes,22,rep,name=permissions,json=pms,proto3" json:"permissions,omitempty"` // 权限码列表
+	Jti         *string  `protobuf:"bytes,100,opt,name=jti,proto3,oneof" json:"jti,omitempty"`                   // 令牌唯一标识(JWT ID)
+	// 应用会话维度（新增 field number，不改变既有 1..100 语义）。
+	// application 标识该令牌属于 console 还是 boss 应用会话；是会话隔离的必要声明，
+	// 缺失即拒绝，绝不默认归入任一应用。
+	Application *ApplicationType `protobuf:"varint,101,opt,name=application,json=app,proto3,enum=authentication.service.v1.ApplicationType,oneof" json:"application,omitempty"` // 应用会话标识
+	// 稳定逻辑会话 ID：同一会话刷新后 jti 改变，sid 保持不变。
+	// 用于 logout 与 refresh 共享同一原子边界，隔离同应用内的不同逻辑会话。
+	Sid *string `protobuf:"bytes,102,opt,name=sid,proto3,oneof" json:"sid,omitempty"` // 稳定逻辑会话 ID
+	// 令牌用途：access 或 refresh。缺省或非法值拒绝，避免 AT 被当作 RT 使用。
+	TokenUse      *string `protobuf:"bytes,103,opt,name=token_use,json=tu,proto3,oneof" json:"token_use,omitempty"` // 令牌用途
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -185,12 +194,32 @@ func (x *UserTokenPayload) GetJti() string {
 	return ""
 }
 
+func (x *UserTokenPayload) GetApplication() ApplicationType {
+	if x != nil && x.Application != nil {
+		return *x.Application
+	}
+	return ApplicationType_APPLICATION_TYPE_UNSPECIFIED
+}
+
+func (x *UserTokenPayload) GetSid() string {
+	if x != nil && x.Sid != nil {
+		return *x.Sid
+	}
+	return ""
+}
+
+func (x *UserTokenPayload) GetTokenUse() string {
+	if x != nil && x.TokenUse != nil {
+		return *x.TokenUse
+	}
+	return ""
+}
+
 var File_authentication_service_v1_user_token_proto protoreflect.FileDescriptor
 
 const file_authentication_service_v1_user_token_proto_rawDesc = "" +
 	"\n" +
-	"*authentication/service/v1/user_token.proto\x12\x19authentication.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1fidentity/service/v1/types.proto\"\xde\n" +
-	"\n" +
+	"*authentication/service/v1/user_token.proto\x12\x19authentication.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1fidentity/service/v1/types.proto\x1a(authentication/service/v1/ani_auth.proto\"\xba\r\n" +
 	"\x10UserTokenPayload\x12$\n" +
 	"\auser_id\x18\x01 \x01(\rB\x0e\xbaG\v\x92\x02\b用户IDR\x03uid\x12+\n" +
 	"\ttenant_id\x18\x02 \x01(\rB\x0e\xbaG\v\x92\x02\b租户IDH\x00R\x03tid\x88\x01\x01\x12.\n" +
@@ -208,7 +237,11 @@ const file_authentication_service_v1_user_token_proto_rawDesc = "" +
 	"\x11is_platform_admin\x18\x14 \x01(\bB!\xbaG\x1e\x92\x02\x1b是否平台超级管理员H\x06R\x03ipa\x88\x01\x01\x12>\n" +
 	"\x0fis_tenant_admin\x18\x15 \x01(\bB\x1b\xbaG\x18\x92\x02\x15是否租户管理员H\aR\x03ita\x88\x01\x01\x12V\n" +
 	"\vpermissions\x18\x16 \x03(\tB<\xbaG9\x92\x026权限码列表（多角色并集，登录期聚合）R\x03pms\x127\n" +
-	"\x03jti\x18d \x01(\tB \xbaG\x1d\x92\x02\x1a令牌唯一标识(JWT ID)H\bR\x03jti\x88\x01\x01B\f\n" +
+	"\x03jti\x18d \x01(\tB \xbaG\x1d\x92\x02\x1a令牌唯一标识(JWT ID)H\bR\x03jti\x88\x01\x01\x12\x89\x01\n" +
+	"\vapplication\x18e \x01(\x0e2*.authentication.service.v1.ApplicationTypeB>\xbaG;\x92\x028应用会话标识（console / boss），缺省即拒绝H\tR\x03app\x88\x01\x01\x12G\n" +
+	"\x03sid\x18f \x01(\tB0\xbaG-\x92\x02*稳定逻辑会话 ID（刷新后不变）H\n" +
+	"R\x03sid\x88\x01\x01\x12_\n" +
+	"\ttoken_use\x18g \x01(\tBC\xbaG@\x92\x02=令牌用途（access / refresh），缺省或非法值拒绝H\vR\x02tu\x88\x01\x01B\f\n" +
 	"\n" +
 	"_tenant_idB\f\n" +
 	"\n" +
@@ -220,7 +253,11 @@ const file_authentication_service_v1_user_token_proto_rawDesc = "" +
 	"\f_org_unit_idB\x14\n" +
 	"\x12_is_platform_adminB\x12\n" +
 	"\x10_is_tenant_adminB\x06\n" +
-	"\x04_jtiB\xfa\x01\n" +
+	"\x04_jtiB\x0e\n" +
+	"\f_applicationB\x06\n" +
+	"\x04_sidB\f\n" +
+	"\n" +
+	"_token_useB\xfa\x01\n" +
 	"\x1dcom.authentication.service.v1B\x0eUserTokenProtoP\x01ZCgo-wind-admin/api/gen/go/authentication/service/v1;authenticationpb\xa2\x02\x03ASX\xaa\x02\x19Authentication.Service.V1\xca\x02\x19Authentication\\Service\\V1\xe2\x02%Authentication\\Service\\V1\\GPBMetadata\xea\x02\x1bAuthentication::Service::V1b\x06proto3"
 
 var (
@@ -239,15 +276,17 @@ var file_authentication_service_v1_user_token_proto_msgTypes = make([]protoimpl.
 var file_authentication_service_v1_user_token_proto_goTypes = []any{
 	(*UserTokenPayload)(nil), // 0: authentication.service.v1.UserTokenPayload
 	(v1.DataScope)(0),        // 1: identity.service.v1.DataScope
+	(ApplicationType)(0),     // 2: authentication.service.v1.ApplicationType
 }
 var file_authentication_service_v1_user_token_proto_depIdxs = []int32{
 	1, // 0: authentication.service.v1.UserTokenPayload.data_scope:type_name -> identity.service.v1.DataScope
 	1, // 1: authentication.service.v1.UserTokenPayload.data_scopes:type_name -> identity.service.v1.DataScope
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	2, // 2: authentication.service.v1.UserTokenPayload.application:type_name -> authentication.service.v1.ApplicationType
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_authentication_service_v1_user_token_proto_init() }
@@ -255,6 +294,7 @@ func file_authentication_service_v1_user_token_proto_init() {
 	if File_authentication_service_v1_user_token_proto != nil {
 		return
 	}
+	file_authentication_service_v1_ani_auth_proto_init()
 	file_authentication_service_v1_user_token_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

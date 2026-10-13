@@ -56,6 +56,9 @@ type MfaService struct {
 	authenticator     *data.Authenticator
 	rateLimiter       *data.LoginRateLimiter
 	userRepo          data.UserRepo
+
+	// originValidator MFA 写端点的来源校验器（与认证服务同一套规则，见 auth_origin.go）
+	originValidator *authOriginValidator
 }
 
 func NewMfaService(
@@ -73,6 +76,7 @@ func NewMfaService(
 		authenticator:     authenticator,
 		rateLimiter:       rateLimiter,
 		userRepo:          userRepo,
+		originValidator:   newAuthOriginValidator(ctx),
 	}
 }
 
@@ -229,6 +233,15 @@ func (s *MfaService) VerifyMFAChallenge(ctx context.Context, req *authentication
 	ctx = viewer.WithContext(ctx, viewer.NewNoopContext())
 	ctx = privacy.DecisionContext(ctx, privacy.Allow)
 
+	// MFA 完成前不能签发有效令牌，且入口无既有 CSRF 证明：
+	// no-store + JSON Content-Type 是合同闸门；来源校验的 application
+	// 取挑战载荷（请求体只有 operation_id，application 必须来自可信挑战），
+	// 故来源校验放在挑战读取之后、验码之前。
+	setNoStoreHeader(ctx)
+	if err := requireJSONContentType(ctx); err != nil {
+		return nil, err
+	}
+
 	// Peek 不消耗：允许失败重试（上限见 RecordLoginFailure），通过或超限才 Consume
 	challengeCtx, err := s.mfaChallengeCache.PeekLoginChallenge(ctx, req.GetOperationId())
 	if err != nil {
@@ -238,6 +251,10 @@ func (s *MfaService) VerifyMFAChallenge(ctx context.Context, req *authentication
 	payload := challengeCtx.Payload
 	if payload == nil {
 		return nil, authenticationV1.ErrorInternalServerError("mfa challenge payload missing")
+	}
+
+	if err := s.originValidator.validate(ctx, "mfa_verify", payload.GetApplication()); err != nil {
+		return nil, err
 	}
 
 	// 审计贯通：本接口请求体无 username（中间件解析不到），无论成功失败
@@ -310,8 +327,10 @@ func (s *MfaService) VerifyMFAChallenge(ctx context.Context, req *authentication
 	// refresh token 经 HttpOnly Cookie 下发，与 doGrantTypePassword 一致。
 	// 此前本路径把 refresh token 放在响应体里返回（前端只认 Cookie，
 	// MFA 用户会话的静默续期从未生效，且 token 暴露在 JS 可读面）。
+	// application 来自挑战上下文中的令牌载荷（登录入口写入，非客户端可信输入），
+	// 决定写入哪个应用的 cookie。
 	refreshExpiresIn := int64(s.authenticator.GetRefreshTokenExpires(challengeCtx.ClientType).Seconds())
-	setRefreshCookies(ctx, refreshToken, refreshExpiresIn)
+	setRefreshCookies(ctx, payload.GetApplication(), refreshToken, refreshExpiresIn)
 
 	return &authenticationV1.LoginResponse{
 		TokenType:   authenticationV1.TokenType_bearer,

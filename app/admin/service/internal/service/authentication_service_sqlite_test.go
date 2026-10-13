@@ -776,21 +776,37 @@ func TestAuthSvcSqlite_DisabledTenantViaRefresh(t *testing.T) {
 	offTenantID := e.seedTenant(t, "AuthSvc 刷新停用租户", authSvcTenantCodeOff, identityV1.Tenant_OFF)
 	e.seedStubUser(7501, trans.Ptr(offTenantID), "authsvc-refresh-user", identityV1.User_NORMAL, nil)
 
-	payload := &authenticationV1.UserTokenPayload{UserId: 7501, TenantId: trans.Ptr(offTenantID), Username: trans.Ptr("authsvc-refresh-user")}
+	// 刷新链的令牌对必须携带 application 与 sid（服务端会话锚点）；
+	// 刷新还要求会话绑定的 CSRF 证明，先按 sid 签发再经请求头回传。
+	const sidOffTenant = "test-sid-off-tenant"
+	payload := &authenticationV1.UserTokenPayload{
+		UserId:      7501,
+		TenantId:    trans.Ptr(offTenantID),
+		Username:    trans.Ptr("authsvc-refresh-user"),
+		Application: authenticationV1.ApplicationType_console.Enum(),
+		Sid:         trans.Ptr(sidOffTenant),
+	}
 	_, refreshToken, err := e.svc.authenticator.CreateUserToken(base, authenticationV1.ClientType_admin, payload)
+	require.NoError(t, err)
+	_, err = e.svc.authenticator.SaveCsrfToken(base, authenticationV1.ClientType_admin, 7501, sidOffTenant, "csrf-test-token")
 	require.NoError(t, err)
 
 	header := http.Header{}
-	header.Set("Cookie", "refresh_token="+refreshToken)
-	resp, err := e.svc.RefreshAccessToken(headerCtx(base, header), &authenticationV1.RefreshAccessTokenRequest{})
+	header.Set("Content-Type", "application/json")
+	header.Set("Cookie", "console_refresh_token="+refreshToken)
+	header.Set("X-CSRF-Token", "csrf-test-token")
+	resp, err := e.svc.RefreshAccessToken(headerCtx(base, header), &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	})
 	require.Error(t, err)
 	require.True(t, authenticationV1.IsForbidden(err), "停用租户的刷新应 403")
 	require.Nil(t, resp)
 }
 
 // TestAuthSvcSqlite_LogoutAndRevocation 验证登出与令牌吊销：
-// 登录签发的令牌对在 Logout 后立即失效（ValidateToken 返回 401 已吊销）；
-// 无操作人上下文的 Logout 报 401。
+// 缺 application 参数报 400；无 cookie 登出幂等返回 revoked；
+// 携带 RT cookie 的登出按 sid 精确吊销该逻辑会话（其 access token 立即失效）。
+// 登出不再依赖操作人上下文（已白名单化），也不再全域吊销该用户全部令牌。
 func TestAuthSvcSqlite_LogoutAndRevocation(t *testing.T) {
 	e := newAuthenticationServiceForTest(t)
 	base := context.Background()
@@ -801,40 +817,58 @@ func TestAuthSvcSqlite_LogoutAndRevocation(t *testing.T) {
 	e.seedStubUser(authSvcTestUserID, nil, authSvcTestUsername, identityV1.User_NORMAL, []uint32{roleID})
 
 	ctx, req := e.loginHappyReq(t, base, authSvcTestUsername, constants.DefaultUserPassword)
-	resp, err := e.svc.Login(ctx, req)
+	_, err := e.svc.Login(ctx, req)
 	require.NoError(t, err)
-	accessToken := resp.GetAccessToken()
-	require.NotEmpty(t, accessToken)
 
-	valReq := &authenticationV1.ValidateTokenRequest{
-		Token:         accessToken,
-		ClientType:    authenticationV1.ClientType_admin,
-		TokenCategory: authenticationV1.TokenCategory_ACCESS,
-	}
-	valResp, err := e.svc.ValidateToken(base, valReq)
-	require.NoError(t, err)
-	require.True(t, valResp.GetIsValid(), "登出前令牌应有效")
-
-	// 无操作人上下文：401。
+	// 缺 application：400。
 	_, err = e.svc.RevokeJti(base, &authenticationV1.RevokeJtiRequest{})
 	require.Error(t, err)
-	require.True(t, authenticationV1.IsUnauthorized(err), "无操作人的登出应 401")
+	require.True(t, authenticationV1.IsBadRequest(err), "缺 application 的登出应 400")
 
-	// 有操作人上下文：吊销该用户 admin 客户端类型的全部令牌。
-	opCtx := auth.NewContext(base, &authenticationV1.UserTokenPayload{UserId: authSvcTestUserID})
-	revokeResp, err := e.svc.RevokeJti(opCtx, &authenticationV1.RevokeJtiRequest{Jti: trans.Ptr("test-jti")})
+	// 无 cookie（application=console）：幂等返回 revoked；session_revoked=false
+	// （幂等命中，不宣称本次完成远端吊销）。
+	revokeResp, err := e.svc.RevokeJti(base, &authenticationV1.RevokeJtiRequest{
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	})
+	require.NoError(t, err, "无 cookie 的登出应幂等成功")
+	require.Equal(t, "revoked", revokeResp.GetStatus())
+	require.False(t, revokeResp.GetSessionRevoked(), "无会话可吊销时 session_revoked 应为 false")
+
+	// 直发一个 console 应用的令牌对，再携 cookie 登出：该逻辑会话被吊销。
+	payload := &authenticationV1.UserTokenPayload{
+		UserId:      authSvcTestUserID,
+		Username:    trans.Ptr(authSvcTestUsername),
+		Application: authenticationV1.ApplicationType_console.Enum(),
+		Sid:         trans.Ptr("test-sid-logout"),
+	}
+	access, refresh, err := e.svc.authenticator.CreateUserToken(base, authenticationV1.ClientType_admin, payload)
+	require.NoError(t, err)
+
+	logoutHeader := http.Header{}
+	logoutHeader.Set("Content-Type", "application/json")
+	logoutHeader.Set("Cookie", "console_refresh_token="+refresh)
+	revokeResp, err = e.svc.RevokeJti(headerCtx(base, logoutHeader), &authenticationV1.RevokeJtiRequest{
+		Jti:         trans.Ptr("test-jti"),
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	})
 	require.NoError(t, err, "登出应成功吊销")
 	require.Equal(t, "revoked", revokeResp.GetStatus())
+	require.True(t, revokeResp.GetSessionRevoked(), "确有会话被吊销时 session_revoked 应为 true")
 
-	valResp, err = e.svc.ValidateToken(base, valReq)
-	require.Error(t, err, "登出后令牌应失效")
+	valResp, err := e.svc.ValidateToken(base, &authenticationV1.ValidateTokenRequest{
+		Token:         access,
+		ClientType:    authenticationV1.ClientType_admin,
+		TokenCategory: authenticationV1.TokenCategory_ACCESS,
+	})
+	require.Error(t, err, "登出后该会话令牌应失效")
 	require.True(t, authenticationV1.IsUnauthorized(err), "已吊销令牌应 401")
 	require.False(t, valResp.GetIsValid())
 }
 
 // TestAuthSvcSqlite_RefreshTokenFlow 验证刷新令牌轮换全链路：
-// 缺 cookie / 垃圾 token 均 401；合法 refresh token（HttpOnly cookie 注入）
-// 轮换出新令牌对（旧会话元数据登录时间被继承），旧令牌对原子吊销不可复用。
+// 缺 application 400 / 缺 cookie 401 / 垃圾 token 401 / 合法 RT 但缺 CSRF 证明 403；
+// 合法请求（HttpOnly cookie + 会话 CSRF 证明 + application 声明）轮换出新令牌对，
+// 旧令牌对原子吊销不可复用。
 //
 // 注：原「错误 grant_type 应 400」用例已删除——/api/v1/auth/refresh 不再接收
 // grant_type（客户端类型固定 admin），该分支已不存在。
@@ -842,16 +876,27 @@ func TestAuthSvcSqlite_RefreshTokenFlow(t *testing.T) {
 	e := newAuthenticationServiceForTest(t)
 	base := context.Background()
 
-	// 无 cookie：401。
+	// 缺 application：400。
 	resp, err := e.svc.RefreshAccessToken(base, &authenticationV1.RefreshAccessTokenRequest{})
+	require.Error(t, err)
+	require.True(t, authenticationV1.IsBadRequest(err), "缺 application 应 400")
+	require.Nil(t, resp)
+
+	// 声明了 application 但缺 cookie：401。
+	resp, err = e.svc.RefreshAccessToken(base, &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	})
 	require.Error(t, err)
 	require.True(t, authenticationV1.IsIncorrectRefreshToken(err), "缺 cookie 应 401")
 	require.Nil(t, resp)
 
 	// 垃圾 refresh token：验签失败 401。
 	garbage := http.Header{}
-	garbage.Set("Cookie", "refresh_token=not-a-jwt")
-	resp, err = e.svc.RefreshAccessToken(headerCtx(base, garbage), &authenticationV1.RefreshAccessTokenRequest{})
+	garbage.Set("Content-Type", "application/json")
+	garbage.Set("Cookie", "console_refresh_token=not-a-jwt")
+	resp, err = e.svc.RefreshAccessToken(headerCtx(base, garbage), &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	})
 	require.Error(t, err)
 	require.True(t, authenticationV1.IsIncorrectRefreshToken(err), "垃圾 refresh token 应 401")
 	require.Nil(t, resp)
@@ -862,7 +907,32 @@ func TestAuthSvcSqlite_RefreshTokenFlow(t *testing.T) {
 	e.seedCredential(t, nil, authSvcTestUserID, authSvcTestUsername, authenticationV1.UserCredential_ENABLED)
 	e.seedStubUser(authSvcTestUserID, nil, authSvcTestUsername, identityV1.User_NORMAL, []uint32{roleID})
 
-	payload := &authenticationV1.UserTokenPayload{UserId: authSvcTestUserID, Username: trans.Ptr(authSvcTestUsername)}
+	// 合法 RT 但缺 CSRF 证明：403（双提交 Cookie 校验在验签与租户解析之间）。
+	payloadNoCsrf := &authenticationV1.UserTokenPayload{
+		UserId:      authSvcTestUserID,
+		Username:    trans.Ptr(authSvcTestUsername),
+		Application: authenticationV1.ApplicationType_console.Enum(),
+		Sid:         trans.Ptr("test-sid-no-csrf"),
+	}
+	_, rtNoCsrf, err := e.svc.authenticator.CreateUserToken(base, authenticationV1.ClientType_admin, payloadNoCsrf)
+	require.NoError(t, err)
+	noCsrfHeader := http.Header{}
+	noCsrfHeader.Set("Content-Type", "application/json")
+	noCsrfHeader.Set("Cookie", "console_refresh_token="+rtNoCsrf)
+	resp, err = e.svc.RefreshAccessToken(headerCtx(base, noCsrfHeader), &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	})
+	require.Error(t, err)
+	require.True(t, authenticationV1.IsForbidden(err), "缺 CSRF 证明的刷新应 403")
+	require.Nil(t, resp)
+
+	const sidRefresh = "test-sid-refresh"
+	payload := &authenticationV1.UserTokenPayload{
+		UserId:      authSvcTestUserID,
+		Username:    trans.Ptr(authSvcTestUsername),
+		Application: authenticationV1.ApplicationType_console.Enum(),
+		Sid:         trans.Ptr(sidRefresh),
+	}
 	oldAccess, oldRefresh, err := e.svc.authenticator.CreateUserToken(base, authenticationV1.ClientType_admin, payload)
 	require.NoError(t, err)
 	require.NotEmpty(t, oldAccess)
@@ -870,10 +940,18 @@ func TestAuthSvcSqlite_RefreshTokenFlow(t *testing.T) {
 	// 会话元数据走 recordSessionMeta（登录链同款入口）为旧 jti 落档，
 	// 使轮换路径命中"旧会话元数据继承登录时间"分支。
 	recordSessionMeta(base, e.svc.log, e.svc.authenticator, authenticationV1.ClientType_admin, payload)
+	// 签发会话绑定的 CSRF 证明（/api/v1/auth/csrf 同款路径）
+	_, err = e.svc.authenticator.SaveCsrfToken(base, authenticationV1.ClientType_admin, authSvcTestUserID, sidRefresh, "csrf-refresh-token")
+	require.NoError(t, err)
 
 	rotHeader := http.Header{}
-	rotHeader.Set("Cookie", "refresh_token="+oldRefresh)
-	rotResp, err := e.svc.RefreshAccessToken(headerCtx(base, rotHeader), &authenticationV1.RefreshAccessTokenRequest{})
+	rotHeader.Set("Content-Type", "application/json")
+	rotHeader.Set("Cookie", "console_refresh_token="+oldRefresh)
+	rotHeader.Set("X-CSRF-Token", "csrf-refresh-token")
+	rotReq := &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	}
+	rotResp, err := e.svc.RefreshAccessToken(headerCtx(base, rotHeader), rotReq)
 	require.NoError(t, err, "合法 refresh token 应轮换成功")
 	require.NotEmpty(t, rotResp.GetAccessToken(), "轮换应签发新 access token")
 	require.Positive(t, rotResp.GetExpiresIn())
@@ -898,10 +976,91 @@ func TestAuthSvcSqlite_RefreshTokenFlow(t *testing.T) {
 	require.True(t, authenticationV1.IsUnauthorized(err))
 	require.False(t, oldValResp.GetIsValid())
 
-	reuseResp, err := e.svc.RefreshAccessToken(headerCtx(base, rotHeader), &authenticationV1.RefreshAccessTokenRequest{})
+	reuseResp, err := e.svc.RefreshAccessToken(headerCtx(base, rotHeader), rotReq)
 	require.Error(t, err, "旧 refresh token 不可复用")
 	require.True(t, authenticationV1.IsIncorrectRefreshToken(err))
 	require.Nil(t, reuseResp)
+}
+
+// TestAuthSvcSqlite_CrossApplicationIsolation 回归缺陷主场景：
+// BOSS 与 Console 同 host 不同端口共享 cookie 命名空间，隔离只能靠 cookie 名。
+// 验证：console 会话的 RT 无法经 boss 通道刷新（cookie 名隔离）；错误 CSRF 证明 403；
+// 同一用户两应用会话并存且互不吊销（一端登出另一端仍可刷新）。
+func TestAuthSvcSqlite_CrossApplicationIsolation(t *testing.T) {
+	e := newAuthenticationServiceForTest(t)
+	base := context.Background()
+
+	permID := e.seedBackendAccessPermission(t)
+	roleID := e.seedRole(t, nil, permissionV1.Role_SYSTEM, constants.PlatformAdminRoleCode, []uint32{permID}, nil, nil)
+	e.seedCredential(t, nil, authSvcTestUserID, authSvcTestUsername, authenticationV1.UserCredential_ENABLED)
+	e.seedStubUser(authSvcTestUserID, nil, authSvcTestUsername, identityV1.User_NORMAL, []uint32{roleID})
+
+	// 同一用户两个应用的逻辑会话，各自 sid 与 CSRF 证明。
+	const consoleSid = "test-sid-console"
+	const bossSid = "test-sid-boss"
+	consolePayload := &authenticationV1.UserTokenPayload{
+		UserId:      authSvcTestUserID,
+		Username:    trans.Ptr(authSvcTestUsername),
+		Application: authenticationV1.ApplicationType_console.Enum(),
+		Sid:         trans.Ptr(consoleSid),
+	}
+	bossPayload := &authenticationV1.UserTokenPayload{
+		UserId:      authSvcTestUserID,
+		Username:    trans.Ptr(authSvcTestUsername),
+		Application: authenticationV1.ApplicationType_boss.Enum(),
+		Sid:         trans.Ptr(bossSid),
+	}
+	_, consoleRT, err := e.svc.authenticator.CreateUserToken(base, authenticationV1.ClientType_admin, consolePayload)
+	require.NoError(t, err)
+	_, bossRT, err := e.svc.authenticator.CreateUserToken(base, authenticationV1.ClientType_admin, bossPayload)
+	require.NoError(t, err)
+	_, err = e.svc.authenticator.SaveCsrfToken(base, authenticationV1.ClientType_admin, authSvcTestUserID, consoleSid, "csrf-console")
+	require.NoError(t, err)
+	_, err = e.svc.authenticator.SaveCsrfToken(base, authenticationV1.ClientType_admin, authSvcTestUserID, bossSid, "csrf-boss")
+	require.NoError(t, err)
+
+	// 1) console 的 RT 经 boss 通道刷新：boss_cookie 缺失 → 401（cookie 名隔离生效）。
+	consoleCookieHeader := http.Header{}
+	consoleCookieHeader.Set("Content-Type", "application/json")
+	consoleCookieHeader.Set("Cookie", "console_refresh_token="+consoleRT)
+	resp, err := e.svc.RefreshAccessToken(headerCtx(base, consoleCookieHeader), &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_boss.Enum(),
+	})
+	require.Error(t, err)
+	require.True(t, authenticationV1.IsIncorrectRefreshToken(err), "console 会话不得经 boss 通道刷新")
+	require.Nil(t, resp)
+
+	// 2) RT 与证明分属两个会话：403（证明按 sid 绑定，不可挪用）。
+	mixedHeader := http.Header{}
+	mixedHeader.Set("Content-Type", "application/json")
+	mixedHeader.Set("Cookie", "boss_refresh_token="+bossRT)
+	mixedHeader.Set("X-CSRF-Token", "csrf-console")
+	resp, err = e.svc.RefreshAccessToken(headerCtx(base, mixedHeader), &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_boss.Enum(),
+	})
+	require.Error(t, err)
+	require.True(t, authenticationV1.IsForbidden(err), "挪用其他会话的 CSRF 证明应 403")
+	require.Nil(t, resp)
+
+	// 3) console 登出后，boss 会话仍可独立刷新（跨应用不波及）。
+	logoutHeader := http.Header{}
+	logoutHeader.Set("Content-Type", "application/json")
+	logoutHeader.Set("Cookie", "console_refresh_token="+consoleRT)
+	revokeResp, err := e.svc.RevokeJti(headerCtx(base, logoutHeader), &authenticationV1.RevokeJtiRequest{
+		Application: authenticationV1.ApplicationType_console.Enum(),
+	})
+	require.NoError(t, err)
+	require.Equal(t, "revoked", revokeResp.GetStatus())
+
+	bossHeader := http.Header{}
+	bossHeader.Set("Content-Type", "application/json")
+	bossHeader.Set("Cookie", "boss_refresh_token="+bossRT)
+	bossHeader.Set("X-CSRF-Token", "csrf-boss")
+	bossResp, err := e.svc.RefreshAccessToken(headerCtx(base, bossHeader), &authenticationV1.RefreshAccessTokenRequest{
+		Application: authenticationV1.ApplicationType_boss.Enum(),
+	})
+	require.NoError(t, err, "console 登出不得影响 boss 会话刷新")
+	require.NotEmpty(t, bossResp.GetAccessToken())
 }
 
 // TestAuthSvcSqlite_ValidateTokenBranches 验证 ValidateToken 的入参守卫与
@@ -933,7 +1092,11 @@ func TestAuthSvcSqlite_ValidateTokenBranches(t *testing.T) {
 	require.Nil(t, resp)
 
 	// 合法 refresh token 的 REFRESH 类别校验（不轮换）。
-	payload := &authenticationV1.UserTokenPayload{UserId: authSvcTestUserID}
+	payload := &authenticationV1.UserTokenPayload{
+		UserId:      authSvcTestUserID,
+		Application: authenticationV1.ApplicationType_console.Enum(),
+		Sid:         trans.Ptr("test-sid-validate"),
+	}
 	_, refreshToken, err := e.svc.authenticator.CreateUserToken(base, authenticationV1.ClientType_admin, payload)
 	require.NoError(t, err)
 	resp, err = e.svc.ValidateToken(base, &authenticationV1.ValidateTokenRequest{
@@ -1198,8 +1361,8 @@ func TestAuthSvcSqlite_CookieHelperGuards(t *testing.T) {
 	logHelper := bLogger.NewHelper(bLogger.NopLogger())
 
 	require.NotPanics(t, func() {
-		setRefreshCookies(base, "rt-value", 60)
-		clearRefreshCookies(base)
+		setRefreshCookies(base, authenticationV1.ApplicationType_console, "rt-value", 60)
+		clearRefreshCookies(base, authenticationV1.ApplicationType_console)
 	}, "无传输上下文时 cookie 助手应静默返回")
 
 	// userID=0：不发起更新。

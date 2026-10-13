@@ -330,7 +330,7 @@ func (a *Authenticator) Authenticate(ctx context.Context, req *authenticationV1.
 			return &authenticationV1.ValidateTokenResponse{IsValid: false},
 				authenticationV1.ErrorUnauthorized("refresh token is expired")
 		}
-		rtUserId, _, rtParseErr := jwt.ParseRefreshTokenClaims(rtClaims)
+		rtUserId, _, _, _, rtParseErr := jwt.ParseRefreshTokenClaims(rtClaims)
 		if rtParseErr != nil {
 			return &authenticationV1.ValidateTokenResponse{IsValid: false},
 				authenticationV1.ErrorUnauthorized("invalid refresh token")
@@ -354,39 +354,30 @@ func (a *Authenticator) Authenticate(ctx context.Context, req *authenticationV1.
 	}
 }
 
-// CreateUserToken 创建用户令牌对（访问令牌和刷新令牌）
+// CreateUserToken 创建用户令牌对（访问令牌和刷新令牌）。
+// 登录路径使用：生成 jti、签发令牌对、写入令牌对并绑定逻辑会话 sid。
+// payload 必须已带 Application 与 Sid（由调用方按入口/上下文确定）。
 func (a *Authenticator) CreateUserToken(
 	ctx context.Context,
 	clientType authenticationV1.ClientType,
 	tokenPayload *authenticationV1.UserTokenPayload,
 ) (accessToken, refreshToken string, err error) {
-	if tokenPayload == nil {
-		return "", "", authenticationV1.ErrorBadRequest("token payload is nil")
+	accessToken, refreshToken, err = a.PrepareUserToken(ctx, clientType, tokenPayload)
+	if err != nil {
+		return "", "", err
 	}
 
-	var jti string
-	if jti = a.newJwtId(); jti == "" {
-		return "", "", authenticationV1.ErrorServiceUnavailable("create jwt id failed")
+	// 绑定逻辑会话并写入令牌对：登录无旧会话，直接写入。
+	sid := tokenPayload.GetSid()
+	if sid == "" {
+		return "", "", authenticationV1.ErrorBadRequest("token payload missing sid")
 	}
-
-	tokenPayload.Jti = trans.Ptr(jti)
-
-	// Create Access Token
-	if accessToken, err = a.newAccessToken(clientType, tokenPayload); accessToken == "" || err != nil {
-		return "", "", authenticationV1.ErrorServiceUnavailable("create access token failed")
-	}
-
-	// Create Refresh Token
-	if refreshToken, err = a.newRefreshToken(clientType, tokenPayload); refreshToken == "" || err != nil {
-		return "", "", authenticationV1.ErrorServiceUnavailable("create refresh token failed")
-	}
-
-	// Store tokens in cache
-	if err = a.userTokenCache.AddTokenPair(
+	if err = a.userTokenCache.BindSessionAndStore(
 		ctx,
 		clientType,
 		tokenPayload.GetUserId(),
-		jti,
+		sid,
+		tokenPayload.GetJti(),
 		accessToken,
 		refreshToken,
 		a.GetAccessTokenExpires(clientType),
@@ -395,7 +386,41 @@ func (a *Authenticator) CreateUserToken(
 		return "", "", err
 	}
 
-	return
+	return accessToken, refreshToken, nil
+}
+
+// PrepareUserToken 生成 jti 并签发令牌对，但**不写入任何存储**。
+// 用于"先准备后提交"的刷新路径：准备阶段失败不消费旧会话。
+// payload 必须已带 Application 与 Sid。
+func (a *Authenticator) PrepareUserToken(
+	_ context.Context,
+	clientType authenticationV1.ClientType,
+	tokenPayload *authenticationV1.UserTokenPayload,
+) (accessToken, refreshToken string, err error) {
+	if tokenPayload == nil {
+		return "", "", authenticationV1.ErrorBadRequest("token payload is nil")
+	}
+	if tokenPayload.GetSid() == "" {
+		return "", "", authenticationV1.ErrorBadRequest("token payload missing sid")
+	}
+	if _, ok := jwt.ApplicationName(tokenPayload.GetApplication()); !ok {
+		return "", "", authenticationV1.ErrorBadRequest("token payload missing application")
+	}
+
+	var jti string
+	if jti = a.newJwtId(); jti == "" {
+		return "", "", authenticationV1.ErrorServiceUnavailable("create jwt id failed")
+	}
+	tokenPayload.Jti = trans.Ptr(jti)
+
+	if accessToken, err = a.newAccessToken(clientType, tokenPayload); accessToken == "" || err != nil {
+		return "", "", authenticationV1.ErrorServiceUnavailable("create access token failed")
+	}
+	if refreshToken, err = a.newRefreshToken(clientType, tokenPayload); refreshToken == "" || err != nil {
+		return "", "", authenticationV1.ErrorServiceUnavailable("create refresh token failed")
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 // RevokeUserToken 撤销用户令牌
@@ -435,55 +460,126 @@ func (a *Authenticator) RevokeTokenByJti(ctx context.Context, clientType *authen
 	return a.userTokenCache.RevokeTokenByJti(ctx, authenticationV1.ClientType_app, userId, jti)
 }
 
-// VerifyRefreshToken 验证刷新令牌，并原子地吊销旧令牌对。
-// refresh token 现为自描述 JWT，本函数从 token 自身验签解析出 uid/jti，
-// 不再依赖 access token 提供的身份信息。随后用 Lua 脚本保证「验证 RT → 删除 RT →
-// 删除 AT」的原子性，避免 TOCTOU 竞态。
+// VerifyRefreshToken 验签 refresh token 并解析出 uid/jti/application/sid。
+//
+// 本函数**不再消费**旧会话：改为"先准备后提交"——它只验签与解析，
+// 由调用方在准备阶段（查用户/算权限/签发新令牌）全部成功后，
+// 再调用 CommitRotateSession 做一次原子提交。任一准备步骤失败都不会
+// 提前消费旧会话，用户可重试。
+//
+// 令牌必须携带 application 与 token_use=refresh，缺失即拒绝，
+// 不把旧缺 claim 令牌默认归入某应用。返回值中的 application 是**服务端
+// 签名的可信来源**，调用方须以它为准，与请求参数、cookie 名比对。
 func (a *Authenticator) VerifyRefreshToken(
 	ctx context.Context,
 	clientType authenticationV1.ClientType,
 	refreshToken string,
-) (userId uint32, jti string, err error) {
+) (userId uint32, jti string, application authenticationV1.ApplicationType, sid string, err error) {
 	if a.userTokenCache == nil {
 		a.log.Error(ctx, "userTokenCache is nil")
-		return 0, "", authenticationV1.ErrorServiceUnavailable("token cache unavailable")
+		return 0, "", authenticationV1.ApplicationType_APPLICATION_TYPE_UNSPECIFIED, "", authenticationV1.ErrorServiceUnavailable("token cache unavailable")
 	}
 	if refreshToken == "" {
-		return 0, "", authenticationV1.ErrorBadRequest("refresh token is empty")
+		return 0, "", authenticationV1.ApplicationType_APPLICATION_TYPE_UNSPECIFIED, "", authenticationV1.ErrorBadRequest("refresh token is empty")
 	}
 
 	authenticator, err := a.getAuthenticator(clientType)
 	if err != nil {
-		return 0, "", err
+		return 0, "", authenticationV1.ApplicationType_APPLICATION_TYPE_UNSPECIFIED, "", err
 	}
 
-	// 验签 refresh token JWT，提取 uid/jti
 	claims, authErr := authenticator.AuthenticateToken(refreshToken)
 	if authErr != nil {
 		a.log.Errorf(ctx, "authenticate refresh token failed: [%s]", authErr)
-		return 0, "", authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
+		return 0, "", authenticationV1.ApplicationType_APPLICATION_TYPE_UNSPECIFIED, "", authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
 	}
 	if jwt.IsTokenExpired(claims) {
-		return 0, "", authenticationV1.ErrorIncorrectRefreshToken("refresh token is expired")
+		return 0, "", authenticationV1.ApplicationType_APPLICATION_TYPE_UNSPECIFIED, "", authenticationV1.ErrorIncorrectRefreshToken("refresh token is expired")
 	}
-	userId, jti, err = jwt.ParseRefreshTokenClaims(claims)
+	userId, jti, application, sid, err = jwt.ParseRefreshTokenClaims(claims)
 	if err != nil {
 		a.log.Errorf(ctx, "parse refresh token claims failed: [%s]", err)
-		return 0, "", authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
+		return 0, "", authenticationV1.ApplicationType_APPLICATION_TYPE_UNSPECIFIED, "", authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
 	}
 
-	// 原子验证并吊销旧令牌对（Lua 脚本保证原子性）
-	var valid bool
-	if valid, err = a.userTokenCache.VerifyAndRevokeTokenPair(ctx, clientType, userId, jti, refreshToken); err != nil {
-		a.log.Errorf(ctx, "verify refresh token failed for user [%d]: [%s]", userId, err)
-		return 0, "", authenticationV1.ErrorServiceUnavailable("verify refresh token failed")
-	}
-	if !valid {
-		a.log.Errorf(ctx, "invalid refresh token for user [%d]", userId)
-		return 0, "", authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
-	}
+	return userId, jti, application, sid, nil
+}
 
-	return userId, jti, nil
+// CommitRotateSession 原子提交一次逻辑会话轮换：
+// 校验 sid 指针仍指向 oldJti（否则说明已被登出或并发轮换抢走），
+// 在同一 Lua 脚本内删除旧令牌对/旧会话记录、写入新令牌对/新会话记录，
+// 并把 sid 指针更新为 newJti。
+//
+// 返回 false 表示该 sid 已失效（登出或并发），调用方须拒绝本次刷新，
+// 不得让已准备好的新令牌生效。
+func (a *Authenticator) CommitRotateSession(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+	oldJti string,
+	newJti string,
+	accessToken string,
+	refreshToken string,
+	newMeta *SessionMeta,
+) (bool, error) {
+	if a.userTokenCache == nil {
+		return false, authenticationV1.ErrorServiceUnavailable("token cache unavailable")
+	}
+	atTTL := a.GetAccessTokenExpires(clientType)
+	rtTTL := a.GetRefreshTokenExpires(clientType)
+	return a.userTokenCache.RotateSession(
+		ctx, clientType, userId, sid, oldJti, newJti,
+		accessToken, refreshToken, newMeta, atTTL, rtTTL,
+	)
+}
+
+// RevokeSession 退出当前应用的当前逻辑会话（按 sid 精确定位，不波及另一应用
+// 或其他设备）。返回 false 表示会话已不存在（幂等）。
+func (a *Authenticator) RevokeSession(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+) (bool, error) {
+	if a.userTokenCache == nil {
+		return false, authenticationV1.ErrorServiceUnavailable("token cache unavailable")
+	}
+	return a.userTokenCache.RevokeSession(ctx, clientType, userId, sid)
+}
+
+// SaveCsrfToken 为逻辑会话写入 CSRF 证明（SetNX，已存在则返回原值）。
+// 供 csrf bootstrap 与登录/MFA 签发后调用；返回值即最终生效的证明。
+func (a *Authenticator) SaveCsrfToken(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+	token string,
+) (string, error) {
+	if a.userTokenCache == nil {
+		return "", authenticationV1.ErrorServiceUnavailable("token cache unavailable")
+	}
+	return a.userTokenCache.SetCsrfToken(ctx, clientType, userId, sid, token, a.GetRefreshTokenExpires(clientType))
+}
+
+// GetCsrfToken 读取逻辑会话的 CSRF 证明；无证明返回空串（不视为错误）。
+func (a *Authenticator) GetCsrfToken(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+) (string, error) {
+	if a.userTokenCache == nil {
+		return "", authenticationV1.ErrorServiceUnavailable("token cache unavailable")
+	}
+	return a.userTokenCache.GetCsrfToken(ctx, clientType, userId, sid)
+}
+
+// NewSessionId 生成新的稳定逻辑会话 ID（sid）。
+// 复用与 refresh token 同源的加密随机串，保证不可预测且全局唯一。
+func NewSessionId() (string, error) {
+	return jwtutil.NewRefreshToken()
 }
 
 // GetAccessTokens 获取用户的所有访问令牌
@@ -681,7 +777,13 @@ func (a *Authenticator) newRefreshToken(
 	}
 
 	expTime := time.Now().Add(a.GetRefreshTokenExpires(clientType))
-	authClaims, err := jwt.NewRefreshTokenAuthClaims(tokenPayload.GetUserId(), tokenPayload.GetJti(), &expTime)
+	authClaims, err := jwt.NewRefreshTokenAuthClaims(
+		tokenPayload.GetUserId(),
+		tokenPayload.GetJti(),
+		tokenPayload.GetApplication(),
+		tokenPayload.GetSid(),
+		&expTime,
+	)
 	if err != nil {
 		a.log.Error(context.Background(), "create refresh token claims failed: [%v]", err)
 		return "", authenticationV1.ErrorServiceUnavailable("create refresh token failed")

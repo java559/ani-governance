@@ -40,8 +40,8 @@ service AuthenticationService {
     };
   }
 
-  // 登出：吊销当前用户的全部会话（非仅当前 jti）
-  // jti 仅随请求上报用于审计留痕，不改变吊销范围。需携带有效访问令牌。
+  // 登出：退出当前应用当前逻辑会话（按 RT Cookie 定位），不再全域吊销。
+  // 无需有效 access token；请求体 application 选择应用，jti 仅随请求上报用于审计留痕。
   rpc RevokeJti (authentication.service.v1.RevokeJtiRequest) returns (authentication.service.v1.RevokeStatusResponse) {
     option (google.api.http) = {
       post: "/api/v1/auth/logout"
@@ -55,6 +55,20 @@ service AuthenticationService {
   rpc RefreshAccessToken (authentication.service.v1.RefreshAccessTokenRequest) returns (authentication.service.v1.TokenPairResponse) {
     option (google.api.http) = {
       post: "/api/v1/auth/refresh"
+      body: "*"
+    };
+
+    option(gnostic.openapi.v3.operation) = {
+      security: {}
+    };
+  }
+
+  // 获取 CSRF 证明（免鉴权，白名单内）
+  // 非消费性读取：以所选应用的 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+  // 不刷新、不轮换、不更换 Cookie。仅免 access token，仍由有效 RT + 来源校验保护。
+  rpc Csrf (authentication.service.v1.CsrfRequest) returns (authentication.service.v1.CsrfResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/auth/csrf"
       body: "*"
     };
 

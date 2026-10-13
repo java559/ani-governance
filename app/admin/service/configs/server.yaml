@@ -15,6 +15,9 @@ server:
         - "Authorization"
         - "X-Captcha-Id"
         - "X-Captcha-Value"
+        # CSRF 证明回传头（双提交 Cookie 模式）：前端在 refresh 请求上携带
+        # /api/v1/auth/csrf 签发的会话证明，浏览器预检须放行该自定义头
+        - "X-CSRF-Token"
       methods:
         - "GET"
         - "POST"

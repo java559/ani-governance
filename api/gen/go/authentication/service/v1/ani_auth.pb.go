@@ -26,6 +26,60 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 应用标识：区分 Console（租户前端）与 BOSS（平台前端）两套浏览器会话。
+//
+// 语义边界（重要）：application 是"选择哪一套应用会话（Cookie/令牌/Redis 记录）"的
+// 参数，不是可信身份。真正的可信性来自服务端签发的令牌声明与应用会话记录；
+// 请求体中的 application 只用于路由到对应 Cookie，服务端必须以令牌声明为最终裁决。
+type ApplicationType int32
+
+const (
+	ApplicationType_APPLICATION_TYPE_UNSPECIFIED ApplicationType = 0 // 未指定；请求中不得出现，出现即拒绝
+	ApplicationType_console                      ApplicationType = 1 // Console：租户前端应用
+	ApplicationType_boss                         ApplicationType = 2 // BOSS：平台前端应用
+)
+
+// Enum value maps for ApplicationType.
+var (
+	ApplicationType_name = map[int32]string{
+		0: "APPLICATION_TYPE_UNSPECIFIED",
+		1: "console",
+		2: "boss",
+	}
+	ApplicationType_value = map[string]int32{
+		"APPLICATION_TYPE_UNSPECIFIED": 0,
+		"console":                      1,
+		"boss":                         2,
+	}
+)
+
+func (x ApplicationType) Enum() *ApplicationType {
+	p := new(ApplicationType)
+	*p = x
+	return p
+}
+
+func (x ApplicationType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ApplicationType) Descriptor() protoreflect.EnumDescriptor {
+	return file_authentication_service_v1_ani_auth_proto_enumTypes[0].Descriptor()
+}
+
+func (ApplicationType) Type() protoreflect.EnumType {
+	return &file_authentication_service_v1_ani_auth_proto_enumTypes[0]
+}
+
+func (x ApplicationType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ApplicationType.Descriptor instead.
+func (ApplicationType) EnumDescriptor() ([]byte, []int) {
+	return file_authentication_service_v1_ani_auth_proto_rawDescGZIP(), []int{0}
+}
+
 // 租户账密登录 - 请求
 type PasswordLoginRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -150,9 +204,13 @@ func (x *PlatformPasswordLoginRequest) GetPassword() string {
 // 两个字段为可选的客户端/设备标识，用于在刷新后延续审计留痕（client_id 进审计日志）
 // 与会话元数据（device_id 进在线会话列表）。缺失时新令牌对相应字段为空，不影响功能。
 type RefreshAccessTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClientId      *string                `protobuf:"bytes,1,opt,name=client_id,proto3,oneof" json:"client_id,omitempty"` // 客户端标识
-	DeviceId      *string                `protobuf:"bytes,2,opt,name=device_id,proto3,oneof" json:"device_id,omitempty"` // 设备唯一标识
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	ClientId *string                `protobuf:"bytes,1,opt,name=client_id,proto3,oneof" json:"client_id,omitempty"` // 客户端标识
+	DeviceId *string                `protobuf:"bytes,2,opt,name=device_id,proto3,oneof" json:"device_id,omitempty"` // 设备唯一标识
+	// 应用会话选择参数（新增 field number，不改动既有 1/2 语义）。
+	// 值必须严格为 console / boss；缺省或 UNSPECIFIED 一律拒绝，不默认归任一应用。
+	// 仅用于选择对应应用的 RT Cookie，最终裁决以 RT 签名声明与服务端会话记录为准。
+	Application   *ApplicationType `protobuf:"varint,3,opt,name=application,proto3,enum=authentication.service.v1.ApplicationType,oneof" json:"application,omitempty"` // 应用会话选择参数
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -199,6 +257,13 @@ func (x *RefreshAccessTokenRequest) GetDeviceId() string {
 		return *x.DeviceId
 	}
 	return ""
+}
+
+func (x *RefreshAccessTokenRequest) GetApplication() ApplicationType {
+	if x != nil && x.Application != nil {
+		return *x.Application
+	}
+	return ApplicationType_APPLICATION_TYPE_UNSPECIFIED
 }
 
 // 令牌对 - 回应
@@ -295,8 +360,12 @@ func (x *TokenPairResponse) GetMfaOperationId() string {
 //
 // 命名说明：不叫 LogoutRequest，因 authentication.proto 已被内部登出报文占用该名。
 type RevokeJtiRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Jti           *string                `protobuf:"bytes,1,opt,name=jti,proto3,oneof" json:"jti,omitempty"` // JWT ID（仅审计用）
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Jti   *string                `protobuf:"bytes,1,opt,name=jti,proto3,oneof" json:"jti,omitempty"` // JWT ID（仅审计用）
+	// 应用会话选择参数（新增 field number，保留既有 1 语义）。
+	// 值必须严格为 console / boss；缺省或 UNSPECIFIED 一律拒绝。
+	// 仅用于选择对应应用的 RT Cookie，最终裁决以 RT 签名声明与服务端会话记录为准。
+	Application   *ApplicationType `protobuf:"varint,2,opt,name=application,proto3,enum=authentication.service.v1.ApplicationType,oneof" json:"application,omitempty"` // 应用会话选择参数
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -338,12 +407,23 @@ func (x *RevokeJtiRequest) GetJti() string {
 	return ""
 }
 
+func (x *RevokeJtiRequest) GetApplication() ApplicationType {
+	if x != nil && x.Application != nil {
+		return *x.Application
+	}
+	return ApplicationType_APPLICATION_TYPE_UNSPECIFIED
+}
+
 // 登出 - 回应
 type RevokeStatusResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // 吊销结果
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Status string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // 吊销结果
+	// 本次请求是否确实吊销了一个活动会话。
+	// false 表示幂等命中：无对应 RT cookie、令牌已失效或远端本就没有该逻辑会话——
+	// 与"服务端已确认退出"区分，避免把"本就没有会话"宣称成本次完成远端吊销。
+	SessionRevoked *bool `protobuf:"varint,2,opt,name=session_revoked,proto3,oneof" json:"session_revoked,omitempty"` // 是否确实吊销了活动会话
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *RevokeStatusResponse) Reset() {
@@ -383,6 +463,108 @@ func (x *RevokeStatusResponse) GetStatus() string {
 	return ""
 }
 
+func (x *RevokeStatusResponse) GetSessionRevoked() bool {
+	if x != nil && x.SessionRevoked != nil {
+		return *x.SessionRevoked
+	}
+	return false
+}
+
+// 获取 CSRF 证明 - 请求
+//
+// 用途：页面启动时以现有 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+// 供后续 refresh / logout 在 X-CSRF-Token 头中携带。本接口为**非消费性读取**：
+// 不刷新令牌、不轮换、不更换 Cookie、不消费 RT，多次调用对同一 sid 返回有效证明。
+type CsrfRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 应用会话选择参数，必填且严格为 console / boss；缺省或 UNSPECIFIED 拒绝。
+	Application   *ApplicationType `protobuf:"varint,1,opt,name=application,proto3,enum=authentication.service.v1.ApplicationType,oneof" json:"application,omitempty"` // 应用会话选择参数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CsrfRequest) Reset() {
+	*x = CsrfRequest{}
+	mi := &file_authentication_service_v1_ani_auth_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CsrfRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CsrfRequest) ProtoMessage() {}
+
+func (x *CsrfRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authentication_service_v1_ani_auth_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CsrfRequest.ProtoReflect.Descriptor instead.
+func (*CsrfRequest) Descriptor() ([]byte, []int) {
+	return file_authentication_service_v1_ani_auth_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CsrfRequest) GetApplication() ApplicationType {
+	if x != nil && x.Application != nil {
+		return *x.Application
+	}
+	return ApplicationType_APPLICATION_TYPE_UNSPECIFIED
+}
+
+// 获取 CSRF 证明 - 回应
+type CsrfResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CsrfToken     string                 `protobuf:"bytes,1,opt,name=csrf_token,proto3" json:"csrf_token,omitempty"` // CSRF 证明
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CsrfResponse) Reset() {
+	*x = CsrfResponse{}
+	mi := &file_authentication_service_v1_ani_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CsrfResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CsrfResponse) ProtoMessage() {}
+
+func (x *CsrfResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authentication_service_v1_ani_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CsrfResponse.ProtoReflect.Descriptor instead.
+func (*CsrfResponse) Descriptor() ([]byte, []int) {
+	return file_authentication_service_v1_ani_auth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CsrfResponse) GetCsrfToken() string {
+	if x != nil {
+		return x.CsrfToken
+	}
+	return ""
+}
+
 var File_authentication_service_v1_ani_auth_proto protoreflect.FileDescriptor
 
 const file_authentication_service_v1_ani_auth_proto_rawDesc = "" +
@@ -399,14 +581,16 @@ const file_authentication_service_v1_ani_auth_proto_rawDesc = "" +
 	"\busername\x18\x01 \x01(\tBP\xfaB\x06r\x04\x10\x01\x18@\xbaGD\x92\x02A平台账号用户名。可带 local: 前缀，服务端会剥离H\x00R\busername\x88\x01\x01\x12\x93\x01\n" +
 	"\bpassword\x18\x02 \x01(\tBr\xfaB\ar\x05\x10\x01\x18\x80\x02\xbaG_\x92\x02\\用户输入的原始密码，经 HTTPS 提交；不要进行 AES、Base64 或 bcrypt 编码ڶ\x1a\x02z\x00H\x01R\bpassword\x88\x01\x01B\v\n" +
 	"\t_usernameB\v\n" +
-	"\t_password\"\xf9\x01\n" +
+	"\t_password\"\x9a\x03\n" +
 	"\x19RefreshAccessTokenRequest\x12\\\n" +
 	"\tclient_id\x18\x01 \x01(\tB9\xbaG6\x92\x023客户端标识，用于刷新后延续审计留痕H\x00R\tclient_id\x88\x01\x01\x12b\n" +
-	"\tdevice_id\x18\x02 \x01(\tB?\xbaG<\x92\x029设备唯一标识，用于刷新后延续会话元数据H\x01R\tdevice_id\x88\x01\x01B\f\n" +
+	"\tdevice_id\x18\x02 \x01(\tB?\xbaG<\x92\x029设备唯一标识，用于刷新后延续会话元数据H\x01R\tdevice_id\x88\x01\x01\x12\x8e\x01\n" +
+	"\vapplication\x18\x03 \x01(\x0e2*.authentication.service.v1.ApplicationTypeB;\xbaG8\x92\x025应用会话选择参数，取值为 console 或 bossH\x02R\vapplication\x88\x01\x01B\f\n" +
 	"\n" +
 	"_client_idB\f\n" +
 	"\n" +
-	"_device_id\"\xa5\x06\n" +
+	"_device_idB\x0e\n" +
+	"\f_application\"\xa5\x06\n" +
 	"\x11TokenPairResponse\x12E\n" +
 	"\faccess_token\x18\x01 \x01(\tB!\xe0A\x02\xbaG\x1b\x92\x02\x18访问令牌（Bearer）R\faccess_token\x12G\n" +
 	"\n" +
@@ -420,12 +604,27 @@ const file_authentication_service_v1_ani_auth_proto_rawDesc = "" +
 	"\n" +
 	"_issued_atB\x0f\n" +
 	"\r_mfa_requiredB\x13\n" +
-	"\x11_mfa_operation_id\"\xcc\x01\n" +
-	"\x10RevokeJtiRequest\x12\xaf\x01\n" +
-	"\x03jti\x18\x01 \x01(\tB\x97\x01\xbaG\x93\x01\x92\x02\x8f\x01当前访问令牌的 JWT ID，用于审计留痕。注意：本实现的登出范围是吊销该用户全部会话，jti 不改变吊销范围H\x00R\x03jti\x88\x01\x01B\x06\n" +
-	"\x04_jti\"e\n" +
-	"\x14RevokeStatusResponse\x12M\n" +
-	"\x06status\x18\x01 \x01(\tB5\xe0A\x02\xbaG/\xc2\x01\t\x12\arevoked\x92\x02 吊销结果，固定为 revokedR\x06statusB\xf8\x01\n" +
+	"\x11_mfa_operation_id\"\xe7\x02\n" +
+	"\x10RevokeJtiRequest\x12\xa9\x01\n" +
+	"\x03jti\x18\x01 \x01(\tB\x91\x01\xbaG\x8d\x01\x92\x02\x89\x01当前访问令牌的 JWT ID，仅用于审计留痕。本实现退出范围为当前应用当前逻辑会话，jti 不改变退出范围H\x00R\x03jti\x88\x01\x01\x12\x8e\x01\n" +
+	"\vapplication\x18\x02 \x01(\x0e2*.authentication.service.v1.ApplicationTypeB;\xbaG8\x92\x025应用会话选择参数，取值为 console 或 bossH\x01R\vapplication\x88\x01\x01B\x06\n" +
+	"\x04_jtiB\x0e\n" +
+	"\f_application\"\xdc\x02\n" +
+	"\x14RevokeStatusResponse\x12\x9a\x01\n" +
+	"\x06status\x18\x01 \x01(\tB\x81\x01\xe0A\x02\xbaG{\xc2\x01\t\x12\arevoked\x92\x02l吊销结果：revoked=本次确认吊销了远端会话；幂等语义与该值解耦，见 session_revokedR\x06status\x12\x92\x01\n" +
+	"\x0fsession_revoked\x18\x02 \x01(\bBc\xbaG`\x92\x02]本次是否确实吊销了远端活动会话；false 为幂等命中（无会话可吊销）H\x00R\x0fsession_revoked\x88\x01\x01B\x12\n" +
+	"\x10_session_revoked\"\xae\x01\n" +
+	"\vCsrfRequest\x12\x8e\x01\n" +
+	"\vapplication\x18\x01 \x01(\x0e2*.authentication.service.v1.ApplicationTypeB;\xbaG8\x92\x025应用会话选择参数，取值为 console 或 bossH\x00R\vapplication\x88\x01\x01B\x0e\n" +
+	"\f_application\"\x9c\x01\n" +
+	"\fCsrfResponse\x12\x8b\x01\n" +
+	"\n" +
+	"csrf_token\x18\x01 \x01(\tBk\xe0A\x02\xbaGe\x92\x02b绑定当前逻辑会话的 CSRF 证明，写请求时放入 X-CSRF-Token 头；不含身份授权R\n" +
+	"csrf_token*J\n" +
+	"\x0fApplicationType\x12 \n" +
+	"\x1cAPPLICATION_TYPE_UNSPECIFIED\x10\x00\x12\v\n" +
+	"\aconsole\x10\x01\x12\b\n" +
+	"\x04boss\x10\x02B\xf8\x01\n" +
 	"\x1dcom.authentication.service.v1B\fAniAuthProtoP\x01ZCgo-wind-admin/api/gen/go/authentication/service/v1;authenticationpb\xa2\x02\x03ASX\xaa\x02\x19Authentication.Service.V1\xca\x02\x19Authentication\\Service\\V1\xe2\x02%Authentication\\Service\\V1\\GPBMetadata\xea\x02\x1bAuthentication::Service::V1b\x06proto3"
 
 var (
@@ -440,23 +639,30 @@ func file_authentication_service_v1_ani_auth_proto_rawDescGZIP() []byte {
 	return file_authentication_service_v1_ani_auth_proto_rawDescData
 }
 
-var file_authentication_service_v1_ani_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_authentication_service_v1_ani_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_authentication_service_v1_ani_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_authentication_service_v1_ani_auth_proto_goTypes = []any{
-	(*PasswordLoginRequest)(nil),         // 0: authentication.service.v1.PasswordLoginRequest
-	(*PlatformPasswordLoginRequest)(nil), // 1: authentication.service.v1.PlatformPasswordLoginRequest
-	(*RefreshAccessTokenRequest)(nil),    // 2: authentication.service.v1.RefreshAccessTokenRequest
-	(*TokenPairResponse)(nil),            // 3: authentication.service.v1.TokenPairResponse
-	(*RevokeJtiRequest)(nil),             // 4: authentication.service.v1.RevokeJtiRequest
-	(*RevokeStatusResponse)(nil),         // 5: authentication.service.v1.RevokeStatusResponse
-	(*timestamppb.Timestamp)(nil),        // 6: google.protobuf.Timestamp
+	(ApplicationType)(0),                 // 0: authentication.service.v1.ApplicationType
+	(*PasswordLoginRequest)(nil),         // 1: authentication.service.v1.PasswordLoginRequest
+	(*PlatformPasswordLoginRequest)(nil), // 2: authentication.service.v1.PlatformPasswordLoginRequest
+	(*RefreshAccessTokenRequest)(nil),    // 3: authentication.service.v1.RefreshAccessTokenRequest
+	(*TokenPairResponse)(nil),            // 4: authentication.service.v1.TokenPairResponse
+	(*RevokeJtiRequest)(nil),             // 5: authentication.service.v1.RevokeJtiRequest
+	(*RevokeStatusResponse)(nil),         // 6: authentication.service.v1.RevokeStatusResponse
+	(*CsrfRequest)(nil),                  // 7: authentication.service.v1.CsrfRequest
+	(*CsrfResponse)(nil),                 // 8: authentication.service.v1.CsrfResponse
+	(*timestamppb.Timestamp)(nil),        // 9: google.protobuf.Timestamp
 }
 var file_authentication_service_v1_ani_auth_proto_depIdxs = []int32{
-	6, // 0: authentication.service.v1.TokenPairResponse.issued_at:type_name -> google.protobuf.Timestamp
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: authentication.service.v1.RefreshAccessTokenRequest.application:type_name -> authentication.service.v1.ApplicationType
+	9, // 1: authentication.service.v1.TokenPairResponse.issued_at:type_name -> google.protobuf.Timestamp
+	0, // 2: authentication.service.v1.RevokeJtiRequest.application:type_name -> authentication.service.v1.ApplicationType
+	0, // 3: authentication.service.v1.CsrfRequest.application:type_name -> authentication.service.v1.ApplicationType
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_authentication_service_v1_ani_auth_proto_init() }
@@ -469,18 +675,21 @@ func file_authentication_service_v1_ani_auth_proto_init() {
 	file_authentication_service_v1_ani_auth_proto_msgTypes[2].OneofWrappers = []any{}
 	file_authentication_service_v1_ani_auth_proto_msgTypes[3].OneofWrappers = []any{}
 	file_authentication_service_v1_ani_auth_proto_msgTypes[4].OneofWrappers = []any{}
+	file_authentication_service_v1_ani_auth_proto_msgTypes[5].OneofWrappers = []any{}
+	file_authentication_service_v1_ani_auth_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authentication_service_v1_ani_auth_proto_rawDesc), len(file_authentication_service_v1_ani_auth_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   6,
+			NumEnums:      1,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_authentication_service_v1_ani_auth_proto_goTypes,
 		DependencyIndexes: file_authentication_service_v1_ani_auth_proto_depIdxs,
+		EnumInfos:         file_authentication_service_v1_ani_auth_proto_enumTypes,
 		MessageInfos:      file_authentication_service_v1_ani_auth_proto_msgTypes,
 	}.Build()
 	File_authentication_service_v1_ani_auth_proto = out.File

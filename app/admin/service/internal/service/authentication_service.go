@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"crypto/subtle"
+	"mime"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,35 +36,76 @@ import (
 )
 
 // refresh token cookie 相关常量。
-// refresh token 以 HttpOnly Cookie 传输，Path 收窄到刷新端点，SameSite=Lax 阻断跨站 POST。
-// refresh_exp 为非 HttpOnly 的过期时间戳 cookie，供前端定时器读取以调度主动刷新。
+//
+// 关键约束（拓扑：BOSS 与 Console 同 host、不同 port）：Cookie 作用域是 domain(host)+path，
+// **不含端口**；两端共享同一 cookie 命名空间。故必须按应用使用不同 cookie 名，
+// 否则后登录会覆盖前登录的 refresh cookie（跨应用会话串台）。cookie 名是本方案
+// 唯一的隔离手段（不可依赖 domain/port 区分）。
+//
+// Path 统一收窄到 /api/v1/auth，覆盖 csrf/refresh/logout 三个端点，
+// 保证退出与刷新请求浏览器都会携带对应应用的 RT（Path 只影响携带，不构成授权边界）。
+// 不再下发可读的 refresh_exp（前端改用响应 expires_in + 内存调度）。
 const (
-	refreshTokenCookieName = "refresh_token"
-	refreshExpCookieName   = "refresh_exp"
-	refreshCookiePath      = "/api/v1/auth/refresh"
+	// consoleRefreshTokenCookieName Console（租户前端）应用的 refresh token cookie 名。
+	consoleRefreshTokenCookieName = "console_refresh_token"
+	// bossRefreshTokenCookieName BOSS（平台前端）应用的 refresh token cookie 名。
+	bossRefreshTokenCookieName = "boss_refresh_token"
+
+	// refreshCookiePath 两个应用 RT cookie 统一的 Path（覆盖 csrf/refresh/logout）。
+	refreshCookiePath = "/api/v1/auth"
+
+	// 旧版 cookie（历史遗留）：按原 Name/Path 显式删除，清理浏览器残留。
+	// 旧 refresh_token 的 Path 至少含 /api/v1/auth/refresh；旧 refresh_exp 的 Path 为 /。
+	legacyRefreshTokenCookieName = "refresh_token"
+	legacyRefreshCookiePath      = "/api/v1/auth/refresh"
+	legacyRefreshExpCookieName   = "refresh_exp"
+	legacyRefreshExpCookiePath   = "/"
 )
 
-// resolveCookieSecure 按请求的实际传输层判断是否加 Secure 属性：
-// TLS 直连或经可信反代（X-Forwarded-Proto: https）→ true；明文 HTTP → false。
-// 依据：带 Secure 的 cookie 在明文 HTTP 下会被浏览器拒收，导致 refresh token 无法落地。
-// 伪造 X-Forwarded-Proto 只会让 cookie 多加 Secure（存不下而非泄露），失败方向安全。
-func resolveCookieSecure(htr *khttp.Transport) bool {
-	req := htr.Request()
-	if req == nil {
-		return true
+// devInsecureCookieEnv 是显式开发开关：仅当该环境变量为 true 时，refresh cookie 才省略
+// Secure（供本地明文 HTTP 开发落地）。正式配置不设置该变量 → 恒 Secure。
+//
+// 依据：带 Secure 的 cookie 在明文 HTTP 下会被浏览器拒收；但正式环境不得依据
+// 入站 X-Forwarded-Proto 动态降级（伪造转发头会让正式 cookie 降级为可被明文嗅探）。
+// 故安全属性只由显式配置决定，不由请求触发。
+const devInsecureCookieEnv = "GWA_AUTH_REFRESH_COOKIE_INSECURE"
+
+// csrfHeaderName 前端回传 CSRF 证明的请求头名（双提交 Cookie 模式的"提交"侧）。
+const csrfHeaderName = "X-CSRF-Token"
+
+// refreshCookieName 返回应用对应的 RT cookie 名；非法应用返回 false（调用方须拒绝）。
+func refreshCookieName(application authenticationV1.ApplicationType) (string, bool) {
+	switch application {
+	case authenticationV1.ApplicationType_console:
+		return consoleRefreshTokenCookieName, true
+	case authenticationV1.ApplicationType_boss:
+		return bossRefreshTokenCookieName, true
+	default:
+		return "", false
 	}
-	if req.TLS != nil {
-		return true
-	}
-	return strings.EqualFold(req.Header.Get("X-Forwarded-Proto"), "https")
 }
 
-// setRefreshCookies 将 refresh token 及其过期时间戳写入 Set-Cookie 响应头。
-// refresh_token cookie 为 HttpOnly（JS 不可读）+ Path 收窄到刷新端点；
-// refresh_exp cookie 非 HttpOnly（前端定时器可读）+ Path=/（任意页面 JS 可读）。
-// 两者均 SameSite=Lax（按站点判断，localhost 不同端口属同站，dev 直连后端可落地）；
-// Secure 按 TLS 自适应（明文 HTTP 下省略，否则浏览器拒收）。
-func setRefreshCookies(ctx context.Context, refreshToken string, refreshExpiresInSeconds int64) {
+// resolveCookieSecure 决定 refresh cookie 是否带 Secure 属性。
+// 正式环境恒 true；仅显式开发开关 GWA_AUTH_REFRESH_COOKIE_INSECURE=true 时返回 false。
+func resolveCookieSecure() bool {
+	if v := strings.TrimSpace(os.Getenv(devInsecureCookieEnv)); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil && b {
+			return false
+		}
+	}
+	return true
+}
+
+// setRefreshCookies 将指定应用的 refresh token 写入 Set-Cookie 响应头（host-only）。
+// 属性：HttpOnly、Path=/api/v1/auth、SameSite=Lax、Secure 由配置决定；
+// 不设 Domain → host-only（避免写入可注册域让所有子域可见）。
+// 同时按原 Name/Path 删除旧版 cookie（refresh_token / refresh_exp）清理历史残留。
+// 只写本应用 cookie，不动另一应用 → 两端会话互不覆盖。
+func setRefreshCookies(ctx context.Context, application authenticationV1.ApplicationType, refreshToken string, refreshExpiresInSeconds int64) {
+	name, ok := refreshCookieName(application)
+	if !ok {
+		return
+	}
 	tr, ok := ktransport.FromServerContext(ctx)
 	if !ok {
 		return
@@ -71,11 +115,10 @@ func setRefreshCookies(ctx context.Context, refreshToken string, refreshExpiresI
 		return
 	}
 	header := htr.ReplyHeader()
-	cookieSecure := resolveCookieSecure(htr)
+	cookieSecure := resolveCookieSecure()
 
-	// HttpOnly refresh token cookie：Path 收窄到刷新端点（纵深防御，仅刷新请求携带）
 	rtCookie := &http.Cookie{
-		Name:     refreshTokenCookieName,
+		Name:     name,
 		Value:    refreshToken,
 		Path:     refreshCookiePath,
 		MaxAge:   int(refreshExpiresInSeconds),
@@ -85,24 +128,32 @@ func setRefreshCookies(ctx context.Context, refreshToken string, refreshExpiresI
 	}
 	header.Add("Set-Cookie", rtCookie.String())
 
-	// 非 HttpOnly 过期时间戳 cookie（只含 Unix 秒，无敏感信息）。
-	// Path 必须为 /：前端 JS（bootstrap 静默恢复/刷新定时器）在任意页面路径读取
-	// document.cookie 判断续期窗口——收窄到刷新端点会导致普通页面读不到、刷新即丢会话。
-	expCookie := &http.Cookie{
-		Name:     refreshExpCookieName,
-		Value:    fmt.Sprintf("%d", time.Now().Unix()+refreshExpiresInSeconds),
-		Path:     "/",
-		MaxAge:   int(refreshExpiresInSeconds),
-		Secure:   cookieSecure,
-		HttpOnly: false,
-		SameSite: http.SameSiteLaxMode,
+	// 清理旧版 cookie：按各自原 Path 删除，否则浏览器因属性不匹配拒绝删除。
+	for _, legacy := range []struct{ name, path string }{
+		{legacyRefreshTokenCookieName, legacyRefreshCookiePath},
+		{legacyRefreshExpCookieName, legacyRefreshExpCookiePath},
+	} {
+		c := &http.Cookie{
+			Name:     legacy.name,
+			Value:    "",
+			Path:     legacy.path,
+			MaxAge:   -1,
+			Secure:   cookieSecure,
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+		}
+		header.Add("Set-Cookie", c.String())
 	}
-	header.Add("Set-Cookie", expCookie.String())
 }
 
-// clearRefreshCookies 向响应头写入 Max-Age=0 的清除 cookie，使浏览器立即删除 refresh token 相关 cookie。
-// Secure 按 TLS 自适应，与 setRefreshCookies 同逻辑，保证属性匹配可删除。
-func clearRefreshCookies(ctx context.Context) {
+// clearRefreshCookies 清除指定应用的 RT cookie（Max-Age=-1），使浏览器立即删除。
+// 只清本应用 cookie，不清另一应用（另一端会话保持有效）。
+// Secure 取值与 setRefreshCookies 一致，保证属性匹配可删除。
+func clearRefreshCookies(ctx context.Context, application authenticationV1.ApplicationType) {
+	name, ok := refreshCookieName(application)
+	if !ok {
+		return
+	}
 	tr, ok := ktransport.FromServerContext(ctx)
 	if !ok {
 		return
@@ -112,25 +163,31 @@ func clearRefreshCookies(ctx context.Context) {
 		return
 	}
 	header := htr.ReplyHeader()
-	cookieSecure := resolveCookieSecure(htr)
+	cookieSecure := resolveCookieSecure()
 
-	// 两个 cookie 的 Path 不同（refresh_token 收窄到刷新端点、refresh_exp 为 /），
-	// 清除时须各自匹配原 Path，否则浏览器因属性不匹配拒绝删除。
-	for name, path := range map[string]string{
-		refreshTokenCookieName: refreshCookiePath,
-		refreshExpCookieName:   "/",
-	} {
-		cookie := &http.Cookie{
-			Name:     name,
-			Value:    "",
-			Path:     path,
-			MaxAge:   -1,
-			Secure:   cookieSecure,
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-		}
-		header.Add("Set-Cookie", cookie.String())
+	cookie := &http.Cookie{
+		Name:     name,
+		Value:    "",
+		Path:     refreshCookiePath,
+		MaxAge:   -1,
+		Secure:   cookieSecure,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
 	}
+	header.Add("Set-Cookie", cookie.String())
+}
+
+// setNoStoreHeader 给认证相关响应设置 Cache-Control: no-store，避免令牌/证明被缓存。
+func setNoStoreHeader(ctx context.Context) {
+	tr, ok := ktransport.FromServerContext(ctx)
+	if !ok {
+		return
+	}
+	htr, hok := tr.(*khttp.Transport)
+	if !hok {
+		return
+	}
+	htr.ReplyHeader().Set("Cache-Control", "no-store")
 }
 
 // normalizeLoginVerifyError 将登录凭证校验的多种细分错误统一对外成 INVALID_CREDENTIALS，
@@ -213,6 +270,10 @@ type AuthenticationService struct {
 	authenticator *data.Authenticator
 	clientType    authenticationV1.ClientType
 
+	// originValidator 认证写端点的来源校验器（按 application 绑定白名单，
+	// 详见 auth_origin.go）。MFA 服务持有独立实例，同一套规则。
+	originValidator *authOriginValidator
+
 	captchaClient *captcha.Captcha
 	rateLimiter   *data.LoginRateLimiter
 
@@ -259,6 +320,7 @@ func NewAuthenticationService(
 		permissionRepo:          permissionRepo,
 		authenticator:           authenticator,
 		clientType:              clientType,
+		originValidator:         newAuthOriginValidator(ctx),
 		captchaClient:           captchaClient,
 		rateLimiter:             rateLimiter,
 		loginPolicyRepo:         loginPolicyRepo,
@@ -308,7 +370,8 @@ func (s *AuthenticationService) resetContextForLogin(ctx context.Context) contex
 func (s *AuthenticationService) Login(ctx context.Context, req *authenticationV1.LoginRequest) (*authenticationV1.LoginResponse, error) {
 	switch req.GetGrantType() {
 	case authenticationV1.GrantType_password:
-		return s.doGrantTypePassword(ctx, req)
+		// 内部引擎入口默认 console 应用（对外入口各自显式指定，见下方适配层）。
+		return s.doGrantTypePassword(ctx, req, authenticationV1.ApplicationType_console)
 
 	case authenticationV1.GrantType_refresh_token:
 		// refresh token 刷新已迁移到 /api/v1/auth/refresh 端点（HttpOnly Cookie 传输），
@@ -337,6 +400,16 @@ func (s *AuthenticationService) PasswordLogin(ctx context.Context, req *authenti
 		return nil, authenticationV1.ErrorBadRequest("invalid parameter")
 	}
 
+	// 登录入口无既有 CSRF 证明：no-store + JSON Content-Type + 来源校验是
+	// 计划合同（§6）要求的闸门；本端点 application 固定 console，用其专属白名单。
+	setNoStoreHeader(ctx)
+	if err := requireJSONContentType(ctx); err != nil {
+		return nil, err
+	}
+	if err := s.validateAuthOrigin(ctx, "password_login", authenticationV1.ApplicationType_console); err != nil {
+		return nil, err
+	}
+
 	// 显式闸门：tenant_name 为空必须拒绝。
 	// 引擎对"tenant_code 留空"的既有语义是解析为平台租户（tenantID=0），
 	// 若不在入口拦住，租户登录漏传租户名会静默降级为平台登录——
@@ -357,7 +430,7 @@ func (s *AuthenticationService) PasswordLogin(ctx context.Context, req *authenti
 		Username: stripLocalIdentityPrefix(req.GetUsername()),
 	}
 
-	resp, err := s.doGrantTypePassword(ctx, inner)
+	resp, err := s.doGrantTypePassword(ctx, inner, authenticationV1.ApplicationType_console)
 	if err != nil {
 		return nil, err
 	}
@@ -374,9 +447,22 @@ func (s *AuthenticationService) PasswordLogin(ctx context.Context, req *authenti
 // 引擎语义：tenant_code 留空即 tenantID=0（平台作用域），这是 doGrantTypePassword 既有行为，
 // 故此处零新增逻辑。平台身份的准入校验在授权阶段完成
 // （见 authorizeAndEnrichUserTokenPayload 的平台角色闸门）。
+//
+// 本端点固定签发 boss 应用会话（与租户登录的 console 隔离），
+// application 由服务端入口决定，客户端无法通过请求体改写（信任锚点）。
 func (s *AuthenticationService) PlatformPasswordLogin(ctx context.Context, req *authenticationV1.PlatformPasswordLoginRequest) (*authenticationV1.TokenPairResponse, error) {
 	if req == nil {
 		return nil, authenticationV1.ErrorBadRequest("invalid parameter")
+	}
+
+	// 登录入口无既有 CSRF 证明：no-store + JSON Content-Type + 来源校验是
+	// 计划合同（§6）要求的闸门；本端点 application 固定 boss，用其专属白名单。
+	setNoStoreHeader(ctx)
+	if err := requireJSONContentType(ctx); err != nil {
+		return nil, err
+	}
+	if err := s.validateAuthOrigin(ctx, "platform_password_login", authenticationV1.ApplicationType_boss); err != nil {
+		return nil, err
 	}
 
 	inner := &authenticationV1.LoginRequest{
@@ -389,7 +475,7 @@ func (s *AuthenticationService) PlatformPasswordLogin(ctx context.Context, req *
 		Username: stripLocalIdentityPrefix(req.GetUsername()),
 	}
 
-	resp, err := s.doGrantTypePassword(ctx, inner)
+	resp, err := s.doGrantTypePassword(ctx, inner, authenticationV1.ApplicationType_boss)
 	if err != nil {
 		return nil, err
 	}
@@ -601,8 +687,11 @@ func (s *AuthenticationService) resolveUserAuthority(ctx context.Context, user *
 	return nil
 }
 
-// doGrantTypePassword 处理授权类型 - 密码
-func (s *AuthenticationService) doGrantTypePassword(ctx context.Context, req *authenticationV1.LoginRequest) (*authenticationV1.LoginResponse, error) {
+// doGrantTypePassword 处理授权类型 - 密码。
+// application 由服务端入口决定（PasswordLogin→console、PlatformPasswordLogin→boss、
+// 内部引擎入口默认 console），随令牌载荷写入 JWT claim 与会话绑定键；
+// 客户端无法通过请求体改写该值（信任锚点）。
+func (s *AuthenticationService) doGrantTypePassword(ctx context.Context, req *authenticationV1.LoginRequest, application authenticationV1.ApplicationType) (*authenticationV1.LoginResponse, error) {
 	ctx = s.resetContextForLogin(ctx)
 
 	// 取客户端 IP（供限流维度使用），失败不阻断登录
@@ -703,12 +792,21 @@ func (s *AuthenticationService) doGrantTypePassword(ctx context.Context, req *au
 		}
 	}
 
+	// sid 是稳定逻辑会话 ID：MFA 挑战、令牌对、Cookie 与 CSRF 证明均以它为锚点，
+	// 刷新轮换只换 jti 不换 sid，登出按 sid 精确吊销（不波及另一应用/其他设备）。
+	sid, serr := data.NewSessionId()
+	if serr != nil {
+		s.log.Errorf(ctx, "create session id failed: %s", serr.Error())
+		return nil, authenticationV1.ErrorServiceUnavailable("create session id failed")
+	}
 	tokenPayload := &authenticationV1.UserTokenPayload{
-		UserId:   user.GetId(),
-		TenantId: user.TenantId,
-		Username: user.Username,
-		ClientId: req.ClientId,
-		DeviceId: req.DeviceId,
+		UserId:      user.GetId(),
+		TenantId:    user.TenantId,
+		Username:    user.Username,
+		ClientId:    req.ClientId,
+		DeviceId:    req.DeviceId,
+		Application: application.Enum(),
+		Sid:         trans.Ptr(sid),
 	}
 
 	// 解析用户权限信息
@@ -760,9 +858,10 @@ func (s *AuthenticationService) doGrantTypePassword(ctx context.Context, req *au
 		s.rateLimiter.Reset(ctx, clientIP, username)
 	}
 
-	// refresh token 通过 HttpOnly Cookie 下发，不再放入响应体
+	// refresh token 通过 HttpOnly Cookie 下发，不再放入响应体；
+	// 只写本应用的 cookie，不影响另一应用的会话。
 	refreshExpiresIn := int64(s.authenticator.GetRefreshTokenExpires(req.GetClientType()).Seconds())
-	setRefreshCookies(ctx, refreshToken, refreshExpiresIn)
+	setRefreshCookies(ctx, application, refreshToken, refreshExpiresIn)
 
 	return &authenticationV1.LoginResponse{
 		TokenType:   authenticationV1.TokenType_bearer,
@@ -857,14 +956,37 @@ func dedupeStrings(in []string) []string {
 	return out
 }
 
-// doGrantTypeRefreshToken 处理授权类型 - 刷新令牌
-func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req *authenticationV1.LoginRequest, refreshToken string) (*authenticationV1.LoginResponse, error) {
-	// refresh token 为自描述 JWT，VerifyRefreshToken 验签并原子吊销旧令牌对，返回 uid/jti。
-	// 不再依赖 access token 提供的身份信息。旧 jti 用于继承会话元数据的登录时间。
-	userId, oldJti, err := s.authenticator.VerifyRefreshToken(ctx, req.GetClientType(), refreshToken)
+// doGrantTypeRefreshToken 处理授权类型 - 刷新令牌。
+// requestApplication 是本次刷新声明的应用（由请求参数决定读取哪个 cookie），
+// 须与 RT 签名 claim 中的 application 一致——最终裁决以签名为准，防跨应用混用。
+// 流程为"先准备后提交"：验签→CSRF 校验→查用户/权限→PrepareUserToken 签发新令牌对
+// （不落库，任一准备步骤失败旧会话仍有效，用户可重试）→CommitRotateSession 原子轮换
+// （校验 sid 指针，防登出后复活与并发双花）。
+func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req *authenticationV1.LoginRequest, refreshToken string, requestApplication authenticationV1.ApplicationType) (*authenticationV1.LoginResponse, error) {
+	clientType := req.GetClientType()
+
+	// refresh token 为自描述 JWT，VerifyRefreshToken 验签并解析 uid/jti/application/sid，
+	// 不再依赖 access token 提供的身份信息，也不再在验证阶段消费旧会话。
+	userId, oldJti, claimApplication, sid, err := s.authenticator.VerifyRefreshToken(ctx, clientType, refreshToken)
 	if err != nil {
 		s.log.Errorf(ctx, "verify refresh token failed: [%s]", err)
 		return nil, authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
+	}
+
+	// 应用裁决以签名 claim 为最终依据：请求声明的应用（决定读哪个 cookie）
+	// 必须与 RT 内签名的应用一致，否则视为跨应用混用/伪造，拒绝并统一文案
+	// （不区分两种失败原因，避免为探测提供信号）。
+	if claimApplication != requestApplication {
+		s.log.Warnf(ctx, "refresh token application mismatch: claim [%v] vs request [%v] for user [%d]",
+			claimApplication, requestApplication, userId)
+		return nil, authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
+	}
+
+	// CSRF 证明校验（双提交 Cookie 模式）：证明由 /api/v1/auth/csrf 按会话签发、
+	// 前端内存持有并经 X-CSRF-Token 回传；HttpOnly RT cookie 浏览器自动携带，
+	// 跨站攻击者读不到证明，即使 SameSite 策略放行也无法完成刷新。
+	if err = s.checkCsrfToken(ctx, clientType, userId, sid); err != nil {
+		return nil, err
 	}
 
 	// 本端点在鉴权白名单内（refresh token 独立鉴权），ctx 无 auth 中间件注入的
@@ -883,12 +1005,16 @@ func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req
 		return nil, err
 	}
 
+	// application/sid 继承自已验签 RT 的 claim（不来自请求），保证轮换后的
+	// 新令牌对仍锚定同一应用与同一逻辑会话。
 	tokenPayload := &authenticationV1.UserTokenPayload{
-		UserId:   user.GetId(),
-		TenantId: user.TenantId,
-		Username: user.Username,
-		ClientId: req.ClientId,
-		DeviceId: req.DeviceId,
+		UserId:      user.GetId(),
+		TenantId:    user.TenantId,
+		Username:    user.Username,
+		ClientId:    req.ClientId,
+		DeviceId:    req.DeviceId,
+		Application: claimApplication.Enum(),
+		Sid:         trans.Ptr(sid),
 	}
 
 	// 解析用户权限信息
@@ -898,15 +1024,15 @@ func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req
 		return nil, err
 	}
 
-	// 生成令牌
-	accessToken, newRefreshToken, err := s.authenticator.CreateUserToken(ctx, req.GetClientType(), tokenPayload)
+	// 先准备：签发新令牌对但不落库，旧会话仍有效，任一失败用户可重试。
+	accessToken, newRefreshToken, err := s.authenticator.PrepareUserToken(ctx, clientType, tokenPayload)
 	if err != nil {
 		return nil, err
 	}
 
-	// 记录新令牌对的会话元数据：刷新轮换是同一客户端续期而非重新登录，
-	// 登录时间继承旧会话（旧元数据已随旧令牌对在 Lua 脚本中原子删除）。
-	oldMeta, gerr := s.authenticator.GetSessionMeta(ctx, req.GetClientType(), userId, oldJti)
+	// 刷新轮换是同一客户端续期而非重新登录，登录时间继承旧会话
+	// （旧元数据在提交阶段的 Lua 脚本中随旧令牌对原子删除）。
+	oldMeta, gerr := s.authenticator.GetSessionMeta(ctx, clientType, userId, oldJti)
 	if gerr != nil {
 		s.log.Errorf(ctx, "get old session meta failed for user [%d]: %v", userId, gerr)
 	}
@@ -914,16 +1040,30 @@ func (s *AuthenticationService) doGrantTypeRefreshToken(ctx context.Context, req
 	if oldMeta != nil {
 		loginAt = oldMeta.LoginAt
 	}
-	recordSessionMetaAt(ctx, s.log, s.authenticator, req.GetClientType(), tokenPayload, loginAt)
+
+	// 提交：原子轮换。false = sid 已被登出或并发轮换抢走，拒绝本次刷新，
+	// 已准备的新令牌对随之作废（未落库，无泄漏面）。
+	committed, cerr := s.authenticator.CommitRotateSession(
+		ctx, clientType, userId, sid, oldJti, tokenPayload.GetJti(),
+		accessToken, newRefreshToken,
+		buildSessionMeta(ctx, tokenPayload, loginAt),
+	)
+	if cerr != nil {
+		return nil, cerr
+	}
+	if !committed {
+		s.log.Warnf(ctx, "rotate session rejected for user [%d] sid [%s]: revoked or concurrently rotated", userId, sid)
+		return nil, authenticationV1.ErrorIncorrectRefreshToken("session revoked or concurrently refreshed")
+	}
 
 	// refresh token 通过 HttpOnly Cookie 下发，不再放入响应体
-	refreshExpiresIn := int64(s.authenticator.GetRefreshTokenExpires(req.GetClientType()).Seconds())
-	setRefreshCookies(ctx, newRefreshToken, refreshExpiresIn)
+	refreshExpiresIn := int64(s.authenticator.GetRefreshTokenExpires(clientType).Seconds())
+	setRefreshCookies(ctx, claimApplication, newRefreshToken, refreshExpiresIn)
 
 	return &authenticationV1.LoginResponse{
 		TokenType:   authenticationV1.TokenType_bearer,
 		AccessToken: accessToken,
-		ExpiresIn:   int64(s.authenticator.GetAccessTokenExpires(req.GetClientType()).Seconds()),
+		ExpiresIn:   int64(s.authenticator.GetAccessTokenExpires(clientType).Seconds()),
 	}, nil
 }
 
@@ -934,34 +1074,80 @@ func (s *AuthenticationService) doGrantTypeClientCredentials(_ context.Context, 
 
 // RevokeJti 登出（POST /api/v1/auth/logout）。
 //
-// 吊销范围是该用户的全部会话，而非请求上报的单个 jti：
-// 全域吊销比单令牌吊销更彻底（浏览器登出后其他设备/标签页的令牌一并失效），
-// 且与既有 authenticator.RevokeUserToken 的语义一致，故不改为按 jti 吊销。
-// jti 仅用于审计留痕——调用方从当前 AccessToken 的 claims 读取后上报。
+// 吊销范围收敛为"本应用当前逻辑会话"（按 RT Cookie 中 sid 精确定位）：
+// Console 登出不再全域吊销该用户全部令牌（旧行为会连带 BOSS 与其他设备下线），
+// 同应用其他设备、另一应用的会话均不受波及。
+//
+// 本端点加入鉴权白名单，不再依赖 access token（旧实现经 auth.FromContext 取
+// 操作人身份，令"AT 过期后无法登出"成为必然）；身份与会话定位全部来自
+// HttpOnly Cookie 中经验签的 refresh token，其 application/sid claim 由服务端
+// 签名，不可伪造。jti 仅用于审计留痕。
+//
+// 幂等语义：无 Cookie 或验签失败（已过期/已被吊销）照常清 Cookie 并返回 revoked，
+// 登出是尽力而为的操作，不因会话已失效而报错卡死前端登出态。
+// "服务端已确认吊销"与"幂等命中（本就没有活动会话）"经 session_revoked 区分，
+// 后者不宣称本次完成远端吊销（计划合同 §4/§5）。
 func (s *AuthenticationService) RevokeJti(ctx context.Context, req *authenticationV1.RevokeJtiRequest) (*authenticationV1.RevokeStatusResponse, error) {
-	// 获取操作人信息
-	operator, err := auth.FromContext(ctx)
-	if err != nil {
+	// no-store 覆盖成功与错误响应（kratos 错误编码沿用同一响应头）；
+	// 幂等端点也不允许被缓存。
+	setNoStoreHeader(ctx)
+
+	application := req.GetApplication()
+	name, ok := refreshCookieName(application)
+	if !ok {
+		return nil, authenticationV1.ErrorBadRequest("application is required (console or boss)")
+	}
+
+	if err := requireJSONContentType(ctx); err != nil {
+		return nil, err
+	}
+	if err := s.validateAuthOrigin(ctx, "logout", application); err != nil {
 		return nil, err
 	}
 
-	if jti := req.GetJti(); jti != "" {
-		s.log.Infof(ctx, "logout: user [%d] reported jti [%s]", operator.GetUserId(), jti)
+	sessionRevoked := false
+	refreshToken := netutil.CookieFromContext(ctx, name)
+	if refreshToken != "" {
+		userId, jti, claimApplication, sid, verr := s.authenticator.VerifyRefreshToken(ctx, authenticationV1.ClientType_admin, refreshToken)
+		switch {
+		case verr != nil:
+			// 会话已过期/已吊销：视为登出成功（幂等），仅审计留痕
+			s.log.Infof(ctx, "logout: refresh token verify failed (treated as already logged out): %v", verr)
+		case claimApplication != application:
+			s.log.Warnf(ctx, "logout: refresh token application mismatch: claim [%v] vs request [%v] for user [%d]",
+				claimApplication, application, userId)
+		default:
+			if jti != "" {
+				s.log.Infof(ctx, "logout: user [%d] session sid [%s] jti [%s]", userId, sid, jti)
+			}
+			revoked, rerr := s.authenticator.RevokeSession(ctx, authenticationV1.ClientType_admin, userId, sid)
+			if rerr != nil {
+				return nil, rerr
+			}
+			sessionRevoked = revoked
+			s.log.Infof(ctx, "logout: user [%d] sid [%s] revoked=%v", userId, sid, revoked)
+		}
+	} else if jti := req.GetJti(); jti != "" {
+		s.log.Infof(ctx, "logout: no refresh cookie, reported jti [%s] (audit only)", jti)
 	}
 
-	if err = s.authenticator.RevokeUserToken(ctx, s.clientType, operator.GetUserId()); err != nil {
-		return nil, err
-	}
+	// 只清本应用 cookie，另一应用的会话保持有效
+	clearRefreshCookies(ctx, application)
 
-	// 清除 refresh token 相关 cookie
-	clearRefreshCookies(ctx)
-
-	return &authenticationV1.RevokeStatusResponse{Status: "revoked"}, nil
+	return &authenticationV1.RevokeStatusResponse{
+		Status:         "revoked",
+		SessionRevoked: trans.Ptr(sessionRevoked),
+	}, nil
 }
 
 // RefreshAccessToken 刷新认证令牌（POST /api/v1/auth/refresh）。
 // refresh token 以 HttpOnly Cookie 传输，本端点已加入白名单（无需 access token）。
-// refresh token 为自描述 JWT，VerifyRefreshToken 从中解析 uid/jti 完成独立鉴权。
+//
+// 隔离与裁决链：
+//  1. 请求必须显式声明 application → 决定读取哪个应用的 RT cookie；
+//  2. RT 经验签后以其签名 claim 的 application 为最终裁决，与声明不一致即拒绝；
+//  3. 会话以 sid 定位，轮换经 CommitRotateSession 原子提交（防登出后复活/并发双花）；
+//  4. 刷新须携带会话绑定的 CSRF 证明（X-CSRF-Token）并通过来源校验。
 //
 // 请求体的 client_id / device_id 为可选：用于让新令牌对延续审计留痕与会话元数据。
 // 二者均不参与鉴权判定，缺失只影响审计与会话列表的信息完整度。
@@ -970,8 +1156,25 @@ func (s *AuthenticationService) RefreshAccessToken(ctx context.Context, req *aut
 		req = &authenticationV1.RefreshAccessTokenRequest{}
 	}
 
-	// refresh token 从 HttpOnly Cookie 读取，不从请求体获取
-	refreshToken := netutil.CookieFromContext(ctx, refreshTokenCookieName)
+	// no-store 覆盖成功与错误响应：令牌响应不得进入任何缓存
+	setNoStoreHeader(ctx)
+
+	// 应用必须显式声明：决定读取哪个 cookie，并作为与签名 claim 比对的请求侧基准
+	application := req.GetApplication()
+	name, ok := refreshCookieName(application)
+	if !ok {
+		return nil, authenticationV1.ErrorBadRequest("application is required (console or boss)")
+	}
+
+	if err := requireJSONContentType(ctx); err != nil {
+		return nil, err
+	}
+	if err := s.validateAuthOrigin(ctx, "refresh", application); err != nil {
+		return nil, err
+	}
+
+	// refresh token 从对应应用的 HttpOnly Cookie 读取，不从请求体获取
+	refreshToken := netutil.CookieFromContext(ctx, name)
 	if refreshToken == "" {
 		return nil, authenticationV1.ErrorIncorrectRefreshToken("refresh token cookie is missing")
 	}
@@ -983,12 +1186,133 @@ func (s *AuthenticationService) RefreshAccessToken(ctx context.Context, req *aut
 		DeviceId:   req.DeviceId,
 	}
 
-	resp, err := s.doGrantTypeRefreshToken(ctx, inner, refreshToken)
+	resp, err := s.doGrantTypeRefreshToken(ctx, inner, refreshToken, application)
 	if err != nil {
 		return nil, err
 	}
 
 	return buildTokenPairResponse(resp), nil
+}
+
+// Csrf 签发会话绑定的 CSRF 证明（POST /api/v1/auth/csrf）。
+//
+// 双提交 Cookie 模式的签发侧：身份来自 HttpOnly RT cookie（浏览器自动携带），
+// 签出的证明经响应体返回，由前端内存持有并在 refresh 时经 X-CSRF-Token 回传。
+// 证明按 sid 绑定（SetNX 不轮换）：同一逻辑会话多标签页 bootstrap 得到同一证明，
+// 互不破坏；随会话登出一并清除。
+//
+// 本端点在鉴权白名单内，来源校验（Origin/Referer）是签发的第一道闸门——
+// 跨站页面即使诱导浏览器带 Cookie 访问，也拿不到证明。
+func (s *AuthenticationService) Csrf(ctx context.Context, req *authenticationV1.CsrfRequest) (*authenticationV1.CsrfResponse, error) {
+	application := req.GetApplication()
+	name, ok := refreshCookieName(application)
+	if !ok {
+		return nil, authenticationV1.ErrorBadRequest("application is required (console or boss)")
+	}
+
+	if err := requireJSONContentType(ctx); err != nil {
+		return nil, err
+	}
+	if err := s.validateAuthOrigin(ctx, "csrf", application); err != nil {
+		return nil, err
+	}
+
+	refreshToken := netutil.CookieFromContext(ctx, name)
+	if refreshToken == "" {
+		return nil, authenticationV1.ErrorIncorrectRefreshToken("refresh token cookie is missing")
+	}
+
+	userId, _, claimApplication, sid, verr := s.authenticator.VerifyRefreshToken(ctx, authenticationV1.ClientType_admin, refreshToken)
+	if verr != nil {
+		return nil, authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
+	}
+	// cookie 名（由 application 决定）与签名 claim 不一致即拒绝，防跨应用混用
+	if claimApplication != application {
+		s.log.Warnf(ctx, "csrf: refresh token application mismatch: claim [%v] vs request [%v] for user [%d]",
+			claimApplication, application, userId)
+		return nil, authenticationV1.ErrorIncorrectRefreshToken("invalid refresh token")
+	}
+
+	// SetNX：证明已存在则原样返回（bootstrap 幂等），不存在才生成新证明
+	token, err := s.authenticator.GetCsrfToken(ctx, authenticationV1.ClientType_admin, userId, sid)
+	if err != nil {
+		return nil, err
+	}
+	if token == "" {
+		// 复用加密随机串生成器（与 sid 同源），证明不可预测
+		newToken, gerr := data.NewSessionId()
+		if gerr != nil {
+			return nil, authenticationV1.ErrorServiceUnavailable("create csrf token failed")
+		}
+		token, err = s.authenticator.SaveCsrfToken(ctx, authenticationV1.ClientType_admin, userId, sid, newToken)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	setNoStoreHeader(ctx)
+
+	return &authenticationV1.CsrfResponse{CsrfToken: token}, nil
+}
+
+// checkCsrfToken 校验请求头 X-CSRF-Token 与会话绑定的 CSRF 证明一致。
+// 双提交 Cookie 模式的校验侧：证明由 Csrf 端点签发，前端内存持有；
+// 证明非会话绑定或未回传即拒绝。恒定时间比较防时序侧信道。
+func (s *AuthenticationService) checkCsrfToken(ctx context.Context, clientType authenticationV1.ClientType, userId uint32, sid string) error {
+	header := netutil.HeaderFromContext(ctx)
+	if header == nil {
+		return authenticationV1.ErrorForbidden("missing csrf token")
+	}
+	presented := strings.TrimSpace(header.Get(csrfHeaderName))
+	if presented == "" {
+		return authenticationV1.ErrorForbidden("missing csrf token")
+	}
+
+	stored, err := s.authenticator.GetCsrfToken(ctx, clientType, userId, sid)
+	if err != nil {
+		return err
+	}
+	// 会话无证明（从未 bootstrap）或证明不匹配均拒绝
+	if stored == "" {
+		return authenticationV1.ErrorForbidden("missing csrf token")
+	}
+	if subtle.ConstantTimeCompare([]byte(presented), []byte(stored)) != 1 {
+		return authenticationV1.ErrorForbidden("invalid csrf token")
+	}
+	return nil
+}
+
+// validateAuthOrigin 校验状态变更认证端点的请求来源（按 application 绑定白名单）。
+// 规则与裁决记录见 auth_origin.go；拒绝发生在任何令牌消费/会话变更之前，无副作用。
+func (s *AuthenticationService) validateAuthOrigin(ctx context.Context, endpoint string, application authenticationV1.ApplicationType) error {
+	return s.originValidator.validate(ctx, endpoint, application)
+}
+
+// requireJSONContentType 强制认证写端点使用 JSON 请求体（application/json）。
+//
+// 目的：封掉跨站"text/plain 简单请求"绕过 CORS 预检直接投递 JSON 体的路径——
+// 简单请求不触发预检，X-CSRF-Token 自定义头拦不住它，Content-Type 白名单
+// 是计划合同（§6）要求的第二道闸。检查失败返回 403，无副作用。
+// 经 Transporter 接口取请求头（与 netutil 同款范式），非 HTTP 传输
+// （任务/内部调用/包内测试直调 service）无请求对象时跳过。
+func requireJSONContentType(ctx context.Context) error {
+	tr, ok := ktransport.FromServerContext(ctx)
+	if !ok {
+		return nil
+	}
+	htr, ok := tr.(khttp.Transporter)
+	if !ok {
+		return nil
+	}
+	req := htr.Request()
+	if req == nil {
+		return nil
+	}
+	mt, _, perr := mime.ParseMediaType(req.Header.Get("Content-Type"))
+	if perr != nil || !strings.EqualFold(mt, "application/json") {
+		return authenticationV1.ErrorForbidden("content-type must be application/json")
+	}
+	return nil
 }
 
 // ValidateToken 验证令牌

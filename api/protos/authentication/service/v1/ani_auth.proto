@@ -31,6 +31,17 @@ import "redact/v1/redact.proto";
 // 租户标识说明：tenant_name 的值取 sys_tenants.code（"租户编号"），
 // 而非 name。name 为自由文本且无唯一约束，不适宜作为对外 slug。
 
+// 应用标识：区分 Console（租户前端）与 BOSS（平台前端）两套浏览器会话。
+//
+// 语义边界（重要）：application 是"选择哪一套应用会话（Cookie/令牌/Redis 记录）"的
+// 参数，不是可信身份。真正的可信性来自服务端签发的令牌声明与应用会话记录；
+// 请求体中的 application 只用于路由到对应 Cookie，服务端必须以令牌声明为最终裁决。
+enum ApplicationType {
+  APPLICATION_TYPE_UNSPECIFIED = 0; // 未指定；请求中不得出现，出现即拒绝
+  console = 1; // Console：租户前端应用
+  boss = 2;    // BOSS：平台前端应用
+}
+
 // 租户账密登录 - 请求
 message PasswordLoginRequest {
   optional string tenant_name = 1 [
@@ -102,6 +113,16 @@ message RefreshAccessTokenRequest {
       description: "设备唯一标识，用于刷新后延续会话元数据"
     }
   ]; // 设备唯一标识
+
+  // 应用会话选择参数（新增 field number，不改动既有 1/2 语义）。
+  // 值必须严格为 console / boss；缺省或 UNSPECIFIED 一律拒绝，不默认归任一应用。
+  // 仅用于选择对应应用的 RT Cookie，最终裁决以 RT 签名声明与服务端会话记录为准。
+  optional ApplicationType application = 3 [
+    json_name = "application",
+    (gnostic.openapi.v3.property) = {
+      description: "应用会话选择参数，取值为 console 或 boss"
+    }
+  ]; // 应用会话选择参数
 }
 
 // 令牌对 - 回应
@@ -163,9 +184,19 @@ message RevokeJtiRequest {
   optional string jti = 1 [
     json_name = "jti",
     (gnostic.openapi.v3.property) = {
-      description: "当前访问令牌的 JWT ID，用于审计留痕。注意：本实现的登出范围是吊销该用户全部会话，jti 不改变吊销范围"
+      description: "当前访问令牌的 JWT ID，仅用于审计留痕。本实现退出范围为当前应用当前逻辑会话，jti 不改变退出范围"
     }
   ]; // JWT ID（仅审计用）
+
+  // 应用会话选择参数（新增 field number，保留既有 1 语义）。
+  // 值必须严格为 console / boss；缺省或 UNSPECIFIED 一律拒绝。
+  // 仅用于选择对应应用的 RT Cookie，最终裁决以 RT 签名声明与服务端会话记录为准。
+  optional ApplicationType application = 2 [
+    json_name = "application",
+    (gnostic.openapi.v3.property) = {
+      description: "应用会话选择参数，取值为 console 或 boss"
+    }
+  ]; // 应用会话选择参数
 }
 
 // 登出 - 回应
@@ -174,8 +205,44 @@ message RevokeStatusResponse {
     json_name = "status",
     (google.api.field_behavior) = REQUIRED,
     (gnostic.openapi.v3.property) = {
-      description: "吊销结果，固定为 revoked",
+      description: "吊销结果：revoked=本次确认吊销了远端会话；幂等语义与该值解耦，见 session_revoked",
       enum: [{yaml: "revoked"}]
     }
   ]; // 吊销结果
+
+  // 本次请求是否确实吊销了一个活动会话。
+  // false 表示幂等命中：无对应 RT cookie、令牌已失效或远端本就没有该逻辑会话——
+  // 与"服务端已确认退出"区分，避免把"本就没有会话"宣称成本次完成远端吊销。
+  optional bool session_revoked = 2 [
+    json_name = "session_revoked",
+    (gnostic.openapi.v3.property) = {
+      description: "本次是否确实吊销了远端活动会话；false 为幂等命中（无会话可吊销）"
+    }
+  ]; // 是否确实吊销了活动会话
+}
+
+// 获取 CSRF 证明 - 请求
+//
+// 用途：页面启动时以现有 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+// 供后续 refresh / logout 在 X-CSRF-Token 头中携带。本接口为**非消费性读取**：
+// 不刷新令牌、不轮换、不更换 Cookie、不消费 RT，多次调用对同一 sid 返回有效证明。
+message CsrfRequest {
+  // 应用会话选择参数，必填且严格为 console / boss；缺省或 UNSPECIFIED 拒绝。
+  optional ApplicationType application = 1 [
+    json_name = "application",
+    (gnostic.openapi.v3.property) = {
+      description: "应用会话选择参数，取值为 console 或 boss"
+    }
+  ]; // 应用会话选择参数
+}
+
+// 获取 CSRF 证明 - 回应
+message CsrfResponse {
+  string csrf_token = 1 [
+    json_name = "csrf_token",
+    (google.api.field_behavior) = REQUIRED,
+    (gnostic.openapi.v3.property) = {
+      description: "绑定当前逻辑会话的 CSRF 证明，写请求时放入 X-CSRF-Token 头；不含身份授权"
+    }
+  ]; // CSRF 证明
 }

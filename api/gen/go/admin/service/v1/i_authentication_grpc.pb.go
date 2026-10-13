@@ -25,6 +25,7 @@ const (
 	AuthenticationService_PlatformPasswordLogin_FullMethodName = "/admin.service.v1.AuthenticationService/PlatformPasswordLogin"
 	AuthenticationService_RevokeJti_FullMethodName             = "/admin.service.v1.AuthenticationService/RevokeJti"
 	AuthenticationService_RefreshAccessToken_FullMethodName    = "/admin.service.v1.AuthenticationService/RefreshAccessToken"
+	AuthenticationService_Csrf_FullMethodName                  = "/admin.service.v1.AuthenticationService/Csrf"
 	AuthenticationService_ForgotPassword_FullMethodName        = "/admin.service.v1.AuthenticationService/ForgotPassword"
 	AuthenticationService_ResetPasswordByCode_FullMethodName   = "/admin.service.v1.AuthenticationService/ResetPasswordByCode"
 	AuthenticationService_AcceptInvitation_FullMethodName      = "/admin.service.v1.AuthenticationService/AcceptInvitation"
@@ -47,13 +48,17 @@ type AuthenticationServiceClient interface {
 	// 平台账密登录（免鉴权）
 	// 与租户登录分为两端点：平台身份的爆破影响面是全局，独立端点便于施加更严的限流/审计。
 	PlatformPasswordLogin(ctx context.Context, in *v1.PlatformPasswordLoginRequest, opts ...grpc.CallOption) (*v1.TokenPairResponse, error)
-	// 登出：吊销当前用户的全部会话（非仅当前 jti）
-	// jti 仅随请求上报用于审计留痕，不改变吊销范围。需携带有效访问令牌。
+	// 登出：退出当前应用当前逻辑会话（按 RT Cookie 定位），不再全域吊销。
+	// 无需有效 access token；请求体 application 选择应用，jti 仅随请求上报用于审计留痕。
 	RevokeJti(ctx context.Context, in *v1.RevokeJtiRequest, opts ...grpc.CallOption) (*v1.RevokeStatusResponse, error)
 	// 刷新认证令牌（免鉴权）
 	// refresh token 经 HttpOnly Cookie 传输，请求体只承载可选的 client_id / device_id
 	// 用于延续审计留痕与会话元数据；cookie 缺失即拒绝。
 	RefreshAccessToken(ctx context.Context, in *v1.RefreshAccessTokenRequest, opts ...grpc.CallOption) (*v1.TokenPairResponse, error)
+	// 获取 CSRF 证明（免鉴权，白名单内）
+	// 非消费性读取：以所选应用的 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+	// 不刷新、不轮换、不更换 Cookie。仅免 access token，仍由有效 RT + 来源校验保护。
+	Csrf(ctx context.Context, in *v1.CsrfRequest, opts ...grpc.CallOption) (*v1.CsrfResponse, error)
 	// 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
 	ForgotPassword(ctx context.Context, in *v1.ForgotPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
@@ -109,6 +114,16 @@ func (c *authenticationServiceClient) RefreshAccessToken(ctx context.Context, in
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.TokenPairResponse)
 	err := c.cc.Invoke(ctx, AuthenticationService_RefreshAccessToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authenticationServiceClient) Csrf(ctx context.Context, in *v1.CsrfRequest, opts ...grpc.CallOption) (*v1.CsrfResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.CsrfResponse)
+	err := c.cc.Invoke(ctx, AuthenticationService_Csrf_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -180,13 +195,17 @@ type AuthenticationServiceServer interface {
 	// 平台账密登录（免鉴权）
 	// 与租户登录分为两端点：平台身份的爆破影响面是全局，独立端点便于施加更严的限流/审计。
 	PlatformPasswordLogin(context.Context, *v1.PlatformPasswordLoginRequest) (*v1.TokenPairResponse, error)
-	// 登出：吊销当前用户的全部会话（非仅当前 jti）
-	// jti 仅随请求上报用于审计留痕，不改变吊销范围。需携带有效访问令牌。
+	// 登出：退出当前应用当前逻辑会话（按 RT Cookie 定位），不再全域吊销。
+	// 无需有效 access token；请求体 application 选择应用，jti 仅随请求上报用于审计留痕。
 	RevokeJti(context.Context, *v1.RevokeJtiRequest) (*v1.RevokeStatusResponse, error)
 	// 刷新认证令牌（免鉴权）
 	// refresh token 经 HttpOnly Cookie 传输，请求体只承载可选的 client_id / device_id
 	// 用于延续审计留痕与会话元数据；cookie 缺失即拒绝。
 	RefreshAccessToken(context.Context, *v1.RefreshAccessTokenRequest) (*v1.TokenPairResponse, error)
+	// 获取 CSRF 证明（免鉴权，白名单内）
+	// 非消费性读取：以所选应用的 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+	// 不刷新、不轮换、不更换 Cookie。仅免 access token，仍由有效 RT + 来源校验保护。
+	Csrf(context.Context, *v1.CsrfRequest) (*v1.CsrfResponse, error)
 	// 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
 	ForgotPassword(context.Context, *v1.ForgotPasswordRequest) (*emptypb.Empty, error)
 	// 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
@@ -219,6 +238,9 @@ func (UnimplementedAuthenticationServiceServer) RevokeJti(context.Context, *v1.R
 }
 func (UnimplementedAuthenticationServiceServer) RefreshAccessToken(context.Context, *v1.RefreshAccessTokenRequest) (*v1.TokenPairResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshAccessToken not implemented")
+}
+func (UnimplementedAuthenticationServiceServer) Csrf(context.Context, *v1.CsrfRequest) (*v1.CsrfResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Csrf not implemented")
 }
 func (UnimplementedAuthenticationServiceServer) ForgotPassword(context.Context, *v1.ForgotPasswordRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ForgotPassword not implemented")
@@ -324,6 +346,24 @@ func _AuthenticationService_RefreshAccessToken_Handler(srv interface{}, ctx cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthenticationServiceServer).RefreshAccessToken(ctx, req.(*v1.RefreshAccessTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthenticationService_Csrf_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CsrfRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthenticationServiceServer).Csrf(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthenticationService_Csrf_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthenticationServiceServer).Csrf(ctx, req.(*v1.CsrfRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -440,6 +480,10 @@ var AuthenticationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshAccessToken",
 			Handler:    _AuthenticationService_RefreshAccessToken_Handler,
+		},
+		{
+			MethodName: "Csrf",
+			Handler:    _AuthenticationService_Csrf_Handler,
 		},
 		{
 			MethodName: "ForgotPassword",

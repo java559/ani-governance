@@ -73,6 +73,8 @@ func (x *RefreshAccessTokenRequest) Redact() {
 	// Safe field: ClientId
 
 	// Safe field: DeviceId
+
+	// Safe field: Application
 }
 
 // Ensure TokenPairResponse implements the Redactor interface at compile time.
@@ -107,6 +109,8 @@ func (x *RevokeJtiRequest) Redact() {
 	}
 
 	// Safe field: Jti
+
+	// Safe field: Application
 }
 
 // Ensure RevokeStatusResponse implements the Redactor interface at compile time.
@@ -119,4 +123,30 @@ func (x *RevokeStatusResponse) Redact() {
 	}
 
 	// Safe field: Status
+
+	// Safe field: SessionRevoked
+}
+
+// Ensure CsrfRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*CsrfRequest)(nil)
+
+// Redact method implementation for CsrfRequest
+func (x *CsrfRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Application
+}
+
+// Ensure CsrfResponse implements the Redactor interface at compile time.
+var _ redact.Redactor = (*CsrfResponse)(nil)
+
+// Redact method implementation for CsrfResponse
+func (x *CsrfResponse) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: CsrfToken
 }

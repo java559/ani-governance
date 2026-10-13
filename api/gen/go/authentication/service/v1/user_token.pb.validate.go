@@ -99,6 +99,18 @@ func (m *UserTokenPayload) validate(all bool) error {
 		// no validation rules for Jti
 	}
 
+	if m.Application != nil {
+		// no validation rules for Application
+	}
+
+	if m.Sid != nil {
+		// no validation rules for Sid
+	}
+
+	if m.TokenUse != nil {
+		// no validation rules for TokenUse
+	}
+
 	if len(errors) > 0 {
 		return UserTokenPayloadMultiError(errors)
 	}

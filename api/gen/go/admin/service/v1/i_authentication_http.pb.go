@@ -22,6 +22,7 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationAuthenticationServiceAcceptInvitation = "/admin.service.v1.AuthenticationService/AcceptInvitation"
+const OperationAuthenticationServiceCsrf = "/admin.service.v1.AuthenticationService/Csrf"
 const OperationAuthenticationServiceForgotPassword = "/admin.service.v1.AuthenticationService/ForgotPassword"
 const OperationAuthenticationServiceGenerateCaptcha = "/admin.service.v1.AuthenticationService/GenerateCaptcha"
 const OperationAuthenticationServicePasswordLogin = "/admin.service.v1.AuthenticationService/PasswordLogin"
@@ -34,6 +35,10 @@ const OperationAuthenticationServiceVerifyCaptcha = "/admin.service.v1.Authentic
 type AuthenticationServiceHTTPServer interface {
 	// AcceptInvitation 接受邀请（免登录；以一次性邀请令牌证明身份）。
 	AcceptInvitation(context.Context, *v1.AcceptInvitationRequest) (*emptypb.Empty, error)
+	// Csrf 获取 CSRF 证明（免鉴权，白名单内）
+	// 非消费性读取：以所选应用的 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+	// 不刷新、不轮换、不更换 Cookie。仅免 access token，仍由有效 RT + 来源校验保护。
+	Csrf(context.Context, *v1.CsrfRequest) (*v1.CsrfResponse, error)
 	// ForgotPassword 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
 	ForgotPassword(context.Context, *v1.ForgotPasswordRequest) (*emptypb.Empty, error)
 	// GenerateCaptcha 生成验证码（免鉴权）
@@ -50,8 +55,8 @@ type AuthenticationServiceHTTPServer interface {
 	RefreshAccessToken(context.Context, *v1.RefreshAccessTokenRequest) (*v1.TokenPairResponse, error)
 	// ResetPasswordByCode 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
 	ResetPasswordByCode(context.Context, *v1.ResetPasswordByCodeRequest) (*emptypb.Empty, error)
-	// RevokeJti 登出：吊销当前用户的全部会话（非仅当前 jti）
-	// jti 仅随请求上报用于审计留痕，不改变吊销范围。需携带有效访问令牌。
+	// RevokeJti 登出：退出当前应用当前逻辑会话（按 RT Cookie 定位），不再全域吊销。
+	// 无需有效 access token；请求体 application 选择应用，jti 仅随请求上报用于审计留痕。
 	RevokeJti(context.Context, *v1.RevokeJtiRequest) (*v1.RevokeStatusResponse, error)
 	// VerifyCaptcha 验证验证码（免鉴权）
 	VerifyCaptcha(context.Context, *v1.VerifyCaptchaRequest) (*v1.VerifyCaptchaResponse, error)
@@ -63,6 +68,7 @@ func RegisterAuthenticationServiceHTTPServer(s *http.Server, srv AuthenticationS
 	r.POST("/api/v1/auth/platform/password/login", _AuthenticationService_PlatformPasswordLogin0_HTTP_Handler(srv))
 	r.POST("/api/v1/auth/logout", _AuthenticationService_RevokeJti0_HTTP_Handler(srv))
 	r.POST("/api/v1/auth/refresh", _AuthenticationService_RefreshAccessToken0_HTTP_Handler(srv))
+	r.POST("/api/v1/auth/csrf", _AuthenticationService_Csrf0_HTTP_Handler(srv))
 	r.POST("/api/v1/auth/forgot-password", _AuthenticationService_ForgotPassword0_HTTP_Handler(srv))
 	r.POST("/api/v1/auth/reset-password-by-code", _AuthenticationService_ResetPasswordByCode0_HTTP_Handler(srv))
 	r.POST("/api/v1/auth/invitations/accept", _AuthenticationService_AcceptInvitation0_HTTP_Handler(srv))
@@ -154,6 +160,28 @@ func _AuthenticationService_RefreshAccessToken0_HTTP_Handler(srv AuthenticationS
 			return err
 		}
 		reply := out.(*v1.TokenPairResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AuthenticationService_Csrf0_HTTP_Handler(srv AuthenticationServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CsrfRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAuthenticationServiceCsrf)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Csrf(ctx, req.(*v1.CsrfRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.CsrfResponse)
 		return ctx.Result(200, reply)
 	}
 }
@@ -268,6 +296,10 @@ func _AuthenticationService_VerifyCaptcha0_HTTP_Handler(srv AuthenticationServic
 type AuthenticationServiceHTTPClient interface {
 	// AcceptInvitation 接受邀请（免登录；以一次性邀请令牌证明身份）。
 	AcceptInvitation(ctx context.Context, req *v1.AcceptInvitationRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// Csrf 获取 CSRF 证明（免鉴权，白名单内）
+	// 非消费性读取：以所选应用的 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+	// 不刷新、不轮换、不更换 Cookie。仅免 access token，仍由有效 RT + 来源校验保护。
+	Csrf(ctx context.Context, req *v1.CsrfRequest, opts ...http.CallOption) (rsp *v1.CsrfResponse, err error)
 	// ForgotPassword 忘记密码：向已绑定邮箱的用户发送重置验证码（免鉴权；不泄露用户是否存在）
 	ForgotPassword(ctx context.Context, req *v1.ForgotPasswordRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// GenerateCaptcha 生成验证码（免鉴权）
@@ -284,8 +316,8 @@ type AuthenticationServiceHTTPClient interface {
 	RefreshAccessToken(ctx context.Context, req *v1.RefreshAccessTokenRequest, opts ...http.CallOption) (rsp *v1.TokenPairResponse, err error)
 	// ResetPasswordByCode 凭验证码重置密码（免鉴权；重置后吊销该用户全部会话）
 	ResetPasswordByCode(ctx context.Context, req *v1.ResetPasswordByCodeRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
-	// RevokeJti 登出：吊销当前用户的全部会话（非仅当前 jti）
-	// jti 仅随请求上报用于审计留痕，不改变吊销范围。需携带有效访问令牌。
+	// RevokeJti 登出：退出当前应用当前逻辑会话（按 RT Cookie 定位），不再全域吊销。
+	// 无需有效 access token；请求体 application 选择应用，jti 仅随请求上报用于审计留痕。
 	RevokeJti(ctx context.Context, req *v1.RevokeJtiRequest, opts ...http.CallOption) (rsp *v1.RevokeStatusResponse, err error)
 	// VerifyCaptcha 验证验证码（免鉴权）
 	VerifyCaptcha(ctx context.Context, req *v1.VerifyCaptchaRequest, opts ...http.CallOption) (rsp *v1.VerifyCaptchaResponse, err error)
@@ -305,6 +337,22 @@ func (c *AuthenticationServiceHTTPClientImpl) AcceptInvitation(ctx context.Conte
 	pattern := "/api/v1/auth/invitations/accept"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAuthenticationServiceAcceptInvitation))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Csrf 获取 CSRF 证明（免鉴权，白名单内）
+// 非消费性读取：以所选应用的 RT Cookie 换取绑定当前逻辑会话的 CSRF token，
+// 不刷新、不轮换、不更换 Cookie。仅免 access token，仍由有效 RT + 来源校验保护。
+func (c *AuthenticationServiceHTTPClientImpl) Csrf(ctx context.Context, in *v1.CsrfRequest, opts ...http.CallOption) (*v1.CsrfResponse, error) {
+	var out v1.CsrfResponse
+	pattern := "/api/v1/auth/csrf"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAuthenticationServiceCsrf))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
@@ -401,8 +449,8 @@ func (c *AuthenticationServiceHTTPClientImpl) ResetPasswordByCode(ctx context.Co
 	return &out, nil
 }
 
-// RevokeJti 登出：吊销当前用户的全部会话（非仅当前 jti）
-// jti 仅随请求上报用于审计留痕，不改变吊销范围。需携带有效访问令牌。
+// RevokeJti 登出：退出当前应用当前逻辑会话（按 RT Cookie 定位），不再全域吊销。
+// 无需有效 access token；请求体 application 选择应用，jti 仅随请求上报用于审计留痕。
 func (c *AuthenticationServiceHTTPClientImpl) RevokeJti(ctx context.Context, in *v1.RevokeJtiRequest, opts ...http.CallOption) (*v1.RevokeStatusResponse, error) {
 	var out v1.RevokeStatusResponse
 	pattern := "/api/v1/auth/logout"

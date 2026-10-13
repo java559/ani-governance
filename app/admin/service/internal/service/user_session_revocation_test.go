@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -62,7 +63,7 @@ func TestUserService_AccountSessionRevocation(t *testing.T) {
 			other := e.client.User.GetX(e.ctx, 1) // protected operator; its sessions must survive
 			type session struct {
 				uid, ct              uint32
-				jti, access, refresh string
+				jti, sid, access, refresh string
 			}
 			var sessions []session
 			for _, uid := range []uint32{target.ID, other.ID} {
@@ -71,11 +72,14 @@ func TestUserService_AccountSessionRevocation(t *testing.T) {
 					if uid == target.ID {
 						tid = tenantID
 					}
-					payload := &authV1.UserTokenPayload{UserId: uid, TenantId: trans.Ptr(tid)}
+					// 会话令牌对必须携带 application 与 sid（服务端会话锚点）：
+					// sid 唯一，供按逻辑会话吊销与轮换探测使用。
+					sid := fmt.Sprintf("test-sid-%d-%d", uid, i)
+					payload := &authV1.UserTokenPayload{UserId: uid, TenantId: trans.Ptr(tid), Application: authV1.ApplicationType_console.Enum(), Sid: trans.Ptr(sid)}
 					access, refresh, issueErr := a.CreateUserToken(e.ctx, authV1.ClientType_admin, payload)
 					require.NoError(t, issueErr)
 					require.NoError(t, a.SaveSessionMeta(e.ctx, authV1.ClientType_admin, uid, payload.GetJti(), &data.SessionMeta{Username: "test"}, time.Hour))
-					sessions = append(sessions, session{uid: uid, jti: payload.GetJti(), access: access, refresh: refresh})
+					sessions = append(sessions, session{uid: uid, jti: payload.GetJti(), sid: sid, access: access, refresh: refresh})
 				}
 				// The app client has no signing implementation; verify its cache
 				// entries are still covered by the all-client revocation helper.
@@ -141,8 +145,13 @@ func TestUserService_AccountSessionRevocation(t *testing.T) {
 						require.True(t, resp.GetIsValid())
 					} else {
 						require.Error(t, authErr)
-						_, _, refreshErr := a.VerifyRefreshToken(e.ctx, clientType, s.refresh)
-						require.Error(t, refreshErr)
+						// 吊销检测已移至提交阶段：VerifyRefreshToken 只验签
+						// （JWT 仍自洽），会话是否被吊销由 sid 指针是否仍指向
+						// 该 jti 决定——用 RotateSession 探测：被吊销会话的
+						// sid 指针已删除，提交必须被拒绝。
+						committed, rotateErr := cache.RotateSession(e.ctx, clientType, s.uid, s.sid, s.jti, "probe-jti", "probe-at", "probe-rt", nil, time.Hour, time.Hour)
+						require.NoError(t, rotateErr)
+						require.False(t, committed, "被吊销会话的轮换提交必须被拒绝")
 					}
 				}
 			}

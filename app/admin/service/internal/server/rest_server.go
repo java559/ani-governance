@@ -97,6 +97,14 @@ func NewRestMiddleware(
 		// 可脱离 access token 独立鉴权。页面刷新后 access token 丢失时，前端凭
 		// refresh cookie 静默恢复会话，不再强制重新登录。
 		adminV1.OperationAuthenticationServiceRefreshAccessToken,
+		// CSRF 证明签发免鉴权：身份来自 HttpOnly RT cookie（浏览器自动携带），
+		// 证明按会话 sid 绑定签发，供刷新时经 X-CSRF-Token 回传（双提交 Cookie 模式）。
+		// 端点内部做 Origin/Referer 精确校验，跨站页面拿不到证明。
+		adminV1.OperationAuthenticationServiceCsrf,
+		// 登出免鉴权：身份与会话定位全部来自 HttpOnly RT cookie 中经验签的
+		// application/sid claim，按 sid 精确吊销当前应用的当前逻辑会话。
+		// 旧实现依赖 access token 取操作人，AT 过期后无法登出——白名单化后消除该缺陷。
+		adminV1.OperationAuthenticationServiceRevokeJti,
 		// MFA 登录挑战验证免鉴权：operation_id 由登录流程签发，见 doGrantTypePassword 的 MFA 闸门。
 		// 仅此一个 MFA RPC 免鉴权；管理侧 RPC（GetMFAStatus 等）走正常 auth+authz。
 		adminV1.OperationMfaServiceVerifyMFAChallenge,

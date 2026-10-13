@@ -33,9 +33,68 @@ const (
 	// UserSessionKeyFormat 用户会话元数据键格式 us:{ct}:{uid}:{jti}
 	UserSessionKeyFormat = "us:%d:%d:%s"
 
+	// SessionBindKeyFormat 逻辑会话绑定键格式 sid:{ct}:{uid}:{sid}
+	// 值为该逻辑会话当前有效的 jti。它是"稳定 sid → 当前令牌对"的唯一指针，
+	// 刷新轮换与登出共用同一原子边界：轮换在此比对旧 jti，登出先删本键，
+	// 从而保证登出后任何已准备好的后继刷新都无法提交或复活该 sid。
+	SessionBindKeyFormat = "sid:%d:%d:%s"
+
+	// CsrfBindKeyFormat CSRF 证明绑定键格式 csr:{ct}:{uid}:{sid}
+	// 值为绑定该逻辑会话的 CSRF token。刷新轮换不更换（sid 不变即证明不变），
+	// 登出随会话一并清除。生命周期与 RT 对齐。
+	CsrfBindKeyFormat = "csr:%d:%d:%s"
+
 	// scanCount 每次 SCAN 返回的键数量提示（仅是建议值，非强制）
 	scanCount = 100
 )
+
+// rotateSessionScript 原子轮换逻辑会话：校验 sid 仍指向旧 jti（防重放与双花），
+// 删除旧令牌对与会话记录，写入新令牌对、新会话记录，并把 sid 指针更新为新 jti。
+// 注意：不触碰 CSRF 证明键——sid 不变即证明不变（bootstrap 不轮换证明，
+// 多标签页共享同一证明互不破坏）。
+//
+// KEYS[1]=sid 绑定键, [2]=旧 AT 键, [3]=旧 RT 键, [4]=旧会话记录键,
+// KEYS[5]=新 AT 键, [6]=新 RT 键, [7]=新会话记录键
+// ARGV[1]=旧 jti, [2]=新 jti, [3]=新 AT 值, [4]=新 RT 值, [5]=新会话记录 JSON,
+// ARGV[6]=AT TTL(ms), [7]=RT TTL(ms), [8]=会话记录 TTL(ms)
+// 返回 1=提交成功, 0=sid 不存在或已指向其它 jti（登出/并发轮换），调用方须拒绝。
+var rotateSessionScript = redis.NewScript(`
+	local sidKey = KEYS[1]
+	local cur = redis.call('GET', sidKey)
+	if not cur or cur ~= ARGV[1] then
+		return 0
+	end
+	redis.call('DEL', KEYS[2])
+	redis.call('DEL', KEYS[3])
+	redis.call('DEL', KEYS[4])
+	redis.call('SET', KEYS[5], ARGV[3], 'PX', ARGV[6])
+	redis.call('SET', KEYS[6], ARGV[4], 'PX', ARGV[7])
+	redis.call('SET', KEYS[7], ARGV[5], 'PX', ARGV[8])
+	redis.call('SET', sidKey, ARGV[2], 'PX', ARGV[7])
+	return 1
+`)
+
+// logoutSessionScript 原子退出逻辑会话：以 sid 指针定位当前 jti，
+// 先删指针再删令牌对与会话记录，并清除 CSRF 证明。删指针是关键的"先手"：
+// 任何已准备好但尚未提交的轮换都会在 sid 比对处失败，无法复活该 sid。
+//
+// KEYS[1]=sid 绑定键
+// ARGV[1]=AT 键前缀（形如 at:{ct}:{uid}:）, [2]=RT 键前缀, [3]=会话记录键前缀,
+// ARGV[4]=CSRF 键前缀（形如 csr:{ct}:{uid}:）
+// 返回 1=确实撤销了一个活动会话, 0=会话已不存在（幂等）
+var logoutSessionScript = redis.NewScript(`
+	local sidKey = KEYS[1]
+	local cur = redis.call('GET', sidKey)
+	if not cur then
+		return 0
+	end
+	redis.call('DEL', sidKey)
+	redis.call('DEL', ARGV[1] .. cur)
+	redis.call('DEL', ARGV[2] .. cur)
+	redis.call('DEL', ARGV[3] .. cur)
+	redis.call('DEL', ARGV[4] .. cur)
+	return 1
+`)
 
 // verifyAndRevokeRefreshTokenScript 原子验证并吊销刷新令牌的 Lua 脚本。
 // 在单次 Redis 调用中完成「验证 RT → 删除 RT → 删除 AT → 删除会话元数据」，
@@ -160,6 +219,12 @@ func (r *UserTokenCache) RevokeToken(ctx context.Context, clientType authenticat
 	// 会话元数据随令牌一并清理，保持「无令牌即无会话记录」的一致性
 	if err := r.DeleteUserSessionMetas(ctx, clientType, userId); err != nil {
 		r.log.Errorf(ctx, "remove user session metas failed: [%v]", err)
+		errs = append(errs, err)
+	}
+
+	// 逻辑会话绑定键与 CSRF 证明也一并清理，避免残留 sid 指针指向已删除令牌。
+	if err := r.RevokeUserAllSessions(ctx, clientType, userId); err != nil {
+		r.log.Errorf(ctx, "remove user session binds failed: [%v]", err)
 		errs = append(errs, err)
 	}
 
@@ -326,9 +391,30 @@ func (r *UserTokenCache) RevokeUserAllRefreshToken(
 	return r.delByPattern(ctx, pattern)
 }
 
+// RevokeUserAllSessions 删除某用户的全部逻辑会话绑定键与 CSRF 证明键。
+// 全端踢下线（改密等）时调用，避免残留 sid 指针指向已删除的令牌对。
+func (r *UserTokenCache) RevokeUserAllSessions(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+) error {
+	var errs []error
+	if err := r.delByPattern(ctx, fmt.Sprintf(SessionBindKeyFormat, clientType.Number(), userId, "*")); err != nil {
+		errs = append(errs, err)
+	}
+	if err := r.delByPattern(ctx, fmt.Sprintf(CsrfBindKeyFormat, clientType.Number(), userId, "*")); err != nil {
+		errs = append(errs, err)
+	}
+	return errors.Join(errs...)
+}
+
 // VerifyAndRevokeTokenPair 原子验证并吊销刷新令牌及其关联的访问令牌。
 // 使用 Lua 脚本保证「验证→删除」操作的原子性，避免 TOCTOU 竞态条件。
 // 返回 (true, nil) 表示刷新令牌有效且已成功吊销旧令牌对。
+//
+// 说明：新刷新链已改用 RotateSession（先准备后提交）。本方法保留给
+// 既有远程测试与兼容调用；生产刷新路径不再使用它（它会在验证通过时
+// 立即消费旧会话，不符合"准备失败不消费"的合同）。
 func (r *UserTokenCache) VerifyAndRevokeTokenPair(
 	ctx context.Context,
 	clientType authenticationV1.ClientType,
@@ -350,6 +436,185 @@ func (r *UserTokenCache) VerifyAndRevokeTokenPair(
 	return result == 1, nil
 }
 
+// BindSessionAndStore 写入令牌对并把 sid 指针绑定到该 jti（登录路径，无旧会话）。
+// 会话元数据由调用方随后经 SaveSessionMeta 写入（保持既有展示链不变）。
+func (r *UserTokenCache) BindSessionAndStore(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+	jti string,
+	accessToken string,
+	refreshToken string,
+	accessTokenExpires time.Duration,
+	refreshTokenExpires time.Duration,
+) error {
+	if sid == "" || jti == "" {
+		return fmt.Errorf("bind session: sid and jti are required")
+	}
+
+	pipe := r.rdb.TxPipeline()
+	pipe.Set(ctx, r.makeAccessTokenFieldKey(clientType, userId, jti), accessToken, accessTokenExpires)
+	pipe.Set(ctx, r.makeRefreshTokenFieldKey(clientType, userId, jti), refreshToken, refreshTokenExpires)
+	// sid 指针 TTL 与 RT 对齐：RT 过期即会话失效，指针无需单独清理。
+	pipe.Set(ctx, r.makeSessionBindKey(clientType, userId, sid), jti, refreshTokenExpires)
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "bind session for user [%d] sid [%s] failed: %v", userId, sid, err)
+	}
+	return err
+}
+
+// RotateSession 原子轮换逻辑会话（刷新路径的"提交"阶段）。
+// 校验 sid 仍指向 oldJti，删除旧令牌对/旧会话记录，写入新令牌对/新会话记录，
+// 并把 sid 指针更新为 newJti。返回 false 表示 sid 已失效（登出/并发），须拒绝。
+func (r *UserTokenCache) RotateSession(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+	oldJti string,
+	newJti string,
+	accessToken string,
+	refreshToken string,
+	newMeta *SessionMeta,
+	accessTokenExpires time.Duration,
+	refreshTokenExpires time.Duration,
+) (bool, error) {
+	if sid == "" || oldJti == "" || newJti == "" {
+		return false, fmt.Errorf("rotate session: sid, oldJti and newJti are required")
+	}
+
+	metaJSON := ""
+	if newMeta != nil {
+		raw, mErr := json.Marshal(newMeta)
+		if mErr != nil {
+			return false, fmt.Errorf("rotate session: marshal session meta failed: %w", mErr)
+		}
+		metaJSON = string(raw)
+	}
+
+	sidKey := r.makeSessionBindKey(clientType, userId, sid)
+	oldAtKey := r.makeAccessTokenFieldKey(clientType, userId, oldJti)
+	oldRtKey := r.makeRefreshTokenFieldKey(clientType, userId, oldJti)
+	oldUsKey := r.makeUserSessionKey(clientType, userId, oldJti)
+	newAtKey := r.makeAccessTokenFieldKey(clientType, userId, newJti)
+	newRtKey := r.makeRefreshTokenFieldKey(clientType, userId, newJti)
+	newUsKey := r.makeUserSessionKey(clientType, userId, newJti)
+
+	res, err := rotateSessionScript.Run(
+		ctx,
+		r.rdb,
+		[]string{sidKey, oldAtKey, oldRtKey, oldUsKey, newAtKey, newRtKey, newUsKey},
+		oldJti,
+		newJti,
+		accessToken,
+		refreshToken,
+		metaJSON,
+		accessTokenExpires.Milliseconds(),
+		refreshTokenExpires.Milliseconds(),
+		refreshTokenExpires.Milliseconds(),
+	).Int64()
+	if err != nil {
+		r.log.Errorf(ctx, "rotate session failed for user [%d] sid [%s]: %v", userId, sid, err)
+		return false, err
+	}
+	return res == 1, nil
+}
+
+// RevokeSession 退出逻辑会话：以 sid 指针定位当前 jti，删指针与令牌对/会话记录。
+// 先删指针是关键：任何已准备好但未提交的轮换会在 sid 比对处失败，无法复活该 sid。
+func (r *UserTokenCache) RevokeSession(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+) (bool, error) {
+	if sid == "" {
+		return false, nil
+	}
+	sidKey := r.makeSessionBindKey(clientType, userId, sid)
+	atPrefix := r.makeAccessTokenKey(clientType, userId) + ":"
+	rtPrefix := r.makeRefreshTokenKey(clientType, userId) + ":"
+	usPrefix := fmt.Sprintf(UserSessionKeyFormat, clientType.Number(), userId, "")
+	csrfPrefix := fmt.Sprintf(CsrfBindKeyFormat, clientType.Number(), userId, "")
+
+	res, err := logoutSessionScript.Run(ctx, r.rdb, []string{sidKey}, atPrefix, rtPrefix, usPrefix, csrfPrefix).Int64()
+	if err != nil {
+		r.log.Errorf(ctx, "revoke session failed for user [%d] sid [%s]: %v", userId, sid, err)
+		return false, err
+	}
+	return res == 1, nil
+}
+
+// SetCsrfToken 为逻辑会话写入 CSRF 证明（SetNX，已存在则不覆盖）。
+// bootstrap 不轮换证明：多次调用返回同一证明，避免多标签页互相破坏。
+// 会话不存在（sid 指针缺失，如已登出）时拒绝写入，防止为已退出会话写孤儿证明。
+// 返回最终生效的证明值（可能是既有的），err 表示 Redis 故障。
+func (r *UserTokenCache) SetCsrfToken(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+	token string,
+	expires time.Duration,
+) (string, error) {
+	if sid == "" || token == "" {
+		return "", fmt.Errorf("set csrf token: sid and token are required")
+	}
+	exists, err := r.rdb.Exists(ctx, r.makeSessionBindKey(clientType, userId, sid)).Result()
+	if err != nil {
+		r.log.Errorf(ctx, "check session bind for csrf failed for user [%d] sid [%s]: %v", userId, sid, err)
+		return "", err
+	}
+	if exists == 0 {
+		return "", fmt.Errorf("set csrf token: session not found")
+	}
+
+	key := r.makeCsrfKey(clientType, userId, sid)
+	// SetNX：证明已存在（bootstrap 重复调用）时保留原值，不轮换。
+	ok, err := r.rdb.SetNX(ctx, key, token, expires).Result()
+	if err != nil {
+		r.log.Errorf(ctx, "set csrf token failed for user [%d] sid [%s]: %v", userId, sid, err)
+		return "", err
+	}
+	if !ok {
+		// 已存在：读取既有证明返回，保证同一 sid 多次 bootstrap 得到同一值。
+		return r.getCsrfToken(ctx, clientType, userId, sid)
+	}
+	return token, nil
+}
+
+// getCsrfToken 读取会话的 CSRF 证明；会话无证明返回空串（不视为错误）。
+func (r *UserTokenCache) getCsrfToken(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+) (string, error) {
+	key := r.makeCsrfKey(clientType, userId, sid)
+	val, err := r.rdb.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return "", nil
+	}
+	if err != nil {
+		r.log.Errorf(ctx, "get csrf token failed for user [%d] sid [%s]: %v", userId, sid, err)
+		return "", err
+	}
+	return val, nil
+}
+
+// GetCsrfToken 读取会话的 CSRF 证明（导出）；会话无证明返回空串。
+func (r *UserTokenCache) GetCsrfToken(
+	ctx context.Context,
+	clientType authenticationV1.ClientType,
+	userId uint32,
+	sid string,
+) (string, error) {
+	return r.getCsrfToken(ctx, clientType, userId, sid)
+}
+
 // ==============================
 // key 生成
 // ==============================
@@ -357,6 +622,16 @@ func (r *UserTokenCache) VerifyAndRevokeTokenPair(
 // makeAccessTokenKey 生成访问令牌键前缀 at:{ct}:{uid}（用于 SCAN 匹配）
 func (r *UserTokenCache) makeAccessTokenKey(clientType authenticationV1.ClientType, userId uint32) string {
 	return fmt.Sprintf(AccessTokenKeyFormat, clientType.Number(), userId)
+}
+
+// makeSessionBindKey 生成逻辑会话绑定键 sid:{ct}:{uid}:{sid}
+func (r *UserTokenCache) makeSessionBindKey(clientType authenticationV1.ClientType, userId uint32, sid string) string {
+	return fmt.Sprintf(SessionBindKeyFormat, clientType.Number(), userId, sid)
+}
+
+// makeCsrfKey 生成 CSRF 证明绑定键 csr:{ct}:{uid}:{sid}
+func (r *UserTokenCache) makeCsrfKey(clientType authenticationV1.ClientType, userId uint32, sid string) string {
+	return fmt.Sprintf(CsrfBindKeyFormat, clientType.Number(), userId, sid)
 }
 
 // makeAccessTokenFieldKey 生成访问令牌键（含 jti）at:{ct}:{uid}:{jti}

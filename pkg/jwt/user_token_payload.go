@@ -143,6 +143,17 @@ func NewUserTokenAuthClaims(
 		authClaims[ClaimFieldIsTenantAdmin] = tokenPayload.GetIsTenantAdmin()
 	}
 
+	// 应用会话隔离声明：application 与 sid 保证同一用户的 console/boss 会话
+	// 以及同应用内的不同逻辑会话在 AT 层面也可区分；token_use 固定 access，
+	// 用于拒绝把 RT 当 AT 使用。
+	if appName, ok := ApplicationName(tokenPayload.GetApplication()); ok {
+		authClaims[ClaimFieldApplication] = appName
+	}
+	if sid := tokenPayload.GetSid(); sid != "" {
+		authClaims[ClaimFieldSid] = sid
+	}
+	authClaims[ClaimFieldTokenUse] = TokenUseAccess
+
 	return &authClaims
 }
 
@@ -272,6 +283,19 @@ func NewUserTokenPayloadWithClaims(claims *authn.AuthClaims) (*authenticationV1.
 		payload.IsTenantAdmin = trans.Ptr(true)
 	}
 
+	// 应用会话隔离声明：缺失或非法一律不落值，由下游按"缺失即拒绝"处理。
+	if appName, err := claims.GetString(ClaimFieldApplication); err == nil {
+		if app, ok := ParseApplication(appName); ok {
+			payload.Application = app.Enum()
+		}
+	}
+	if sid, err := claims.GetString(ClaimFieldSid); err == nil && sid != "" {
+		payload.Sid = trans.Ptr(sid)
+	}
+	if tokenUse, err := claims.GetString(ClaimFieldTokenUse); err == nil && tokenUse != "" {
+		payload.TokenUse = trans.Ptr(tokenUse)
+	}
+
 	return payload, nil
 }
 
@@ -371,6 +395,19 @@ func NewUserTokenPayloadWithJwtMapClaims(claims jwt.MapClaims) (*authenticationV
 				payload.HiddenFields = append(payload.HiddenFields, hfStr)
 			}
 		}
+	}
+
+	// 应用会话隔离声明：审计路径上令牌同样不可信，一律两值断言后按"非法即不落值"处理。
+	if appName, ok := claims[ClaimFieldApplication].(string); ok {
+		if app, aok := ParseApplication(appName); aok {
+			payload.Application = app.Enum()
+		}
+	}
+	if sid, ok := claims[ClaimFieldSid].(string); ok && sid != "" {
+		payload.Sid = trans.Ptr(sid)
+	}
+	if tokenUse, ok := claims[ClaimFieldTokenUse].(string); ok && tokenUse != "" {
+		payload.TokenUse = trans.Ptr(tokenUse)
 	}
 
 	return payload, nil

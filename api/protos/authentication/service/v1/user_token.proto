@@ -6,6 +6,8 @@ import "gnostic/openapi/v3/annotations.proto";
 
 import "identity/service/v1/types.proto";
 
+import "authentication/service/v1/ani_auth.proto";
+
 // 用户令牌载体
 message UserTokenPayload {
   uint32 user_id = 1 [
@@ -117,4 +119,31 @@ message UserTokenPayload {
       description: "令牌唯一标识(JWT ID)"
     }
   ]; // 令牌唯一标识(JWT ID)
+
+  // 应用会话维度（新增 field number，不改变既有 1..100 语义）。
+  // application 标识该令牌属于 console 还是 boss 应用会话；是会话隔离的必要声明，
+  // 缺失即拒绝，绝不默认归入任一应用。
+  optional ApplicationType application = 101 [
+    json_name = "app",
+    (gnostic.openapi.v3.property) = {
+      description: "应用会话标识（console / boss），缺省即拒绝"
+    }
+  ]; // 应用会话标识
+
+  // 稳定逻辑会话 ID：同一会话刷新后 jti 改变，sid 保持不变。
+  // 用于 logout 与 refresh 共享同一原子边界，隔离同应用内的不同逻辑会话。
+  optional string sid = 102 [
+    json_name = "sid",
+    (gnostic.openapi.v3.property) = {
+      description: "稳定逻辑会话 ID（刷新后不变）"
+    }
+  ]; // 稳定逻辑会话 ID
+
+  // 令牌用途：access 或 refresh。缺省或非法值拒绝，避免 AT 被当作 RT 使用。
+  optional string token_use = 103 [
+    json_name = "tu",
+    (gnostic.openapi.v3.property) = {
+      description: "令牌用途（access / refresh），缺省或非法值拒绝"
+    }
+  ]; // 令牌用途
 }
