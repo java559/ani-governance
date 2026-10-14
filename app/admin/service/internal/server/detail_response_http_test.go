@@ -97,13 +97,13 @@ func TestDetailOpenAPIResponsesDescribeResourceObjects(t *testing.T) {
 	}
 	require.NoError(t, yaml.Unmarshal(assets.OpenApiData, &document))
 	for path, schema := range map[string]string{
-		"/api/v1/networks/vpcs/{vpc_id}":                       "VPC",
-		"/api/v1/networks/eips/{eip_id}":                       "EIP",
-		"/api/v1/networks/operations/{operation_id}":           "NetworkOperation",
-		"/api/v1/networks/vpcs/{vpc_id}/snat":                  "VPCSnat",
-		"/api/v1/images/space":                                 "ImageSpace",
-		"/api/v1/images/publisher-credential":                  "PublisherCredential",
-		"/api/v1/images/registrations/{image_id}":              "ImageRegistration",
+		"/api/v1/networks/vpcs/{vpc_id}":                     "VPC",
+		"/api/v1/networks/eips/{eip_id}":                     "EIP",
+		"/api/v1/networks/operations/{operation_id}":         "NetworkOperation",
+		"/api/v1/networks/vpcs/{vpc_id}/snat":                "VPCSnat",
+		"/api/v1/images/space":                               "ImageSpace",
+		"/api/v1/images/publisher-credential":                "PublisherCredential",
+		"/api/v1/images/registrations/{image_id}":            "ImageRegistration",
 		"/api/v1/modeldev/input-versions/{input_version_id}": "InputVersionView",
 		"/api/v1/modeldev/executions/{execution_id}":         "ExecutionView",
 	} {

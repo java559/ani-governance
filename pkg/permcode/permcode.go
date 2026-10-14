@@ -102,9 +102,9 @@ func nkey(method, path string) string {
 // 归一化索引：normalized key -> expectation。若同一 normalized key 命中多个不同码，
 // 标记为冲突（在 init 时记录）。
 var (
-	normalizedManagement map[string]expectation
-	normalizedCapability map[string]expectation
-	normalizedConflicts  []ConflictError
+	normalizedManagement    map[string]expectation
+	normalizedCapability    map[string]expectation
+	normalizedConflicts     []ConflictError
 	exemptReasonsNormalized map[string]string
 )
 

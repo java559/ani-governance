@@ -26,6 +26,7 @@ import argparse
 import csv
 import io
 import os
+import subprocess
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 ROUTE_MAP_TSV = os.path.join(ROOT, "docs", "plans", "gov-auth-session-api-unification", "route-map.tsv")
@@ -129,6 +130,15 @@ def go_escape(s):
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def format_go(content):
+    """用 gofmt 规范化生成物，使"重新生成"与"磁盘上已格式化文件"逐字节一致。"""
+    proc = subprocess.run(["gofmt"], input=content.encode("utf-8"),
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if proc.returncode != 0:
+        raise ValueError("gofmt failed: %s" % proc.stderr.decode("utf-8", "replace"))
+    return proc.stdout.decode("utf-8")
+
+
 def render_management(entries):
     lines = [HEADER,
              "// 源自 %s（管理面 180 行，生成期固化）。\n" % rel(MANAGEMENT_TSV),
@@ -167,6 +177,9 @@ def render_exempt(entries):
 
 
 def sync(path, content, check):
+    # 生成物必须 gofmt 对齐：CI 的 changed-file format 检查只跑 gofmt -l，
+    # 若生成器产出未对齐文本，一次重生成就会让生成物与磁盘既有文件不一致。
+    content = format_go(content)
     if check:
         current = ""
         if os.path.isfile(path):
