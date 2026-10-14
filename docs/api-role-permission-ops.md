@@ -102,7 +102,7 @@ Authorization: Bearer <platform-admin-token>
 
 ## 3. 权限点与"给角色赋访问权限"
 
-**权限点模型**（`permission/service/v1/permission.proto`）：`code`（如 `sys:audit_logs`）、`name`、`groupId`、`status`、**`apiIds`**（关联接口）、**`menuIds`**（关联菜单）。`module` 在 **权限分组**（`PermissionGroup`）上，不在权限点上。
+**权限点模型**（`permission/service/v1/permission.proto`）：`code`（如 `sys:audit_logs`）、`name`、`groupId`、`status`、**`apiIds`**（关联接口）、**`menuIds`**（关联菜单）。`module` 在 **权限分组**（`PermissionGroup`）上，不在权限点上。权限点 `code` 的业务语义、命名、接口映射和目录校验见 [权限码规范](contracts/permission-code.md)。
 
 **接口**：
 
