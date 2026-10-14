@@ -99,8 +99,8 @@ func TestQuotaAdminHTTPAndRPCContract(t *testing.T) {
 	cases := []struct {
 		service, method, input, output, path string
 	}{
-		{"admin.service.v1.QuotaAdminService", "ListQuotaDefinitions", "pagination.PagingRequest", "admin.service.v1.ListQuotaDefinitionsResponse", "/admin/v1/quota-definitions"},
-		{"admin.service.v1.QuotaAdminService", "ListTenantQuotaAccounts", "admin.service.v1.GetTenantQuotaAccountsRequest", "admin.service.v1.ListTenantQuotaAccountsResponse", "/admin/v1/tenants/{id}/quota-accounts"},
+		{"admin.service.v1.QuotaAdminService", "ListQuotaDefinitions", "pagination.PagingRequest", "admin.service.v1.ListQuotaDefinitionsResponse", "/api/v1/admin/quota-definitions"},
+		{"admin.service.v1.QuotaAdminService", "ListTenantQuotaAccounts", "admin.service.v1.GetTenantQuotaAccountsRequest", "admin.service.v1.ListTenantQuotaAccountsResponse", "/api/v1/admin/tenants/{id}/quota-accounts"},
 		{"admin.service.v1.QuotaSelfService", "GetMyQuotaAccounts", "google.protobuf.Empty", "admin.service.v1.ListTenantQuotaAccountsResponse", "/api/v1/me/quota-accounts"},
 	}
 	for _, tc := range cases {

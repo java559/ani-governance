@@ -32,8 +32,8 @@ type QuotaAdminServiceHTTPServer interface {
 
 func RegisterQuotaAdminServiceHTTPServer(s *http.Server, srv QuotaAdminServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/quota-definitions", _QuotaAdminService_ListQuotaDefinitions0_HTTP_Handler(srv))
-	r.GET("/admin/v1/tenants/{id}/quota-accounts", _QuotaAdminService_ListTenantQuotaAccounts0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/quota-definitions", _QuotaAdminService_ListQuotaDefinitions0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/{id}/quota-accounts", _QuotaAdminService_ListTenantQuotaAccounts0_HTTP_Handler(srv))
 }
 
 func _QuotaAdminService_ListQuotaDefinitions0_HTTP_Handler(srv QuotaAdminServiceHTTPServer) func(ctx http.Context) error {
@@ -95,7 +95,7 @@ func NewQuotaAdminServiceHTTPClient(client *http.Client) QuotaAdminServiceHTTPCl
 // ListQuotaDefinitions 查询配额目录（QUOTA-01）
 func (c *QuotaAdminServiceHTTPClientImpl) ListQuotaDefinitions(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*ListQuotaDefinitionsResponse, error) {
 	var out ListQuotaDefinitionsResponse
-	pattern := "/admin/v1/quota-definitions"
+	pattern := "/api/v1/admin/quota-definitions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationQuotaAdminServiceListQuotaDefinitions))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -109,7 +109,7 @@ func (c *QuotaAdminServiceHTTPClientImpl) ListQuotaDefinitions(ctx context.Conte
 // ListTenantQuotaAccounts 查询指定租户配额账户（QUOTA-02）
 func (c *QuotaAdminServiceHTTPClientImpl) ListTenantQuotaAccounts(ctx context.Context, in *GetTenantQuotaAccountsRequest, opts ...http.CallOption) (*ListTenantQuotaAccountsResponse, error) {
 	var out ListTenantQuotaAccountsResponse
-	pattern := "/admin/v1/tenants/{id}/quota-accounts"
+	pattern := "/api/v1/admin/tenants/{id}/quota-accounts"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationQuotaAdminServiceListTenantQuotaAccounts))
 	opts = append(opts, http.PathTemplate(pattern))

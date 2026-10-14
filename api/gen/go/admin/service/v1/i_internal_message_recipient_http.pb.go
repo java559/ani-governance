@@ -40,10 +40,10 @@ type InternalMessageRecipientServiceHTTPServer interface {
 
 func RegisterInternalMessageRecipientServiceHTTPServer(s *http.Server, srv InternalMessageRecipientServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/internal-message/inbox", _InternalMessageRecipientService_ListUserInbox0_HTTP_Handler(srv))
-	r.POST("/admin/v1/internal-message/inbox/delete", _InternalMessageRecipientService_DeleteNotificationFromInbox0_HTTP_Handler(srv))
-	r.POST("/admin/v1/internal-message/read", _InternalMessageRecipientService_MarkNotificationAsRead0_HTTP_Handler(srv))
-	r.POST("/admin/v1/internal-message/status", _InternalMessageRecipientService_MarkNotificationsStatus0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/internal-message/inbox", _InternalMessageRecipientService_ListUserInbox0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/internal-message/inbox/delete", _InternalMessageRecipientService_DeleteNotificationFromInbox0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/internal-message/read", _InternalMessageRecipientService_MarkNotificationAsRead0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/internal-message/status", _InternalMessageRecipientService_MarkNotificationsStatus0_HTTP_Handler(srv))
 }
 
 func _InternalMessageRecipientService_ListUserInbox0_HTTP_Handler(srv InternalMessageRecipientServiceHTTPServer) func(ctx http.Context) error {
@@ -153,7 +153,7 @@ func NewInternalMessageRecipientServiceHTTPClient(client *http.Client) InternalM
 // DeleteNotificationFromInbox 删除用户收件箱中的通知记录
 func (c *InternalMessageRecipientServiceHTTPClientImpl) DeleteNotificationFromInbox(ctx context.Context, in *v11.DeleteNotificationFromInboxRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/internal-message/inbox/delete"
+	pattern := "/api/v1/admin/internal-message/inbox/delete"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInternalMessageRecipientServiceDeleteNotificationFromInbox))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -167,7 +167,7 @@ func (c *InternalMessageRecipientServiceHTTPClientImpl) DeleteNotificationFromIn
 // ListUserInbox 获取用户的收件箱列表 (通知类)
 func (c *InternalMessageRecipientServiceHTTPClientImpl) ListUserInbox(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListUserInboxResponse, error) {
 	var out v11.ListUserInboxResponse
-	pattern := "/admin/v1/internal-message/inbox"
+	pattern := "/api/v1/admin/internal-message/inbox"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationInternalMessageRecipientServiceListUserInbox))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -181,7 +181,7 @@ func (c *InternalMessageRecipientServiceHTTPClientImpl) ListUserInbox(ctx contex
 // MarkNotificationAsRead 将通知标记为已读
 func (c *InternalMessageRecipientServiceHTTPClientImpl) MarkNotificationAsRead(ctx context.Context, in *v11.MarkNotificationAsReadRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/internal-message/read"
+	pattern := "/api/v1/admin/internal-message/read"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInternalMessageRecipientServiceMarkNotificationAsRead))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -195,7 +195,7 @@ func (c *InternalMessageRecipientServiceHTTPClientImpl) MarkNotificationAsRead(c
 // MarkNotificationsStatus 标记通知投递回执（SENT→RECEIVED；服务端写入即 RECEIVED，此端点为回执补偿通道）
 func (c *InternalMessageRecipientServiceHTTPClientImpl) MarkNotificationsStatus(ctx context.Context, in *v11.MarkNotificationsStatusRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/internal-message/status"
+	pattern := "/api/v1/admin/internal-message/status"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInternalMessageRecipientServiceMarkNotificationsStatus))
 	opts = append(opts, http.PathTemplate(pattern))

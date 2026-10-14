@@ -79,7 +79,7 @@ func Check(ctx context.Context, db *sql.DB) error {
  AND EXISTS(SELECT 1 FROM sys_role_permissions rp JOIN sys_permissions p ON p.id=rp.permission_id
  WHERE rp.role_id=r.id AND rp.tenant_id=0 AND rp.status='ON' AND rp.effect='ALLOW' AND p.status='ON' AND p.code='sys:access_backend')
  AND NOT EXISTS (
- SELECT 1 FROM (VALUES ('GET','/admin/v1/me'),('GET','/admin/v1/initial-context'),('GET','/admin/v1/plans'),('GET','/admin/v1/tenants')) required(method,path)
+ SELECT 1 FROM (VALUES ('GET','/api/v1/admin/me'),('GET','/api/v1/admin/initial-context'),('GET','/api/v1/admin/plans'),('GET','/api/v1/admin/tenants')) required(method,path)
  WHERE NOT EXISTS(SELECT 1 FROM sys_apis a JOIN sys_permission_apis pa ON pa.api_id=a.id
  JOIN sys_permissions p ON p.id=pa.permission_id JOIN sys_role_permissions rp ON rp.permission_id=p.id
  WHERE a.method=required.method AND a.path=required.path AND a.status='ON' AND p.status='ON'

@@ -29,7 +29,7 @@ type RedisCacheMonitorServiceHTTPServer interface {
 
 func RegisterRedisCacheMonitorServiceHTTPServer(s *http.Server, srv RedisCacheMonitorServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/redis-cache-monitor", _RedisCacheMonitorService_Get21_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/redis-cache-monitor", _RedisCacheMonitorService_Get21_HTTP_Handler(srv))
 }
 
 func _RedisCacheMonitorService_Get21_HTTP_Handler(srv RedisCacheMonitorServiceHTTPServer) func(ctx http.Context) error {
@@ -67,7 +67,7 @@ func NewRedisCacheMonitorServiceHTTPClient(client *http.Client) RedisCacheMonito
 // Get 查询Redis缓存监控信息
 func (c *RedisCacheMonitorServiceHTTPClientImpl) Get(ctx context.Context, in *v1.GetRedisCacheMonitorRequest, opts ...http.CallOption) (*v1.RedisCacheMonitorInfo, error) {
 	var out v1.RedisCacheMonitorInfo
-	pattern := "/admin/v1/redis-cache-monitor"
+	pattern := "/api/v1/admin/redis-cache-monitor"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationRedisCacheMonitorServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))

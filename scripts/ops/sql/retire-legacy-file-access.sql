@@ -17,16 +17,16 @@ BEGIN
   DELETE FROM sys_permission_apis
   WHERE api_id IN (
     SELECT id FROM sys_apis
-    WHERE path LIKE '/admin/v1/files%'
-       OR path LIKE '/admin/v1/file/%'
-       OR path LIKE '/admin/v1/me/avatar'
+    WHERE path LIKE '/api/v1/admin/files%'
+       OR path LIKE '/api/v1/admin/file/%'
+       OR path LIKE '/api/v1/admin/me/avatar'
   );
 
   -- 2. The removed file/avatar API catalog rows.
   DELETE FROM sys_apis
-  WHERE path LIKE '/admin/v1/files%'
-     OR path LIKE '/admin/v1/file/%'
-     OR path LIKE '/admin/v1/me/avatar';
+  WHERE path LIKE '/api/v1/admin/files%'
+     OR path LIKE '/api/v1/admin/file/%'
+     OR path LIKE '/api/v1/admin/me/avatar';
 
   -- 3. Permission → menu grants for the removed FileManagement menu.
   DELETE FROM sys_permission_menus

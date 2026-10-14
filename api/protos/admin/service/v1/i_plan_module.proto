@@ -13,21 +13,21 @@ service PlanModuleService {
   // 分页查询套餐模块列表
   rpc List (pagination.PagingRequest) returns (identity.service.v1.ListPlanModuleResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/plan-modules"
+      get: "/api/v1/admin/plan-modules"
     };
   }
 
   // 查询套餐模块详情
   rpc Get (identity.service.v1.GetPlanModuleRequest) returns (identity.service.v1.PlanModule) {
     option (google.api.http) = {
-      get: "/admin/v1/plan-modules/{id}"
+      get: "/api/v1/admin/plan-modules/{id}"
     };
   }
 
   // 创建套餐模块
   rpc Create (identity.service.v1.CreatePlanModuleRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/plan-modules"
+      post: "/api/v1/admin/plan-modules"
       body: "*"
     };
   }
@@ -35,7 +35,7 @@ service PlanModuleService {
   // 更新套餐模块
   rpc Update (identity.service.v1.UpdatePlanModuleRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/admin/v1/plan-modules/{id}"
+      put: "/api/v1/admin/plan-modules/{id}"
       body: "*"
     };
   }
@@ -43,7 +43,7 @@ service PlanModuleService {
   // 删除套餐模块
   rpc Delete (identity.service.v1.DeletePlanModuleRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/admin/v1/plan-modules"
+      delete: "/api/v1/admin/plan-modules"
     };
   }
 }

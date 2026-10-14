@@ -161,9 +161,9 @@ gow run admin
 
 先用首管理员登录平台：`POST /api/v1/auth/platform/password/login`。登录不再需要图形验证码或验证码请求头；客户端在 JSON 的 `password` 字段直接提交用户输入的密码，不做 AES/Base64/bcrypt 编码，通过 HTTPS 访问部署入口。接口报文和待调整事项统一见 [功能对接与接口风格改动登记](interface-integration-register.md)。不要把“数据库里是 bcrypt”误解为“客户端发送 bcrypt”。
 
-登录后至少验证 `GET /admin/v1/me`、`GET /admin/v1/initial-context`、`GET /admin/v1/plans`，确认能访问管理接口。
+登录后至少验证 `GET /api/v1/admin/me`、`GET /api/v1/admin/initial-context`、`GET /api/v1/admin/plans`，确认能访问管理接口。
 
-然后读取“基础管理”套餐的实际 `id`，通过 `POST /admin/v1/tenants:with-admin` 创建租户及管理员：
+然后读取“基础管理”套餐的实际 `id`，通过 `POST /api/v1/admin/tenants:with-admin` 创建租户及管理员：
 
 ```json
 {
@@ -176,7 +176,7 @@ gow run admin
 
 `123` 必须换成查询得到的套餐 ID；`subscription_plan` 文本不能替代 `plan_id`。`IMMEDIATE` 为默认模式，直接启用账号，不需要邮件。需要邀请邮件时按 [账号开通说明](onboarding.md) 使用 `EMAIL_INVITATION`。
 
-租户登录使用 `POST /api/v1/auth/password/login`，`tenant_name` 填租户的 **code**（示例为 `example`）。登录后验证个人资料、初始上下文、用户列表和租户内创建用户。创建用户的请求还必须包含实际的 `data.role_ids`（先从 `/admin/v1/roles` 查询）及明确提供的密码；缺少角色会返回 400。平台租户 ID `0` 不代表可以直接访问任意下游租户资源。
+租户登录使用 `POST /api/v1/auth/password/login`，`tenant_name` 填租户的 **code**（示例为 `example`）。登录后验证个人资料、初始上下文、用户列表和租户内创建用户。创建用户的请求还必须包含实际的 `data.role_ids`（先从 `/api/v1/admin/roles` 查询）及明确提供的密码；缺少角色会返回 400。平台租户 ID `0` 不代表可以直接访问任意下游租户资源。
 
 ## 5. API 的来源、登记和授权分开管理
 

@@ -146,7 +146,7 @@ func t09Token(hidden ...string) *authenticationV1.UserTokenPayload {
 // 未受控字段保持、未赋值字段缺席。
 func TestT09UserHTTPListRedactsEmailAndMobile(t *testing.T) {
 	srv, stub := newT09UserServer(t, t09Token())
-	out, raw := get(t, srv, "/admin/v1/users")
+	out, raw := get(t, srv, "/api/v1/admin/users")
 
 	require.NotNil(t, stub.gotListReq, "内层业务应收到 List 请求")
 
@@ -178,7 +178,7 @@ func TestT09UserHTTPListRedactsEmailAndMobile(t *testing.T) {
 // 证明「字段权限在内、redact 在外」的包装顺序，且外层不会复活被清除的字段。
 func TestT09UserHTTPGetFieldPermissionClearsBeforeRedaction(t *testing.T) {
 	srv, stub := newT09UserServer(t, t09Token("User.email"))
-	out, raw := get(t, srv, "/admin/v1/users/9")
+	out, raw := get(t, srv, "/api/v1/admin/users/9")
 
 	require.NotNil(t, stub.gotGetReq)
 	require.EqualValues(t, 9, stub.gotGetReq.GetId(), "路径变量应绑定到 GetUserRequest.id")
@@ -195,7 +195,7 @@ func TestT09UserHTTPGetFieldPermissionClearsBeforeRedaction(t *testing.T) {
 // 排除「两层其实是同一层」的假阳性。
 func TestT09UserHTTPFieldPermissionOnMobileKeepsRedactedEmail(t *testing.T) {
 	srv, _ := newT09UserServer(t, t09Token("User.mobile"))
-	out, raw := get(t, srv, "/admin/v1/users/9")
+	out, raw := get(t, srv, "/api/v1/admin/users/9")
 
 	require.NotContains(t, out, "mobile", "命中隐藏集的 mobile 应被清除")
 	require.Equal(t, t09RedactEmail, out["email"], "未命中隐藏集的 email 仍应被外层脱敏")
@@ -211,7 +211,7 @@ func TestT09UserHTTPRedactionIsNotBypassable(t *testing.T) {
 		TenantId: trans.Ptr(uint32(0)),
 		Roles:    []string{"platform-admin"},
 	})
-	out, raw := get(t, srv, "/admin/v1/users/1")
+	out, raw := get(t, srv, "/api/v1/admin/users/1")
 
 	require.Equal(t, t09RedactEmail, out["email"], "bypass=nil 时任何令牌都必须脱敏")
 	require.Equal(t, t09RedactMobile, out["mobile"])

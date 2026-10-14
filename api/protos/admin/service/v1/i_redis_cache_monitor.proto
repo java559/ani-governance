@@ -11,7 +11,7 @@ service RedisCacheMonitorService {
   // 查询Redis缓存监控信息
   rpc Get (redis_cache.service.v1.GetRedisCacheMonitorRequest) returns (redis_cache.service.v1.RedisCacheMonitorInfo) {
     option (google.api.http) = {
-      get: "/admin/v1/redis-cache-monitor"
+      get: "/api/v1/admin/redis-cache-monitor"
     };
   }
 }

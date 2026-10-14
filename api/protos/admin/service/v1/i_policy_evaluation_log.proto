@@ -12,14 +12,14 @@ service PolicyEvaluationLogService {
   // 查询策略评估日志列表
   rpc List (pagination.PagingRequest) returns (permission.service.v1.ListPolicyEvaluationLogResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/policy-evaluation-logs"
+      get: "/api/v1/admin/policy-evaluation-logs"
     };
   }
 
   // 查询策略评估日志详情
   rpc Get (permission.service.v1.GetPolicyEvaluationLogRequest) returns (permission.service.v1.PolicyEvaluationLog) {
     option (google.api.http) = {
-      get: "/admin/v1/policy-evaluation-logs/{id}"
+      get: "/api/v1/admin/policy-evaluation-logs/{id}"
     };
   }
 }

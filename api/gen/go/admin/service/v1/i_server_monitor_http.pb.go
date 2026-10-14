@@ -29,7 +29,7 @@ type ServerMonitorServiceHTTPServer interface {
 
 func RegisterServerMonitorServiceHTTPServer(s *http.Server, srv ServerMonitorServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/server-monitor", _ServerMonitorService_Get23_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/server-monitor", _ServerMonitorService_Get23_HTTP_Handler(srv))
 }
 
 func _ServerMonitorService_Get23_HTTP_Handler(srv ServerMonitorServiceHTTPServer) func(ctx http.Context) error {
@@ -67,7 +67,7 @@ func NewServerMonitorServiceHTTPClient(client *http.Client) ServerMonitorService
 // Get 查询服务监控信息
 func (c *ServerMonitorServiceHTTPClientImpl) Get(ctx context.Context, in *v1.GetServerMonitorRequest, opts ...http.CallOption) (*v1.ServerMonitorInfo, error) {
 	var out v1.ServerMonitorInfo
-	pattern := "/admin/v1/server-monitor"
+	pattern := "/api/v1/admin/server-monitor"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationServerMonitorServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))

@@ -299,7 +299,7 @@ func TestModelDevPauseCommandPersistsGateAndReplays(t *testing.T) {
 			return writer.Client().Permission.DeleteOneID(createPermission.ID).Exec(c)
 		})
 		createAPI, err := writer.Client().Api.Create().
-			SetModule("modeldev-pause-create-" + suffix).SetPath("/admin/v1/modeldev/executions").SetMethod("POST").
+			SetModule("modeldev-pause-create-" + suffix).SetPath("/api/v1/modeldev/executions").SetMethod("POST").
 			SetScope(api.ScopeAdmin).SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(sys)
 		require.NoError(t, err)
 		cleanupModelDevPauseFixture(t, func(c context.Context) error {

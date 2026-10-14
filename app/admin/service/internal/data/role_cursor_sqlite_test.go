@@ -34,7 +34,7 @@ func createCursorRolesForTest(t *testing.T, repo *RoleRepo, ctx context.Context,
 	return ids
 }
 
-// TestRoleRepoSqlite_ListCursorPaging 验证 /admin/v1/roles 游标分页：
+// TestRoleRepoSqlite_ListCursorPaging 验证 /api/v1/admin/roles 游标分页：
 // 未指定排序时按 sort_order 升序、同值靠唯一 ID 升序兜底、翻页不重不漏、
 // 末页 next_cursor 为空、total 为当前条件下的总数。
 func TestRoleRepoSqlite_ListCursorPaging(t *testing.T) {

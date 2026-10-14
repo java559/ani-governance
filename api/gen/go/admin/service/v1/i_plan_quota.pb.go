@@ -28,12 +28,12 @@ var File_admin_service_v1_i_plan_quota_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_plan_quota_proto_rawDesc = "" +
 	"\n" +
-	"#admin/service/v1/i_plan_quota.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a$identity/service/v1/plan_quota.proto2\xd5\x03\n" +
-	"\x10PlanQuotaService\x12l\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a*.identity.service.v1.ListPlanQuotaResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/admin/v1/plan-quotas\x12o\n" +
-	"\x06Create\x12+.identity.service.v1.CreatePlanQuotaRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/admin/v1/plan-quotas\x12t\n" +
-	"\x06Update\x12+.identity.service.v1.UpdatePlanQuotaRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\x1a\x1a/admin/v1/plan-quotas/{id}\x12l\n" +
-	"\x06Delete\x12+.identity.service.v1.DeletePlanQuotaRequest\x1a\x16.google.protobuf.Empty\"\x1d\x82\xd3\xe4\x93\x02\x17*\x15/admin/v1/plan-quotasB\xbc\x01\n" +
+	"#admin/service/v1/i_plan_quota.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a$identity/service/v1/plan_quota.proto2\xe5\x03\n" +
+	"\x10PlanQuotaService\x12p\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a*.identity.service.v1.ListPlanQuotaResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/admin/plan-quotas\x12s\n" +
+	"\x06Create\x12+.identity.service.v1.CreatePlanQuotaRequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/plan-quotas\x12x\n" +
+	"\x06Update\x12+.identity.service.v1.UpdatePlanQuotaRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/api/v1/admin/plan-quotas/{id}\x12p\n" +
+	"\x06Delete\x12+.identity.service.v1.DeletePlanQuotaRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b*\x19/api/v1/admin/plan-quotasB\xbc\x01\n" +
 	"\x14com.admin.service.v1B\x0fIPlanQuotaProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_plan_quota_proto_goTypes = []any{

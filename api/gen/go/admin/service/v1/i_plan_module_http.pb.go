@@ -43,11 +43,11 @@ type PlanModuleServiceHTTPServer interface {
 
 func RegisterPlanModuleServiceHTTPServer(s *http.Server, srv PlanModuleServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/plan-modules", _PlanModuleService_List18_HTTP_Handler(srv))
-	r.GET("/admin/v1/plan-modules/{id}", _PlanModuleService_Get18_HTTP_Handler(srv))
-	r.POST("/admin/v1/plan-modules", _PlanModuleService_Create13_HTTP_Handler(srv))
-	r.PUT("/admin/v1/plan-modules/{id}", _PlanModuleService_Update13_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/plan-modules", _PlanModuleService_Delete13_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/plan-modules", _PlanModuleService_List18_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/plan-modules/{id}", _PlanModuleService_Get18_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/plan-modules", _PlanModuleService_Create13_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/plan-modules/{id}", _PlanModuleService_Update13_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/plan-modules", _PlanModuleService_Delete13_HTTP_Handler(srv))
 }
 
 func _PlanModuleService_List18_HTTP_Handler(srv PlanModuleServiceHTTPServer) func(ctx http.Context) error {
@@ -181,7 +181,7 @@ func NewPlanModuleServiceHTTPClient(client *http.Client) PlanModuleServiceHTTPCl
 // Create 创建套餐模块
 func (c *PlanModuleServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreatePlanModuleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/plan-modules"
+	pattern := "/api/v1/admin/plan-modules"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlanModuleServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -195,7 +195,7 @@ func (c *PlanModuleServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Cr
 // Delete 删除套餐模块
 func (c *PlanModuleServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeletePlanModuleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/plan-modules"
+	pattern := "/api/v1/admin/plan-modules"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlanModuleServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -209,7 +209,7 @@ func (c *PlanModuleServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.De
 // Get 查询套餐模块详情
 func (c *PlanModuleServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPlanModuleRequest, opts ...http.CallOption) (*v11.PlanModule, error) {
 	var out v11.PlanModule
-	pattern := "/admin/v1/plan-modules/{id}"
+	pattern := "/api/v1/admin/plan-modules/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlanModuleServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -223,7 +223,7 @@ func (c *PlanModuleServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPl
 // List 分页查询套餐模块列表
 func (c *PlanModuleServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListPlanModuleResponse, error) {
 	var out v11.ListPlanModuleResponse
-	pattern := "/admin/v1/plan-modules"
+	pattern := "/api/v1/admin/plan-modules"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlanModuleServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -237,7 +237,7 @@ func (c *PlanModuleServiceHTTPClientImpl) List(ctx context.Context, in *v1.Pagin
 // Update 更新套餐模块
 func (c *PlanModuleServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdatePlanModuleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/plan-modules/{id}"
+	pattern := "/api/v1/admin/plan-modules/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlanModuleServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

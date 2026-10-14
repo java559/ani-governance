@@ -46,12 +46,12 @@ type InternalMessageServiceHTTPServer interface {
 
 func RegisterInternalMessageServiceHTTPServer(s *http.Server, srv InternalMessageServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/internal-message/messages", _InternalMessageService_ListMessage0_HTTP_Handler(srv))
-	r.GET("/admin/v1/internal-message/messages/{id}", _InternalMessageService_GetMessage0_HTTP_Handler(srv))
-	r.PUT("/admin/v1/internal-message/messages/{id}", _InternalMessageService_UpdateMessage0_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/internal-message/messages/{id}", _InternalMessageService_DeleteMessage0_HTTP_Handler(srv))
-	r.POST("/admin/v1/internal-message/send", _InternalMessageService_SendMessage0_HTTP_Handler(srv))
-	r.POST("/admin/v1/internal-message/revoke", _InternalMessageService_RevokeMessage0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/internal-message/messages", _InternalMessageService_ListMessage0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/internal-message/messages/{id}", _InternalMessageService_GetMessage0_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/internal-message/messages/{id}", _InternalMessageService_UpdateMessage0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/internal-message/messages/{id}", _InternalMessageService_DeleteMessage0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/internal-message/send", _InternalMessageService_SendMessage0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/internal-message/revoke", _InternalMessageService_RevokeMessage0_HTTP_Handler(srv))
 }
 
 func _InternalMessageService_ListMessage0_HTTP_Handler(srv InternalMessageServiceHTTPServer) func(ctx http.Context) error {
@@ -212,7 +212,7 @@ func NewInternalMessageServiceHTTPClient(client *http.Client) InternalMessageSer
 // DeleteMessage 删除站内信消息
 func (c *InternalMessageServiceHTTPClientImpl) DeleteMessage(ctx context.Context, in *v11.DeleteInternalMessageRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/internal-message/messages/{id}"
+	pattern := "/api/v1/admin/internal-message/messages/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationInternalMessageServiceDeleteMessage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -226,7 +226,7 @@ func (c *InternalMessageServiceHTTPClientImpl) DeleteMessage(ctx context.Context
 // GetMessage 查询站内信消息详情
 func (c *InternalMessageServiceHTTPClientImpl) GetMessage(ctx context.Context, in *v11.GetInternalMessageRequest, opts ...http.CallOption) (*v11.InternalMessage, error) {
 	var out v11.InternalMessage
-	pattern := "/admin/v1/internal-message/messages/{id}"
+	pattern := "/api/v1/admin/internal-message/messages/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationInternalMessageServiceGetMessage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -240,7 +240,7 @@ func (c *InternalMessageServiceHTTPClientImpl) GetMessage(ctx context.Context, i
 // ListMessage 查询站内信消息列表
 func (c *InternalMessageServiceHTTPClientImpl) ListMessage(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListInternalMessageResponse, error) {
 	var out v11.ListInternalMessageResponse
-	pattern := "/admin/v1/internal-message/messages"
+	pattern := "/api/v1/admin/internal-message/messages"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationInternalMessageServiceListMessage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -254,7 +254,7 @@ func (c *InternalMessageServiceHTTPClientImpl) ListMessage(ctx context.Context, 
 // RevokeMessage 撤销某条消息
 func (c *InternalMessageServiceHTTPClientImpl) RevokeMessage(ctx context.Context, in *v11.RevokeMessageRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/internal-message/revoke"
+	pattern := "/api/v1/admin/internal-message/revoke"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInternalMessageServiceRevokeMessage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -268,7 +268,7 @@ func (c *InternalMessageServiceHTTPClientImpl) RevokeMessage(ctx context.Context
 // SendMessage 发送消息
 func (c *InternalMessageServiceHTTPClientImpl) SendMessage(ctx context.Context, in *v11.SendMessageRequest, opts ...http.CallOption) (*v11.SendMessageResponse, error) {
 	var out v11.SendMessageResponse
-	pattern := "/admin/v1/internal-message/send"
+	pattern := "/api/v1/admin/internal-message/send"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInternalMessageServiceSendMessage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -282,7 +282,7 @@ func (c *InternalMessageServiceHTTPClientImpl) SendMessage(ctx context.Context, 
 // UpdateMessage 更新站内信消息
 func (c *InternalMessageServiceHTTPClientImpl) UpdateMessage(ctx context.Context, in *v11.UpdateInternalMessageRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/internal-message/messages/{id}"
+	pattern := "/api/v1/admin/internal-message/messages/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInternalMessageServiceUpdateMessage))
 	opts = append(opts, http.PathTemplate(pattern))

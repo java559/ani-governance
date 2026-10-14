@@ -28,14 +28,14 @@ var File_admin_service_v1_i_language_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_language_proto_rawDesc = "" +
 	"\n" +
-	"!admin/service/v1/i_language.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1edict/service/v1/language.proto2\xa2\x05\n" +
-	"\x0fLanguageService\x12f\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a%.dict.service.v1.ListLanguageResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/admin/v1/dict/langs\x12h\n" +
-	"\x03Get\x12#.dict.service.v1.GetLanguageRequest\x1a\x19.dict.service.v1.Language\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/admin/v1/dict/langs/{id}\x12i\n" +
-	"\x06Create\x12&.dict.service.v1.CreateLanguageRequest\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/admin/v1/dict/langs\x12n\n" +
-	"\x06Update\x12&.dict.service.v1.UpdateLanguageRequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/admin/v1/dict/langs/{id}\x12f\n" +
-	"\x06Delete\x12&.dict.service.v1.DeleteLanguageRequest\x1a\x16.google.protobuf.Empty\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/admin/v1/dict/langs\x12z\n" +
-	"\vBatchCreate\x12,.dict.service.v1.BatchCreateLanguagesRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/admin/v1/dict/langs/batchB\xbb\x01\n" +
+	"!admin/service/v1/i_language.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1edict/service/v1/language.proto2\xba\x05\n" +
+	"\x0fLanguageService\x12j\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a%.dict.service.v1.ListLanguageResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/dict/langs\x12l\n" +
+	"\x03Get\x12#.dict.service.v1.GetLanguageRequest\x1a\x19.dict.service.v1.Language\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/dict/langs/{id}\x12m\n" +
+	"\x06Create\x12&.dict.service.v1.CreateLanguageRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/dict/langs\x12r\n" +
+	"\x06Update\x12&.dict.service.v1.UpdateLanguageRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/api/v1/admin/dict/langs/{id}\x12j\n" +
+	"\x06Delete\x12&.dict.service.v1.DeleteLanguageRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/v1/admin/dict/langs\x12~\n" +
+	"\vBatchCreate\x12,.dict.service.v1.BatchCreateLanguagesRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/dict/langs/batchB\xbb\x01\n" +
 	"\x14com.admin.service.v1B\x0eILanguageProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_language_proto_goTypes = []any{

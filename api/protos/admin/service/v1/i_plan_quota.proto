@@ -13,14 +13,14 @@ service PlanQuotaService {
   // 分页查询套餐配额列表
   rpc List (pagination.PagingRequest) returns (identity.service.v1.ListPlanQuotaResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/plan-quotas"
+      get: "/api/v1/admin/plan-quotas"
     };
   }
 
   // 创建套餐配额
   rpc Create (identity.service.v1.CreatePlanQuotaRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/plan-quotas"
+      post: "/api/v1/admin/plan-quotas"
       body: "*"
     };
   }
@@ -28,7 +28,7 @@ service PlanQuotaService {
   // 更新套餐配额
   rpc Update (identity.service.v1.UpdatePlanQuotaRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/admin/v1/plan-quotas/{id}"
+      put: "/api/v1/admin/plan-quotas/{id}"
       body: "*"
     };
   }
@@ -36,7 +36,7 @@ service PlanQuotaService {
   // 删除套餐配额
   rpc Delete (identity.service.v1.DeletePlanQuotaRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/admin/v1/plan-quotas"
+      delete: "/api/v1/admin/plan-quotas"
     };
   }
 }

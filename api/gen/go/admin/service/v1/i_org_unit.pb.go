@@ -28,13 +28,13 @@ var File_admin_service_v1_i_org_unit_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_org_unit_proto_rawDesc = "" +
 	"\n" +
-	"!admin/service/v1/i_org_unit.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\"identity/service/v1/org_unit.proto2\xb7\x04\n" +
-	"\x0eOrgUnitService\x12h\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a(.identity.service.v1.ListOrgUnitResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/admin/v1/org-units\x12m\n" +
-	"\x03Get\x12&.identity.service.v1.GetOrgUnitRequest\x1a\x1c.identity.service.v1.OrgUnit\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/admin/v1/org-units/{id}\x12k\n" +
-	"\x06Create\x12).identity.service.v1.CreateOrgUnitRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/admin/v1/org-units\x12p\n" +
-	"\x06Update\x12).identity.service.v1.UpdateOrgUnitRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\x1a\x18/admin/v1/org-units/{id}\x12m\n" +
-	"\x06Delete\x12).identity.service.v1.DeleteOrgUnitRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a*\x18/admin/v1/org-units/{id}B\xba\x01\n" +
+	"!admin/service/v1/i_org_unit.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\"identity/service/v1/org_unit.proto2\xcb\x04\n" +
+	"\x0eOrgUnitService\x12l\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a(.identity.service.v1.ListOrgUnitResponse\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/admin/org-units\x12q\n" +
+	"\x03Get\x12&.identity.service.v1.GetOrgUnitRequest\x1a\x1c.identity.service.v1.OrgUnit\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/admin/org-units/{id}\x12o\n" +
+	"\x06Create\x12).identity.service.v1.CreateOrgUnitRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/v1/admin/org-units\x12t\n" +
+	"\x06Update\x12).identity.service.v1.UpdateOrgUnitRequest\x1a\x16.google.protobuf.Empty\"'\x82\xd3\xe4\x93\x02!:\x01*\x1a\x1c/api/v1/admin/org-units/{id}\x12q\n" +
+	"\x06Delete\x12).identity.service.v1.DeleteOrgUnitRequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/api/v1/admin/org-units/{id}B\xba\x01\n" +
 	"\x14com.admin.service.v1B\rIOrgUnitProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_org_unit_proto_goTypes = []any{

@@ -28,13 +28,13 @@ var File_admin_service_v1_i_permission_group_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_permission_group_proto_rawDesc = "" +
 	"\n" +
-	")admin/service/v1/i_permission_group.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a,permission/service/v1/permission_group.proto2\xa5\x05\n" +
-	"\x16PermissionGroupService\x12z\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a2.permission.service.v1.ListPermissionGroupResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/admin/v1/permission-groups\x12\x89\x01\n" +
-	"\x03Get\x120.permission.service.v1.GetPermissionGroupRequest\x1a&.permission.service.v1.PermissionGroup\"(\x82\xd3\xe4\x93\x02\"\x12 /admin/v1/permission-groups/{id}\x12}\n" +
-	"\x06Create\x123.permission.service.v1.CreatePermissionGroupRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/admin/v1/permission-groups\x12\x82\x01\n" +
-	"\x06Update\x123.permission.service.v1.UpdatePermissionGroupRequest\x1a\x16.google.protobuf.Empty\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /admin/v1/permission-groups/{id}\x12\x7f\n" +
-	"\x06Delete\x123.permission.service.v1.DeletePermissionGroupRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\"* /admin/v1/permission-groups/{id}B\xc2\x01\n" +
+	")admin/service/v1/i_permission_group.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a,permission/service/v1/permission_group.proto2\xbb\x05\n" +
+	"\x16PermissionGroupService\x12~\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a2.permission.service.v1.ListPermissionGroupResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/permission-groups\x12\x8d\x01\n" +
+	"\x03Get\x120.permission.service.v1.GetPermissionGroupRequest\x1a&.permission.service.v1.PermissionGroup\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/admin/permission-groups/{id}\x12\x81\x01\n" +
+	"\x06Create\x123.permission.service.v1.CreatePermissionGroupRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/permission-groups\x12\x86\x01\n" +
+	"\x06Update\x123.permission.service.v1.UpdatePermissionGroupRequest\x1a\x16.google.protobuf.Empty\"/\x82\xd3\xe4\x93\x02):\x01*\x1a$/api/v1/admin/permission-groups/{id}\x12\x83\x01\n" +
+	"\x06Delete\x123.permission.service.v1.DeletePermissionGroupRequest\x1a\x16.google.protobuf.Empty\",\x82\xd3\xe4\x93\x02&*$/api/v1/admin/permission-groups/{id}B\xc2\x01\n" +
 	"\x14com.admin.service.v1B\x15IPermissionGroupProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_permission_group_proto_goTypes = []any{

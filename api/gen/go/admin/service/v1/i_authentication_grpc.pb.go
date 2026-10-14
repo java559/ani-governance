@@ -40,7 +40,7 @@ const (
 //
 // 路径规范：本服务的路由统一挂 /api/v1/auth/*，与 ANI Core OpenAPI 契约
 // （api/openapi/v1.yaml，servers[0].url = https://{host}/api/v1）拼出的最终 URL 一致。
-// 仓库内其余服务仍为 /admin/v1/*，两套前缀并存，按域逐步迁移。
+// 仓库内其余服务仍为 /api/v1/admin/*，两套前缀并存，按域逐步迁移。
 type AuthenticationServiceClient interface {
 	// 租户账密登录（免鉴权）
 	PasswordLogin(ctx context.Context, in *v1.PasswordLoginRequest, opts ...grpc.CallOption) (*v1.TokenPairResponse, error)
@@ -173,7 +173,7 @@ func (c *authenticationServiceClient) VerifyCaptcha(ctx context.Context, in *v1.
 //
 // 路径规范：本服务的路由统一挂 /api/v1/auth/*，与 ANI Core OpenAPI 契约
 // （api/openapi/v1.yaml，servers[0].url = https://{host}/api/v1）拼出的最终 URL 一致。
-// 仓库内其余服务仍为 /admin/v1/*，两套前缀并存，按域逐步迁移。
+// 仓库内其余服务仍为 /api/v1/admin/*，两套前缀并存，按域逐步迁移。
 type AuthenticationServiceServer interface {
 	// 租户账密登录（免鉴权）
 	PasswordLogin(context.Context, *v1.PasswordLoginRequest) (*v1.TokenPairResponse, error)

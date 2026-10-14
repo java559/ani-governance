@@ -12,14 +12,14 @@ service UserProfileService {
   // 获取用户资料
   rpc GetUser (google.protobuf.Empty) returns (identity.service.v1.User) {
     option (google.api.http) = {
-      get: "/admin/v1/me"
+      get: "/api/v1/admin/me"
     };
   }
 
   // 更新用户资料
   rpc UpdateUser (identity.service.v1.UpdateUserRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/admin/v1/me"
+      put: "/api/v1/admin/me"
       body: "*"
     };
   }
@@ -27,7 +27,7 @@ service UserProfileService {
   // 修改用户密码
   rpc ChangePassword(identity.service.v1.ChangePasswordRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/me/password"
+      post: "/api/v1/admin/me/password"
       body: "*"
     };
   }
@@ -35,14 +35,14 @@ service UserProfileService {
   // 绑定手机号码/邮箱
   rpc BindContact(identity.service.v1.BindContactRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/me/contact"
+      post: "/api/v1/admin/me/contact"
       body: "*"
     };
   }
   // 验证手机号码/邮箱
   rpc VerifyContact(identity.service.v1.VerifyContactRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/me/contact/verify"
+      post: "/api/v1/admin/me/contact/verify"
       body: "*"
     };
   }

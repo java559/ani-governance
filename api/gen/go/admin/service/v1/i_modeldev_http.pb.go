@@ -46,16 +46,16 @@ type ModelDevServiceHTTPServer interface {
 
 func RegisterModelDevServiceHTTPServer(s *http.Server, srv ModelDevServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/modeldev/presets", _ModelDevService_ListPresets0_HTTP_Handler(srv))
-	r.GET("/admin/v1/modeldev/input-versions/{input_version_id}", _ModelDevService_GetInputVersion0_HTTP_Handler(srv))
-	r.GET("/admin/v1/modeldev/input-versions", _ModelDevService_ListInputVersions0_HTTP_Handler(srv))
-	r.GET("/admin/v1/modeldev/executions", _ModelDevService_ListExecutions0_HTTP_Handler(srv))
-	r.GET("/admin/v1/modeldev/executions/{execution_id}/logs", _ModelDevService_GetExecutionLogs0_HTTP_Handler(srv))
-	r.POST("/admin/v1/modeldev/executions/{execution_id}:stop", _ModelDevService_StopExecution0_HTTP_Handler(srv))
-	r.GET("/admin/v1/modeldev/executions/{execution_id}", _ModelDevService_GetExecution0_HTTP_Handler(srv))
-	r.GET("/admin/v1/modeldev/executions/{execution_id}/artifacts", _ModelDevService_ListExecutionArtifacts0_HTTP_Handler(srv))
-	r.GET("/admin/v1/modeldev/artifacts/{artifact_id}/content", _ModelDevService_AuthorizeArtifactDownload0_HTTP_Handler(srv))
-	r.POST("/admin/v1/modeldev/executions", _ModelDevService_CreateExecution0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/presets", _ModelDevService_ListPresets0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/input-versions/{input_version_id}", _ModelDevService_GetInputVersion0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/input-versions", _ModelDevService_ListInputVersions0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/executions", _ModelDevService_ListExecutions0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/executions/{execution_id}/logs", _ModelDevService_GetExecutionLogs0_HTTP_Handler(srv))
+	r.POST("/api/v1/modeldev/executions/{execution_id}:stop", _ModelDevService_StopExecution0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/executions/{execution_id}", _ModelDevService_GetExecution0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/executions/{execution_id}/artifacts", _ModelDevService_ListExecutionArtifacts0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/artifacts/{artifact_id}/content", _ModelDevService_AuthorizeArtifactDownload0_HTTP_Handler(srv))
+	r.POST("/api/v1/modeldev/executions", _ModelDevService_CreateExecution0_HTTP_Handler(srv))
 }
 
 func _ModelDevService_ListPresets0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
@@ -292,7 +292,7 @@ func NewModelDevServiceHTTPClient(client *http.Client) ModelDevServiceHTTPClient
 
 func (c *ModelDevServiceHTTPClientImpl) AuthorizeArtifactDownload(ctx context.Context, in *v1.AuthorizeArtifactDownloadRequest, opts ...http.CallOption) (*v1.AuthorizeArtifactDownloadResponse, error) {
 	var out v1.AuthorizeArtifactDownloadResponse
-	pattern := "/admin/v1/modeldev/artifacts/{artifact_id}/content"
+	pattern := "/api/v1/modeldev/artifacts/{artifact_id}/content"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceAuthorizeArtifactDownload))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -305,7 +305,7 @@ func (c *ModelDevServiceHTTPClientImpl) AuthorizeArtifactDownload(ctx context.Co
 
 func (c *ModelDevServiceHTTPClientImpl) CreateExecution(ctx context.Context, in *v1.CreateExecutionRequest, opts ...http.CallOption) (*v1.CreateExecutionResponse, error) {
 	var out v1.CreateExecutionResponse
-	pattern := "/admin/v1/modeldev/executions"
+	pattern := "/api/v1/modeldev/executions"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationModelDevServiceCreateExecution))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -318,7 +318,7 @@ func (c *ModelDevServiceHTTPClientImpl) CreateExecution(ctx context.Context, in 
 
 func (c *ModelDevServiceHTTPClientImpl) GetExecution(ctx context.Context, in *v1.GetExecutionRequest, opts ...http.CallOption) (*v1.GetExecutionResponse, error) {
 	var out v1.GetExecutionResponse
-	pattern := "/admin/v1/modeldev/executions/{execution_id}"
+	pattern := "/api/v1/modeldev/executions/{execution_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceGetExecution))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -331,7 +331,7 @@ func (c *ModelDevServiceHTTPClientImpl) GetExecution(ctx context.Context, in *v1
 
 func (c *ModelDevServiceHTTPClientImpl) GetExecutionLogs(ctx context.Context, in *v1.GetExecutionLogsRequest, opts ...http.CallOption) (*v1.GetExecutionLogsResponse, error) {
 	var out v1.GetExecutionLogsResponse
-	pattern := "/admin/v1/modeldev/executions/{execution_id}/logs"
+	pattern := "/api/v1/modeldev/executions/{execution_id}/logs"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceGetExecutionLogs))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -344,7 +344,7 @@ func (c *ModelDevServiceHTTPClientImpl) GetExecutionLogs(ctx context.Context, in
 
 func (c *ModelDevServiceHTTPClientImpl) GetInputVersion(ctx context.Context, in *v1.GetInputVersionRequest, opts ...http.CallOption) (*v1.GetInputVersionResponse, error) {
 	var out v1.GetInputVersionResponse
-	pattern := "/admin/v1/modeldev/input-versions/{input_version_id}"
+	pattern := "/api/v1/modeldev/input-versions/{input_version_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceGetInputVersion))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -357,7 +357,7 @@ func (c *ModelDevServiceHTTPClientImpl) GetInputVersion(ctx context.Context, in 
 
 func (c *ModelDevServiceHTTPClientImpl) ListExecutionArtifacts(ctx context.Context, in *v1.ListExecutionArtifactsRequest, opts ...http.CallOption) (*v1.ListExecutionArtifactsResponse, error) {
 	var out v1.ListExecutionArtifactsResponse
-	pattern := "/admin/v1/modeldev/executions/{execution_id}/artifacts"
+	pattern := "/api/v1/modeldev/executions/{execution_id}/artifacts"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceListExecutionArtifacts))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -370,7 +370,7 @@ func (c *ModelDevServiceHTTPClientImpl) ListExecutionArtifacts(ctx context.Conte
 
 func (c *ModelDevServiceHTTPClientImpl) ListExecutions(ctx context.Context, in *v1.ListExecutionsRequest, opts ...http.CallOption) (*v1.ListExecutionsResponse, error) {
 	var out v1.ListExecutionsResponse
-	pattern := "/admin/v1/modeldev/executions"
+	pattern := "/api/v1/modeldev/executions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceListExecutions))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -383,7 +383,7 @@ func (c *ModelDevServiceHTTPClientImpl) ListExecutions(ctx context.Context, in *
 
 func (c *ModelDevServiceHTTPClientImpl) ListInputVersions(ctx context.Context, in *v1.ListInputVersionsRequest, opts ...http.CallOption) (*v1.ListInputVersionsResponse, error) {
 	var out v1.ListInputVersionsResponse
-	pattern := "/admin/v1/modeldev/input-versions"
+	pattern := "/api/v1/modeldev/input-versions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceListInputVersions))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -396,7 +396,7 @@ func (c *ModelDevServiceHTTPClientImpl) ListInputVersions(ctx context.Context, i
 
 func (c *ModelDevServiceHTTPClientImpl) ListPresets(ctx context.Context, in *v1.ListPresetsRequest, opts ...http.CallOption) (*v1.ListPresetsResponse, error) {
 	var out v1.ListPresetsResponse
-	pattern := "/admin/v1/modeldev/presets"
+	pattern := "/api/v1/modeldev/presets"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceListPresets))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -409,7 +409,7 @@ func (c *ModelDevServiceHTTPClientImpl) ListPresets(ctx context.Context, in *v1.
 
 func (c *ModelDevServiceHTTPClientImpl) StopExecution(ctx context.Context, in *v1.StopExecutionRequest, opts ...http.CallOption) (*v1.StopExecutionResponse, error) {
 	var out v1.StopExecutionResponse
-	pattern := "/admin/v1/modeldev/executions/{execution_id}:stop"
+	pattern := "/api/v1/modeldev/executions/{execution_id}:stop"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceStopExecution))
 	opts = append(opts, http.PathTemplate(pattern))

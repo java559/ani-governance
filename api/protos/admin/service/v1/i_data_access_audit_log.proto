@@ -13,14 +13,14 @@ service DataAccessAuditLogService {
   // 查询数据访问审计日志列表
   rpc List (pagination.PagingRequest) returns (audit.service.v1.ListDataAccessAuditLogResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/data-access-audit-logs"
+      get: "/api/v1/admin/data-access-audit-logs"
     };
   }
 
   // 查询数据访问审计日志详情
   rpc Get (audit.service.v1.GetDataAccessAuditLogRequest) returns (audit.service.v1.DataAccessAuditLog) {
     option (google.api.http) = {
-      get: "/admin/v1/data-access-audit-logs/{id}"
+      get: "/api/v1/admin/data-access-audit-logs/{id}"
     };
   }
 }

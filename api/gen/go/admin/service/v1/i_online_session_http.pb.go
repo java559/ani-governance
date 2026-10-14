@@ -38,10 +38,10 @@ type OnlineSessionServiceHTTPServer interface {
 
 func RegisterOnlineSessionServiceHTTPServer(s *http.Server, srv OnlineSessionServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/online-session/sessions", _OnlineSessionService_ListOnlineSession0_HTTP_Handler(srv))
-	r.POST("/admin/v1/online-session/force-logout", _OnlineSessionService_ForceLogoutSession0_HTTP_Handler(srv))
-	r.GET("/admin/v1/online-session/my-sessions", _OnlineSessionService_ListMyOnlineSession0_HTTP_Handler(srv))
-	r.POST("/admin/v1/online-session/my-sessions/revoke", _OnlineSessionService_RevokeMyOnlineSession0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/online-session/sessions", _OnlineSessionService_ListOnlineSession0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/online-session/force-logout", _OnlineSessionService_ForceLogoutSession0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/online-session/my-sessions", _OnlineSessionService_ListMyOnlineSession0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/online-session/my-sessions/revoke", _OnlineSessionService_RevokeMyOnlineSession0_HTTP_Handler(srv))
 }
 
 func _OnlineSessionService_ListOnlineSession0_HTTP_Handler(srv OnlineSessionServiceHTTPServer) func(ctx http.Context) error {
@@ -148,7 +148,7 @@ func NewOnlineSessionServiceHTTPClient(client *http.Client) OnlineSessionService
 // ForceLogoutSession 强制下线指定会话
 func (c *OnlineSessionServiceHTTPClientImpl) ForceLogoutSession(ctx context.Context, in *v1.ForceLogoutSessionRequest, opts ...http.CallOption) (*v1.ForceLogoutSessionResponse, error) {
 	var out v1.ForceLogoutSessionResponse
-	pattern := "/admin/v1/online-session/force-logout"
+	pattern := "/api/v1/admin/online-session/force-logout"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationOnlineSessionServiceForceLogoutSession))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -162,7 +162,7 @@ func (c *OnlineSessionServiceHTTPClientImpl) ForceLogoutSession(ctx context.Cont
 // ListMyOnlineSession 查询当前登录用户的在线会话（个人中心自助视图）
 func (c *OnlineSessionServiceHTTPClientImpl) ListMyOnlineSession(ctx context.Context, in *v1.ListMyOnlineSessionRequest, opts ...http.CallOption) (*v1.ListOnlineSessionResponse, error) {
 	var out v1.ListOnlineSessionResponse
-	pattern := "/admin/v1/online-session/my-sessions"
+	pattern := "/api/v1/admin/online-session/my-sessions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationOnlineSessionServiceListMyOnlineSession))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -176,7 +176,7 @@ func (c *OnlineSessionServiceHTTPClientImpl) ListMyOnlineSession(ctx context.Con
 // ListOnlineSession 查询在线会话列表
 func (c *OnlineSessionServiceHTTPClientImpl) ListOnlineSession(ctx context.Context, in *v1.ListOnlineSessionRequest, opts ...http.CallOption) (*v1.ListOnlineSessionResponse, error) {
 	var out v1.ListOnlineSessionResponse
-	pattern := "/admin/v1/online-session/sessions"
+	pattern := "/api/v1/admin/online-session/sessions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationOnlineSessionServiceListOnlineSession))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -190,7 +190,7 @@ func (c *OnlineSessionServiceHTTPClientImpl) ListOnlineSession(ctx context.Conte
 // RevokeMyOnlineSession 当前用户强制下线自己的指定会话
 func (c *OnlineSessionServiceHTTPClientImpl) RevokeMyOnlineSession(ctx context.Context, in *v1.RevokeMyOnlineSessionRequest, opts ...http.CallOption) (*v1.RevokeMyOnlineSessionResponse, error) {
 	var out v1.RevokeMyOnlineSessionResponse
-	pattern := "/admin/v1/online-session/my-sessions/revoke"
+	pattern := "/api/v1/admin/online-session/my-sessions/revoke"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationOnlineSessionServiceRevokeMyOnlineSession))
 	opts = append(opts, http.PathTemplate(pattern))

@@ -27,14 +27,14 @@ var File_admin_service_v1_i_user_profile_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_user_profile_proto_rawDesc = "" +
 	"\n" +
-	"%admin/service/v1/i_user_profile.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eidentity/service/v1/user.proto2\xb4\x04\n" +
-	"\x12UserProfileService\x12R\n" +
-	"\aGetUser\x12\x16.google.protobuf.Empty\x1a\x19.identity.service.v1.User\"\x14\x82\xd3\xe4\x93\x02\x0e\x12\f/admin/v1/me\x12e\n" +
+	"%admin/service/v1/i_user_profile.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1eidentity/service/v1/user.proto2\xc8\x04\n" +
+	"\x12UserProfileService\x12V\n" +
+	"\aGetUser\x12\x16.google.protobuf.Empty\x1a\x19.identity.service.v1.User\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/v1/admin/me\x12i\n" +
 	"\n" +
-	"UpdateUser\x12&.identity.service.v1.UpdateUserRequest\x1a\x16.google.protobuf.Empty\"\x17\x82\xd3\xe4\x93\x02\x11:\x01*\x1a\f/admin/v1/me\x12v\n" +
-	"\x0eChangePassword\x12*.identity.service.v1.ChangePasswordRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/admin/v1/me/password\x12o\n" +
-	"\vBindContact\x12'.identity.service.v1.BindContactRequest\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/admin/v1/me/contact\x12z\n" +
-	"\rVerifyContact\x12).identity.service.v1.VerifyContactRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/admin/v1/me/contact/verifyB\xbe\x01\n" +
+	"UpdateUser\x12&.identity.service.v1.UpdateUserRequest\x1a\x16.google.protobuf.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15:\x01*\x1a\x10/api/v1/admin/me\x12z\n" +
+	"\x0eChangePassword\x12*.identity.service.v1.ChangePasswordRequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/me/password\x12s\n" +
+	"\vBindContact\x12'.identity.service.v1.BindContactRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/me/contact\x12~\n" +
+	"\rVerifyContact\x12).identity.service.v1.VerifyContactRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/me/contact/verifyB\xbe\x01\n" +
 	"\x14com.admin.service.v1B\x11IUserProfileProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_user_profile_proto_goTypes = []any{

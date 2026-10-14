@@ -33,8 +33,8 @@ type PolicyEvaluationLogServiceHTTPServer interface {
 
 func RegisterPolicyEvaluationLogServiceHTTPServer(s *http.Server, srv PolicyEvaluationLogServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/policy-evaluation-logs", _PolicyEvaluationLogService_List20_HTTP_Handler(srv))
-	r.GET("/admin/v1/policy-evaluation-logs/{id}", _PolicyEvaluationLogService_Get19_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/policy-evaluation-logs", _PolicyEvaluationLogService_List20_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/policy-evaluation-logs/{id}", _PolicyEvaluationLogService_Get19_HTTP_Handler(srv))
 }
 
 func _PolicyEvaluationLogService_List20_HTTP_Handler(srv PolicyEvaluationLogServiceHTTPServer) func(ctx http.Context) error {
@@ -96,7 +96,7 @@ func NewPolicyEvaluationLogServiceHTTPClient(client *http.Client) PolicyEvaluati
 // Get 查询策略评估日志详情
 func (c *PolicyEvaluationLogServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPolicyEvaluationLogRequest, opts ...http.CallOption) (*v11.PolicyEvaluationLog, error) {
 	var out v11.PolicyEvaluationLog
-	pattern := "/admin/v1/policy-evaluation-logs/{id}"
+	pattern := "/api/v1/admin/policy-evaluation-logs/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPolicyEvaluationLogServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -110,7 +110,7 @@ func (c *PolicyEvaluationLogServiceHTTPClientImpl) Get(ctx context.Context, in *
 // List 查询策略评估日志列表
 func (c *PolicyEvaluationLogServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListPolicyEvaluationLogResponse, error) {
 	var out v11.ListPolicyEvaluationLogResponse
-	pattern := "/admin/v1/policy-evaluation-logs"
+	pattern := "/api/v1/admin/policy-evaluation-logs"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPolicyEvaluationLogServiceList))
 	opts = append(opts, http.PathTemplate(pattern))

@@ -27,10 +27,10 @@ var File_admin_service_v1_i_login_audit_log_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_login_audit_log_proto_rawDesc = "" +
 	"\n" +
-	"(admin/service/v1/i_login_audit_log.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a&audit/service/v1/login_audit_log.proto2\x86\x02\n" +
-	"\x14LoginAuditLogService\x12r\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a+.audit.service.v1.ListLoginAuditLogResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/admin/v1/login-audit-logs\x12z\n" +
-	"\x03Get\x12).audit.service.v1.GetLoginAuditLogRequest\x1a\x1f.audit.service.v1.LoginAuditLog\"'\x82\xd3\xe4\x93\x02!\x12\x1f/admin/v1/login-audit-logs/{id}B\xc0\x01\n" +
+	"(admin/service/v1/i_login_audit_log.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a&audit/service/v1/login_audit_log.proto2\x8e\x02\n" +
+	"\x14LoginAuditLogService\x12v\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a+.audit.service.v1.ListLoginAuditLogResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/login-audit-logs\x12~\n" +
+	"\x03Get\x12).audit.service.v1.GetLoginAuditLogRequest\x1a\x1f.audit.service.v1.LoginAuditLog\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/login-audit-logs/{id}B\xc0\x01\n" +
 	"\x14com.admin.service.v1B\x13ILoginAuditLogProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_login_audit_log_proto_goTypes = []any{

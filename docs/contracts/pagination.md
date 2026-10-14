@@ -41,7 +41,7 @@
 
 ### users：已接入游标，保留显式旧窗口
 
-`GET /admin/v1/users` 使用 [PagingRequest](../../api/localdeps/pagination/pagination/v1/pagination.proto)，返回 [ListUserResponse](../../api/protos/identity/service/v1/user.proto)。[UserService.List](../../app/admin/service/internal/service/user_service.go) 委托 [userRepo.List](../../app/admin/service/internal/data/user_repo.go)，游标细节由 [user_cursor.go](../../app/admin/service/internal/data/user_cursor.go) 和本地 [ListWithCursor](../../pkg/localdeps/go-crud/entgo/cursor.go) 实现。
+`GET /api/v1/admin/users` 使用 [PagingRequest](../../api/localdeps/pagination/pagination/v1/pagination.proto)，返回 [ListUserResponse](../../api/protos/identity/service/v1/user.proto)。[UserService.List](../../app/admin/service/internal/service/user_service.go) 委托 [userRepo.List](../../app/admin/service/internal/data/user_repo.go)，游标细节由 [user_cursor.go](../../app/admin/service/internal/data/user_cursor.go) 和本地 [ListWithCursor](../../pkg/localdeps/go-crud/entgo/cursor.go) 实现。
 
 普通分页请求未显式提供 `page`、`pageSize`、`offset` 或 `token` 时进入游标分支，limit 默认 20、范围 1～100；存在非空 cursor 且同时提供上述窗口字段或 `noPaging` 时报错。显式提供旧窗口字段时仍走 `ListWithPaging`，例如 `?page=1&pageSize=20`；该分支返回 items/total，不具备新游标续页语义。
 

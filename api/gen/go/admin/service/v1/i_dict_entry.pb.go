@@ -28,13 +28,13 @@ var File_admin_service_v1_i_dict_entry_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_dict_entry_proto_rawDesc = "" +
 	"\n" +
-	"#admin/service/v1/i_dict_entry.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a dict/service/v1/dict_entry.proto2\xec\x04\n" +
-	"\x10DictEntryService\x12i\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a&.dict.service.v1.ListDictEntryResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/admin/v1/dict/entries\x12l\n" +
-	"\x06Create\x12'.dict.service.v1.CreateDictEntryRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/admin/v1/dict/entries\x12q\n" +
-	"\x06Update\x12'.dict.service.v1.UpdateDictEntryRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\x1a\x1b/admin/v1/dict/entries/{id}\x12i\n" +
-	"\x06Delete\x12'.dict.service.v1.DeleteDictEntryRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/admin/v1/dict/entries\x12\xa0\x01\n" +
-	"\x0eListByTypeCode\x12/.dict.service.v1.ListDictEntryByTypeCodeRequest\x1a0.dict.service.v1.ListDictEntryByTypeCodeResponse\"+\x82\xd3\xe4\x93\x02%\x12#/admin/v1/dict/entries/by-type-codeB\xbc\x01\n" +
+	"#admin/service/v1/i_dict_entry.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a dict/service/v1/dict_entry.proto2\x80\x05\n" +
+	"\x10DictEntryService\x12m\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a&.dict.service.v1.ListDictEntryResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/dict/entries\x12p\n" +
+	"\x06Create\x12'.dict.service.v1.CreateDictEntryRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/dict/entries\x12u\n" +
+	"\x06Update\x12'.dict.service.v1.UpdateDictEntryRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\x1a\x1f/api/v1/admin/dict/entries/{id}\x12m\n" +
+	"\x06Delete\x12'.dict.service.v1.DeleteDictEntryRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c*\x1a/api/v1/admin/dict/entries\x12\xa4\x01\n" +
+	"\x0eListByTypeCode\x12/.dict.service.v1.ListDictEntryByTypeCodeRequest\x1a0.dict.service.v1.ListDictEntryByTypeCodeResponse\"/\x82\xd3\xe4\x93\x02)\x12'/api/v1/admin/dict/entries/by-type-codeB\xbc\x01\n" +
 	"\x14com.admin.service.v1B\x0fIDictEntryProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_dict_entry_proto_goTypes = []any{

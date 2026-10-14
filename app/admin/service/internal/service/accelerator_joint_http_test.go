@@ -174,7 +174,7 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 		}
 	}
 	// Existing administrator quota route remains a separately authorized API.
-	quotaAPI, e := client.Api.Query().Where(apiEntity.PathEQ("/admin/v1/tenants/{id}/quota-accounts"), apiEntity.MethodEQ("GET")).Only(sys)
+	quotaAPI, e := client.Api.Query().Where(apiEntity.PathEQ("/api/v1/admin/tenants/{id}/quota-accounts"), apiEntity.MethodEQ("GET")).Only(sys)
 	require.NoError(t, e)
 	quotaPermission, e := client.Permission.Query().Where(permission.CodeEQ("bff:existing-quota:read")).Only(sys)
 	if ent.IsNotFound(e) {
@@ -275,7 +275,7 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 		return items
 	}
 	// Replays the exact management mutation committed by the seed's actor=1.
-	adminWrites := []struct{ rpc, path string }{{"RegisterCluster", "/admin/v1/accelerator/clusters"}, {"CreatePool", "/admin/v1/accelerator/pools"}, {"AdoptSupplyGroup", "/admin/v1/accelerator/supply-groups:adopt"}, {"PublishProfile", "/admin/v1/accelerator/profiles"}, {"SetAdmission", "/admin/v1/accelerator/supply-groups/" + seed.Group.GroupId + ":set-admission"}}
+	adminWrites := []struct{ rpc, path string }{{"RegisterCluster", "/api/v1/admin/accelerator/clusters"}, {"CreatePool", "/api/v1/admin/accelerator/pools"}, {"AdoptSupplyGroup", "/api/v1/admin/accelerator/supply-groups:adopt"}, {"PublishProfile", "/api/v1/admin/accelerator/profiles"}, {"SetAdmission", "/api/v1/admin/accelerator/supply-groups/" + seed.Group.GroupId + ":set-admission"}}
 	for _, call := range adminWrites {
 		var payload map[string]any
 		require.NoError(t, json.Unmarshal(seed.Requests[call.rpc], &payload))
@@ -333,13 +333,13 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 		return path + "?" + q.Encode()
 	}
 	for _, path := range []string{
-		"/admin/v1/accelerator/clusters?page_size=1",
-		query("/admin/v1/accelerator/pools", "cluster_id", seed.Cluster.ClusterId),
-		query("/admin/v1/accelerator/supply-groups", "pool_id", seed.Pool.PoolId),
-		query("/admin/v1/accelerator/profiles", "cluster_id", seed.Cluster.ClusterId),
-		query("/admin/v1/accelerator/devices", "cluster_id", seed.Cluster.ClusterId),
-		query("/admin/v1/accelerator/bindings", "cluster_id", seed.Cluster.ClusterId),
-		query("/admin/v1/accelerator/capacity", "profile_id", seed.Profile.ProfileId, "profile_version", "1", "include_devices", "true"),
+		"/api/v1/admin/accelerator/clusters?page_size=1",
+		query("/api/v1/admin/accelerator/pools", "cluster_id", seed.Cluster.ClusterId),
+		query("/api/v1/admin/accelerator/supply-groups", "pool_id", seed.Pool.PoolId),
+		query("/api/v1/admin/accelerator/profiles", "cluster_id", seed.Cluster.ClusterId),
+		query("/api/v1/admin/accelerator/devices", "cluster_id", seed.Cluster.ClusterId),
+		query("/api/v1/admin/accelerator/bindings", "cluster_id", seed.Cluster.ClusterId),
+		query("/api/v1/admin/accelerator/capacity", "profile_id", seed.Profile.ProfileId, "profile_version", "1", "include_devices", "true"),
 	} {
 		response := request("GET", path, platformToken, nil, 200)
 		if strings.Contains(path, "/capacity?") {
@@ -432,14 +432,14 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 	accounts := request("GET", "/api/v1/me/quota-accounts?tenant_id=9102", tenantToken, nil, 200)
 	require.Equal(t, float64(1), accounts["tenantId"])
 	require.NotEmpty(t, accounts["items"])
-	adminAccounts := request("GET", "/admin/v1/tenants/1/quota-accounts", platformToken, nil, 200)
+	adminAccounts := request("GET", "/api/v1/admin/tenants/1/quota-accounts", platformToken, nil, 200)
 	require.Equal(t, accounts, adminAccounts)
-	request("GET", "/admin/v1/tenants/1/quota-accounts", tenantToken, nil, 404)
-	request("GET", "/admin/v1/tenants/1/quota-accounts", "", nil, 401)
+	request("GET", "/api/v1/admin/tenants/1/quota-accounts", tenantToken, nil, 404)
+	request("GET", "/api/v1/admin/tenants/1/quota-accounts", "", nil, 401)
 	request("GET", tenantProfiles, "", nil, 401)
 	request("GET", tenantProfiles, "invalid.jwt", nil, 401)
 	request("GET", tenantProfiles, createToken(tenantID, "ungranted-bff-role"), nil, 403)
-	request("GET", "/admin/v1/accelerator/clusters", tenantToken, nil, 403)
+	request("GET", "/api/v1/admin/accelerator/clusters", tenantToken, nil, 403)
 	request("GET", tenantProfiles, platformToken, nil, 403)
 	request("GET", tenantProfiles+"&page_size=201", tenantToken, nil, 400)
 	request("GET", "/api/v1/accelerator/profiles/"+uuid.NewString()+"?profile_version=1", tenantToken, nil, 404)

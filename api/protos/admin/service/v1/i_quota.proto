@@ -13,14 +13,14 @@ service QuotaAdminService {
   // 查询配额目录（QUOTA-01）
   rpc ListQuotaDefinitions (pagination.PagingRequest) returns (ListQuotaDefinitionsResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/quota-definitions"
+      get: "/api/v1/admin/quota-definitions"
     };
   }
 
   // 查询指定租户配额账户（QUOTA-02）
   rpc ListTenantQuotaAccounts (GetTenantQuotaAccountsRequest) returns (ListTenantQuotaAccountsResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/tenants/{id}/quota-accounts"
+      get: "/api/v1/admin/tenants/{id}/quota-accounts"
     };
   }
 }

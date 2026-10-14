@@ -28,14 +28,14 @@ var File_admin_service_v1_i_permission_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_permission_proto_rawDesc = "" +
 	"\n" +
-	"#admin/service/v1/i_permission.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a&permission/service/v1/permission.proto2\xd2\x05\n" +
-	"\x11PermissionService\x12o\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a-.permission.service.v1.ListPermissionResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/admin/v1/permissions\x12y\n" +
-	"\x03Get\x12+.permission.service.v1.GetPermissionRequest\x1a!.permission.service.v1.Permission\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/admin/v1/permissions/{id}\x12r\n" +
-	"\x06Create\x12..permission.service.v1.CreatePermissionRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/admin/v1/permissions\x12w\n" +
-	"\x06Update\x12..permission.service.v1.UpdatePermissionRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\x1a\x1a/admin/v1/permissions/{id}\x12t\n" +
-	"\x06Delete\x12..permission.service.v1.DeletePermissionRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c*\x1a/admin/v1/permissions/{id}\x12n\n" +
-	"\x0fSyncPermissions\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"+\x82\xd3\xe4\x93\x02%:\x01*\" /admin/v1/permissions/sync:permsB\xbd\x01\n" +
+	"#admin/service/v1/i_permission.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a&permission/service/v1/permission.proto2\xea\x05\n" +
+	"\x11PermissionService\x12s\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a-.permission.service.v1.ListPermissionResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/admin/permissions\x12}\n" +
+	"\x03Get\x12+.permission.service.v1.GetPermissionRequest\x1a!.permission.service.v1.Permission\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/permissions/{id}\x12v\n" +
+	"\x06Create\x12..permission.service.v1.CreatePermissionRequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/permissions\x12{\n" +
+	"\x06Update\x12..permission.service.v1.UpdatePermissionRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\x1a\x1e/api/v1/admin/permissions/{id}\x12x\n" +
+	"\x06Delete\x12..permission.service.v1.DeletePermissionRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 *\x1e/api/v1/admin/permissions/{id}\x12r\n" +
+	"\x0fSyncPermissions\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/admin/permissions/sync:permsB\xbd\x01\n" +
 	"\x14com.admin.service.v1B\x10IPermissionProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_permission_proto_goTypes = []any{

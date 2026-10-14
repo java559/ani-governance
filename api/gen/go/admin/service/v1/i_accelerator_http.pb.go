@@ -51,18 +51,18 @@ type AcceleratorAdminServiceHTTPServer interface {
 
 func RegisterAcceleratorAdminServiceHTTPServer(s *http.Server, srv AcceleratorAdminServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/accelerator/clusters", _AcceleratorAdminService_ListClusters0_HTTP_Handler(srv))
-	r.POST("/admin/v1/accelerator/clusters", _AcceleratorAdminService_RegisterCluster0_HTTP_Handler(srv))
-	r.GET("/admin/v1/accelerator/pools", _AcceleratorAdminService_ListPools0_HTTP_Handler(srv))
-	r.POST("/admin/v1/accelerator/pools", _AcceleratorAdminService_CreatePool0_HTTP_Handler(srv))
-	r.GET("/admin/v1/accelerator/supply-groups", _AcceleratorAdminService_ListSupplyGroups0_HTTP_Handler(srv))
-	r.POST("/admin/v1/accelerator/supply-groups:adopt", _AcceleratorAdminService_AdoptSupplyGroup0_HTTP_Handler(srv))
-	r.POST("/admin/v1/accelerator/supply-groups/{group_id}:set-admission", _AcceleratorAdminService_SetAdmission0_HTTP_Handler(srv))
-	r.GET("/admin/v1/accelerator/profiles", _AcceleratorAdminService_AdminListProfiles0_HTTP_Handler(srv))
-	r.POST("/admin/v1/accelerator/profiles", _AcceleratorAdminService_PublishProfile0_HTTP_Handler(srv))
-	r.GET("/admin/v1/accelerator/devices", _AcceleratorAdminService_ListDevices0_HTTP_Handler(srv))
-	r.GET("/admin/v1/accelerator/bindings", _AcceleratorAdminService_AdminListBindings0_HTTP_Handler(srv))
-	r.GET("/admin/v1/accelerator/capacity", _AcceleratorAdminService_AdminGetCapacity0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/clusters", _AcceleratorAdminService_ListClusters0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/clusters", _AcceleratorAdminService_RegisterCluster0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/pools", _AcceleratorAdminService_ListPools0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/pools", _AcceleratorAdminService_CreatePool0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/supply-groups", _AcceleratorAdminService_ListSupplyGroups0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/supply-groups:adopt", _AcceleratorAdminService_AdoptSupplyGroup0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/supply-groups/{group_id}:set-admission", _AcceleratorAdminService_SetAdmission0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/profiles", _AcceleratorAdminService_AdminListProfiles0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/profiles", _AcceleratorAdminService_PublishProfile0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/devices", _AcceleratorAdminService_ListDevices0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/bindings", _AcceleratorAdminService_AdminListBindings0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/capacity", _AcceleratorAdminService_AdminGetCapacity0_HTTP_Handler(srv))
 }
 
 func _AcceleratorAdminService_ListClusters0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
@@ -336,7 +336,7 @@ func NewAcceleratorAdminServiceHTTPClient(client *http.Client) AcceleratorAdminS
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) AdminGetCapacity(ctx context.Context, in *v1.AcceleratorVersionRequest, opts ...http.CallOption) (*v1.AcceleratorCapacity, error) {
 	var out v1.AcceleratorCapacity
-	pattern := "/admin/v1/accelerator/capacity"
+	pattern := "/api/v1/admin/accelerator/capacity"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceAdminGetCapacity))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -349,7 +349,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) AdminGetCapacity(ctx context.Con
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) AdminListBindings(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorAdminBindings, error) {
 	var out v1.AcceleratorAdminBindings
-	pattern := "/admin/v1/accelerator/bindings"
+	pattern := "/api/v1/admin/accelerator/bindings"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceAdminListBindings))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -362,7 +362,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) AdminListBindings(ctx context.Co
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) AdminListProfiles(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorProfiles, error) {
 	var out v1.AcceleratorProfiles
-	pattern := "/admin/v1/accelerator/profiles"
+	pattern := "/api/v1/admin/accelerator/profiles"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceAdminListProfiles))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -375,7 +375,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) AdminListProfiles(ctx context.Co
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) AdoptSupplyGroup(ctx context.Context, in *v1.AdoptAcceleratorSupplyRequest, opts ...http.CallOption) (*v1.AcceleratorSupply, error) {
 	var out v1.AcceleratorSupply
-	pattern := "/admin/v1/accelerator/supply-groups:adopt"
+	pattern := "/api/v1/admin/accelerator/supply-groups:adopt"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceAdoptSupplyGroup))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -388,7 +388,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) AdoptSupplyGroup(ctx context.Con
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) CreatePool(ctx context.Context, in *v1.CreateAcceleratorPoolRequest, opts ...http.CallOption) (*v1.AcceleratorPool, error) {
 	var out v1.AcceleratorPool
-	pattern := "/admin/v1/accelerator/pools"
+	pattern := "/api/v1/admin/accelerator/pools"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceCreatePool))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -401,7 +401,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) CreatePool(ctx context.Context, 
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) ListClusters(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorClusters, error) {
 	var out v1.AcceleratorClusters
-	pattern := "/admin/v1/accelerator/clusters"
+	pattern := "/api/v1/admin/accelerator/clusters"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceListClusters))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -414,7 +414,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) ListClusters(ctx context.Context
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) ListDevices(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorDevices, error) {
 	var out v1.AcceleratorDevices
-	pattern := "/admin/v1/accelerator/devices"
+	pattern := "/api/v1/admin/accelerator/devices"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceListDevices))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -427,7 +427,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) ListDevices(ctx context.Context,
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) ListPools(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorPools, error) {
 	var out v1.AcceleratorPools
-	pattern := "/admin/v1/accelerator/pools"
+	pattern := "/api/v1/admin/accelerator/pools"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceListPools))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -440,7 +440,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) ListPools(ctx context.Context, i
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) ListSupplyGroups(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorSupplies, error) {
 	var out v1.AcceleratorSupplies
-	pattern := "/admin/v1/accelerator/supply-groups"
+	pattern := "/api/v1/admin/accelerator/supply-groups"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceListSupplyGroups))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -453,7 +453,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) ListSupplyGroups(ctx context.Con
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) PublishProfile(ctx context.Context, in *v1.PublishAcceleratorProfileRequest, opts ...http.CallOption) (*v1.AcceleratorProfile, error) {
 	var out v1.AcceleratorProfile
-	pattern := "/admin/v1/accelerator/profiles"
+	pattern := "/api/v1/admin/accelerator/profiles"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServicePublishProfile))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -466,7 +466,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) PublishProfile(ctx context.Conte
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) RegisterCluster(ctx context.Context, in *v1.RegisterAcceleratorClusterRequest, opts ...http.CallOption) (*v1.AcceleratorCluster, error) {
 	var out v1.AcceleratorCluster
-	pattern := "/admin/v1/accelerator/clusters"
+	pattern := "/api/v1/admin/accelerator/clusters"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceRegisterCluster))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -479,7 +479,7 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) RegisterCluster(ctx context.Cont
 
 func (c *AcceleratorAdminServiceHTTPClientImpl) SetAdmission(ctx context.Context, in *v1.SetAcceleratorAdmissionRequest, opts ...http.CallOption) (*v1.AcceleratorSupply, error) {
 	var out v1.AcceleratorSupply
-	pattern := "/admin/v1/accelerator/supply-groups/{group_id}:set-admission"
+	pattern := "/api/v1/admin/accelerator/supply-groups/{group_id}:set-admission"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceSetAdmission))
 	opts = append(opts, http.PathTemplate(pattern))

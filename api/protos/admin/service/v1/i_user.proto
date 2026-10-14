@@ -15,16 +15,16 @@ service UserService {
   // 获取用户列表
   rpc List (pagination.PagingRequest) returns (identity.service.v1.ListUserResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/users"
+      get: "/api/v1/admin/users"
     };
   }
 
   // 获取用户数据
   rpc Get (identity.service.v1.GetUserRequest) returns (identity.service.v1.User) {
     option (google.api.http) = {
-      get: "/admin/v1/users/{id}"
+      get: "/api/v1/admin/users/{id}"
       additional_bindings {
-        get: "/admin/v1/users/username/{username}"
+        get: "/api/v1/admin/users/username/{username}"
       }
     };
   }
@@ -33,7 +33,7 @@ service UserService {
   rpc Create (identity.service.v1.CreateUserRequest) returns (google.protobuf.Empty) {
     option (redact.method_skip) = true;
     option (google.api.http) = {
-      post: "/admin/v1/users"
+      post: "/api/v1/admin/users"
       body: "*"
     };
   }
@@ -42,7 +42,7 @@ service UserService {
   rpc Update (identity.service.v1.UpdateUserRequest) returns (google.protobuf.Empty) {
     option (redact.method_skip) = true;
     option (google.api.http) = {
-      put: "/admin/v1/users/{id}"
+      put: "/api/v1/admin/users/{id}"
       body: "*"
     };
   }
@@ -51,9 +51,9 @@ service UserService {
   rpc Delete (identity.service.v1.DeleteUserRequest) returns (google.protobuf.Empty) {
     option (redact.method_skip) = true;
     option (google.api.http) = {
-      delete: "/admin/v1/users/{id}"
+      delete: "/api/v1/admin/users/{id}"
       additional_bindings {
-        delete: "/admin/v1/users/username/{username}"
+        delete: "/api/v1/admin/users/username/{username}"
       }
     };
   }
@@ -62,7 +62,7 @@ service UserService {
   rpc UserExists (identity.service.v1.UserExistsRequest) returns (identity.service.v1.UserExistsResponse) {
     option (redact.method_skip) = true;
     option (google.api.http) = {
-      get: "/admin/v1/users:exists"
+      get: "/api/v1/admin/users:exists"
     };
   }
 
@@ -70,7 +70,7 @@ service UserService {
   rpc EditUserPassword(identity.service.v1.EditUserPasswordRequest) returns (google.protobuf.Empty) {
     option (redact.method_skip) = true;
     option (google.api.http) = {
-      post: "/admin/v1/users/{user_id}/password"
+      post: "/api/v1/admin/users/{user_id}/password"
       body: "*"
     };
   }

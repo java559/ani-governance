@@ -33,8 +33,8 @@ type PermissionAuditLogServiceHTTPServer interface {
 
 func RegisterPermissionAuditLogServiceHTTPServer(s *http.Server, srv PermissionAuditLogServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/permission-audit-logs", _PermissionAuditLogService_List15_HTTP_Handler(srv))
-	r.GET("/admin/v1/permission-audit-logs/{id}", _PermissionAuditLogService_Get15_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/permission-audit-logs", _PermissionAuditLogService_List15_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/permission-audit-logs/{id}", _PermissionAuditLogService_Get15_HTTP_Handler(srv))
 }
 
 func _PermissionAuditLogService_List15_HTTP_Handler(srv PermissionAuditLogServiceHTTPServer) func(ctx http.Context) error {
@@ -96,7 +96,7 @@ func NewPermissionAuditLogServiceHTTPClient(client *http.Client) PermissionAudit
 // Get 查询权限变更审计日志详情
 func (c *PermissionAuditLogServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPermissionAuditLogRequest, opts ...http.CallOption) (*v11.PermissionAuditLog, error) {
 	var out v11.PermissionAuditLog
-	pattern := "/admin/v1/permission-audit-logs/{id}"
+	pattern := "/api/v1/admin/permission-audit-logs/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionAuditLogServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -110,7 +110,7 @@ func (c *PermissionAuditLogServiceHTTPClientImpl) Get(ctx context.Context, in *v
 // List 查询权限变更审计日志列表
 func (c *PermissionAuditLogServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListPermissionAuditLogResponse, error) {
 	var out v11.ListPermissionAuditLogResponse
-	pattern := "/admin/v1/permission-audit-logs"
+	pattern := "/api/v1/admin/permission-audit-logs"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionAuditLogServiceList))
 	opts = append(opts, http.PathTemplate(pattern))

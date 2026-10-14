@@ -8,18 +8,18 @@ import "google/protobuf/empty.proto";
 // JWT platform user, current role permission and downstream exact actor/action/
 // cluster grant are all required. There is no implicit tenant-zero grant.
 service AcceleratorAdminService {
-  rpc ListClusters(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorClusters) { option (google.api.http) = {get:"/admin/v1/accelerator/clusters"}; }
-  rpc RegisterCluster(catalog.service.v1.RegisterAcceleratorClusterRequest) returns (catalog.service.v1.AcceleratorCluster) { option (google.api.http) = {post:"/admin/v1/accelerator/clusters" body:"*"}; }
-  rpc ListPools(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorPools) { option (google.api.http) = {get:"/admin/v1/accelerator/pools"}; }
-  rpc CreatePool(catalog.service.v1.CreateAcceleratorPoolRequest) returns (catalog.service.v1.AcceleratorPool) { option (google.api.http) = {post:"/admin/v1/accelerator/pools" body:"*"}; }
-  rpc ListSupplyGroups(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorSupplies) { option (google.api.http) = {get:"/admin/v1/accelerator/supply-groups"}; }
-  rpc AdoptSupplyGroup(catalog.service.v1.AdoptAcceleratorSupplyRequest) returns (catalog.service.v1.AcceleratorSupply) { option (google.api.http) = {post:"/admin/v1/accelerator/supply-groups:adopt" body:"*"}; }
-  rpc SetAdmission(catalog.service.v1.SetAcceleratorAdmissionRequest) returns (catalog.service.v1.AcceleratorSupply) { option (google.api.http) = {post:"/admin/v1/accelerator/supply-groups/{group_id}:set-admission" body:"*"}; }
-  rpc AdminListProfiles(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorProfiles) { option (google.api.http) = {get:"/admin/v1/accelerator/profiles"}; }
-  rpc PublishProfile(catalog.service.v1.PublishAcceleratorProfileRequest) returns (catalog.service.v1.AcceleratorProfile) { option (google.api.http) = {post:"/admin/v1/accelerator/profiles" body:"*"}; }
-  rpc ListDevices(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorDevices) { option (google.api.http) = {get:"/admin/v1/accelerator/devices"}; }
-  rpc AdminListBindings(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorAdminBindings) { option (google.api.http) = {get:"/admin/v1/accelerator/bindings"}; }
-  rpc AdminGetCapacity(catalog.service.v1.AcceleratorVersionRequest) returns (catalog.service.v1.AcceleratorCapacity) { option (google.api.http) = {get:"/admin/v1/accelerator/capacity"}; }
+  rpc ListClusters(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorClusters) { option (google.api.http) = {get:"/api/v1/admin/accelerator/clusters"}; }
+  rpc RegisterCluster(catalog.service.v1.RegisterAcceleratorClusterRequest) returns (catalog.service.v1.AcceleratorCluster) { option (google.api.http) = {post:"/api/v1/admin/accelerator/clusters" body:"*"}; }
+  rpc ListPools(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorPools) { option (google.api.http) = {get:"/api/v1/admin/accelerator/pools"}; }
+  rpc CreatePool(catalog.service.v1.CreateAcceleratorPoolRequest) returns (catalog.service.v1.AcceleratorPool) { option (google.api.http) = {post:"/api/v1/admin/accelerator/pools" body:"*"}; }
+  rpc ListSupplyGroups(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorSupplies) { option (google.api.http) = {get:"/api/v1/admin/accelerator/supply-groups"}; }
+  rpc AdoptSupplyGroup(catalog.service.v1.AdoptAcceleratorSupplyRequest) returns (catalog.service.v1.AcceleratorSupply) { option (google.api.http) = {post:"/api/v1/admin/accelerator/supply-groups:adopt" body:"*"}; }
+  rpc SetAdmission(catalog.service.v1.SetAcceleratorAdmissionRequest) returns (catalog.service.v1.AcceleratorSupply) { option (google.api.http) = {post:"/api/v1/admin/accelerator/supply-groups/{group_id}:set-admission" body:"*"}; }
+  rpc AdminListProfiles(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorProfiles) { option (google.api.http) = {get:"/api/v1/admin/accelerator/profiles"}; }
+  rpc PublishProfile(catalog.service.v1.PublishAcceleratorProfileRequest) returns (catalog.service.v1.AcceleratorProfile) { option (google.api.http) = {post:"/api/v1/admin/accelerator/profiles" body:"*"}; }
+  rpc ListDevices(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorDevices) { option (google.api.http) = {get:"/api/v1/admin/accelerator/devices"}; }
+  rpc AdminListBindings(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorAdminBindings) { option (google.api.http) = {get:"/api/v1/admin/accelerator/bindings"}; }
+  rpc AdminGetCapacity(catalog.service.v1.AcceleratorVersionRequest) returns (catalog.service.v1.AcceleratorCapacity) { option (google.api.http) = {get:"/api/v1/admin/accelerator/capacity"}; }
 }
 // JWT tenant user, active tenant, ACCELERATOR plan module, current role
 // permission and downstream delegation grant are all required.

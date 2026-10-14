@@ -28,13 +28,13 @@ var File_admin_service_v1_i_config_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_config_proto_rawDesc = "" +
 	"\n" +
-	"\x1fadmin/service/v1/i_config.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1econfig/service/v1/config.proto2\x9a\x04\n" +
-	"\rConfigService\x12c\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a%.config.service.v1.ListConfigResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/admin/v1/configs\x12e\n" +
-	"\x03Get\x12#.config.service.v1.GetConfigRequest\x1a\x19.config.service.v1.Config\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/admin/v1/configs/{id}\x12f\n" +
-	"\x06Create\x12&.config.service.v1.CreateConfigRequest\x1a\x16.google.protobuf.Empty\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/admin/v1/configs\x12k\n" +
-	"\x06Update\x12&.config.service.v1.UpdateConfigRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\x1a\x16/admin/v1/configs/{id}\x12h\n" +
-	"\x06Delete\x12&.config.service.v1.DeleteConfigRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/admin/v1/configs/{id}B\xb9\x01\n" +
+	"\x1fadmin/service/v1/i_config.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1econfig/service/v1/config.proto2\xae\x04\n" +
+	"\rConfigService\x12g\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a%.config.service.v1.ListConfigResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/admin/configs\x12i\n" +
+	"\x03Get\x12#.config.service.v1.GetConfigRequest\x1a\x19.config.service.v1.Config\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/configs/{id}\x12j\n" +
+	"\x06Create\x12&.config.service.v1.CreateConfigRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/admin/configs\x12o\n" +
+	"\x06Update\x12&.config.service.v1.UpdateConfigRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\x1a\x1a/api/v1/admin/configs/{id}\x12l\n" +
+	"\x06Delete\x12&.config.service.v1.DeleteConfigRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c*\x1a/api/v1/admin/configs/{id}B\xb9\x01\n" +
 	"\x14com.admin.service.v1B\fIConfigProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_config_proto_goTypes = []any{

@@ -224,27 +224,27 @@ HTTP 成功表示 Resource 返回了持久资源或受理快照；资源生命�
 | AUTH-02 | `POST /api/v1/auth/platform/password/login` | `username`、`password`；无需 Bearer、无需图形验证码 | 平台登录，要求平台角色 | 验证码和登录 AES 编码已移除；路径/字段待指定 |
 | AUTH-03 | `POST /api/v1/auth/logout` | Bearer；请求体 `{}` 即可；`jti` 可选 | `{"status":"revoked"}`；吊销该用户的全部后台会话并清 Cookie，非仅当前设备 | 路径/登出范围待指定；租户权限问题见 ISSUE-02 |
 | AUTH-04 | `POST /api/v1/auth/refresh` | 携带 `refresh_token` Cookie；请求体 `{}`，可选 `client_id`、`device_id`；无需 Bearer | 返回新访问令牌，轮换 Cookie，旧令牌对失效 | Cookie 或其他风格待指定 |
-| AUTH-05 | `GET /admin/v1/me` | Bearer | 当前用户 `identity.service.v1.User` 对象 | 路径/用户字段待指定 |
-| AUTH-06 | `GET /admin/v1/initial-context` | Bearer | `menus`、`permissions`、`hiddenFields` | 登录后聚合初始化；路径/报文待指定 |
-| AUTH-07 | `GET /admin/v1/routes` | Bearer | `items` 菜单路由树 | 单独获取菜单；与聚合接口择需调用 |
-| AUTH-08 | `GET /admin/v1/perm-codes` | Bearer | `codes`、`hiddenFields` | 单独获取权限；与聚合接口择需调用 |
+| AUTH-05 | `GET /api/v1/admin/me` | Bearer | 当前用户 `identity.service.v1.User` 对象 | 路径/用户字段待指定 |
+| AUTH-06 | `GET /api/v1/admin/initial-context` | Bearer | `menus`、`permissions`、`hiddenFields` | 登录后聚合初始化；路径/报文待指定 |
+| AUTH-07 | `GET /api/v1/admin/routes` | Bearer | `items` 菜单路由树 | 单独获取菜单；与聚合接口择需调用 |
+| AUTH-08 | `GET /api/v1/admin/perm-codes` | Bearer | `codes`、`hiddenFields` | 单独获取权限；与聚合接口择需调用 |
 
 以下仅在对应功能使用时才需要接入，不是普通账密登录的前置步骤：
 
 | 编号 | 方法与路径 | 当前用途 | 登记状态 |
 | --- | --- | --- | --- |
-| AUTH-09 | `POST /admin/v1/mfa/verify` | 已启用 MFA 的账号提交登录返回的操作 ID 与二次验证答案；返回旧版 `LoginResponse`，与 `TokenPairResponse` 不是同一报文 | 仅 MFA 登录中间态需要，报文风格待指定 |
+| AUTH-09 | `POST /api/v1/auth/mfa/verify` | 已启用 MFA 的账号提交登录返回的操作 ID 与二次验证答案；返回旧版 `LoginResponse`，与 `TokenPairResponse` 不是同一报文 | 仅 MFA 登录中间态需要，报文风格待指定 |
 | AUTH-10 | `POST /api/v1/auth/forgot-password` | 发找回密码邮件验证码 | 可选功能，未改 |
 | AUTH-11 | `POST /api/v1/auth/reset-password-by-code` | 用邮件验证码重置密码 | 可选功能，未改 |
 | AUTH-12 | `POST /api/v1/auth/invitations/accept` | 接受邀请、设置密码并激活；直接激活模式无需调用 | 可选功能，未改 |
 | AUTH-13 | `GET /api/v1/auth/captcha` | 独立获取图形验证码 | 登录不再使用；接口是否删除待指定 |
 | AUTH-14 | `POST /api/v1/auth/captcha/verify` | 独立验证图形验证码 | 登录不再使用；接口是否删除待指定 |
-| AUTH-15 | `PUT /admin/v1/me` | 本人资料自助更新；直接落 `userRepo.Update`，**绕过 `UserService` 的角色类型/租户校验**，携带 `roleIds`+`role_ids`　掩码可能自改角色（见 MGMT-11） | 已接线但此前未登记，本轮补登；路径/字段待指定 |
-| AUTH-16 | `POST /admin/v1/me/password` | 本人自助改密；`oldPassword`/`newPassword` 走 AES 密文（与登录直接提交明文密码不同）；成功后吊销本人全部客户端令牌 | 已接线但此前未登记，本轮补登；协议/路径待指定 |
-| AUTH-17 | `POST /admin/v1/me/contact` | 向本人待绑定邮箱发送验证码；当前只支持 EMAIL，不支持手机号。与 AUTH-18 配合建立邮箱凭证，可用于找回密码；邀请接受流程会自行建立邮箱凭证，不以本接口为前置 | 已接线；2026-09-22 前端交接复核更正用途；待指定 |
-| AUTH-18 | `POST /admin/v1/me/contact/verify` | 校验本人联系方式验证码，与 AUTH-17 成对 | 已接线但此前未登记，本轮补登；待指定 |
+| AUTH-15 | `PUT /api/v1/admin/me` | 本人资料自助更新；直接落 `userRepo.Update`，**绕过 `UserService` 的角色类型/租户校验**，携带 `roleIds`+`role_ids`　掩码可能自改角色（见 MGMT-11） | 已接线但此前未登记，本轮补登；路径/字段待指定 |
+| AUTH-16 | `POST /api/v1/admin/me/password` | 本人自助改密；`oldPassword`/`newPassword` 走 AES 密文（与登录直接提交明文密码不同）；成功后吊销本人全部客户端令牌 | 已接线但此前未登记，本轮补登；协议/路径待指定 |
+| AUTH-17 | `POST /api/v1/admin/me/contact` | 向本人待绑定邮箱发送验证码；当前只支持 EMAIL，不支持手机号。与 AUTH-18 配合建立邮箱凭证，可用于找回密码；邀请接受流程会自行建立邮箱凭证，不以本接口为前置 | 已接线；2026-09-22 前端交接复核更正用途；待指定 |
+| AUTH-18 | `POST /api/v1/admin/me/contact/verify` | 校验本人联系方式验证码，与 AUTH-17 成对 | 已接线但此前未登记，本轮补登；待指定 |
 
-`PUT /admin/v1/me`（AUTH-15）与账号组的 `ACCOUNT-04`（管理侧改用户）不是同一入口：后者经 `UserService` 校验角色类型/租户并要求至少一个角色，前者不经该校验。
+`PUT /api/v1/admin/me`（AUTH-15）与账号组的 `ACCOUNT-04`（管理侧改用户）不是同一入口：后者经 `UserService` 校验角色类型/租户并要求至少一个角色，前者不经该校验。
 
 内部方法 `Login`、`WhoAmI`、`ValidateToken` 不等于存在对应公开 HTTP 地址；不要按方法名拼接口。
 
@@ -284,7 +284,7 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 | --- | --- | --- | --- |
 | ISSUE-01 | 原登录强制 AES 编码，与接口说明不一致 | 按用户要求改成 HTTPS 直接提交原始密码；更新源 Proto、生成代码/OpenAPI、登录用例及审计回归；数据库 bcrypt 不变 | 实现完成；登录/密码管理与审计定向测试、服务编译 PASS；前端与后端需同步发布，用户环境尚未部署 |
 | ISSUE-02 | 原首次种子遗漏 `sys:tenant_manager` → `POST /api/v1/auth/logout` | 已补首次种子；旧库显式执行 [登出授权补丁](../scripts/ops/sql/repair-tenant-logout.sql)，操作见 [部署流程](deployment.md)；仍保留租户状态、套餐与角色权限检查 | 实现完成；PostgreSQL 18 定向验证 PASS；用户环境尚未应用，HTTP 联调 not_verified |
-| ISSUE-03 | 认证路径为 `/api/v1/auth/*`，个人资料/初始化为 `/admin/v1/*`；字段也有 snake_case 与 camelCase 混用 | 累计记录差异，待用户指定批次与旧项目目标格式后统一调整 | 待指定 |
+| ISSUE-03 | 认证路径为 `/api/v1/auth/*`，个人资料/初始化为 `/api/v1/admin/*`；字段也有 snake_case 与 camelCase 混用 | 累计记录差异，待用户指定批次与旧项目目标格式后统一调整 | 待指定 |
 | ISSUE-04 | 当前登出吊销用户全部后台会话，`jti` 仅审计用 | 用户指定保留全部登出还是改为当前会话 | 待指定 |
 | ISSUE-05 | kind 实际联调发现租户数据库已有套餐，但读取 DTO 丢失 `plan_id`，初始化菜单被误判为无套餐而清空 | 将现有 nullable 外键显式绑定为 Ent 字段；重新生成代码，租户详情与列表可返回套餐 ID；Atlas 确认与现有结构无差异，无需迁移 | 租户仓储、登录与租户服务回归 PASS；kind NodePort 平台/租户登录、非空菜单、权限、刷新、登出验收 PASS；详见 [运行记录](https://github.com/zhangzhe-ctrl/ani-governance/blob/63849fc4cde38b879184a8fea4a6f539e60063e1/docs/deployment-kind-20260921.md) |
 
@@ -338,14 +338,14 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 
 | 接口族 | 平台管理员 | 租户管理员 | 平台块行号 / 租户块行号 |
 | --- | --- | --- | --- |
-| 租户 `/admin/v1/tenants*`（含 `:with-admin`、`:exists`、`/usage`、`/cleanup`） | 全 | **无** | 334,407-410,459-461,494 / 无 |
-| 套餐 `/admin/v1/plans*`、`/plan-modules*`、`/plan-quotas*` | 全 | **无** | 328-330,389-393,449-451,488-490 / 无 |
-| 权限点·权限组 `/admin/v1/permissions*`、`/permission-groups*` | 全 | **无**（仅 `GET /admin/v1/perm-codes` 只读权限码目录，515） | 326-327,385-388,446-448,486-487 / 无 |
-| 角色 `/admin/v1/roles*` | 全 CRUD | 仅 `GET /roles`、`GET /roles/{id}`（只读） | 332,399-400,453,492 / 516-517 |
+| 租户 `/api/v1/admin/tenants*`（含 `:with-admin`、`:exists`、`/usage`、`/cleanup`） | 全 | **无** | 334,407-410,459-461,494 / 无 |
+| 套餐 `/api/v1/admin/plans*`、`/plan-modules*`、`/plan-quotas*` | 全 | **无** | 328-330,389-393,449-451,488-490 / 无 |
+| 权限点·权限组 `/api/v1/admin/permissions*`、`/permission-groups*` | 全 | **无**（仅 `GET /api/v1/admin/perm-codes` 只读权限码目录，515） | 326-327,385-388,446-448,486-487 / 无 |
+| 角色 `/api/v1/admin/roles*` | 全 CRUD | 仅 `GET /roles`、`GET /roles/{id}`（只读） | 332,399-400,453,492 / 516-517 |
 | API 目录 / 菜单 `/apis*`、`/menus*` | 全 | **无** | 314,322,341-343,370-371,418-419,435-436,474,483 / 无 |
-| 在线会话 `/admin/v1/online-session/*`（含自助 `my-sessions`） | 全 | **无** | 376-377,443-444 / 无（见 MGMT-08） |
-| 用户 `/admin/v1/users*`（建/读/改/删/重置密码） | 全 | **全**（限本租户） | 335-336,411-414,462-463,495 / 507-508,519-522,526-527,530 |
-| 自助 `/admin/v1/me*` | 全 | **全** | 369,432-434,482 / 514,523-525,529 |
+| 在线会话 `/api/v1/admin/online-session/*`（含自助 `my-sessions`） | 全 | **无** | 376-377,443-444 / 无（见 MGMT-08） |
+| 用户 `/api/v1/admin/users*`（建/读/改/删/重置密码） | 全 | **全**（限本租户） | 335-336,411-414,462-463,495 / 507-508,519-522,526-527,530 |
+| 自助 `/api/v1/admin/me*` | 全 | **全** | 369,432-434,482 / 514,523-525,529 |
 | API Key `/api/v1/auth/api-keys*`（2026-09-22 新增，见 AK 功能组） | 种子有绑定，但 Service 拒绝 `tenantId=0`，平台身份实际不可调用 | **全**（限本租户） | 313,337-338,417,472-473 / 501-506 |
 
 权限码与绑定（`35-42`、`51-56`）：`platform:admin`（`tenant_id=0`，SYSTEM，受保护）绑定 `sys:access_backend` + `sys:platform_admin` 等 6 项；`template:tenant:manager`（`tenant_id=0`，TEMPLATE）只绑 `sys:access_backend` + `sys:tenant_manager`。`sys:access_backend` 是两角色共有的后台入口权限。
@@ -375,64 +375,64 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 
 | 编号 | 方法与路径 | 请求或用途 |
 | --- | --- | --- |
-| TENANT-01 | `GET /admin/v1/tenants` | 分页、过滤租户；返回人数及主管理员名称 |
-| TENANT-02 | `GET /admin/v1/tenants/{id}` | 租户详情 |
-| TENANT-03 | `POST /admin/v1/tenants` | `data`；只创建租户记录 |
-| TENANT-04 | `PUT /admin/v1/tenants/{id}` | `data`、`updateMask`；含 `planId`、`expiredAt`、`status` 等 |
-| TENANT-05 | `DELETE /admin/v1/tenants/{id}` | 删除租户记录 |
-| TENANT-06 | `POST /admin/v1/tenants:with-admin` | `{tenant:{...},user:{...},password,activationMode}`；租户、管理员、角色和凭证在同一事务创建 |
-| TENANT-07 | `GET /admin/v1/tenants:exists` | `code` / `name` 查重，返回 `exist` |
-| TENANT-08 | `GET /admin/v1/tenants/{id}/usage` | 用户数、API 审计记录数、套餐及配额；文件管理移除后 `storageUsedBytes` 固定为 0，不代表外部存储真实用量；不是计费周期用量 |
-| TENANT-09 | `POST /admin/v1/tenants/{id}/cleanup` | 显式删除实现所列 Governance 租户数据，保留租户并置 OFF；不等于清理下游资源或对象存储文件 |
-| ACCOUNT-01 | `GET /admin/v1/users` | 用户分页；按租户、角色等过滤；`query` 支持顶层 `role_code`（单值）与 `role_codes__in`（集合），详见 [ROLE-CODE-FILTER-01](#role-code-filter-01) |
-| ACCOUNT-02 | `GET /admin/v1/users/{id}` | 用户详情 |
-| ACCOUNT-03 | `POST /admin/v1/users` | `{data:{tenantId,username,roleIds,...},password,activationMode}`；角色必须与目标租户/系统类型匹配 |
-| ACCOUNT-04 | `PUT /admin/v1/users/{id}` | `data`、`updateMask`，可另传 `password`；当前 Service 即使只改资料/状态也要求传有效角色 |
-| ACCOUNT-05 | `DELETE /admin/v1/users/{id}` | 删除用户；拒绝删除默认平台管理员或操作者本人 |
-| ACCOUNT-06 | `GET /admin/v1/users:exists` | `id` / `username` 二选一，返回 `exist`；用户名查重仅支持当前租户，平台身份按用户名调用会拒绝，不能额外传 `tenantId` 指定目标；平台页面改用 ACCOUNT-01 按目标租户＋用户名精确过滤 |
-| ACCOUNT-07 | `POST /admin/v1/users/{user_id}/password` | `newPassword`；当前仍要求 AES 编码，与登录不同；路径目录问题见 MGMT-05 |
-| ACCOUNT-08 | `GET /admin/v1/users/username/{username}` | 用户名读取别名；同名账号可能跨租户，平台管理优先使用 ID |
-| ACCOUNT-09 | `DELETE /admin/v1/users/username/{username}` | 已注册的旧别名；Service 删除保护按 ID 查目标，不能据路由存在认定此别名可用，见 MGMT-06 |
-| ROLE-01 | `GET /admin/v1/roles` | 按租户与 `type` 读取角色 |
-| ROLE-02 | `GET /admin/v1/roles/{id}` | 角色详情与权限 ID |
-| ROLE-03 | `POST /admin/v1/roles` | `data`，包含角色代码、类型和 `permissions` |
-| ROLE-04 | `PUT /admin/v1/roles/{id}` | 修改角色及权限关联；受保护角色的类型、代码、状态等禁止修改 |
-| ROLE-05 | `DELETE /admin/v1/roles/{id}` | 删除角色；受保护角色禁止删除 |
-| PLAN-01 | `GET /admin/v1/plans` | 套餐列表 |
-| PLAN-02 | `GET /admin/v1/plans/{id}` | 套餐详情 |
-| PLAN-03 | `POST /admin/v1/plans` | `data`，含名称、版本、到期策略、保留天数 |
-| PLAN-04 | `PUT /admin/v1/plans/{id}` | `data`、`updateMask` |
-| PLAN-05 | `DELETE /admin/v1/plans?id=...` | ID 在查询参数，未使用详情路径 |
-| PLAN-06 | `GET /admin/v1/plan-modules` | 按 `plan_id` 查模块白名单 |
-| PLAN-07 | `GET /admin/v1/plan-modules/{id}` | 单条模块配置 |
-| PLAN-08 | `POST /admin/v1/plan-modules` | `data`，关联套餐与模块 |
-| PLAN-09 | `PUT /admin/v1/plan-modules/{id}` | `data`、`updateMask` |
-| PLAN-10 | `DELETE /admin/v1/plan-modules?id=...` | 删除单条模块配置 |
-| PLAN-11 | `GET /admin/v1/plan-quotas` | 配额列表；BFF 没有注册单条 GET |
-| PLAN-12 | `POST /admin/v1/plan-quotas` | `data`，含 `planId`、`quotaType`、`quotaValue` |
-| PLAN-13 | `PUT /admin/v1/plan-quotas/{id}` | `data`、`updateMask` |
-| PLAN-14 | `DELETE /admin/v1/plan-quotas?id=...` | 删除配额项 |
-| SESSION-01 | `GET /admin/v1/online-session/sessions` | `page`、`pageSize`、`keyword`；返回在线会话 |
-| SESSION-02 | `POST /admin/v1/online-session/force-logout` | `userId`、`jti`、`clientType`；吊销指定会话，返回空对象 |
-| SESSION-03 | `GET /admin/v1/online-session/my-sessions` | 无请求参数，身份取自认证上下文；返回本人会话列表（含 `current` 标记），供个人中心自助查看 |
-| SESSION-04 | `POST /admin/v1/online-session/my-sessions/revoke` | `clientType`、`jti`；吊销本人指定会话，返回空对象 |
-| PERM-01 | `GET /admin/v1/permissions` | 权限点分页；租户调用者仅见自身角色可达的权限点，平台调用者见全部 |
-| PERM-02 | `GET /admin/v1/permissions/{id}` | 权限点详情；租户调用者对越权权限点返回 403 |
-| PERM-03 | `POST /admin/v1/permissions` | `data`（code/name/groupId/status）；写后 `ResetPolicies` 失败会向上返回错误 |
-| PERM-04 | `PUT /admin/v1/permissions/{id}` | `data`、`updateMask`；当前关联更新存在丢失风险，完整数组也不能规避 mask 过滤，见 [已知实现缺陷](api-role-permission-ops.md#permission-update-mask-risk) 和 MGMT-09 |
-| PERM-05 | `DELETE /admin/v1/permissions/{id}` | 删除权限点；`sys:*` 受保护清单未在本路径强制（见 MGMT-10） |
-| PERM-06 | `POST /admin/v1/permissions/sync:perms` | 无请求体；先截断再重建非 `sys:*` 的权限组/权限点，破坏性同步，执行前需备份 |
-| PERMGROUP-01 | `GET /admin/v1/permission-groups` | 权限组分页；`query` 支持顶层 `exclude_subtree`（排除某分组自身及全部后代），详见 [PERMGROUP-SUBTREE-01](#permgroup-subtree-01) |
-| PERMGROUP-02 | `GET /admin/v1/permission-groups/{id}` | 权限组详情 |
-| PERMGROUP-03 | `POST /admin/v1/permission-groups` | `data`；不触发 `ResetPolicies`（策略生成不读分组 module，非刷新缺口） |
-| PERMGROUP-04 | `PUT /admin/v1/permission-groups/{id}` | `data`、`updateMask`；不触发 `ResetPolicies` |
-| PERMGROUP-05 | `DELETE /admin/v1/permission-groups/{id}` | 先删组内权限点再删组，两步无共享事务，属破坏性级联 |
+| TENANT-01 | `GET /api/v1/admin/tenants` | 分页、过滤租户；返回人数及主管理员名称 |
+| TENANT-02 | `GET /api/v1/admin/tenants/{id}` | 租户详情 |
+| TENANT-03 | `POST /api/v1/admin/tenants` | `data`；只创建租户记录 |
+| TENANT-04 | `PUT /api/v1/admin/tenants/{id}` | `data`、`updateMask`；含 `planId`、`expiredAt`、`status` 等 |
+| TENANT-05 | `DELETE /api/v1/admin/tenants/{id}` | 删除租户记录 |
+| TENANT-06 | `POST /api/v1/admin/tenants:with-admin` | `{tenant:{...},user:{...},password,activationMode}`；租户、管理员、角色和凭证在同一事务创建 |
+| TENANT-07 | `GET /api/v1/admin/tenants:exists` | `code` / `name` 查重，返回 `exist` |
+| TENANT-08 | `GET /api/v1/admin/tenants/{id}/usage` | 用户数、API 审计记录数、套餐及配额；文件管理移除后 `storageUsedBytes` 固定为 0，不代表外部存储真实用量；不是计费周期用量 |
+| TENANT-09 | `POST /api/v1/admin/tenants/{id}/cleanup` | 显式删除实现所列 Governance 租户数据，保留租户并置 OFF；不等于清理下游资源或对象存储文件 |
+| ACCOUNT-01 | `GET /api/v1/admin/users` | 用户分页；按租户、角色等过滤；`query` 支持顶层 `role_code`（单值）与 `role_codes__in`（集合），详见 [ROLE-CODE-FILTER-01](#role-code-filter-01) |
+| ACCOUNT-02 | `GET /api/v1/admin/users/{id}` | 用户详情 |
+| ACCOUNT-03 | `POST /api/v1/admin/users` | `{data:{tenantId,username,roleIds,...},password,activationMode}`；角色必须与目标租户/系统类型匹配 |
+| ACCOUNT-04 | `PUT /api/v1/admin/users/{id}` | `data`、`updateMask`，可另传 `password`；当前 Service 即使只改资料/状态也要求传有效角色 |
+| ACCOUNT-05 | `DELETE /api/v1/admin/users/{id}` | 删除用户；拒绝删除默认平台管理员或操作者本人 |
+| ACCOUNT-06 | `GET /api/v1/admin/users:exists` | `id` / `username` 二选一，返回 `exist`；用户名查重仅支持当前租户，平台身份按用户名调用会拒绝，不能额外传 `tenantId` 指定目标；平台页面改用 ACCOUNT-01 按目标租户＋用户名精确过滤 |
+| ACCOUNT-07 | `POST /api/v1/admin/users/{user_id}/password` | `newPassword`；当前仍要求 AES 编码，与登录不同；路径目录问题见 MGMT-05 |
+| ACCOUNT-08 | `GET /api/v1/admin/users/username/{username}` | 用户名读取别名；同名账号可能跨租户，平台管理优先使用 ID |
+| ACCOUNT-09 | `DELETE /api/v1/admin/users/username/{username}` | 已注册的旧别名；Service 删除保护按 ID 查目标，不能据路由存在认定此别名可用，见 MGMT-06 |
+| ROLE-01 | `GET /api/v1/admin/roles` | 按租户与 `type` 读取角色 |
+| ROLE-02 | `GET /api/v1/admin/roles/{id}` | 角色详情与权限 ID |
+| ROLE-03 | `POST /api/v1/admin/roles` | `data`，包含角色代码、类型和 `permissions` |
+| ROLE-04 | `PUT /api/v1/admin/roles/{id}` | 修改角色及权限关联；受保护角色的类型、代码、状态等禁止修改 |
+| ROLE-05 | `DELETE /api/v1/admin/roles/{id}` | 删除角色；受保护角色禁止删除 |
+| PLAN-01 | `GET /api/v1/admin/plans` | 套餐列表 |
+| PLAN-02 | `GET /api/v1/admin/plans/{id}` | 套餐详情 |
+| PLAN-03 | `POST /api/v1/admin/plans` | `data`，含名称、版本、到期策略、保留天数 |
+| PLAN-04 | `PUT /api/v1/admin/plans/{id}` | `data`、`updateMask` |
+| PLAN-05 | `DELETE /api/v1/admin/plans?id=...` | ID 在查询参数，未使用详情路径 |
+| PLAN-06 | `GET /api/v1/admin/plan-modules` | 按 `plan_id` 查模块白名单 |
+| PLAN-07 | `GET /api/v1/admin/plan-modules/{id}` | 单条模块配置 |
+| PLAN-08 | `POST /api/v1/admin/plan-modules` | `data`，关联套餐与模块 |
+| PLAN-09 | `PUT /api/v1/admin/plan-modules/{id}` | `data`、`updateMask` |
+| PLAN-10 | `DELETE /api/v1/admin/plan-modules?id=...` | 删除单条模块配置 |
+| PLAN-11 | `GET /api/v1/admin/plan-quotas` | 配额列表；BFF 没有注册单条 GET |
+| PLAN-12 | `POST /api/v1/admin/plan-quotas` | `data`，含 `planId`、`quotaType`、`quotaValue` |
+| PLAN-13 | `PUT /api/v1/admin/plan-quotas/{id}` | `data`、`updateMask` |
+| PLAN-14 | `DELETE /api/v1/admin/plan-quotas?id=...` | 删除配额项 |
+| SESSION-01 | `GET /api/v1/admin/online-session/sessions` | `page`、`pageSize`、`keyword`；返回在线会话 |
+| SESSION-02 | `POST /api/v1/admin/online-session/force-logout` | `userId`、`jti`、`clientType`；吊销指定会话，返回空对象 |
+| SESSION-03 | `GET /api/v1/admin/online-session/my-sessions` | 无请求参数，身份取自认证上下文；返回本人会话列表（含 `current` 标记），供个人中心自助查看 |
+| SESSION-04 | `POST /api/v1/admin/online-session/my-sessions/revoke` | `clientType`、`jti`；吊销本人指定会话，返回空对象 |
+| PERM-01 | `GET /api/v1/admin/permissions` | 权限点分页；租户调用者仅见自身角色可达的权限点，平台调用者见全部 |
+| PERM-02 | `GET /api/v1/admin/permissions/{id}` | 权限点详情；租户调用者对越权权限点返回 403 |
+| PERM-03 | `POST /api/v1/admin/permissions` | `data`（code/name/groupId/status）；写后 `ResetPolicies` 失败会向上返回错误 |
+| PERM-04 | `PUT /api/v1/admin/permissions/{id}` | `data`、`updateMask`；当前关联更新存在丢失风险，完整数组也不能规避 mask 过滤，见 [已知实现缺陷](api-role-permission-ops.md#permission-update-mask-risk) 和 MGMT-09 |
+| PERM-05 | `DELETE /api/v1/admin/permissions/{id}` | 删除权限点；`sys:*` 受保护清单未在本路径强制（见 MGMT-10） |
+| PERM-06 | `POST /api/v1/admin/permissions/sync:perms` | 无请求体；先截断再重建非 `sys:*` 的权限组/权限点，破坏性同步，执行前需备份 |
+| PERMGROUP-01 | `GET /api/v1/admin/permission-groups` | 权限组分页；`query` 支持顶层 `exclude_subtree`（排除某分组自身及全部后代），详见 [PERMGROUP-SUBTREE-01](#permgroup-subtree-01) |
+| PERMGROUP-02 | `GET /api/v1/admin/permission-groups/{id}` | 权限组详情 |
+| PERMGROUP-03 | `POST /api/v1/admin/permission-groups` | `data`；不触发 `ResetPolicies`（策略生成不读分组 module，非刷新缺口） |
+| PERMGROUP-04 | `PUT /api/v1/admin/permission-groups/{id}` | `data`、`updateMask`；不触发 `ResetPolicies` |
+| PERMGROUP-05 | `DELETE /api/v1/admin/permission-groups/{id}` | 先删组内权限点再删组，两步无共享事务，属破坏性级联 |
 
 > 权限点与权限组此前只以"待对应功能对接时详细登记"一句带过，本轮按 `PERM-*`/`PERMGROUP-*` 正式登记；菜单与 API 目录的独立管理仍待对应功能对接时登记。
 
 > 在线会话在源域只声明 2 个 RPC（`online_session.service.v1.OnlineSessionService.List/ForceLogout`），BFF `OnlineSessionService` 额外暴露了 `ListMyOnlineSession`/`RevokeMyOnlineSession` 两条自助路由（`api/protos/admin/service/v1/i_online_session.proto:27,34`），两者复用同一批源域消息。
 
-登录/登出复用 AUTH-01～04，邮件接受邀请复用 AUTH-12。`activationMode=IMMEDIATE`（默认）不需要 SMTP；`EMAIL_INVITATION` 需邮件通道及邀请入口配置，不接受预设密码，账号待激活，邀请有效期 24 小时。当前无邀请重发/撤销管理 HTTP 接口。权限点与权限组已按 `PERM-01～06`、`PERMGROUP-01～05` 正式登记；自助 `/admin/v1/me` 面（`AUTH-15～18`）登记于登录功能组；菜单与 API 目录的独立管理仍待对应功能对接时详细登记，本轮未操作其同步接口。
+登录/登出复用 AUTH-01～04，邮件接受邀请复用 AUTH-12。`activationMode=IMMEDIATE`（默认）不需要 SMTP；`EMAIL_INVITATION` 需邮件通道及邀请入口配置，不接受预设密码，账号待激活，邀请有效期 24 小时。当前无邀请重发/撤销管理 HTTP 接口。权限点与权限组已按 `PERM-01～06`、`PERMGROUP-01～05` 正式登记；自助 `/api/v1/admin/me` 面（`AUTH-15～18`）登记于登录功能组；菜单与 API 目录的独立管理仍待对应功能对接时详细登记，本轮未操作其同步接口。
 
 ### 已发现的限制与对接问题
 
@@ -448,10 +448,10 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 | MGMT-08 | 在线会话 4 条路由中，自助两条 `my-sessions`、`my-sessions/revoke` 在首次种子里只授给 `sys:platform_admin`；`sys:tenant_manager` 没有任何 online-session 授权，菜单 `OnlineSessionManagement` 的 `authority` 也只有 `sys:platform_admin`。因此租户管理员（及一般自服务场景）无法查看/下线自己的会话 | 源码与种子已确认；租户管理员是否放行自助会话待用户指定，未修改 |
 | MGMT-09 | 仓储从 mask 移除关联字段后，通用更新原地过滤 DTO，再无条件替换 API / 菜单关联；HTTP PUT 的非 nil mask 经 Service 追加 updated_by，因此即使回传完整数组也会被清空，详见 [静态执行链](api-role-permission-ops.md#permission-update-mask-risk) | 2026-10-11 文档更正；此前“回传完整数组”建议无效。实现仍待修，未运行复现，不标已符合关联 mask 合同 |
 | MGMT-10 | `constants.ProtectedPermissionCodes`（`sys:*` 共 7 个）在 `PermissionService.Delete` 路径未被强制校验，删除保护只落在角色层（`ROLE-05`） | 受保护权限点可被直接删除，导致鉴权与菜单静默失效；是否补删除保护待指定 |
-| MGMT-11 | `PUT /admin/v1/me`（`UserProfileService.UpdateUser`，`user_profile_service.go:81-96`）直接调 `userRepo.Update`，跳过 `UserService.Update` 的角色类型/租户校验与"至少一个角色"约束；而 `user_repo.go` 在掩码含 `role_ids` 时会应用 `roleIds` | 源码观察（**未运行验证**）：本人可借自助接口改动自身角色集合，形成自助提权面；是否收紧待用户指定 |
+| MGMT-11 | `PUT /api/v1/admin/me`（`UserProfileService.UpdateUser`，`user_profile_service.go:81-96`）直接调 `userRepo.Update`，跳过 `UserService.Update` 的角色类型/租户校验与"至少一个角色"约束；而 `user_repo.go` 在掩码含 `role_ids` 时会应用 `roleIds` | 源码观察（**未运行验证**）：本人可借自助接口改动自身角色集合，形成自助提权面；是否收紧待用户指定 |
 | MGMT-12 | `tenant.admin_user_id` 是自由指针（`TenantRepo.AssignTenantAdmin`），无外键/级联或一致性校验；`UserService.Delete` 删除主管理员用户后**不清空**该指针 | 租户记录留下悬空主管理员引用，`List`/`Get` 的 `adminUserName` 静默为空；与 MGMT-01（移交缺失）是不同问题 |
-| MGMT-13 | 平台账号复用 `/admin/v1/users`；删除保护覆盖 `id==1`、（`username==admin` 且 `tenantId==0`）以及操作者本人。平台登录还要求 `platform:*` 角色及后台访问权限，不能仅凭 `SYSTEM` 类型判定可登录。 | 删除非默认账号不必然导致失去管理员；缺口是停用、移除角色等更新没有“最后一个有效管理员”保护，默认账号被停用或失去管理角色后亦可能失去管理入口。2026-09-22 更正；是否补保护待指定 |
-| MGMT-14 | 租户仅注册 `GET /admin/v1/tenants/{id}`（绑定 id），源消息的 `query_by code/name` 无 HTTP 入口；`cleanup` 不删租户行（置 OFF），`code`/`name` 仍被 `TenantExists` 占用 | 按 code/name 读取须列表过滤；清理后无法以同 code/name 重新 `with-admin` 建租户 |
+| MGMT-13 | 平台账号复用 `/api/v1/admin/users`；删除保护覆盖 `id==1`、（`username==admin` 且 `tenantId==0`）以及操作者本人。平台登录还要求 `platform:*` 角色及后台访问权限，不能仅凭 `SYSTEM` 类型判定可登录。 | 删除非默认账号不必然导致失去管理员；缺口是停用、移除角色等更新没有“最后一个有效管理员”保护，默认账号被停用或失去管理角色后亦可能失去管理入口。2026-09-22 更正；是否补保护待指定 |
+| MGMT-14 | 租户仅注册 `GET /api/v1/admin/tenants/{id}`（绑定 id），源消息的 `query_by code/name` 无 HTTP 入口；`cleanup` 不删租户行（置 OFF），`code`/`name` 仍被 `TenantExists` 占用 | 按 code/name 读取须列表过滤；清理后无法以同 code/name 重新 `with-admin` 建租户 |
 | MGMT-15 | `PlanModuleService`/`PlanQuotaService` 的 Update 回调不写 `planId`（仅 updated_by/updated_at 与 module/quota 字段）；三者均无 HTTP `Count` 路由，源域 `TenantService.Count`/`BatchCreate` 亦无 HTTP 入口；`cleanup` 声明 `body:"*"` 但请求体无业务语义 | 白名单行/配额行的套餐归属不能经 PUT 改挂，只能删后重建；批量建租户须循环调用；登记为契约冗余，未改代码 |
 
 ### MGMT-02 修复及验证边界
@@ -472,7 +472,7 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 
 整合记录：已拉取 `11fa857`，源码改动无文本冲突；原未跟踪的 `docs/onboarding-invite-audit.md` 与远端新增版本内容一致，保留远端跟踪版本。同步修正文件管理移除后存储用量固定返回 0 的登记说明；整合后的相同定向回归与服务入口编译均 PASS（Go 1.26.7）；证据目录为 Ubuntu `/home/ubuntu/Workspace/.codex-runs/governance-account-main-20260921/`，包含 `regression.log` 和 `build.log`。未部署到 kind。
 
-整合记录（2026-09-22）：本轮登记与远端 `0c8e567`（AK-SK 签名接入 / Network VPC 校验）及合并提交 `7c8f574` 整合。该提交把访问密钥路由由 `/admin/v1/access-keys*` 改为 `/api/v1/auth/api-keys*`，为租户管理员新增 6 条 AK 授权（租户块由 24 条增至 30 条，现为 `501-530`），重写 `pkg/middleware/auth/auth.go`（viewer 构造移至 `112-123`，新增已验签 AK/SK 主体路径 `49-66`），并移除了 `access_key_repo.go` 中的 SystemViewer 调用。本文件「鉴权边界（授权矩阵与租户隔离）」小节的全部行号引用已据此**重算**（平台块 `313-497`、租户块 `501-530`），并新增「API Key」一行及与 AK 功能组的交叉引用。同步修正登录路径的 SystemViewer 引用行号（`294,874`）。登记为文档改动，未改任何接口或运行代码。
+整合记录（2026-09-22）：本轮登记与远端 `0c8e567`（AK-SK 签名接入 / Network VPC 校验）及合并提交 `7c8f574` 整合。该提交把访问密钥路由由 `/api/v1/admin/access-keys*` 改为 `/api/v1/auth/api-keys*`，为租户管理员新增 6 条 AK 授权（租户块由 24 条增至 30 条，现为 `501-530`），重写 `pkg/middleware/auth/auth.go`（viewer 构造移至 `112-123`，新增已验签 AK/SK 主体路径 `49-66`），并移除了 `access_key_repo.go` 中的 SystemViewer 调用。本文件「鉴权边界（授权矩阵与租户隔离）」小节的全部行号引用已据此**重算**（平台块 `313-497`、租户块 `501-530`），并新增「API Key」一行及与 AK 功能组的交叉引用。同步修正登录路径的 SystemViewer 引用行号（`294,874`）。登记为文档改动，未改任何接口或运行代码。
 
 <a id="frontend-management-handoff"></a>
 
@@ -500,19 +500,19 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 | --- | --- | --- | --- |
 | AUTH-02 | `POST /api/v1/auth/platform/password/login` | `{username,password}`，原始密码 | 平台管理员登录 |
 | AUTH-01 | `POST /api/v1/auth/password/login` | `{tenant_name,username,password}`，原始密码 | 租户用户及租户首管理员登录；`tenant_name` 填租户 `code`，不是显示名称 |
-| AUTH-05 | `GET /admin/v1/me` | Bearer，无参数 | 当前 User；用于确认当前 `id/tenantId/roles` |
-| AUTH-06 | `GET /admin/v1/initial-context` | Bearer，无参数 | `{menus,permissions,hiddenFields}`，用于导航、按钮和字段展示 |
+| AUTH-05 | `GET /api/v1/admin/me` | Bearer，无参数 | 当前 User；用于确认当前 `id/tenantId/roles` |
+| AUTH-06 | `GET /api/v1/admin/initial-context` | Bearer，无参数 | `{menus,permissions,hiddenFields}`，用于导航、按钮和字段展示 |
 | AUTH-04 | `POST /api/v1/auth/refresh` | `{}`，携带 `refresh_token` Cookie，无需 Bearer | 新访问令牌；客户端串行刷新，旧令牌对失效 |
 | AUTH-03 | `POST /api/v1/auth/logout` | Bearer，`{}` | `{status:"revoked"}`；吊销该用户全部后台会话并清 Cookie |
-| AUTH-07/08 | `GET /admin/v1/routes`、`GET /admin/v1/perm-codes` | Bearer | 单独导航 `{items}`、权限 `{codes,hiddenFields}`；用了 AUTH-06 可不重复调用 |
+| AUTH-07/08 | `GET /api/v1/admin/routes`、`GET /api/v1/admin/perm-codes` | Bearer | 单独导航 `{items}`、权限 `{codes,hiddenFields}`；用了 AUTH-06 可不重复调用 |
 
 正常登录/刷新响应为 `access_token`、`expires_in`（秒，字符串）和 `issued_at` 等字段。刷新令牌从 HttpOnly Cookie 读取，不依赖响应体的 `refresh_token`。密码登录不再使用 AES、Base64 或图形验证码。
 
-若登录返回 `mfa_required=true`，当前尚未完成登录，不能进入管理页；按既有 AUTH-09（`POST /admin/v1/mfa/verify`）处理二次验证，其响应与普通登录不同，见登录功能组。不要因首批未制作 MFA 页面而把该中间态当成功。
+若登录返回 `mfa_required=true`，当前尚未完成登录，不能进入管理页；按既有 AUTH-09（`POST /api/v1/auth/mfa/verify`）处理二次验证，其响应与普通登录不同，见登录功能组。不要因首批未制作 MFA 页面而把该中间态当成功。
 
 ### 3. 列表、筛选与分页
 
-`GET /admin/v1/users` 默认使用 `limit` + `cursor`，响应为 `{items,next_cursor,total}`；首次不传 cursor，后续原样回传上一页的 next_cursor。参数边界、签名绑定、稳定排序和旧页码兼容的唯一正文见 [分页规范](contracts/pagination.md)，历史验收见 [LIST-CURSOR-01](#list-cursor-01)。租户、角色、套餐等其余 admin 列表仍使用 `page`、`pageSize`，从第 1 页开始，不具备 users 的游标语义。
+`GET /api/v1/admin/users` 默认使用 `limit` + `cursor`，响应为 `{items,next_cursor,total}`；首次不传 cursor，后续原样回传上一页的 next_cursor。参数边界、签名绑定、稳定排序和旧页码兼容的唯一正文见 [分页规范](contracts/pagination.md)，历史验收见 [LIST-CURSOR-01](#list-cursor-01)。租户、角色、套餐等其余 admin 列表仍使用 `page`、`pageSize`，从第 1 页开始，不具备 users 的游标语义。
 
 各列表的 `query` 是 **JSON 字符串**，通过 URL 参数编码发送；筛选字段采用数据库 snake_case，与 JSON body 的 camelCase 分开。
 
@@ -523,7 +523,7 @@ const params = new URLSearchParams({
   query: JSON.stringify({ tenant_id: '12' }),
   orderBy: JSON.stringify(['-id']),
 });
-const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
+const url = `${BASE_URL}/api/v1/admin/users?${params.toString()}`;
 // 使用项目统一请求客户端，并附加 Bearer。
 // 下一页设置 cursor=response.next_cursor，保留相同 query/orderBy；末页停止。
 ```
@@ -535,10 +535,10 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 | 指定租户管理员列表 | `{ "tenant_id": "12", "role_id": "34" }`，34 为该租户管理员角色 ID |
 | 用户名包含搜索 | `{ "tenant_id": "12", "username__contains": "alice" }` |
 | 平台替指定租户检查用户名 | `{ "tenant_id": "12", "username": "alice" }`，查 `items/total` |
-| 查租户管理员角色 | 对 `/admin/v1/roles`：`{ "tenant_id": "12", "type": "TENANT", "code": "tenant:manager", "status": "ON" }` |
-| 查默认平台管理员角色 | 对 `/admin/v1/roles`：`{ "tenant_id": "0", "type": "SYSTEM", "code": "platform:admin", "status": "ON" }` |
-| 租户名称包含搜索 | 对 `/admin/v1/tenants`：`{ "name__contains": "示例" }` |
-| 创建租户后定位记录 | 对 `/admin/v1/tenants`：`{ "code": "example-team" }` |
+| 查租户管理员角色 | 对 `/api/v1/admin/roles`：`{ "tenant_id": "12", "type": "TENANT", "code": "tenant:manager", "status": "ON" }` |
+| 查默认平台管理员角色 | 对 `/api/v1/admin/roles`：`{ "tenant_id": "0", "type": "SYSTEM", "code": "platform:admin", "status": "ON" }` |
+| 租户名称包含搜索 | 对 `/api/v1/admin/tenants`：`{ "name__contains": "示例" }` |
+| 创建租户后定位记录 | 对 `/api/v1/admin/tenants`：`{ "code": "example-team" }` |
 
 裸字段是精确条件，文本模糊搜索显式使用 `__contains`，ID 不做模糊匹配。单角色过滤用顶层 `role_id`；多角色用顶层 `"role_ids__in": ["34","35"]`。不要写成 `role_ids:[34,35]`，也不要把角色条件藏在 `$and/$or` 子树中。管理员列表由后端过滤后分页，不在前端拿一页普通用户再筛管理员。
 
@@ -550,18 +550,18 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 
 | 编号 | 方法与路径 | 请求 / 响应 | 第一批接入说明 |
 | --- | --- | --- | --- |
-| ACCOUNT-01 | `GET /admin/v1/users` | 默认 `limit/cursor` → `{items,next_cursor,total}`；显式页码兼容见 [LIST-CURSOR-01](#list-cursor-01) | 列表、查重预检查、创建后定位 |
-| ACCOUNT-02 | `GET /admin/v1/users/{id}` | 无 body → User | 查看及编辑前读取最新角色/状态 |
-| ACCOUNT-03 | `POST /admin/v1/users` | `{data,password,activationMode}` → `{}` | 新增普通用户、追加租户管理员、创建平台管理员共用 |
-| ACCOUNT-04 | `PUT /admin/v1/users/{id}` | `{data,updateMask}` → `{}` | 资料、角色、启用/禁用共用；不在资料更新中夹带 password |
-| ACCOUNT-05 | `DELETE /admin/v1/users/{id}` | 无 body → `{}` | 按 ID 删除；服务端拒绝删除默认平台管理员及本人 |
-| ACCOUNT-06 | `GET /admin/v1/users:exists` | `?username=alice` 或 `?id=123` → `{exist}` | username 仅当前租户可用；平台用户名查重改用列表精确查询，不能附加 tenantId 绕过 |
-| ROLE-01 | `GET /admin/v1/roles` | 共用分页 → `{items,total}` | 获取目标租户可分配角色；平台角色筛 `tenant_id=0,type=SYSTEM` |
-| ROLE-02 | `GET /admin/v1/roles/{id}` | 无 body → Role | 查看角色 `code/type/tenantId/permissions`；permissions 是权限点 ID 数组 |
+| ACCOUNT-01 | `GET /api/v1/admin/users` | 默认 `limit/cursor` → `{items,next_cursor,total}`；显式页码兼容见 [LIST-CURSOR-01](#list-cursor-01) | 列表、查重预检查、创建后定位 |
+| ACCOUNT-02 | `GET /api/v1/admin/users/{id}` | 无 body → User | 查看及编辑前读取最新角色/状态 |
+| ACCOUNT-03 | `POST /api/v1/admin/users` | `{data,password,activationMode}` → `{}` | 新增普通用户、追加租户管理员、创建平台管理员共用 |
+| ACCOUNT-04 | `PUT /api/v1/admin/users/{id}` | `{data,updateMask}` → `{}` | 资料、角色、启用/禁用共用；不在资料更新中夹带 password |
+| ACCOUNT-05 | `DELETE /api/v1/admin/users/{id}` | 无 body → `{}` | 按 ID 删除；服务端拒绝删除默认平台管理员及本人 |
+| ACCOUNT-06 | `GET /api/v1/admin/users:exists` | `?username=alice` 或 `?id=123` → `{exist}` | username 仅当前租户可用；平台用户名查重改用列表精确查询，不能附加 tenantId 绕过 |
+| ROLE-01 | `GET /api/v1/admin/roles` | 共用分页 → `{items,total}` | 获取目标租户可分配角色；平台角色筛 `tenant_id=0,type=SYSTEM` |
+| ROLE-02 | `GET /api/v1/admin/roles/{id}` | 无 body → Role | 查看角色 `code/type/tenantId/permissions`；permissions 是权限点 ID 数组 |
 
 用户主要显示字段：`id,tenantId,tenantName,username,nickname,realname,roleIds,roles,roleNames,status,email,mobile,createdAt,updatedAt`。角色显示名称不能作为写入标识，写入使用 `roleIds`。
 
-创建示例：`POST /admin/v1/users`。`12/34` 为查询所得租户/角色 ID；密码占位符必须替换为用户输入并通过服务端密码策略。
+创建示例：`POST /api/v1/admin/users`。`12/34` 为查询所得租户/角色 ID；密码占位符必须替换为用户输入并通过服务端密码策略。
 
 ```json
 {
@@ -579,7 +579,7 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 
 立即激活时页面要求明确输入密码，不依赖后端默认密码。创建用户和密码凭证目前不是一个事务；若返回失败，应按租户和用户名重新查列表确认是否已建用户，不能无条件自动重试创建（MGMT-07）。
 
-资料更新示例：`PUT /admin/v1/users/123`。
+资料更新示例：`PUT /api/v1/admin/users/123`。
 
 ```json
 {
@@ -624,19 +624,19 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 
 | 编号 | 方法与路径 | 请求 / 响应 | 第一批接入说明 |
 | --- | --- | --- | --- |
-| TENANT-01 | `GET /admin/v1/tenants` | 共用分页 → `{items,total}` | 列表、租户选择、创建后定位 |
-| TENANT-02 | `GET /admin/v1/tenants/{id}` | 无 body → Tenant | 详情 |
-| TENANT-06 | `POST /admin/v1/tenants:with-admin` | `{tenant,user,password,activationMode}` → `{}` | 新开租户推荐入口，原子创建租户、首管理员、角色、凭证 |
-| TENANT-03 | `POST /admin/v1/tenants` | `{data:{...租户字段}}` → `{}` | 仅创建租户记录，不生成管理员/租户管理员角色；不作为默认开通按钮 |
-| TENANT-04 | `PUT /admin/v1/tenants/{id}` | `{data,updateMask}` → `{}` | 编辑资料、状态、套餐、有效期 |
-| TENANT-07 | `GET /admin/v1/tenants:exists` | `?code=example-team` 或 `?name=示例团队` → `{exist}` | 至少传一项；两项同时传时任一重复即 true；不支持排除当前记录 ID |
-| TENANT-08 | `GET /admin/v1/tenants/{id}/usage` | 无 body → TenantUsage | 只读用量；`storageUsedBytes=0` 为当前占位，不能标记为外部存储真实用量 |
-| PLAN-01 | `GET /admin/v1/plans` | 共用分页 → `{items,total}` | 套餐选择器，使用返回的真实 id |
-| PLAN-02 | `GET /admin/v1/plans/{id}` | 无 body → Plan | 展示所选套餐名称、到期策略等 |
+| TENANT-01 | `GET /api/v1/admin/tenants` | 共用分页 → `{items,total}` | 列表、租户选择、创建后定位 |
+| TENANT-02 | `GET /api/v1/admin/tenants/{id}` | 无 body → Tenant | 详情 |
+| TENANT-06 | `POST /api/v1/admin/tenants:with-admin` | `{tenant,user,password,activationMode}` → `{}` | 新开租户推荐入口，原子创建租户、首管理员、角色、凭证 |
+| TENANT-03 | `POST /api/v1/admin/tenants` | `{data:{...租户字段}}` → `{}` | 仅创建租户记录，不生成管理员/租户管理员角色；不作为默认开通按钮 |
+| TENANT-04 | `PUT /api/v1/admin/tenants/{id}` | `{data,updateMask}` → `{}` | 编辑资料、状态、套餐、有效期 |
+| TENANT-07 | `GET /api/v1/admin/tenants:exists` | `?code=example-team` 或 `?name=示例团队` → `{exist}` | 至少传一项；两项同时传时任一重复即 true；不支持排除当前记录 ID |
+| TENANT-08 | `GET /api/v1/admin/tenants/{id}/usage` | 无 body → TenantUsage | 只读用量；`storageUsedBytes=0` 为当前占位，不能标记为外部存储真实用量 |
+| PLAN-01 | `GET /api/v1/admin/plans` | 共用分页 → `{items,total}` | 套餐选择器，使用返回的真实 id |
+| PLAN-02 | `GET /api/v1/admin/plans/{id}` | 无 body → Plan | 展示所选套餐名称、到期策略等 |
 
 主要租户展示字段：`id,name,code,status,type,auditStatus,planId,expiredAt,adminUserId,adminUserName,memberCount,createdAt`。审核状态目前是普通字段，不代表独立审批流程。`TenantUsage` 返回 `tenantId,userCount,storageUsedBytes,apiCallCount,planId,planName,quotas`，API 次数不是计费周期统计，quota 也不代表已实现超额拦截。
 
-开通示例：`POST /admin/v1/tenants:with-admin`。套餐 ID 5 须换成实际允许后台管理模块的套餐。
+开通示例：`POST /api/v1/admin/tenants:with-admin`。套餐 ID 5 须换成实际允许后台管理模块的套餐。
 
 ```json
 {
@@ -660,7 +660,7 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 
 `tenants:with-admin` 返回失败时，也先按 code 查询租户及首管理员。数据库事务提交后还会重载策略，重载失败可导致“已创建但响应报错”；不要无条件自动重试创建，由后端确认持久化结果并重载策略。
 
-更新示例：`PUT /admin/v1/tenants/12`。
+更新示例：`PUT /api/v1/admin/tenants/12`。
 
 ```json
 {
@@ -685,10 +685,10 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 
 | 编号 | 方法与路径 | 请求 | 响应 |
 | --- | --- | --- | --- |
-| SESSION-01 | `GET /admin/v1/online-session/sessions` | `page=1&pageSize=20&keyword=alice`；keyword 按用户名/IP 匹配 | `{items,total}` |
-| SESSION-02 | `POST /admin/v1/online-session/force-logout` | `{userId,jti,clientType}`，均取目标会话记录 | `{}`；下线指定会话 |
-| SESSION-03 | `GET /admin/v1/online-session/my-sessions` | 无参数 | `{items,total}`，本人会话，含 `current` 标记 |
-| SESSION-04 | `POST /admin/v1/online-session/my-sessions/revoke` | `{jti,clientType}` | `{}`；下线本人指定会话 |
+| SESSION-01 | `GET /api/v1/admin/online-session/sessions` | `page=1&pageSize=20&keyword=alice`；keyword 按用户名/IP 匹配 | `{items,total}` |
+| SESSION-02 | `POST /api/v1/admin/online-session/force-logout` | `{userId,jti,clientType}`，均取目标会话记录 | `{}`；下线指定会话 |
+| SESSION-03 | `GET /api/v1/admin/online-session/my-sessions` | 无参数 | `{items,total}`，本人会话，含 `current` 标记 |
+| SESSION-04 | `POST /api/v1/admin/online-session/my-sessions/revoke` | `{jti,clientType}` | `{}`；下线本人指定会话 |
 
 会话项含 `jti,userId,username,tenantId,clientType,ipAddress,userAgent,deviceId,loginAt`；`clientType` 为 `"admin"` 或 `"app"`，原样回传。`current` 仅在本人列表有意义。管理会话列表不支持独立 userId/tenantId 精确筛选参数，不能把前端过滤一页的结果和全局 total 当成某用户的完整会话分页。
 
@@ -696,13 +696,13 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 
 | 接口 / 操作 | 暂缓原因或接入前置 |
 | --- | --- |
-| AUTH-15 `PUT /admin/v1/me` | 直接进入通用用户更新，可写角色；必须先由后端限定自助字段（MGMT-11）。页面隐藏字段无法消除已暴露接口的风险，正式开放给真实用户前需处理 |
-| ACCOUNT-07 `POST /admin/v1/users/{user_id}/password` | 仍要求 AES+Base64，且 HTTP 路径模板与 API 目录不一致（MGMT-05）；建议本批先不开放重置密码按钮 |
-| ACCOUNT-04 顶层 password、AUTH-16 `POST /admin/v1/me/password` | 同样仍是旧 AES 协议；不能复用创建/登录明文提交，也不以普通 PUT 夹带密码绕过前述问题 |
+| AUTH-15 `PUT /api/v1/admin/me` | 直接进入通用用户更新，可写角色；必须先由后端限定自助字段（MGMT-11）。页面隐藏字段无法消除已暴露接口的风险，正式开放给真实用户前需处理 |
+| ACCOUNT-07 `POST /api/v1/admin/users/{user_id}/password` | 仍要求 AES+Base64，且 HTTP 路径模板与 API 目录不一致（MGMT-05）；建议本批先不开放重置密码按钮 |
+| ACCOUNT-04 顶层 password、AUTH-16 `POST /api/v1/admin/me/password` | 同样仍是旧 AES 协议；不能复用创建/登录明文提交，也不以普通 PUT 夹带密码绕过前述问题 |
 | ACCOUNT-08/09 用户名详情/删除别名 | 使用 ID 入口；用户名删除有实现缺口，平台同名账号存在跨租户歧义（MGMT-06） |
 | ROLE-03～05、PERM-*、PERMGROUP-* 自定义角色与权限写入 | 四类页面先选择已有角色。运营/只读权限矩阵待定；权限点 PUT 丢数组会清绑定，删除保护不完整（MGMT-09/10/18） |
-| TENANT-05 `DELETE /admin/v1/tenants/{id}` | 仅删除租户记录，不等于关联数据及下游资源清理；首批普通管理流程不开放 |
-| TENANT-09 `POST /admin/v1/tenants/{id}/cleanup` | 删除实现列出的 Governance 本地数据，保留租户并置 OFF；不清下游资源，code/name 仍占用，需单独设计操作流程 |
+| TENANT-05 `DELETE /api/v1/admin/tenants/{id}` | 仅删除租户记录，不等于关联数据及下游资源清理；首批普通管理流程不开放 |
+| TENANT-09 `POST /api/v1/admin/tenants/{id}/cleanup` | 删除实现列出的 Governance 本地数据，保留租户并置 OFF；不清下游资源，code/name 仍占用，需单独设计操作流程 |
 | 主管理员移交 | 产品明确不提供，不调用通用更新改 adminUserId 代替移交 |
 | 平台身份调用 API Key 管理 | 当前 Service 拒绝 tenantId=0；本批平台管理员页面不据种子授权矩阵添加该入口 |
 
@@ -732,7 +732,7 @@ const url = `${BASE_URL}/admin/v1/users?${params.toString()}`;
 | AK-04 | `PUT /api/v1/auth/api-keys/{key_id}` | 仅 name/role_id/is_active/expires_at；外层 update_mask，值为 FieldMask lowerCamel；清空到期、启停、改绑 PASS |
 | AK-05 | `DELETE /api/v1/auth/api-keys/{key_id}` | 200 `{status:"revoked"}`，后续签名 401，PASS |
 | AK-06 | `PUT /api/v1/auth/api-keys/{key_id}/secret` | `{}` → `{data,secret_key}`；AK 不变，旧 SK 立即拒绝、新 SK 成功，PASS；响应 data 含只读 `role_name`/`role_description`（见 AK-ROLE-INFO-01） |
-| AK-07 | 旧 `/admin/v1/access-keys/token` 已移除 | RPC/签发分支/白名单和 secret_hash 删除；旧路径 404，PASS |
+| AK-07 | 旧 `/api/v1/admin/access-keys/token` 已移除 | RPC/签发分支/白名单和 secret_hash 删除；旧路径 404，PASS |
 
 Key 绑定同租户启用 TENANT 角色，复用套餐和 Casbin。主密钥文件必填，SK 使用专用 AES-256-GCM 实例加密；仅创建/重置返回一次，列表、详情、日志和审计无 SK/完整签名。每请求查询 Key 和角色状态，主体为独立 `api_key`，不伪造 user_id。首次种子为租户管理员授予六条管理权限；目标专用套餐经 API 开放 DASHBOARD/OPM/SYSTEM/NETWORK。
 
@@ -783,13 +783,13 @@ Key 绑定同租户启用 TENANT 角色，复用套餐和 Casbin。主密钥文�
 
 | 编号 | 方法与路径 | 请求 / 响应与用途 |
 | --- | --- | --- |
-| AK-01 | `GET /admin/v1/access-keys` | `pagination.PagingRequest`；返回 `{items,total}`，不含 SK |
-| AK-02 | `GET /admin/v1/access-keys/{id}` | 返回凭证详情，不含 SK |
-| AK-03 | `POST /admin/v1/access-keys` | `{data:{name,status,expiresAt}}`；返回 `{data:{id,accessKey,...},secret}`，AK/SK 由服务端生成 |
-| AK-04 | `PUT /admin/v1/access-keys/{id}` | `{data:{...},updateMask:"status"}` 等；可改名称、状态、有效期，不能改 AK、摘要或租户；返回空对象 |
-| AK-05 | `DELETE /admin/v1/access-keys/{id}` | 删除凭证；返回空对象 |
-| AK-06 | `PUT /admin/v1/access-keys/{id}/secret` | 请求体 `{}`；返回 `{data,secret}`，旧 SK 不能再换新令牌 |
-| AK-07 | `POST /admin/v1/access-keys/token` | `{accessKey,secret}`；无需登录 Bearer；返回 `{accessToken,expiresIn,tokenType}` |
+| AK-01 | `GET /api/v1/admin/access-keys` | `pagination.PagingRequest`；返回 `{items,total}`，不含 SK |
+| AK-02 | `GET /api/v1/admin/access-keys/{id}` | 返回凭证详情，不含 SK |
+| AK-03 | `POST /api/v1/admin/access-keys` | `{data:{name,status,expiresAt}}`；返回 `{data:{id,accessKey,...},secret}`，AK/SK 由服务端生成 |
+| AK-04 | `PUT /api/v1/admin/access-keys/{id}` | `{data:{...},updateMask:"status"}` 等；可改名称、状态、有效期，不能改 AK、摘要或租户；返回空对象 |
+| AK-05 | `DELETE /api/v1/admin/access-keys/{id}` | 删除凭证；返回空对象 |
+| AK-06 | `PUT /api/v1/admin/access-keys/{id}/secret` | 请求体 `{}`；返回 `{data,secret}`，旧 SK 不能再换新令牌 |
+| AK-07 | `POST /api/v1/admin/access-keys/token` | `{accessKey,secret}`；无需登录 Bearer；返回 `{accessToken,expiresIn,tokenType}` |
 
 这些接口沿用 camelCase，不能直接套用 AUTH-01/02 的 `access_token` 响应解析。没有独立 Count HTTP 路由。
 
@@ -800,7 +800,7 @@ Key 绑定同租户启用 TENANT 角色，复用套餐和 Casbin。主密钥文�
 1. 使用有管理权限的账号登录，再创建凭证：
 
    ```http
-   POST /admin/v1/access-keys
+   POST /api/v1/admin/access-keys
    Authorization: Bearer <管理员访问令牌>
    Content-Type: application/json
 
@@ -812,7 +812,7 @@ Key 绑定同租户启用 TENANT 角色，复用套餐和 Casbin。主密钥文�
 2. 调用方用 AK/SK 换令牌，不需要先登录：
 
    ```http
-   POST /admin/v1/access-keys/token
+   POST /api/v1/admin/access-keys/token
    Content-Type: application/json
 
    {"accessKey":"ak-<创建时返回的值>","secret":"sk-<创建或重置时返回的值>"}
@@ -822,7 +822,7 @@ Key 绑定同租户启用 TENANT 角色，复用套餐和 Casbin。主密钥文�
 
 3. 业务请求带 `Authorization: Bearer <accessToken>`。当前令牌固定 `roles=["machine"]`、`userId=0`；种子没有这个角色的业务授权，也不会继承创建者权限，因此默认 Casbin 下受保护 API 会被拒绝。仅拿到 JWT 不代表已能调用业务接口。
 
-停用示例：`PUT /admin/v1/access-keys/{id}`，请求体 `{"data":{"status":"OFF"},"updateMask":"status"}`。它目前只阻止后续换令牌，**不会立即吊销已经发出的 JWT**；删除和重置同样存在这个限制。
+停用示例：`PUT /api/v1/admin/access-keys/{id}`，请求体 `{"data":{"status":"OFF"},"updateMask":"status"}`。它目前只阻止后续换令牌，**不会立即吊销已经发出的 JWT**；删除和重置同样存在这个限制。
 
 ### 已发现的缺口
 
@@ -1025,8 +1025,8 @@ x-ani-authz:
 
 | 编号 | 方法/路径 | 报文与职责 | 鉴权、套餐关系、状态 |
 | --- | --- | --- | --- |
-| QUOTA-01 | GET /admin/v1/quota-definitions | 配额目录 code/name/unit/kind/enforcement；沿用分页 | 平台管理读权限，TENANT 模块；已实现（本地验收通过） |
-| QUOTA-02 | GET /admin/v1/tenants/{id}/quota-accounts | 指定租户 limit/occupied/available/overLimit；占额不等于 Running GPU | 平台管理读权限，TENANT 模块；已实现（本地验收通过） |
+| QUOTA-01 | GET /api/v1/admin/quota-definitions | 配额目录 code/name/unit/kind/enforcement；沿用分页 | 平台管理读权限，TENANT 模块；已实现（本地验收通过） |
+| QUOTA-02 | GET /api/v1/admin/tenants/{id}/quota-accounts | 指定租户 limit/occupied/available/overLimit；占额不等于 Running GPU | 平台管理读权限，TENANT 模块；已实现（本地验收通过） |
 | QUOTA-03 | gRPC /quota.service.v1.QuotaReleaseService/ReportQuotaRelease | event ID、原 operation、charge 与累计释放量、原因；没有公共 HTTP 映射 | 独立 listener、精确 owner mTLS 身份、账本归属校验；内部退额不受套餐到期阻断；已实现（本地验收通过） |
 | QUOTA-LAB-01 | POST /api/v1/quota-lab/gpu-allocations | data.name/gpuCount，Idempotency-Key；202 与稳定操作/占额/资源 ID | 仅 quota_lab 构建；真实用户 JWT、角色与套餐检查，实验目录归 TENANT；已实现（本地验收通过） |
 | QUOTA-LAB-02 | GET /api/v1/quota-lab/gpu-allocations/{resource_id} | 经 Governance 查询模拟资源，不扣额 | 同上，限本租户；已实现（本地验收通过） |
@@ -1080,7 +1080,7 @@ x-ani-authz:
 - AUTHZ-OPA-ISSUE-03：`permission_policy.policy_engine` 枚举仍含 `OPA`（DB 字段），本批不动：改动需 Ent 重生成 + Atlas 迁移，且业务代码当前不写入该字段。这类"字段值域收敛"与 `geo_location` 字段删除同批另做。
 - AUTHZ-OPA-ISSUE-04：对外接口与错误码不变；受影响的只是"引擎可选值"这一部署期契约。
 
-本轮验证：`go build ./...`、`go vet ./...`、`go test ./pkg/authorizer/... ./pkg/middleware/auth/...` 通过；部署环境需复验 `admin check`、服务启动日志中的 casbin 引擎装载，以及登录后 `GET /admin/v1/me`、`GET /admin/v1/initial-context` 与一个需授权接口的 403/200 表现（`not_verified`）。
+本轮验证：`go build ./...`、`go vet ./...`、`go test ./pkg/authorizer/... ./pkg/middleware/auth/...` 通过；部署环境需复验 `admin check`、服务启动日志中的 casbin 引擎装载，以及登录后 `GET /api/v1/admin/me`、`GET /api/v1/admin/initial-context` 与一个需授权接口的 403/200 表现（`not_verified`）。
 
 ## 功能组：审计报文去掉 geo_location、权限策略枚举去掉 OPA（FIELD-CLEANUP-01）
 
@@ -1109,18 +1109,18 @@ x-ani-authz:
 
 | 编号 | 方法/路径 | 下游 RPC / 语义 | 权限 |
 | --- | --- | --- | --- |
-| ACC-01 | GET /admin/v1/accelerator/clusters | ListClusters | accelerator:cluster:list |
-| ACC-02 | POST /admin/v1/accelerator/clusters | RegisterCluster；data.display_name/connection_ref/idempotency_key | accelerator:cluster:register |
-| ACC-03 | GET /admin/v1/accelerator/pools | ListPools；cluster_id | accelerator:pool:list |
-| ACC-04 | POST /admin/v1/accelerator/pools | CreatePool；data.cluster_id/display_name/idempotency_key | accelerator:pool:create |
-| ACC-05 | GET /admin/v1/accelerator/supply-groups | ListSupplyGroups；pool_id | accelerator:supply-group:list |
-| ACC-06 | POST /admin/v1/accelerator/supply-groups:adopt | AdoptSupplyGroup；data 中固定节点、baseline、mode、queue；无 verification 写字段 | accelerator:supply-group:adopt |
-| ACC-07 | POST /admin/v1/accelerator/supply-groups/{group_id}:set-admission | SetAdmission；data.expected_version/desired/reason/idempotency_key | accelerator:supply-group:set-admission |
-| ACC-08 | GET /admin/v1/accelerator/profiles | AdminListProfiles；cluster_id | accelerator:profile:admin-list |
-| ACC-09 | POST /admin/v1/accelerator/profiles | PublishProfile；data.spec/expected_group_version/verification_ref/idempotency_key | accelerator:profile:publish |
-| ACC-10 | GET /admin/v1/accelerator/devices | ListDevices；cluster_id、可选 group_id | accelerator:device:list |
-| ACC-11 | GET /admin/v1/accelerator/bindings | AdminListBindings；cluster_id、可选 physical_device_id；包括未关联事实 | accelerator:binding:admin-list |
-| ACC-12 | GET /admin/v1/accelerator/capacity | AdminGetCapacity；profile_id/profile_version/include_devices | accelerator:capacity:admin-get |
+| ACC-01 | GET /api/v1/admin/accelerator/clusters | ListClusters | accelerator:cluster:list |
+| ACC-02 | POST /api/v1/admin/accelerator/clusters | RegisterCluster；data.display_name/connection_ref/idempotency_key | accelerator:cluster:register |
+| ACC-03 | GET /api/v1/admin/accelerator/pools | ListPools；cluster_id | accelerator:pool:list |
+| ACC-04 | POST /api/v1/admin/accelerator/pools | CreatePool；data.cluster_id/display_name/idempotency_key | accelerator:pool:create |
+| ACC-05 | GET /api/v1/admin/accelerator/supply-groups | ListSupplyGroups；pool_id | accelerator:supply-group:list |
+| ACC-06 | POST /api/v1/admin/accelerator/supply-groups:adopt | AdoptSupplyGroup；data 中固定节点、baseline、mode、queue；无 verification 写字段 | accelerator:supply-group:adopt |
+| ACC-07 | POST /api/v1/admin/accelerator/supply-groups/{group_id}:set-admission | SetAdmission；data.expected_version/desired/reason/idempotency_key | accelerator:supply-group:set-admission |
+| ACC-08 | GET /api/v1/admin/accelerator/profiles | AdminListProfiles；cluster_id | accelerator:profile:admin-list |
+| ACC-09 | POST /api/v1/admin/accelerator/profiles | PublishProfile；data.spec/expected_group_version/verification_ref/idempotency_key | accelerator:profile:publish |
+| ACC-10 | GET /api/v1/admin/accelerator/devices | ListDevices；cluster_id、可选 group_id | accelerator:device:list |
+| ACC-11 | GET /api/v1/admin/accelerator/bindings | AdminListBindings；cluster_id、可选 physical_device_id；包括未关联事实 | accelerator:binding:admin-list |
+| ACC-12 | GET /api/v1/admin/accelerator/capacity | AdminGetCapacity；profile_id/profile_version/include_devices | accelerator:capacity:admin-get |
 | ACC-13 | GET /api/v1/accelerator/profiles | ListProfiles；cluster_id、可选 mode | accelerator:profile:list |
 | ACC-14 | GET /api/v1/accelerator/profiles/{profile_id} | GetProfile；具体 profile_version | accelerator:profile:get |
 | ACC-15 | GET /api/v1/accelerator/capacity | GetCapacity；具体 profile/version；租户合同无 include_devices 字段，永不返回设备明细 | accelerator:capacity:get |
@@ -1190,10 +1190,10 @@ QUOTA-01～04 与 ACC 既有路由、字段和鉴权保持原合同。`ListQuota
 
 排查中记录三项既有接口行为，本批只登记不改接口：
 
-- `GET /admin/v1/users/{id}` 读取不存在的 id 返回 `code=500`、`reason` 为空、message
+- `GET /api/v1/admin/users/{id}` 读取不存在的 id 返回 `code=500`、`reason` 为空、message
   `ent: user not found`；旧新两侧解析结果相同，说明是服务侧错误映射而非报文差异。若后续要把
   “对象不存在”归到 404，需单独批次评估对既有前端与审计的影响。
-- `GET /admin/v1/users:exists` 按 username 查询要求租户范围，平台管理员令牌（tenant_id=0）
+- `GET /api/v1/admin/users:exists` 按 username 查询要求租户范围，平台管理员令牌（tenant_id=0）
   返回 `400 tenant scope required to check user exists by username`；调用方需显式带租户。
 - 用户报文 `mobile` 由服务端脱敏为 `138****1234`，`email` 原样返回；旧客户端同样解析出脱敏值，
   因此脱敏合同与接管无关，属既有字段权限行为。
@@ -1222,7 +1222,7 @@ Image AK 使用现有 ANI-HMAC-SHA256 七行形式：算法、HTTP method、规�
 
 ## 功能组：ModelDev CPU 主干（CPU-P01）
 
-本组沿用 v0.4 的 `/admin/v1/modeldev` 路由，只增加 CPU-P01 明确启用的能力。
+本组沿用 v0.4 的 `/api/v1/admin/modeldev` 路由，只增加 CPU-P01 明确启用的能力。
 共享 Intent、Snapshot、Proto 和规范测试向量由 ani-modeldev-service 单点维护；
 Governance 通过 go.mod/go.sum 固定精确模块版本，生产代码不导入 conformance fixture。
 当前已装配 Create HTTP、当前数据库授权、可信 ModelDev 解析、PostgreSQL 持久受理和原键重放；
@@ -1230,13 +1230,13 @@ Governance 通过 go.mod/go.sum 固定精确模块版本，生产代码不导入
 
 | 编号 | 路由与方法 | 请求与响应合同 | 鉴权与范围 | 当前边界 |
 | --- | --- | --- | --- | --- |
-| MODELDEV-01 | `POST /admin/v1/modeldev/executions` | lower_snake_case 的 name、kind、preset_id、dataset_version_id、可选 image_version_id/general_parameters 及 idempotency_key；只允许 GENERAL_TRAINING。source_execution_id 暂不支持非空关联，当前必须省略。持久受理后返回 202、原 operation/execution、resolved_release_id、replayed 和四组正交状态 | 复用 Principal、TenantAccess、Casbin，并重查当前数据库的有效租户、用户、成员角色、ALL 数据范围及 MODEL/POST 权限；通过 ResourceTenantResolver 取得 resource tenant UUID。body 不含 tenant/actor/cluster/SA/command/raw CRD，旧 actor 仅审计 | 实际 JWT/Redis、当前授权、mTLS 解析、PG commit 后 202、暂停后重放、异参冲突及撤权拒绝已获隔离 Fedora 证据；可靠投递、其他数据范围和目标集群业务验收仍未完成 |
+| MODELDEV-01 | `POST /api/v1/modeldev/executions` | lower_snake_case 的 name、kind、preset_id、dataset_version_id、可选 image_version_id/general_parameters 及 idempotency_key；只允许 GENERAL_TRAINING。source_execution_id 暂不支持非空关联，当前必须省略。持久受理后返回 202、原 operation/execution、resolved_release_id、replayed 和四组正交状态 | 复用 Principal、TenantAccess、Casbin，并重查当前数据库的有效租户、用户、成员角色、ALL 数据范围及 MODEL/POST 权限；通过 ResourceTenantResolver 取得 resource tenant UUID。body 不含 tenant/actor/cluster/SA/command/raw CRD，旧 actor 仅审计 | 实际 JWT/Redis、当前授权、mTLS 解析、PG commit 后 202、暂停后重放、异参冲突及撤权拒绝已获隔离 Fedora 证据；可靠投递、其他数据范围和目标集群业务验收仍未完成 |
 | MODELDEV-02 | 受管 T02 作业：`admin modeldev-import-release`、`modeldev-enable`、`modeldev-pause`；回退复用 enable | enable/pause 请求只含 preset_id、release_id、release_digest、expected_generation、reason、evidence_reference；返回 operator、before/after（含 generation）和 replayed，首次 before=null。导入使用 typed immutable canonical_release | 实际 admin ACCESS JWT 与 Redis session/blacklist、当前有效租户与用户、当前 ALL 数据范围及独立 `modeldev:manage_release_binding` 权限；租户和操作者只来自可信上下文，同目标重放仍重新授权 | enable 经 exact-method mTLS ValidateRelease 验证已导入目标与当前环境，再重查授权并复用原唯一绑定 CAS；首次 generation=1。已获真实 JWT/Redis/PG 的首次启用、切换、stale 拒绝和同指针回退 RED/GREEN；该测试只替代外部 ModelDev RPC 边界，实际目录验证及目标集群业务验收另行证明。pause 不要求 ModelDev 在线，详见[操作合同](deployment.md#暂停-modeldev-新受理) |
-| MODELDEV-03 | `GET /admin/v1/modeldev/executions/{execution_id}`；`GET /admin/v1/modeldev/executions/{execution_id}/artifacts` | 详情白名单含四组状态及 observed_at；产物仅返回已发布文件 ID、文件名、角色、大小、摘要和验证时间。产物分页仅接受 page_size（上限 100）、page_token（上限 2048 字节） | 每次经过 JWT/session、TenantAccess、Casbin，并重新读取当前有效租户、用户、角色、ALL 范围与对应独立 GET API 授权；新签发 mTLS query delegation，剥离公网同名身份/委派头。非 ALL 拒绝，不使用受理时 actor 授权 | 仅源码与隔离测试，不表示真实 API 目录已同步；执行列表与日志见 MODELDEV-06 |
-| MODELDEV-04 | `GET /admin/v1/modeldev/artifacts/{artifact_id}/content` | 仅接受 artifact_id，返回已发布 ArtifactView、短期 HTTPS download_url 和 expires_at；响应及错误均 no-store/no-cache/no-referrer。下载 URL 不进入快照或本服务日志 | 独立当前 GET 授权；ModelDev 按可信租户解析 artifact 固定版本，不允许调用方选择 bucket/key/Pod/namespace；拒绝未发布、过期、非 HTTPS、含用户凭据或超过 15 分钟的签发结果 | 下载链接为短期凭据，仅交授权调用者；BFF 不代理任意 URL、不向用户发长期 AK/SK。真实存储/ENV 验收仍需独立验证 |
-| MODELDEV-05 | `POST /admin/v1/modeldev/executions/{execution_id}:stop` | 仅 path selector，无请求体或 query；PG 持久停止意图后返回202：operation_id、execution_id、stop_requested、intent_generation、replayed；重复请求回原代次，不返回未观察到的 CLOSED | 每次当前 JWT/session、TenantAccess、Casbin、PG ALL范围及独立 POST API 授权；不使用历史 actor 授权，拒绝公网身份/代次注入；内部 ApplyCloseIntent 使用保存的本次 actor，独立租约投递及回执；尚未投递的 create 等待关闭墓碑 ACK | 202只代表受理，实际关闭经查询观察；G意图代次与M创建门闩 close_generation 独立；新增API需显式目录同步及授权，目标环境验收另行执行 |
-| MODELDEV-06 | `GET /admin/v1/modeldev/executions`；`GET /admin/v1/modeldev/executions/{execution_id}/logs` | 列表仅 page_size（默认20，上限100）、page_token（上限2048字节），返回 ExecutionView 和 next_page_token；日志仅 tail_lines（默认200，上限1000）、max_bytes（默认16384，上限65536），返回 log_id、实际 timestamp/text、truncated、observed_at | 每次当前 JWT/session、TenantAccess、Casbin、PG ALL范围及各自独立 GET API授权；可信租户下查询，日志位置由 ModelDev 已观察训练资源确定；拒绝重复/未知参数、请求体及 Pod/namespace/log_id 等选择器；响应和错误 no-store | 不返回 Pod UID/container/object key；不可读、资源身份变化、无法完整选择历史日志均返回不可用，不伪造空成功。新增 API 需显式目录同步及授权，真实环境验收另行执行 |
-| MODELDEV-07 | `GET /admin/v1/modeldev/presets`；`GET /admin/v1/modeldev/input-versions`、`/{input_version_id}`；受管 `admin modeldev-import-csv` | 目录/输入白名单与注册参数；分页上限100/2048字节，输入列表可用固定状态过滤。preset active_release_id/generation/gate 只由 G 当前唯一绑定填充；没有绑定则不宣称已启用。CSV 导入 typed 固定对象与 immutable Release ID/digest | 三个查询各自独立当前 GET API 授权和 ALL；导入使用当前 `modeldev:manage_release_binding` 和 ALL，再委派 exact-method mTLS；来源 object scope 由 M owner-approved admission facts 验证 | HTTP/CLI 入口与真实 JWT/Redis/PG 的跨客户端导入重放 RED/GREEN 已通过。仅 CSV 导入以 tenant/actor/input ID 派生稳定委派请求 ID，固定 requested_at/body 重放；已确认不可变冲突保留 AlreadyExists，FailedPrecondition 保留原分类，未知来源失败仍拒绝。隔离 LIVE 已证明真实固定 CSV 1024×16 导入 READY、同请求重放、异摘要 FAILED、不存在版本 VALIDATING，以及正常 BFF Get/List；完整计算/关闭/发布仍需独立验收 |
+| MODELDEV-03 | `GET /api/v1/modeldev/executions/{execution_id}`；`GET /api/v1/modeldev/executions/{execution_id}/artifacts` | 详情白名单含四组状态及 observed_at；产物仅返回已发布文件 ID、文件名、角色、大小、摘要和验证时间。产物分页仅接受 page_size（上限 100）、page_token（上限 2048 字节） | 每次经过 JWT/session、TenantAccess、Casbin，并重新读取当前有效租户、用户、角色、ALL 范围与对应独立 GET API 授权；新签发 mTLS query delegation，剥离公网同名身份/委派头。非 ALL 拒绝，不使用受理时 actor 授权 | 仅源码与隔离测试，不表示真实 API 目录已同步；执行列表与日志见 MODELDEV-06 |
+| MODELDEV-04 | `GET /api/v1/modeldev/artifacts/{artifact_id}/content` | 仅接受 artifact_id，返回已发布 ArtifactView、短期 HTTPS download_url 和 expires_at；响应及错误均 no-store/no-cache/no-referrer。下载 URL 不进入快照或本服务日志 | 独立当前 GET 授权；ModelDev 按可信租户解析 artifact 固定版本，不允许调用方选择 bucket/key/Pod/namespace；拒绝未发布、过期、非 HTTPS、含用户凭据或超过 15 分钟的签发结果 | 下载链接为短期凭据，仅交授权调用者；BFF 不代理任意 URL、不向用户发长期 AK/SK。真实存储/ENV 验收仍需独立验证 |
+| MODELDEV-05 | `POST /api/v1/modeldev/executions/{execution_id}:stop` | 仅 path selector，无请求体或 query；PG 持久停止意图后返回202：operation_id、execution_id、stop_requested、intent_generation、replayed；重复请求回原代次，不返回未观察到的 CLOSED | 每次当前 JWT/session、TenantAccess、Casbin、PG ALL范围及独立 POST API 授权；不使用历史 actor 授权，拒绝公网身份/代次注入；内部 ApplyCloseIntent 使用保存的本次 actor，独立租约投递及回执；尚未投递的 create 等待关闭墓碑 ACK | 202只代表受理，实际关闭经查询观察；G意图代次与M创建门闩 close_generation 独立；新增API需显式目录同步及授权，目标环境验收另行执行 |
+| MODELDEV-06 | `GET /api/v1/modeldev/executions`；`GET /api/v1/modeldev/executions/{execution_id}/logs` | 列表仅 page_size（默认20，上限100）、page_token（上限2048字节），返回 ExecutionView 和 next_page_token；日志仅 tail_lines（默认200，上限1000）、max_bytes（默认16384，上限65536），返回 log_id、实际 timestamp/text、truncated、observed_at | 每次当前 JWT/session、TenantAccess、Casbin、PG ALL范围及各自独立 GET API授权；可信租户下查询，日志位置由 ModelDev 已观察训练资源确定；拒绝重复/未知参数、请求体及 Pod/namespace/log_id 等选择器；响应和错误 no-store | 不返回 Pod UID/container/object key；不可读、资源身份变化、无法完整选择历史日志均返回不可用，不伪造空成功。新增 API 需显式目录同步及授权，真实环境验收另行执行 |
+| MODELDEV-07 | `GET /api/v1/modeldev/presets`；`GET /api/v1/modeldev/input-versions`、`/{input_version_id}`；受管 `admin modeldev-import-csv` | 目录/输入白名单与注册参数；分页上限100/2048字节，输入列表可用固定状态过滤。preset active_release_id/generation/gate 只由 G 当前唯一绑定填充；没有绑定则不宣称已启用。CSV 导入 typed 固定对象与 immutable Release ID/digest | 三个查询各自独立当前 GET API 授权和 ALL；导入使用当前 `modeldev:manage_release_binding` 和 ALL，再委派 exact-method mTLS；来源 object scope 由 M owner-approved admission facts 验证 | HTTP/CLI 入口与真实 JWT/Redis/PG 的跨客户端导入重放 RED/GREEN 已通过。仅 CSV 导入以 tenant/actor/input ID 派生稳定委派请求 ID，固定 requested_at/body 重放；已确认不可变冲突保留 AlreadyExists，FailedPrecondition 保留原分类，未知来源失败仍拒绝。隔离 LIVE 已证明真实固定 CSV 1024×16 导入 READY、同请求重放、异摘要 FAILED、不存在版本 VALIDATING，以及正常 BFF Get/List；完整计算/关闭/发布仍需独立验收 |
 | MODELDEV-08 | 受管 `admin modeldev-inspect`、`modeldev-reconcile`、`modeldev-cleanup-plan`、`modeldev-cleanup-apply` | 前三仅 execution_id；apply 仅 execution_id 和 plan_sha256；输出 typed inspection/plan/audit receipt | inspect 重查独立 execution GET grant 与 ALL；reconcile/cleanup 重查 `modeldev:manage_execution` 与 ALL；所有委派 exact RPC method，CLI 无调用者可选 tenant/actor/namespace/resource | M 重建 exact-UID cleanup plan，只允许已关闭且 PUBLISHED、无活动写者的停止训练资源，保留 PVC/Workflow/Pod/DB/S3；G 已装配受认证 typed 入口，真正观察/删除与租户隔离需真实环境验收，不以编译或 CLI 私有文件检查替代 |
 
 `general_parameters` 保留缺省与显式 `[]` 的区别，外部 JSON 不直接套用 ProtoJSON。
@@ -1366,9 +1366,9 @@ RPC 方法清单（接收方白名单，精确 FullMethod）：
 
 | 调用 | 结果 |
 | --- | --- |
-| `GET /admin/v1/modeldev/presets` | 200，返回真实 preset（`active_release_id`、`binding_generation=1`、参数规则） |
-| `GET /admin/v1/modeldev/executions?page_size=2` | 200，返回真实执行（`compute_state`/`delivery_state`/`close_state`） |
-| `GET /admin/v1/modeldev/input-versions?state=READY` | 200，返回真实输入版本（row_count=1024、feature_count=16） |
+| `GET /api/v1/modeldev/presets` | 200，返回真实 preset（`active_release_id`、`binding_generation=1`、参数规则） |
+| `GET /api/v1/modeldev/executions?page_size=2` | 200，返回真实执行（`compute_state`/`delivery_state`/`close_state`） |
+| `GET /api/v1/modeldev/input-versions?state=READY` | 200，返回真实输入版本（row_count=1024、feature_count=16） |
 
 **负向（新校验确实生效）**：
 
@@ -1415,8 +1415,8 @@ Network 客户端改用 Resource 拥有的 `network.v1` 生成类型，保持 mT
 | GetImageSpace | `/api/v1/images/space` | ImageSpace |
 | GetPublisherCredential | `/api/v1/images/publisher-credential` | PublisherCredential |
 | GetImage | `/api/v1/images/registrations/{image_id}` | ImageRegistration |
-| GetInputVersion | `/admin/v1/modeldev/input-versions/{input_version_id}` | InputVersionView |
-| GetExecution | `/admin/v1/modeldev/executions/{execution_id}` | ExecutionView |
+| GetInputVersion | `/api/v1/modeldev/input-versions/{input_version_id}` | InputVersionView |
+| GetExecution | `/api/v1/modeldev/executions/{execution_id}` | ExecutionView |
 
 HTTP 绑定使用 `response_body`，ModelDev 的手写路由同步展开。字段名、权限、租户隔离和内部 gRPC 消息保留；普通 CRUD 详情已直接返回对象。列表、日志、导航、统计、MFA 状态及签发/创建等有多字段业务语义的响应保留原结构。固定生成链同时更新 HTTP 客户端与 OpenAPI；后处理移除 gnostic 在显式 200 前追加的推断 200，避免重复 YAML 键。没有手改生成物。
 
@@ -1435,9 +1435,9 @@ Resource 仅提供内部 gRPC，本批同步公开 JSON 规格和 SBOM，已发�
 
 <a id="list-cursor-01"></a>
 
-## LIST-CURSOR-01：`GET /admin/v1/users` 改为 limit + cursor 游标分页（2026-10-10）
+## LIST-CURSOR-01：`GET /api/v1/admin/users` 改为 limit + cursor 游标分页（2026-10-10）
 
-本批仅将 `GET /admin/v1/users` 接入 `limit/cursor`，保留显式页码兼容；其余 admin 列表不因共享请求消息增加 cursor 而完成迁移。参数、响应、签名绑定、排序、过滤、身份与密钥规则的唯一正文见 [分页规范](contracts/pagination.md)。
+本批仅将 `GET /api/v1/admin/users` 接入 `limit/cursor`，保留显式页码兼容；其余 admin 列表不因共享请求消息增加 cursor 而完成迁移。参数、响应、签名绑定、排序、过滤、身份与密钥规则的唯一正文见 [分页规范](contracts/pagination.md)。
 
 以下保留 2026-10-10 的历史执行与验收记录，不表示本次文档修订重新运行了这些检查；当前源码差异和后续迁移范围见该规范。
 
@@ -1447,7 +1447,7 @@ Resource 仅提供内部 gRPC，本批同步公开 JSON 规格和 SBOM，已发�
 
 部署实测（ani-system @ ani-01，2026-10-10）：本机交叉编译 linux/amd64 → `craft_images.py` 打成 docker-archive（tag `172.16.101.10:5000/ani/ani-governance:20261010-cursor`，53.3MB）→ 经 ttyd 通道上传（整包 md5 校验通过）→ ani-01 `ctr -n k8s.io images import` 并推到可写 registry 5001 → 重启只读 registry 5000 → 该 tag 可见（`tags: ["20261008","20261010-cursor"]`）→ `kubectl set image deployment/ani-governance server=...:20261010-cursor -n ani-system` → rollout 成功，新 Pod 1/1 Running（调度到 ani-03，从 registry 拉取）。本批无 schema 变更，未跑迁移；回滚目标是换镜像前的 `localhost/ani-governance@sha256:9626e873c009650ebb41a9f783b82aede430cb3b08b3e9f72cb54e57e175d829`。
 
-实测（`verify-cursor.py`，全程只读，21 项断言全通过）：平台登录后 `limit=3` 取首页 → 3 条、`total="5"`、返回 `next_cursor`；带游标取第二页 → 2 条、与首页无重复、`total` 仍为 `"5"`；`limit=0/101/abc` 均 400；篡改游标 400；`cursor`+`page` 互斥 400；换筛选复用游标 400；换排序复用游标 400；按 `created_at` 降序 limit=2 翻页 → 5 行无重复且覆盖 `total`；末页 `next_cursor` 为空串。回归冒烟（`smoke-regression.py`，fail=0）：`GET /admin/v1/users?page=1&pageSize=2` 旧路径仍 200、2 条带 `total`；`plans/roles/tenants` 带 `cursor=bogus` 仍 200（这些接口不接入游标语义）；无 token 401、`/admin/v1/me` 200。
+实测（`verify-cursor.py`，全程只读，21 项断言全通过）：平台登录后 `limit=3` 取首页 → 3 条、`total="5"`、返回 `next_cursor`；带游标取第二页 → 2 条、与首页无重复、`total` 仍为 `"5"`；`limit=0/101/abc` 均 400；篡改游标 400；`cursor`+`page` 互斥 400；换筛选复用游标 400；换排序复用游标 400；按 `created_at` 降序 limit=2 翻页 → 5 行无重复且覆盖 `total`；末页 `next_cursor` 为空串。回归冒烟（`smoke-regression.py`，fail=0）：`GET /api/v1/admin/users?page=1&pageSize=2` 旧路径仍 200、2 条带 `total`；`plans/roles/tenants` 带 `cursor=bogus` 仍 200（这些接口不接入游标语义）；无 token 401、`/api/v1/admin/me` 200。
 
 两条实测修正（以实测为准）：① 首页不传排序时的默认排序就是 id 降序，因此"用 `orderBy=["-id"]` 复用游标"属于同一绑定、返回 200 才正确，验收用例已改用 `orderBy=["-created_at"]`；② 本部署的响应编码会输出未填充字段，末页 `next_cursor` 是空串（键存在）而非键缺席，仍满足"末页为空"。
 
@@ -1455,9 +1455,9 @@ Resource 仅提供内部 gRPC，本批同步公开 JSON 规格和 SBOM，已发�
 
 <a id="list-cursor-02"></a>
 
-## LIST-CURSOR-02：`GET /admin/v1/roles` 与 `GET /api/v1/auth/api-keys` 接入 limit + cursor 游标分页（2026-10-10）
+## LIST-CURSOR-02：`GET /api/v1/admin/roles` 与 `GET /api/v1/auth/api-keys` 接入 limit + cursor 游标分页（2026-10-10）
 
-在前一批（LIST-CURSOR-01，users）基础上，把 `GET /admin/v1/roles` 与 `GET /api/v1/auth/api-keys` 两接口由 `page/pageSize` 改为 `limit` + `cursor`，对外形状对齐 users/vpc：`{items, next_cursor, total}`。同时修复 users 接口审查发现的 5 项安全边界问题（§3.1~§3.5）。共用逻辑抽到 `data/cursor_shared.go`（`resolveCursorSortColumn`/`checkCursorWindowConflict`/`shouldUseCursorPaging`/`validateCursorRequest`），三个接口共用同一 codec/keyset/HMAC 实现。
+在前一批（LIST-CURSOR-01，users）基础上，把 `GET /api/v1/admin/roles` 与 `GET /api/v1/auth/api-keys` 两接口由 `page/pageSize` 改为 `limit` + `cursor`，对外形状对齐 users/vpc：`{items, next_cursor, total}`。同时修复 users 接口审查发现的 5 项安全边界问题（§3.1~§3.5）。共用逻辑抽到 `data/cursor_shared.go`（`resolveCursorSortColumn`/`checkCursorWindowConflict`/`shouldUseCursorPaging`/`validateCursorRequest`），三个接口共用同一 codec/keyset/HMAC 实现。
 
 报文与游标语义同 LIST-CURSOR-01：`limit` 不传取 20、只接受 1~100，越界或非法直接 400；`cursor` 与 `page/pageSize/offset/token/noPaging` 互斥（同时出现 400）；游标绑定资源、上下文、可信租户与"筛选+排序"指纹，篡改/跨租户/换筛选/换排序复用一律 400，不降级为首页。两接口均**新增响应字段 `next_cursor`**（`ListRoleResponse.next_cursor = 3`、`ListAccessKeyResponse.next_cursor = 3`），未新增 `(path, method)`，不触发 API 目录与权限关系变更。
 
@@ -1471,7 +1471,7 @@ roles 取页后需逐条回填权限/组织单元/字段权限，故 keyset 采�
 
 部署实测（ani-system @ ani-01，2026-10-10）：交叉编译 linux/amd64 → `craft_images.py`（tag `172.16.101.10:5000/ani/ani-governance:20261010-list-cursor`，53,732,859 字节 / md5 `8b010072a2a7b2caa100c36a1ba17403`）→ ttyd 通道上传（整包 md5 `VERIFY: OK`）→ ani-01 `ctr -n k8s.io images import` 并推 5001 → 重启只读 registry 5000 → 该 tag 可见（`tags: ["20261008","20261010-cursor","20261010-list-cursor"]`）→ `kubectl set image deployment/ani-governance server=...:20261010-list-cursor -n ani-system` → rollout 成功，新 Pod `ani-governance-59fbffcc9b-h6gsw` 1/1 Running（调度到 ani-03，从 registry 拉取）。本批无 schema 变更，未跑迁移；回滚目标为换镜像前的 `172.16.101.10:5000/ani/ani-governance@sha256:de9c9fb87a55c76b01db96e59a92f2d8af2141ae0aadaff9ccc32abf1fd9f6d5`。
 
-实测（全程只读）：`verify-cursor.py`（users，本次扩至 24 项断言）全通过，含 §3.2 两项（空关系筛选 + `limit=101` / `cursor=bogus` → 400）与 `noPaging` + `cursor` 互斥 → 400；`verify-list-cursor.py`（roles 平台/租户、api-keys 租户，36 项断言）全通过——两接口 `limit=2` 返回 `next_cursor`/`total`（十进制字符串）、`limit=0/101/abc` → 400、`cursor=bogus` → 400、篡改游标 → 400、`cursor`+`page` 互斥 → 400、换排序（`-created_at`）复用游标 → 400、roles 平台上下文连翻 5 行无重复且末页游标为空串、api-keys 平台上下文 → 403（非租户用户拒绝）、roles 平台游标用于租户上下文 → 400；`smoke-regression.py` fail=0（users 旧 `page/pageSize` 路径仍 200、plans/tenants 带 `cursor=bogus` 仍 200、roles 坏游标 400 且合法分页 200 带 `next_cursor`/`total`、无 token 401、`/admin/v1/me` 200）。
+实测（全程只读）：`verify-cursor.py`（users，本次扩至 24 项断言）全通过，含 §3.2 两项（空关系筛选 + `limit=101` / `cursor=bogus` → 400）与 `noPaging` + `cursor` 互斥 → 400；`verify-list-cursor.py`（roles 平台/租户、api-keys 租户，36 项断言）全通过——两接口 `limit=2` 返回 `next_cursor`/`total`（十进制字符串）、`limit=0/101/abc` → 400、`cursor=bogus` → 400、篡改游标 → 400、`cursor`+`page` 互斥 → 400、换排序（`-created_at`）复用游标 → 400、roles 平台上下文连翻 5 行无重复且末页游标为空串、api-keys 平台上下文 → 403（非租户用户拒绝）、roles 平台游标用于租户上下文 → 400；`smoke-regression.py` fail=0（users 旧 `page/pageSize` 路径仍 200、plans/tenants 带 `cursor=bogus` 仍 200、roles 坏游标 400 且合法分页 200 带 `next_cursor`/`total`、无 token 401、`/api/v1/admin/me` 200）。
 
 实测修正：`smoke-regression.py` 原"roles 忽略 cursor 仍 200"断言基于 LIST-CURSOR-01 的旧事实（roles 当时未接入游标），本批 roles 已接入，该行改为"坏游标 → 400 + 合法分页 200 带新字段"，以实测为准。
 
@@ -1485,7 +1485,7 @@ roles 取页后需逐条回填权限/组织单元/字段权限，故 keyset 采�
 
 <a id="role-code-filter-01"></a>
 
-## ROLE-CODE-FILTER-01：`GET /admin/v1/users` 支持按角色编码筛选（2026-10-12）
+## ROLE-CODE-FILTER-01：`GET /api/v1/admin/users` 支持按角色编码筛选（2026-10-12）
 
 在既有 `role_id` / `role_ids__in`（按 ID 过滤）之外，`query` 新增按**角色编码**过滤，省去前端“先查角色 ID 再拼用户条件”的两段调用。参数为顶层条件：
 
@@ -1518,7 +1518,7 @@ roles 取页后需逐条回填权限/组织单元/字段权限，故 keyset 采�
 
 <a id="permgroup-subtree-01"></a>
 
-## PERMGROUP-SUBTREE-01：`GET /admin/v1/permission-groups` 支持 `exclude_subtree` 与父子循环校验（2026-10-12）
+## PERMGROUP-SUBTREE-01：`GET /api/v1/admin/permission-groups` 支持 `exclude_subtree` 与父子循环校验（2026-10-12）
 
 ### 列表排除子树
 

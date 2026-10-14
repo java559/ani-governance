@@ -28,14 +28,14 @@ var File_admin_service_v1_i_notification_channel_proto protoreflect.FileDescript
 
 const file_admin_service_v1_i_notification_channel_proto_rawDesc = "" +
 	"\n" +
-	"-admin/service/v1/i_notification_channel.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a:notification_channel/service/v1/notification_channel.proto2\xb3\b\n" +
-	"\x1aNotificationChannelService\x12\x9f\x01\n" +
-	"\x17ListNotificationChannel\x12\x19.pagination.PagingRequest\x1a@.notification_channel.service.v1.ListNotificationChannelResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/admin/v1/notification-channels\x12\xbc\x01\n" +
-	"\x16GetNotificationChannel\x12>.notification_channel.service.v1.GetNotificationChannelRequest\x1a4.notification_channel.service.v1.NotificationChannel\",\x82\xd3\xe4\x93\x02&\x12$/admin/v1/notification-channels/{id}\x12\xc0\x01\n" +
-	"\x19CreateNotificationChannel\x12A.notification_channel.service.v1.CreateNotificationChannelRequest\x1a4.notification_channel.service.v1.NotificationChannel\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/admin/v1/notification-channels\x12\xa7\x01\n" +
-	"\x19UpdateNotificationChannel\x12A.notification_channel.service.v1.UpdateNotificationChannelRequest\x1a\x16.google.protobuf.Empty\"/\x82\xd3\xe4\x93\x02):\x01*\x1a$/admin/v1/notification-channels/{id}\x12\xa4\x01\n" +
-	"\x19DeleteNotificationChannel\x12A.notification_channel.service.v1.DeleteNotificationChannelRequest\x1a\x16.google.protobuf.Empty\",\x82\xd3\xe4\x93\x02&*$/admin/v1/notification-channels/{id}\x12\x9f\x01\n" +
-	"\rSendTestEmail\x125.notification_channel.service.v1.SendTestEmailRequest\x1a\x16.google.protobuf.Empty\"?\x82\xd3\xe4\x93\x029:\x01*\"4/admin/v1/notification-channels/{id}/send-test-emailB\xc6\x01\n" +
+	"-admin/service/v1/i_notification_channel.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a:notification_channel/service/v1/notification_channel.proto2\xcb\b\n" +
+	"\x1aNotificationChannelService\x12\xa3\x01\n" +
+	"\x17ListNotificationChannel\x12\x19.pagination.PagingRequest\x1a@.notification_channel.service.v1.ListNotificationChannelResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/notification-channels\x12\xc0\x01\n" +
+	"\x16GetNotificationChannel\x12>.notification_channel.service.v1.GetNotificationChannelRequest\x1a4.notification_channel.service.v1.NotificationChannel\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/admin/notification-channels/{id}\x12\xc4\x01\n" +
+	"\x19CreateNotificationChannel\x12A.notification_channel.service.v1.CreateNotificationChannelRequest\x1a4.notification_channel.service.v1.NotificationChannel\".\x82\xd3\xe4\x93\x02(:\x01*\"#/api/v1/admin/notification-channels\x12\xab\x01\n" +
+	"\x19UpdateNotificationChannel\x12A.notification_channel.service.v1.UpdateNotificationChannelRequest\x1a\x16.google.protobuf.Empty\"3\x82\xd3\xe4\x93\x02-:\x01*\x1a(/api/v1/admin/notification-channels/{id}\x12\xa8\x01\n" +
+	"\x19DeleteNotificationChannel\x12A.notification_channel.service.v1.DeleteNotificationChannelRequest\x1a\x16.google.protobuf.Empty\"0\x82\xd3\xe4\x93\x02**(/api/v1/admin/notification-channels/{id}\x12\xa3\x01\n" +
+	"\rSendTestEmail\x125.notification_channel.service.v1.SendTestEmailRequest\x1a\x16.google.protobuf.Empty\"C\x82\xd3\xe4\x93\x02=:\x01*\"8/api/v1/admin/notification-channels/{id}/send-test-emailB\xc6\x01\n" +
 	"\x14com.admin.service.v1B\x19INotificationChannelProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_notification_channel_proto_goTypes = []any{

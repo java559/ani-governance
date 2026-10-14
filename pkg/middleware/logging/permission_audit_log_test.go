@@ -11,11 +11,11 @@ import (
 )
 
 func TestLastNumericPathSegment(t *testing.T) {
-	assert.Equal(t, "5", lastNumericPathSegment("/admin/v1/roles/5"))
-	assert.Equal(t, "12", lastNumericPathSegment("/admin/v1/users/12/roles"))
-	assert.Equal(t, "", lastNumericPathSegment("/admin/v1/roles"))
-	assert.Equal(t, "", lastNumericPathSegment("/admin/v1/roles/batch-delete"))
-	assert.Equal(t, "9", lastNumericPathSegment("/admin/v1/dicts/3/entries/9"))
+	assert.Equal(t, "5", lastNumericPathSegment("/api/v1/admin/roles/5"))
+	assert.Equal(t, "12", lastNumericPathSegment("/api/v1/admin/users/12/roles"))
+	assert.Equal(t, "", lastNumericPathSegment("/api/v1/admin/roles"))
+	assert.Equal(t, "", lastNumericPathSegment("/api/v1/admin/roles/batch-delete"))
+	assert.Equal(t, "9", lastNumericPathSegment("/api/v1/admin/dicts/3/entries/9"))
 	assert.Equal(t, "", lastNumericPathSegment(""))
 	assert.Equal(t, "", lastNumericPathSegment("/"))
 }

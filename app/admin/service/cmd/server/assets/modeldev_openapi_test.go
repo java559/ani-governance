@@ -18,7 +18,7 @@ func TestModelDevCreateOpenAPIContract(t *testing.T) {
 		require.True(t, ok, "expected an OpenAPI object")
 		return got
 	}
-	path := object(object(document["paths"])["/admin/v1/modeldev/executions"])
+	path := object(object(document["paths"])["/api/v1/modeldev/executions"])
 	operation := object(path["post"])
 	responses := object(operation["responses"])
 	require.Contains(t, responses, "202")

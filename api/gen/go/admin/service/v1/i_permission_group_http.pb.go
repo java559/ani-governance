@@ -43,11 +43,11 @@ type PermissionGroupServiceHTTPServer interface {
 
 func RegisterPermissionGroupServiceHTTPServer(s *http.Server, srv PermissionGroupServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/permission-groups", _PermissionGroupService_List16_HTTP_Handler(srv))
-	r.GET("/admin/v1/permission-groups/{id}", _PermissionGroupService_Get16_HTTP_Handler(srv))
-	r.POST("/admin/v1/permission-groups", _PermissionGroupService_Create11_HTTP_Handler(srv))
-	r.PUT("/admin/v1/permission-groups/{id}", _PermissionGroupService_Update11_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/permission-groups/{id}", _PermissionGroupService_Delete11_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/permission-groups", _PermissionGroupService_List16_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/permission-groups/{id}", _PermissionGroupService_Get16_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/permission-groups", _PermissionGroupService_Create11_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/permission-groups/{id}", _PermissionGroupService_Update11_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/permission-groups/{id}", _PermissionGroupService_Delete11_HTTP_Handler(srv))
 }
 
 func _PermissionGroupService_List16_HTTP_Handler(srv PermissionGroupServiceHTTPServer) func(ctx http.Context) error {
@@ -184,7 +184,7 @@ func NewPermissionGroupServiceHTTPClient(client *http.Client) PermissionGroupSer
 // Create 创建权限组
 func (c *PermissionGroupServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreatePermissionGroupRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/permission-groups"
+	pattern := "/api/v1/admin/permission-groups"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPermissionGroupServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -198,7 +198,7 @@ func (c *PermissionGroupServiceHTTPClientImpl) Create(ctx context.Context, in *v
 // Delete 删除权限组
 func (c *PermissionGroupServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeletePermissionGroupRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/permission-groups/{id}"
+	pattern := "/api/v1/admin/permission-groups/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionGroupServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -212,7 +212,7 @@ func (c *PermissionGroupServiceHTTPClientImpl) Delete(ctx context.Context, in *v
 // Get 查询权限组详情
 func (c *PermissionGroupServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPermissionGroupRequest, opts ...http.CallOption) (*v11.PermissionGroup, error) {
 	var out v11.PermissionGroup
-	pattern := "/admin/v1/permission-groups/{id}"
+	pattern := "/api/v1/admin/permission-groups/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionGroupServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -226,7 +226,7 @@ func (c *PermissionGroupServiceHTTPClientImpl) Get(ctx context.Context, in *v11.
 // List 查询权限组列表
 func (c *PermissionGroupServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListPermissionGroupResponse, error) {
 	var out v11.ListPermissionGroupResponse
-	pattern := "/admin/v1/permission-groups"
+	pattern := "/api/v1/admin/permission-groups"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionGroupServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -240,7 +240,7 @@ func (c *PermissionGroupServiceHTTPClientImpl) List(ctx context.Context, in *v1.
 // Update 更新权限组
 func (c *PermissionGroupServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdatePermissionGroupRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/permission-groups/{id}"
+	pattern := "/api/v1/admin/permission-groups/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPermissionGroupServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

@@ -11,7 +11,7 @@ service ServerMonitorService {
   // 查询服务监控信息
   rpc Get (server_monitor.service.v1.GetServerMonitorRequest) returns (server_monitor.service.v1.ServerMonitorInfo) {
     option (google.api.http) = {
-      get: "/admin/v1/server-monitor"
+      get: "/api/v1/admin/server-monitor"
     };
   }
 }

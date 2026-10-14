@@ -55,7 +55,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		return nil, nil, err
 	}
 
-	// 游标分页（/admin/v1/users 的 limit+cursor）签名密钥：由同一份 AK/SK 主密钥
+	// 游标分页（/api/v1/admin/users 的 limit+cursor）签名密钥：由同一份 AK/SK 主密钥
 	// 派生，因此所有加载同一密钥文件的副本派生结果一致，A 副本签发的游标可在
 	// B 副本校验。刻意不复用 token 游标密钥（SetTokenSecret）：后者未配置时保留
 	// "接受未签名 token"的兼容语义，不能把新游标的签名要求绑在它上面。

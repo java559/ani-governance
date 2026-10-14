@@ -100,7 +100,7 @@ func (p *PermissionAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 	permissionAuditLog.TargetType = trans.Ptr(targetType)
 	permissionAuditLog.Action = trans.Ptr(action)
 
-	// 目标ID：REST 路径最后一个纯数字段（如 /admin/v1/roles/5 → "5"）。
+	// 目标ID：REST 路径最后一个纯数字段（如 /api/v1/admin/roles/5 → "5"）。
 	if req := htr.Request(); req != nil {
 		if tid := lastNumericPathSegment(req.URL.Path); tid != "" {
 			permissionAuditLog.TargetId = trans.Ptr(tid)
@@ -143,7 +143,7 @@ func (p *PermissionAuditLogMiddleware) Handle(ctx context.Context, htr *http.Tra
 	}
 }
 
-// lastNumericPathSegment 返回路径中最后一个纯数字段（如 /admin/v1/roles/5 → "5"），
+// lastNumericPathSegment 返回路径中最后一个纯数字段（如 /api/v1/admin/roles/5 → "5"），
 // 无数字段返回空串。嵌套资源（/users/1/roles）取最深一层的属主 ID。
 func lastNumericPathSegment(path string) string {
 	segments := strings.Split(strings.Trim(path, "/"), "/")

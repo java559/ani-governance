@@ -49,13 +49,13 @@ type ApiServiceHTTPServer interface {
 
 func RegisterApiServiceHTTPServer(s *http.Server, srv ApiServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/apis", _ApiService_List1_HTTP_Handler(srv))
-	r.GET("/admin/v1/apis/{id}", _ApiService_Get1_HTTP_Handler(srv))
-	r.POST("/admin/v1/apis", _ApiService_Create1_HTTP_Handler(srv))
-	r.PUT("/admin/v1/apis/{id}", _ApiService_Update1_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/apis/{id}", _ApiService_Delete1_HTTP_Handler(srv))
-	r.POST("/admin/v1/apis/sync", _ApiService_SyncApis0_HTTP_Handler(srv))
-	r.GET("/admin/v1/apis/walk-route", _ApiService_GetWalkRouteData0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/apis", _ApiService_List1_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/apis/{id}", _ApiService_Get1_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/apis", _ApiService_Create1_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/apis/{id}", _ApiService_Update1_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/apis/{id}", _ApiService_Delete1_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/apis/sync", _ApiService_SyncApis0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/apis/walk-route", _ApiService_GetWalkRouteData0_HTTP_Handler(srv))
 }
 
 func _ApiService_List1_HTTP_Handler(srv ApiServiceHTTPServer) func(ctx http.Context) error {
@@ -237,7 +237,7 @@ func NewApiServiceHTTPClient(client *http.Client) ApiServiceHTTPClient {
 // Create 创建API资源
 func (c *ApiServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateApiRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/apis"
+	pattern := "/api/v1/admin/apis"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationApiServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -251,7 +251,7 @@ func (c *ApiServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateApi
 // Delete 删除API资源
 func (c *ApiServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteApiRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/apis/{id}"
+	pattern := "/api/v1/admin/apis/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationApiServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -265,7 +265,7 @@ func (c *ApiServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteApi
 // Get 查询API资源详情
 func (c *ApiServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetApiRequest, opts ...http.CallOption) (*v11.Api, error) {
 	var out v11.Api
-	pattern := "/admin/v1/apis/{id}"
+	pattern := "/api/v1/admin/apis/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationApiServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -279,7 +279,7 @@ func (c *ApiServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetApiReques
 // GetWalkRouteData 查询路由数据
 func (c *ApiServiceHTTPClientImpl) GetWalkRouteData(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*v11.ListApiResponse, error) {
 	var out v11.ListApiResponse
-	pattern := "/admin/v1/apis/walk-route"
+	pattern := "/api/v1/admin/apis/walk-route"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationApiServiceGetWalkRouteData))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -293,7 +293,7 @@ func (c *ApiServiceHTTPClientImpl) GetWalkRouteData(ctx context.Context, in *emp
 // List 查询API资源列表
 func (c *ApiServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListApiResponse, error) {
 	var out v11.ListApiResponse
-	pattern := "/admin/v1/apis"
+	pattern := "/api/v1/admin/apis"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationApiServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -307,7 +307,7 @@ func (c *ApiServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingReques
 // SyncApis 同步API资源
 func (c *ApiServiceHTTPClientImpl) SyncApis(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/apis/sync"
+	pattern := "/api/v1/admin/apis/sync"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationApiServiceSyncApis))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -321,7 +321,7 @@ func (c *ApiServiceHTTPClientImpl) SyncApis(ctx context.Context, in *emptypb.Emp
 // Update 更新API资源
 func (c *ApiServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateApiRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/apis/{id}"
+	pattern := "/api/v1/admin/apis/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationApiServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

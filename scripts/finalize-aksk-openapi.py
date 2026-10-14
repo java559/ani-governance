@@ -112,9 +112,9 @@ def finalize(text):
     text = remove_synthetic_200(text, "/api/v1/auth/api-keys", "201")
     # Minimal generator fixtures may omit ModelDev. Its public contract test
     # separately requires this path in the complete service document.
-    if "    /admin/v1/modeldev/executions:\n" in text:
-        text = remove_synthetic_200(text, "/admin/v1/modeldev/executions", "202")
-        text = remove_synthetic_200(text, "/admin/v1/modeldev/executions/{execution_id}:stop", "202")
+    if "    /api/v1/modeldev/executions:\n" in text:
+        text = remove_synthetic_200(text, "/api/v1/modeldev/executions", "202")
+        text = remove_synthetic_200(text, "/api/v1/modeldev/executions/{execution_id}:stop", "202")
     # response_body endpoints retain their explicit public-object schema,
     # including the Network/Image mutation responses and existing details.
     return repair_network_operation(remove_shadowed_200(text))

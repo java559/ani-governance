@@ -13,14 +13,14 @@ service OperationAuditLogService {
   // 查询操作审计日志列表
   rpc List (pagination.PagingRequest) returns (audit.service.v1.ListOperationAuditLogResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/operation-audit-logs"
+      get: "/api/v1/admin/operation-audit-logs"
     };
   }
 
   // 查询操作审计日志详情
   rpc Get (audit.service.v1.GetOperationAuditLogRequest) returns (audit.service.v1.OperationAuditLog) {
     option (google.api.http) = {
-      get: "/admin/v1/operation-audit-logs/{id}"
+      get: "/api/v1/admin/operation-audit-logs/{id}"
     };
   }
 }

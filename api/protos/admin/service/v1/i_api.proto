@@ -14,21 +14,21 @@ service ApiService {
   // 查询API资源列表
   rpc List (pagination.PagingRequest) returns (permission.service.v1.ListApiResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/apis"
+      get: "/api/v1/admin/apis"
     };
   }
 
   // 查询API资源详情
   rpc Get (permission.service.v1.GetApiRequest) returns (permission.service.v1.Api) {
     option (google.api.http) = {
-      get: "/admin/v1/apis/{id}"
+      get: "/api/v1/admin/apis/{id}"
     };
   }
 
   // 创建API资源
   rpc Create (permission.service.v1.CreateApiRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/apis"
+      post: "/api/v1/admin/apis"
       body: "*"
     };
   }
@@ -36,7 +36,7 @@ service ApiService {
   // 更新API资源
   rpc Update (permission.service.v1.UpdateApiRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/admin/v1/apis/{id}"
+      put: "/api/v1/admin/apis/{id}"
       body: "*"
     };
   }
@@ -44,14 +44,14 @@ service ApiService {
   // 删除API资源
   rpc Delete (permission.service.v1.DeleteApiRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/admin/v1/apis/{id}"
+      delete: "/api/v1/admin/apis/{id}"
     };
   }
 
   // 同步API资源
   rpc SyncApis (google.protobuf.Empty) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/apis/sync"
+      post: "/api/v1/admin/apis/sync"
       body: "*"
     };
   }
@@ -59,7 +59,7 @@ service ApiService {
   // 查询路由数据
   rpc GetWalkRouteData (google.protobuf.Empty) returns (permission.service.v1.ListApiResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/apis/walk-route"
+      get: "/api/v1/admin/apis/walk-route"
     };
   }
 }

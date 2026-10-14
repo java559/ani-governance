@@ -58,17 +58,17 @@ type TaskServiceHTTPServer interface {
 
 func RegisterTaskServiceHTTPServer(s *http.Server, srv TaskServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/tasks", _TaskService_List23_HTTP_Handler(srv))
-	r.GET("/admin/v1/tasks/type-name/{type_name}", _TaskService_Get24_HTTP_Handler(srv))
-	r.GET("/admin/v1/tasks/{id}", _TaskService_Get25_HTTP_Handler(srv))
-	r.POST("/admin/v1/tasks", _TaskService_Create17_HTTP_Handler(srv))
-	r.PUT("/admin/v1/tasks/{id}", _TaskService_Update17_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/tasks/{id}", _TaskService_Delete17_HTTP_Handler(srv))
-	r.GET("/admin/v1/tasks:type-names", _TaskService_ListTaskTypeName0_HTTP_Handler(srv))
-	r.POST("/admin/v1/tasks:restart", _TaskService_RestartAllTask0_HTTP_Handler(srv))
-	r.POST("/admin/v1/tasks:start", _TaskService_StartAllTask0_HTTP_Handler(srv))
-	r.POST("/admin/v1/tasks:stop", _TaskService_StopAllTask0_HTTP_Handler(srv))
-	r.POST("/admin/v1/tasks:control", _TaskService_ControlTask0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tasks", _TaskService_List23_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tasks/type-name/{type_name}", _TaskService_Get24_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tasks/{id}", _TaskService_Get25_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tasks", _TaskService_Create17_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/tasks/{id}", _TaskService_Update17_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/tasks/{id}", _TaskService_Delete17_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tasks:type-names", _TaskService_ListTaskTypeName0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tasks:restart", _TaskService_RestartAllTask0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tasks:start", _TaskService_StartAllTask0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tasks:stop", _TaskService_StopAllTask0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tasks:control", _TaskService_ControlTask0_HTTP_Handler(srv))
 }
 
 func _TaskService_List23_HTTP_Handler(srv TaskServiceHTTPServer) func(ctx http.Context) error {
@@ -344,7 +344,7 @@ func NewTaskServiceHTTPClient(client *http.Client) TaskServiceHTTPClient {
 // ControlTask 控制调度任务
 func (c *TaskServiceHTTPClientImpl) ControlTask(ctx context.Context, in *v11.ControlTaskRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tasks:control"
+	pattern := "/api/v1/admin/tasks:control"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTaskServiceControlTask))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -358,7 +358,7 @@ func (c *TaskServiceHTTPClientImpl) ControlTask(ctx context.Context, in *v11.Con
 // Create 创建调度任务
 func (c *TaskServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateTaskRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tasks"
+	pattern := "/api/v1/admin/tasks"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTaskServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -372,7 +372,7 @@ func (c *TaskServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateTa
 // Delete 删除调度任务
 func (c *TaskServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteTaskRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tasks/{id}"
+	pattern := "/api/v1/admin/tasks/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTaskServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -386,7 +386,7 @@ func (c *TaskServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteTa
 // Get 查询调度任务详情
 func (c *TaskServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetTaskRequest, opts ...http.CallOption) (*v11.Task, error) {
 	var out v11.Task
-	pattern := "/admin/v1/tasks/{id}"
+	pattern := "/api/v1/admin/tasks/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTaskServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -400,7 +400,7 @@ func (c *TaskServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetTaskRequ
 // List 查询调度任务列表
 func (c *TaskServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListTaskResponse, error) {
 	var out v11.ListTaskResponse
-	pattern := "/admin/v1/tasks"
+	pattern := "/api/v1/admin/tasks"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTaskServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -414,7 +414,7 @@ func (c *TaskServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingReque
 // ListTaskTypeName 任务类型名称列表
 func (c *TaskServiceHTTPClientImpl) ListTaskTypeName(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*v11.ListTaskTypeNameResponse, error) {
 	var out v11.ListTaskTypeNameResponse
-	pattern := "/admin/v1/tasks:type-names"
+	pattern := "/api/v1/admin/tasks:type-names"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTaskServiceListTaskTypeName))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -428,7 +428,7 @@ func (c *TaskServiceHTTPClientImpl) ListTaskTypeName(ctx context.Context, in *em
 // RestartAllTask 重启所有的调度任务
 func (c *TaskServiceHTTPClientImpl) RestartAllTask(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*v11.RestartAllTaskResponse, error) {
 	var out v11.RestartAllTaskResponse
-	pattern := "/admin/v1/tasks:restart"
+	pattern := "/api/v1/admin/tasks:restart"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTaskServiceRestartAllTask))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -442,7 +442,7 @@ func (c *TaskServiceHTTPClientImpl) RestartAllTask(ctx context.Context, in *empt
 // StartAllTask 启动所有的调度任务
 func (c *TaskServiceHTTPClientImpl) StartAllTask(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tasks:start"
+	pattern := "/api/v1/admin/tasks:start"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTaskServiceStartAllTask))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -456,7 +456,7 @@ func (c *TaskServiceHTTPClientImpl) StartAllTask(ctx context.Context, in *emptyp
 // StopAllTask 停止所有的调度任务
 func (c *TaskServiceHTTPClientImpl) StopAllTask(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tasks:stop"
+	pattern := "/api/v1/admin/tasks:stop"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTaskServiceStopAllTask))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -470,7 +470,7 @@ func (c *TaskServiceHTTPClientImpl) StopAllTask(ctx context.Context, in *emptypb
 // Update 更新调度任务
 func (c *TaskServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateTaskRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tasks/{id}"
+	pattern := "/api/v1/admin/tasks/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTaskServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

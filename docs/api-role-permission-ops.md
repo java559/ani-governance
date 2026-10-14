@@ -9,7 +9,7 @@
 
 ## 0. 前置与鉴权
 
-- **入口**：REST，默认监听 `7788`（`app/admin/service/configs/`）。管理面路径前缀 `/admin/v1/*`，认证路径 `/api/v1/auth/*`。
+- **入口**：REST，默认监听 `7788`（`app/admin/service/configs/`）。管理面路径前缀 `/api/v1/admin/*`，认证路径 `/api/v1/auth/*`。
 - **认证**：先登录拿 access token，后续请求带 `Authorization: Bearer <token>`。
   - 平台账密登录：`POST /api/v1/auth/platform/password/login`（免鉴权白名单，`rest_server.go:88-109`）。
 - **鉴权链**（`rest_server.go:53-122`）：`recovery → requestid → logging → 审计 → validate → [auth.Server(token 校验 → 租户/模块闸门 → 组装 authz claims) → authz.Server(casbin)]`。
@@ -22,8 +22,8 @@
 | 管理 API 资源（增删改/同步） | `sys:platform_admin` | 平台管理员 `platform:admin`（`tenant_id=0`） |
 | 创建/编辑/删除角色 | `sys:platform_admin` | 同上 |
 | 创建/编辑/删除权限点、权限分组 | `sys:platform_admin` | 同上 |
-| 改用户角色（`PUT /admin/v1/users/{id}`） | `sys:platform_admin` **或** `sys:tenant_manager` | 租户管理员可在本租户内管理用户 |
-| 自改角色（`PUT /admin/v1/me`） | `sys:platform_admin` **或** `sys:tenant_manager` | 见 §6 注意事项 |
+| 改用户角色（`PUT /api/v1/admin/users/{id}`） | `sys:platform_admin` **或** `sys:tenant_manager` | 租户管理员可在本租户内管理用户 |
+| 自改角色（`PUT /api/v1/admin/me`） | `sys:platform_admin` **或** `sys:tenant_manager` | 见 §6 注意事项 |
 
 - **平台 vs 租户**：平台管理员（`tenant_id=0`）不进模块白名单；**租户用户**（`tenant_id>0`）每个请求都要过"套餐模块白名单"，判定失败一律 fail-closed（`internal/data/tenant_access_checker.go:44-116`）。
 - **重要耦合**：任何新接口要能被授权与访问，必须①出现在内嵌 OpenAPI（`assets/openapi.yaml`）且②其 tag 能在 `pkg/constants/module_mapping.go` 的 `ServiceTagToBusinessModule` 映射到业务模块。否则 `admin sync-apis` 直接报错，且租户侧 `module not allowed`/`access denied`（`sql/bootstrap/catalog.go:42-44`、`tenant_access_checker.go:90-99`）。
@@ -34,17 +34,17 @@
 
 **数据模型**：`sys_apis`（Ent `Api`），列 `path/method/operation/module/module_description/description/business_module/scope/status`。
 **真相源**：手写 proto → `make openapi` 生成内嵌 `openapi.yaml`。
-**同步**：`POST /admin/v1/apis/sync`（`api_service.go:135`）与 CLI `admin sync-apis` 复用同一 `dbbootstrap.SyncAPIs`（`sql/bootstrap/catalog.go:55`）：按 `(method,path)` 幂等 UPSERT，**保留 ID / status / 权限关联，从不删除、从不授权**；OpenAPI 已下线的路由只报 `REVIEW absent from OpenAPI (retained)`。
+**同步**：`POST /api/v1/admin/apis/sync`（`api_service.go:135`）与 CLI `admin sync-apis` 复用同一 `dbbootstrap.SyncAPIs`（`sql/bootstrap/catalog.go:55`）：按 `(method,path)` 幂等 UPSERT，**保留 ID / status / 权限关联，从不删除、从不授权**；OpenAPI 已下线的路由只报 `REVIEW absent from OpenAPI (retained)`。
 
 | 方法 | 路径 | RPC | 说明 |
 |---|---|---|---|
-| GET | `/admin/v1/apis` | `ApiService.List` | 列表 |
-| GET | `/admin/v1/apis/{id}` | `ApiService.Get` | 详情 |
-| POST | `/admin/v1/apis` | `ApiService.Create` | 新建（手工登记路由） |
-| PUT | `/admin/v1/apis/{id}` | `ApiService.Update` | 更新（带 `updateMask`） |
-| DELETE | `/admin/v1/apis/{id}` | `ApiService.Delete` | 删除 |
-| POST | `/admin/v1/apis/sync` | `ApiService.SyncApis` | 从内嵌 OpenAPI 同步 |
-| GET | `/admin/v1/apis/walk-route` | `ApiService.GetWalkRouteData` | 运行时路由遍历（调试用） |
+| GET | `/api/v1/admin/apis` | `ApiService.List` | 列表 |
+| GET | `/api/v1/admin/apis/{id}` | `ApiService.Get` | 详情 |
+| POST | `/api/v1/admin/apis` | `ApiService.Create` | 新建（手工登记路由） |
+| PUT | `/api/v1/admin/apis/{id}` | `ApiService.Update` | 更新（带 `updateMask`） |
+| DELETE | `/api/v1/admin/apis/{id}` | `ApiService.Delete` | 删除 |
+| POST | `/api/v1/admin/apis/sync` | `ApiService.SyncApis` | 从内嵌 OpenAPI 同步 |
+| GET | `/api/v1/admin/apis/walk-route` | `ApiService.GetWalkRouteData` | 运行时路由遍历（调试用） |
 
 一次同步（dry-run）：
 ```bash
@@ -62,11 +62,11 @@ ANI_DATABASE_DSN='postgres://...' ./bin/admin sync-apis --dry-run
 
 | 方法 | 路径 | RPC | 请求体 |
 |---|---|---|---|
-| GET | `/admin/v1/roles` | `List` | 分页参数 |
-| GET | `/admin/v1/roles/{id}` | `Get` | — |
-| POST | `/admin/v1/roles` | `Create` | `{ "data": Role }` |
-| PUT | `/admin/v1/roles/{id}` | `Update` | `{ "data": Role, "updateMask": "..." }` |
-| DELETE | `/admin/v1/roles/{id}` | `Delete` | — |
+| GET | `/api/v1/admin/roles` | `List` | 分页参数 |
+| GET | `/api/v1/admin/roles/{id}` | `Get` | — |
+| POST | `/api/v1/admin/roles` | `Create` | `{ "data": Role }` |
+| PUT | `/api/v1/admin/roles/{id}` | `Update` | `{ "data": Role, "updateMask": "..." }` |
+| DELETE | `/api/v1/admin/roles/{id}` | `Delete` | — |
 
 **`Role` 关键字段**（`permission/service/v1/role.proto`）：`name`、`code`（角色码，即 casbin 主体）、`status`、`type`（SYSTEM/TEMPLATE/TENANT）、`isProtected`、`dataScope`（行级，`ALL`/`SELECTED_UNITS` 等）、`permissions`（权限点 ID 数组）、`orgUnits`、`fieldPermissions`（列级黑名单：`{resource, hiddenFields}`）、`tenantId`。
 
@@ -78,7 +78,7 @@ ANI_DATABASE_DSN='postgres://...' ./bin/admin sync-apis --dry-run
 
 示例：把角色 12 改名为"运营只读"，并把权限整体替换为 [101,102,103]，清空自定义组织单元，设置字段隐藏：
 ```http
-PUT /admin/v1/roles/12
+PUT /api/v1/admin/roles/12
 Content-Type: application/json
 Authorization: Bearer <platform-admin-token>
 
@@ -108,27 +108,27 @@ Authorization: Bearer <platform-admin-token>
 
 | 方法 | 路径 | RPC |
 |---|---|---|
-| GET | `/admin/v1/permissions` | `PermissionService.List` |
-| GET | `/admin/v1/permissions/{id}` | `Get` |
-| POST | `/admin/v1/permissions` | `Create`（带 `data.apiIds`/`data.menuIds`） |
-| PUT | `/admin/v1/permissions/{id}` | `Update` |
-| DELETE | `/admin/v1/permissions/{id}` | `Delete` |
-| POST | `/admin/v1/permissions/sync:perms` | `SyncPermissions` |
-| GET/POST/PUT/DELETE | `/admin/v1/permission-groups[/{id}]` | 权限分组管理 |
+| GET | `/api/v1/admin/permissions` | `PermissionService.List` |
+| GET | `/api/v1/admin/permissions/{id}` | `Get` |
+| POST | `/api/v1/admin/permissions` | `Create`（带 `data.apiIds`/`data.menuIds`） |
+| PUT | `/api/v1/admin/permissions/{id}` | `Update` |
+| DELETE | `/api/v1/admin/permissions/{id}` | `Delete` |
+| POST | `/api/v1/admin/permissions/sync:perms` | `SyncPermissions` |
+| GET/POST/PUT/DELETE | `/api/v1/admin/permission-groups[/{id}]` | 权限分组管理 |
 
 **给角色赋访问权限有两条 HTTP 路径**：
-1. **创建角色时赋权**：`POST /admin/v1/roles`，`data.permissions` 非空即写入（`role_repo.go:516-524`）。
-2. **更新角色时赋权**：`PUT /admin/v1/roles/{id}`，`data.permissions=[权限点ID]` 且 `updateMask` 含 `permissions`（`role_repo.go:600,669-676` → `role_permission_repo.ReplacePermissions`）。
+1. **创建角色时赋权**：`POST /api/v1/admin/roles`，`data.permissions` 非空即写入（`role_repo.go:516-524`）。
+2. **更新角色时赋权**：`PUT /api/v1/admin/roles/{id}`，`data.permissions=[权限点ID]` 且 `updateMask` 含 `permissions`（`role_repo.go:600,669-676` → `role_permission_repo.ReplacePermissions`）。
 
 示例：给角色 12 赋予权限点 101/102：
 ```http
-PUT /admin/v1/roles/12
+PUT /api/v1/admin/roles/12
 { "data": { "permissions": [101, 102] }, "updateMask": "permissions" }
 ```
 
 新建权限点并挂接口：
 ```http
-POST /admin/v1/permissions
+POST /api/v1/admin/permissions
 {
   "data": {
     "name": "查看网络",
@@ -156,17 +156,17 @@ POST /admin/v1/permissions
 
 | 方法 | 路径 | RPC |
 |---|---|---|
-| GET | `/admin/v1/users` | `UserService.List` |
-| GET | `/admin/v1/users/{id}` | `Get` |
-| POST | `/admin/v1/users` | `Create`（可带 `data.roleIds`） |
-| PUT | `/admin/v1/users/{id}` | `Update`（**改角色用这个**） |
-| DELETE | `/admin/v1/users/{id}` | `Delete` |
+| GET | `/api/v1/admin/users` | `UserService.List` |
+| GET | `/api/v1/admin/users/{id}` | `Get` |
+| POST | `/api/v1/admin/users` | `Create`（可带 `data.roleIds`） |
+| PUT | `/api/v1/admin/users/{id}` | `Update`（**改角色用这个**） |
+| DELETE | `/api/v1/admin/users/{id}` | `Delete` |
 
 `User` 有单数 `roleId` 与复数 `roleIds` 两个字段（`identity/service/v1/user.proto:108-115`）。
 
 示例：把用户 42 的角色改为 [7,8]：
 ```http
-PUT /admin/v1/users/42
+PUT /api/v1/admin/users/42
 { "data": { "roleIds": [7, 8] }, "updateMask": "roleIds" }
 ```
 
@@ -175,7 +175,7 @@ PUT /admin/v1/users/42
 > ⚠️ **服务层额外硬约束**（`user_service.go:492-503`）：`UserService.Update` **要求至少 1 个合法角色 ID，且不理会 mask**。因此：
 > 1. **不能清空用户全部角色**（传空 → 400 `role_ids is required`）。
 > 2. **只想改昵称等字段的部分更新，也必须回传合法角色 ID**，否则 400。
-> ⚠️ **自改角色旁路**：`PUT /admin/v1/me`（`UserProfileService.UpdateUser` → `user_profile_service.go:81-96`）接收同一 `UpdateUserRequest`（含 `roleIds`），把目标强制盖成操作人自己后**直接调 `userRepo.Update`**，**绕过 `UserService` 的校验与合并逻辑**。即用户可改自己的角色集合——生产上需评估是否收紧。
+> ⚠️ **自改角色旁路**：`PUT /api/v1/admin/me`（`UserProfileService.UpdateUser` → `user_profile_service.go:81-96`）接收同一 `UpdateUserRequest`（含 `roleIds`），把目标强制盖成操作人自己后**直接调 `userRepo.Update`**，**绕过 `UserService` 的校验与合并逻辑**。即用户可改自己的角色集合——生产上需评估是否收紧。
 > ⚠️ **角色变更不吊销令牌**：仅改状态或重置密码才吊销会话（`user_service.go:545-559`）。
 
 **租户管理员初始角色**：`CreateTenantWithAdminUser`（`tenant_service.go:231-327`）在单事务内复制 `template:tenant:manager` 模板 → 建管理员 → 绑角色 → `ResetPolicies`。
@@ -203,7 +203,7 @@ PUT /admin/v1/users/42
 2. **权限点 PUT 的关联更新尚有实现缺陷**；携带 mask 时回传完整数组也不能保留绑定，见 §3 的静态调用链与未验证边界。
 3. **改权限分组（module）不会、也不需要刷新策略**：`permission_group_service.go` 的 Update 不调 `ResetPolicies`，且策略生成链路只读"角色→角色权限→API"，**从不读 `permission_group.module`**（`authorizer_provider.go:59-119`）——不要把它当作"授权未生效"的原因。
 4. **创建角色即可赋权**（`POST /roles` 带 `data.permissions`），非仅 PUT。
-5. **`PUT /admin/v1/me` 可自改角色**，绕过 `UserService` 校验。
+5. **`PUT /api/v1/admin/me` 可自改角色**，绕过 `UserService` 校验。
 6. **`UserService.Update` 强制 ≥1 角色**，且不理会 mask → 部分更新也要带角色 ID；无法清空角色。
 7. **两处关联仓库校验风格不一致**：`role_org_unit_repo.go` 写入前校验组织单元同租户（`:80-90`），而 `role_permission_repo.go:186-220` 的 `AssignPermissions` 无租户校验。注意这**不是跨租户风险**：`sys_permissions` 是**全局共享资源、无 `tenant_id`**（`ent/schema/permission.go:29-55`），本就不存在"权限点租户归属"；此条仅为一致性提醒。
 8. **多副本需重启**才能保证策略一致。
@@ -224,22 +224,22 @@ TOKEN=$(curl -s $BASE/api/v1/auth/platform/password/login \
 AUTH="Authorization: Bearer $TOKEN"
 
 # 2) 同步 API 目录（从内嵌 OpenAPI）
-curl -s -X POST $BASE/admin/v1/apis/sync -H "$AUTH"
+curl -s -X POST $BASE/api/v1/admin/apis/sync -H "$AUTH"
 
 # 3) 建权限点并挂接口
-curl -s -X POST $BASE/admin/v1/permissions -H "$AUTH" -H 'Content-Type: application/json' \
+curl -s -X POST $BASE/api/v1/admin/permissions -H "$AUTH" -H 'Content-Type: application/json' \
   -d '{"data":{"name":"查看网络","code":"net:vpc:read","groupId":1,"apiIds":[501],"menuIds":[]}}'
 
 # 4) 建角色并赋权（创建期赋权）
-curl -s -X POST $BASE/admin/v1/roles -H "$AUTH" -H 'Content-Type: application/json' \
+curl -s -X POST $BASE/api/v1/admin/roles -H "$AUTH" -H 'Content-Type: application/json' \
   -d '{"data":{"name":"网络只读","code":"tenant:net_reader","type":2,"permissions":[<permId>]}}'
 
 # 5) 编辑角色：换权限（整体替换）
-curl -s -X PUT $BASE/admin/v1/roles/<roleId> -H "$AUTH" -H 'Content-Type: application/json' \
+curl -s -X PUT $BASE/api/v1/admin/roles/<roleId> -H "$AUTH" -H 'Content-Type: application/json' \
   -d '{"data":{"permissions":[<permId1>,<permId2>]},"updateMask":"permissions"}'
 
 # 6) 换用户角色（≥1 个角色，须回传角色 ID）
-curl -s -X PUT $BASE/admin/v1/users/42 -H "$AUTH" -H 'Content-Type: application/json' \
+curl -s -X PUT $BASE/api/v1/admin/users/42 -H "$AUTH" -H 'Content-Type: application/json' \
   -d '{"data":{"roleIds":[<roleId>]},"updateMask":"roleIds"}'
 ```
 

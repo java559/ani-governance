@@ -26,12 +26,12 @@ var File_admin_service_v1_i_online_session_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_online_session_proto_rawDesc = "" +
 	"\n" +
-	"'admin/service/v1/i_online_session.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a.online_session/service/v1/online_session.proto2\xf0\x05\n" +
-	"\x14OnlineSessionService\x12\xa9\x01\n" +
-	"\x11ListOnlineSession\x123.online_session.service.v1.ListOnlineSessionRequest\x1a4.online_session.service.v1.ListOnlineSessionResponse\")\x82\xd3\xe4\x93\x02#\x12!/admin/v1/online-session/sessions\x12\xb3\x01\n" +
-	"\x12ForceLogoutSession\x124.online_session.service.v1.ForceLogoutSessionRequest\x1a5.online_session.service.v1.ForceLogoutSessionResponse\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/admin/v1/online-session/force-logout\x12\xb0\x01\n" +
-	"\x13ListMyOnlineSession\x125.online_session.service.v1.ListMyOnlineSessionRequest\x1a4.online_session.service.v1.ListOnlineSessionResponse\",\x82\xd3\xe4\x93\x02&\x12$/admin/v1/online-session/my-sessions\x12\xc2\x01\n" +
-	"\x15RevokeMyOnlineSession\x127.online_session.service.v1.RevokeMyOnlineSessionRequest\x1a8.online_session.service.v1.RevokeMyOnlineSessionResponse\"6\x82\xd3\xe4\x93\x020:\x01*\"+/admin/v1/online-session/my-sessions/revokeB\xc0\x01\n" +
+	"'admin/service/v1/i_online_session.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a.online_session/service/v1/online_session.proto2\x80\x06\n" +
+	"\x14OnlineSessionService\x12\xad\x01\n" +
+	"\x11ListOnlineSession\x123.online_session.service.v1.ListOnlineSessionRequest\x1a4.online_session.service.v1.ListOnlineSessionResponse\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/admin/online-session/sessions\x12\xb7\x01\n" +
+	"\x12ForceLogoutSession\x124.online_session.service.v1.ForceLogoutSessionRequest\x1a5.online_session.service.v1.ForceLogoutSessionResponse\"4\x82\xd3\xe4\x93\x02.:\x01*\")/api/v1/admin/online-session/force-logout\x12\xb4\x01\n" +
+	"\x13ListMyOnlineSession\x125.online_session.service.v1.ListMyOnlineSessionRequest\x1a4.online_session.service.v1.ListOnlineSessionResponse\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/admin/online-session/my-sessions\x12\xc6\x01\n" +
+	"\x15RevokeMyOnlineSession\x127.online_session.service.v1.RevokeMyOnlineSessionRequest\x1a8.online_session.service.v1.RevokeMyOnlineSessionResponse\":\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/admin/online-session/my-sessions/revokeB\xc0\x01\n" +
 	"\x14com.admin.service.v1B\x13IOnlineSessionProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_online_session_proto_goTypes = []any{

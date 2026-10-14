@@ -12,7 +12,7 @@ import (
 
 // SysConfig holds the schema definition for the SysConfig entity.
 //
-// proto 侧实体名为 Config（config.service.v1.Config，路由 /admin/v1/configs），
+// proto 侧实体名为 Config（config.service.v1.Config，路由 /api/v1/admin/configs），
 // 但 ent 预声明了小写标识符 config，实体不能叫 Config，故 ent 层用 SysConfig。
 // CopierMapper 只按字段名映射，两侧类型名不必一致；表名固定 sys_configs。
 type SysConfig struct {

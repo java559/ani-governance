@@ -28,17 +28,17 @@ var File_admin_service_v1_i_mfa_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_mfa_proto_rawDesc = "" +
 	"\n" +
-	"\x1cadmin/service/v1/i_mfa.proto\x12\x10admin.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a#authentication/service/v1/mfa.proto\x1a.authentication/service/v1/authentication.proto2\xb3\b\n" +
+	"\x1cadmin/service/v1/i_mfa.proto\x12\x10admin.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a#authentication/service/v1/mfa.proto\x1a.authentication/service/v1/authentication.proto2\xce\b\n" +
 	"\n" +
-	"MfaService\x12\x8d\x01\n" +
-	"\fGetMFAStatus\x12..authentication.service.v1.GetMFAStatusRequest\x1a/.authentication.service.v1.GetMFAStatusResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/admin/v1/mfa/status\x12\xa3\x01\n" +
-	"\x13ListEnrolledMethods\x125.authentication.service.v1.ListEnrolledMethodsRequest\x1a6.authentication.service.v1.ListEnrolledMethodsResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/admin/v1/mfa/methods\x12\xa5\x01\n" +
-	"\x11StartEnrollMethod\x123.authentication.service.v1.StartEnrollMethodRequest\x1a4.authentication.service.v1.StartEnrollMethodResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/admin/v1/mfa/enroll/start\x12\xad\x01\n" +
-	"\x13ConfirmEnrollMethod\x125.authentication.service.v1.ConfirmEnrollMethodRequest\x1a6.authentication.service.v1.ConfirmEnrollMethodResponse\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/admin/v1/mfa/enroll/confirm\x12t\n" +
+	"MfaService\x12\x91\x01\n" +
+	"\fGetMFAStatus\x12..authentication.service.v1.GetMFAStatusRequest\x1a/.authentication.service.v1.GetMFAStatusResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/mfa/status\x12\xa7\x01\n" +
+	"\x13ListEnrolledMethods\x125.authentication.service.v1.ListEnrolledMethodsRequest\x1a6.authentication.service.v1.ListEnrolledMethodsResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/admin/mfa/methods\x12\xa9\x01\n" +
+	"\x11StartEnrollMethod\x123.authentication.service.v1.StartEnrollMethodRequest\x1a4.authentication.service.v1.StartEnrollMethodResponse\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/mfa/enroll/start\x12\xb1\x01\n" +
+	"\x13ConfirmEnrollMethod\x125.authentication.service.v1.ConfirmEnrollMethodRequest\x1a6.authentication.service.v1.ConfirmEnrollMethodResponse\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/admin/mfa/enroll/confirm\x12x\n" +
 	"\n" +
-	"DisableMFA\x12,.authentication.service.v1.DisableMFARequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/admin/v1/mfa/disable\x12\x83\x01\n" +
-	"\x0fRevokeMFADevice\x121.authentication.service.v1.RevokeMFADeviceRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/admin/v1/mfa/{credential_id}\x12\x9a\x01\n" +
-	"\x12VerifyMFAChallenge\x124.authentication.service.v1.VerifyMFAChallengeRequest\x1a(.authentication.service.v1.LoginResponse\"$\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/admin/v1/mfa/verifyB\xb6\x01\n" +
+	"DisableMFA\x12,.authentication.service.v1.DisableMFARequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/mfa/disable\x12\x87\x01\n" +
+	"\x0fRevokeMFADevice\x121.authentication.service.v1.RevokeMFADeviceRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#*!/api/v1/admin/mfa/{credential_id}\x12\x9d\x01\n" +
+	"\x12VerifyMFAChallenge\x124.authentication.service.v1.VerifyMFAChallengeRequest\x1a(.authentication.service.v1.LoginResponse\"'\xbaG\x02Z\x00\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/v1/auth/mfa/verifyB\xb6\x01\n" +
 	"\x14com.admin.service.v1B\tIMfaProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_mfa_proto_goTypes = []any{

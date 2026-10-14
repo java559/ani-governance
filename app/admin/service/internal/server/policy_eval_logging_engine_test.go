@@ -45,28 +45,28 @@ func TestEvaluationContextJSON(t *testing.T) {
 	got := evaluationContextJSON("noop",
 		authzEngine.Subject("platform:admin"),
 		authzEngine.Action("GET"),
-		authzEngine.Resource("/admin/v1/roles"),
+		authzEngine.Resource("/api/v1/admin/roles"),
 		authzEngine.Project(""),
 		nil)
 	assert.JSONEq(t, `{
 		"engine": "noop",
 		"subject": "platform:admin",
 		"action": "GET",
-		"resource": "/admin/v1/roles"
+		"resource": "/api/v1/admin/roles"
 	}`, got)
 
 	// project 与 user/tenant 归属一并入快照
 	got2 := evaluationContextJSON("casbin",
 		authzEngine.Subject("ops"),
 		authzEngine.Action("PUT"),
-		authzEngine.Resource("/admin/v1/roles/3"),
+		authzEngine.Resource("/api/v1/admin/roles/3"),
 		authzEngine.Project("main"),
 		newRecWithUser(7, 2))
 	assert.JSONEq(t, `{
 		"engine": "casbin",
 		"subject": "ops",
 		"action": "PUT",
-		"resource": "/admin/v1/roles/3",
+		"resource": "/api/v1/admin/roles/3",
 		"project": "main",
 		"userId": 7,
 		"tenantId": 2

@@ -55,7 +55,7 @@ func TestBootstrapPostgres(t *testing.T) {
 	require.Error(t, err)
 	require.Zero(t, count("sys_users"))
 	// Omit one API required by 001_initial.sql without changing the original catalog.
-	const requiredMethod, requiredPath = "GET", "/admin/v1/me"
+	const requiredMethod, requiredPath = "GET", "/api/v1/admin/me"
 	originalCatalog := append([]dbbootstrap.API(nil), catalog...)
 	incompleteCatalog := make([]dbbootstrap.API, 0, len(catalog))
 	missingCount := 0
@@ -134,7 +134,7 @@ func TestBootstrapPostgres(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, before, snapshot())
 	var apiID int
-	require.NoError(t, db.QueryRowContext(ctx, `SELECT id FROM sys_apis WHERE path='/admin/v1/users' AND method='GET'`).Scan(&apiID))
+	require.NoError(t, db.QueryRowContext(ctx, `SELECT id FROM sys_apis WHERE path='/api/v1/admin/users' AND method='GET'`).Scan(&apiID))
 	grantsBefore := count("sys_permission_apis")
 	_, err = db.ExecContext(ctx, `UPDATE sys_apis SET status='OFF',description='old' WHERE id=$1`, apiID)
 	require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestBootstrapPostgres(t *testing.T) {
 	require.NoError(t, tx.Commit())
 	var actualID int
 	var status string
-	require.NoError(t, db.QueryRowContext(ctx, `SELECT id,status FROM sys_apis WHERE path='/admin/v1/users' AND method='GET'`).Scan(&actualID, &status))
+	require.NoError(t, db.QueryRowContext(ctx, `SELECT id,status FROM sys_apis WHERE path='/api/v1/admin/users' AND method='GET'`).Scan(&actualID, &status))
 	require.Equal(t, apiID, actualID)
 	require.Equal(t, "OFF", status)
 	require.Equal(t, grantsBefore, count("sys_permission_apis"))

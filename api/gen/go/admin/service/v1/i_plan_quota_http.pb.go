@@ -40,10 +40,10 @@ type PlanQuotaServiceHTTPServer interface {
 
 func RegisterPlanQuotaServiceHTTPServer(s *http.Server, srv PlanQuotaServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/plan-quotas", _PlanQuotaService_List19_HTTP_Handler(srv))
-	r.POST("/admin/v1/plan-quotas", _PlanQuotaService_Create14_HTTP_Handler(srv))
-	r.PUT("/admin/v1/plan-quotas/{id}", _PlanQuotaService_Update14_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/plan-quotas", _PlanQuotaService_Delete14_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/plan-quotas", _PlanQuotaService_List19_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/plan-quotas", _PlanQuotaService_Create14_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/plan-quotas/{id}", _PlanQuotaService_Update14_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/plan-quotas", _PlanQuotaService_Delete14_HTTP_Handler(srv))
 }
 
 func _PlanQuotaService_List19_HTTP_Handler(srv PlanQuotaServiceHTTPServer) func(ctx http.Context) error {
@@ -153,7 +153,7 @@ func NewPlanQuotaServiceHTTPClient(client *http.Client) PlanQuotaServiceHTTPClie
 // Create 创建套餐配额
 func (c *PlanQuotaServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreatePlanQuotaRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/plan-quotas"
+	pattern := "/api/v1/admin/plan-quotas"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlanQuotaServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -167,7 +167,7 @@ func (c *PlanQuotaServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Cre
 // Delete 删除套餐配额
 func (c *PlanQuotaServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeletePlanQuotaRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/plan-quotas"
+	pattern := "/api/v1/admin/plan-quotas"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlanQuotaServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -181,7 +181,7 @@ func (c *PlanQuotaServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.Del
 // List 分页查询套餐配额列表
 func (c *PlanQuotaServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListPlanQuotaResponse, error) {
 	var out v11.ListPlanQuotaResponse
-	pattern := "/admin/v1/plan-quotas"
+	pattern := "/api/v1/admin/plan-quotas"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlanQuotaServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -195,7 +195,7 @@ func (c *PlanQuotaServiceHTTPClientImpl) List(ctx context.Context, in *v1.Paging
 // Update 更新套餐配额
 func (c *PlanQuotaServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdatePlanQuotaRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/plan-quotas/{id}"
+	pattern := "/api/v1/admin/plan-quotas/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlanQuotaServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

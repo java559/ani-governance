@@ -46,12 +46,12 @@ type NotificationChannelServiceHTTPServer interface {
 
 func RegisterNotificationChannelServiceHTTPServer(s *http.Server, srv NotificationChannelServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/notification-channels", _NotificationChannelService_ListNotificationChannel0_HTTP_Handler(srv))
-	r.GET("/admin/v1/notification-channels/{id}", _NotificationChannelService_GetNotificationChannel0_HTTP_Handler(srv))
-	r.POST("/admin/v1/notification-channels", _NotificationChannelService_CreateNotificationChannel0_HTTP_Handler(srv))
-	r.PUT("/admin/v1/notification-channels/{id}", _NotificationChannelService_UpdateNotificationChannel0_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/notification-channels/{id}", _NotificationChannelService_DeleteNotificationChannel0_HTTP_Handler(srv))
-	r.POST("/admin/v1/notification-channels/{id}/send-test-email", _NotificationChannelService_SendTestEmail0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/notification-channels", _NotificationChannelService_ListNotificationChannel0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/notification-channels/{id}", _NotificationChannelService_GetNotificationChannel0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/notification-channels", _NotificationChannelService_CreateNotificationChannel0_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/notification-channels/{id}", _NotificationChannelService_UpdateNotificationChannel0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/notification-channels/{id}", _NotificationChannelService_DeleteNotificationChannel0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/notification-channels/{id}/send-test-email", _NotificationChannelService_SendTestEmail0_HTTP_Handler(srv))
 }
 
 func _NotificationChannelService_ListNotificationChannel0_HTTP_Handler(srv NotificationChannelServiceHTTPServer) func(ctx http.Context) error {
@@ -215,7 +215,7 @@ func NewNotificationChannelServiceHTTPClient(client *http.Client) NotificationCh
 // CreateNotificationChannel 创建通知渠道
 func (c *NotificationChannelServiceHTTPClientImpl) CreateNotificationChannel(ctx context.Context, in *v11.CreateNotificationChannelRequest, opts ...http.CallOption) (*v11.NotificationChannel, error) {
 	var out v11.NotificationChannel
-	pattern := "/admin/v1/notification-channels"
+	pattern := "/api/v1/admin/notification-channels"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationNotificationChannelServiceCreateNotificationChannel))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -229,7 +229,7 @@ func (c *NotificationChannelServiceHTTPClientImpl) CreateNotificationChannel(ctx
 // DeleteNotificationChannel 删除通知渠道
 func (c *NotificationChannelServiceHTTPClientImpl) DeleteNotificationChannel(ctx context.Context, in *v11.DeleteNotificationChannelRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/notification-channels/{id}"
+	pattern := "/api/v1/admin/notification-channels/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationNotificationChannelServiceDeleteNotificationChannel))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -243,7 +243,7 @@ func (c *NotificationChannelServiceHTTPClientImpl) DeleteNotificationChannel(ctx
 // GetNotificationChannel 查询通知渠道详情
 func (c *NotificationChannelServiceHTTPClientImpl) GetNotificationChannel(ctx context.Context, in *v11.GetNotificationChannelRequest, opts ...http.CallOption) (*v11.NotificationChannel, error) {
 	var out v11.NotificationChannel
-	pattern := "/admin/v1/notification-channels/{id}"
+	pattern := "/api/v1/admin/notification-channels/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationNotificationChannelServiceGetNotificationChannel))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -257,7 +257,7 @@ func (c *NotificationChannelServiceHTTPClientImpl) GetNotificationChannel(ctx co
 // ListNotificationChannel 查询通知渠道列表
 func (c *NotificationChannelServiceHTTPClientImpl) ListNotificationChannel(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListNotificationChannelResponse, error) {
 	var out v11.ListNotificationChannelResponse
-	pattern := "/admin/v1/notification-channels"
+	pattern := "/api/v1/admin/notification-channels"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationNotificationChannelServiceListNotificationChannel))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -271,7 +271,7 @@ func (c *NotificationChannelServiceHTTPClientImpl) ListNotificationChannel(ctx c
 // SendTestEmail 发送测试邮件（验证渠道配置）
 func (c *NotificationChannelServiceHTTPClientImpl) SendTestEmail(ctx context.Context, in *v11.SendTestEmailRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/notification-channels/{id}/send-test-email"
+	pattern := "/api/v1/admin/notification-channels/{id}/send-test-email"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationNotificationChannelServiceSendTestEmail))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -285,7 +285,7 @@ func (c *NotificationChannelServiceHTTPClientImpl) SendTestEmail(ctx context.Con
 // UpdateNotificationChannel 更新通知渠道
 func (c *NotificationChannelServiceHTTPClientImpl) UpdateNotificationChannel(ctx context.Context, in *v11.UpdateNotificationChannelRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/notification-channels/{id}"
+	pattern := "/api/v1/admin/notification-channels/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationNotificationChannelServiceUpdateNotificationChannel))
 	opts = append(opts, http.PathTemplate(pattern))

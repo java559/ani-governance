@@ -28,16 +28,16 @@ var File_admin_service_v1_i_api_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_api_proto_rawDesc = "" +
 	"\n" +
-	"\x1cadmin/service/v1/i_api.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1fpermission/service/v1/api.proto2\xe1\x05\n" +
+	"\x1cadmin/service/v1/i_api.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1fpermission/service/v1/api.proto2\xfd\x05\n" +
 	"\n" +
-	"ApiService\x12a\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a&.permission.service.v1.ListApiResponse\"\x16\x82\xd3\xe4\x93\x02\x10\x12\x0e/admin/v1/apis\x12d\n" +
-	"\x03Get\x12$.permission.service.v1.GetApiRequest\x1a\x1a.permission.service.v1.Api\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/admin/v1/apis/{id}\x12d\n" +
-	"\x06Create\x12'.permission.service.v1.CreateApiRequest\x1a\x16.google.protobuf.Empty\"\x19\x82\xd3\xe4\x93\x02\x13:\x01*\"\x0e/admin/v1/apis\x12i\n" +
-	"\x06Update\x12'.permission.service.v1.UpdateApiRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\x1a\x13/admin/v1/apis/{id}\x12f\n" +
-	"\x06Delete\x12'.permission.service.v1.DeleteApiRequest\x1a\x16.google.protobuf.Empty\"\x1b\x82\xd3\xe4\x93\x02\x15*\x13/admin/v1/apis/{id}\x12Z\n" +
-	"\bSyncApis\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/admin/v1/apis/sync\x12u\n" +
-	"\x10GetWalkRouteData\x12\x16.google.protobuf.Empty\x1a&.permission.service.v1.ListApiResponse\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/admin/v1/apis/walk-routeB\xb6\x01\n" +
+	"ApiService\x12e\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a&.permission.service.v1.ListApiResponse\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/admin/apis\x12h\n" +
+	"\x03Get\x12$.permission.service.v1.GetApiRequest\x1a\x1a.permission.service.v1.Api\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/admin/apis/{id}\x12h\n" +
+	"\x06Create\x12'.permission.service.v1.CreateApiRequest\x1a\x16.google.protobuf.Empty\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/admin/apis\x12m\n" +
+	"\x06Update\x12'.permission.service.v1.UpdateApiRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\x1a\x17/api/v1/admin/apis/{id}\x12j\n" +
+	"\x06Delete\x12'.permission.service.v1.DeleteApiRequest\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/v1/admin/apis/{id}\x12^\n" +
+	"\bSyncApis\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/api/v1/admin/apis/sync\x12y\n" +
+	"\x10GetWalkRouteData\x12\x16.google.protobuf.Empty\x1a&.permission.service.v1.ListApiResponse\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/apis/walk-routeB\xb6\x01\n" +
 	"\x14com.admin.service.v1B\tIApiProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_api_proto_goTypes = []any{
