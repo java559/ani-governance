@@ -12,6 +12,8 @@ package bootstrap
 //  1. 期望码在库中不存在 → INSERT 新权限；
 //  2. 期望码已存在       → 保留 id/status/group，不重建；
 //  3. 库中非 sys: 且不在期望集 → 置 status=OFF（保 id，不删除）；
+//     但若该码绑定的接口属豁免路由（独立认证/会话、特殊传输、业务域），
+//     则该能力由其自身合同管理、不属本批范围 → 保持不动，不得误停用；
 //  4. sys_permission_apis 关联按期望集增/删。
 
 import (
@@ -39,6 +41,7 @@ type AlignResult struct {
 	Changes  []string // 人类可读的变更行（dry-run 与实写共用）
 	Inserted int
 	Disabled int
+	Kept     int // 因绑定豁免路由而被保护、未处置的既有码
 	Linked   int
 	Unlinked int
 	Matched  int
@@ -56,6 +59,9 @@ func AlignPermissions(ctx context.Context, tx *sql.Tx, dryRun bool) (*AlignResul
 
 	// 1) 逐条 (method,path) 查表取期望码；缺项/冲突整批拒绝。
 	expected := make(map[string][]uint64) // code -> api_id 集合
+	// 豁免路由（独立认证/会话、特殊传输、业务域）的 api_id 集合。这类路由没有期望码，
+	// 其既有权限码由自身合同管理，不得被步骤 4 当作"库中多余码"停用。
+	exemptAPIIDs := make(map[uint64]bool)
 	var missing, conflicts []string
 	for _, a := range apis {
 		exp, rerr := permcode.Resolve(a.method, a.path)
@@ -63,7 +69,9 @@ func AlignPermissions(ctx context.Context, tx *sql.Tx, dryRun bool) (*AlignResul
 			var ce *permcode.ConflictError
 			if errors.As(rerr, &ce) {
 				conflicts = append(conflicts, ce.Error())
-			} else if _, exempt := permcode.IsExempt(a.method, a.path); !exempt {
+			} else if _, exempt := permcode.IsExempt(a.method, a.path); exempt {
+				exemptAPIIDs[a.id] = true
+			} else {
 				missing = append(missing, fmt.Sprintf("%s %s", a.method, a.path))
 			}
 			continue
@@ -145,17 +153,14 @@ func AlignPermissions(ctx context.Context, tx *sql.Tx, dryRun bool) (*AlignResul
 		}
 	}
 
-	// 4) 库中非 sys: 且不在期望集 → 置 OFF（保 id）。
-	for _, p := range perms {
-		if strings.HasPrefix(p.Code, constants.SystemPermissionCodePrefix) {
-			continue
-		}
-		if _, ok := expected[p.Code]; ok {
-			continue
-		}
-		if p.Status != "ON" {
-			continue
-		}
+	// 4) 库中非 sys:、不在期望集、当前 ON 的码 → 置 OFF（保 id）。
+	//    例外：绑定的接口属豁免路由的码保持不动（避免误停用业务域能力，如 modeldev:*）。
+	decision := decideDisable(perms, links, exemptAPIIDs, expected)
+	for _, p := range decision.Protect {
+		res.Changes = append(res.Changes, fmt.Sprintf("KEEP permission %s (id=%d, bound to exempt route, left unchanged)", p.Code, p.ID))
+		res.Kept++
+	}
+	for _, p := range decision.Disable {
 		res.Changes = append(res.Changes, fmt.Sprintf("DISABLE permission %s (id=%d, kept)", p.Code, p.ID))
 		res.Disabled++
 		if !dryRun {
@@ -167,6 +172,52 @@ func AlignPermissions(ctx context.Context, tx *sql.Tx, dryRun bool) (*AlignResul
 
 	sort.Strings(res.Changes)
 	return res, nil
+}
+
+// disableDecision 是步骤 4 的判定结果：应置 OFF 的权限，以及因绑定豁免路由而被保护的权限。
+type disableDecision struct {
+	Disable []permissionRow
+	Protect []permissionRow
+}
+
+// decideDisable 判定库中哪些权限应置 OFF（纯函数，不触碰数据库，便于单元测试）。
+//
+// 规则（与 AlignPermissions 步骤 4 一致）：
+//   - `sys:` 保留前缀的权限不处置；
+//   - 已在期望集中的码不处置（步骤 3 已保留其 id/状态并按需同步关联）；
+//   - 当前非 `ON` 的码不处置；
+//   - 绑定任一条豁免路由（独立认证/会话、特殊传输、业务域）的码不处置，计入 Protect；
+//   - 其余置 OFF（保 id）。
+func decideDisable(perms []permissionRow, links map[uint64]map[uint64]bool,
+	exemptAPIIDs map[uint64]bool, expected map[string][]uint64) disableDecision {
+	var d disableDecision
+	for _, p := range perms {
+		if strings.HasPrefix(p.Code, constants.SystemPermissionCodePrefix) {
+			continue
+		}
+		if _, ok := expected[p.Code]; ok {
+			continue
+		}
+		if p.Status != "ON" {
+			continue
+		}
+		if boundToExemptRoute(links[p.ID], exemptAPIIDs) {
+			d.Protect = append(d.Protect, p)
+			continue
+		}
+		d.Disable = append(d.Disable, p)
+	}
+	return d
+}
+
+// boundToExemptRoute 报告权限绑定的接口中是否有任一条属豁免路由。
+func boundToExemptRoute(bound, exemptAPIIDs map[uint64]bool) bool {
+	for apiID := range bound {
+		if exemptAPIIDs[apiID] {
+			return true
+		}
+	}
+	return false
 }
 
 type apiRow struct {

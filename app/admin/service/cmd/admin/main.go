@@ -107,15 +107,15 @@ func runAdmin(ctx context.Context, args []string, stdout io.Writer) error {
 			fmt.Fprintln(stdout, change)
 		}
 		if *dryRun {
-			fmt.Fprintf(stdout, "DRY RUN: no changes written (matched=%d insert=%d disable=%d link=%d unlink=%d)\n",
-				result.Matched, result.Inserted, result.Disabled, result.Linked, result.Unlinked)
+			fmt.Fprintf(stdout, "DRY RUN: no changes written (matched=%d insert=%d disable=%d kept=%d link=%d unlink=%d)\n",
+				result.Matched, result.Inserted, result.Disabled, result.Kept, result.Linked, result.Unlinked)
 			return nil
 		}
 		if err = tx.Commit(); err != nil {
 			return err
 		}
-		fmt.Fprintf(stdout, "PASS: permissions aligned incrementally (matched=%d insert=%d disable=%d link=%d unlink=%d). Reload running instances to refresh authorization policies.\n",
-			result.Matched, result.Inserted, result.Disabled, result.Linked, result.Unlinked)
+		fmt.Fprintf(stdout, "PASS: permissions aligned incrementally (matched=%d insert=%d disable=%d kept=%d link=%d unlink=%d). Reload running instances to refresh authorization policies.\n",
+			result.Matched, result.Inserted, result.Disabled, result.Kept, result.Linked, result.Unlinked)
 		return nil
 	}
 	catalog, err := dbbootstrap.Catalog(assets.OpenApiData)
