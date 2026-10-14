@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strings"
 
@@ -21,6 +22,7 @@ import (
 
 	"go-wind-admin/pkg/authorizer"
 	"go-wind-admin/pkg/constants"
+	"go-wind-admin/pkg/permcode"
 
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/utils/converter"
@@ -42,7 +44,6 @@ type PermissionService struct {
 	authorizer *authorizer.Authorizer
 
 	menuPermissionConverter *converter.MenuPermissionConverter
-	apiPermissionConverter  *converter.ApiPermissionConverter
 }
 
 func NewPermissionService(
@@ -63,7 +64,6 @@ func NewPermissionService(
 		roleRepo:                roleRepo,
 		authorizer:              authorizer,
 		menuPermissionConverter: converter.NewMenuPermissionConverter(),
-		apiPermissionConverter:  converter.NewApiPermissionConverter(),
 	}
 
 	// Database initialization is an explicit deployment step; constructors never seed data.
@@ -308,11 +308,22 @@ func (s *PermissionService) appendAPis(
 
 	codes := make(map[string]*moduleApis)
 	for _, api := range apis.Items {
-		//code := s.apiPermissionConverter.ConvertCodeByOperationID(api.GetOperation())
-		code := s.apiPermissionConverter.ConvertCodeByPath(api.GetMethod(), api.GetPath())
-		if imageCode, ok := auth.ImagePermission(api.GetMethod(), api.GetPath()); ok {
-			code = imageCode
+		// 权限码来源一律以权威表为准（实施文档 §B3.3/§B4/§B8.3）：
+		// 运行时只按 (method,path) 查表取码，不重新推导；推导函数仅作候选值，永不写入授权目录。
+		exp, rerr := permcode.Resolve(api.GetMethod(), api.GetPath())
+		if rerr != nil {
+			var ce *permcode.ConflictError
+			if errors.As(rerr, &ce) {
+				return ce
+			}
+			// 未命中且属独立认证/会话、特殊传输或业务域接口：不产生业务码，跳过。
+			if _, exempt := permcode.IsExempt(api.GetMethod(), api.GetPath()); exempt {
+				continue
+			}
+			// 其余为缺项：拒绝写入（不落候选推导码）。
+			return rerr
 		}
+		code := exp.Code
 		if code == "" {
 			continue
 		}

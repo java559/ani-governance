@@ -65,7 +65,6 @@ func newPermissionServiceForTest(t *testing.T) (*PermissionService, *ent.Client)
 		roleRepo:                newRoleRepo(entClient),
 		authorizer:              authorizer.NewAuthorizer(bootstrapCtx, stubAuthzProvider{}),
 		menuPermissionConverter: converter.NewMenuPermissionConverter(),
-		apiPermissionConverter:  converter.NewApiPermissionConverter(),
 	}
 	return svc, entClient.Client()
 }
@@ -88,8 +87,11 @@ func seedPermissionGroups(t *testing.T, svc *PermissionService, ctx context.Cont
 
 // TestPermissionService_SyncPermissions_MenuAndApiDerived 验证权限同步的
 // 菜单派生与接口派生：目录菜单生成组、子菜单生成权限、一级路径段决定归属
-// 模块、接口代码经前缀匹配模块后生成接口派生权限；关联行（权限-组、
-// 权限-菜单、权限-接口）落库；未分类默认组恒建。
+// 模块、接口代码经权威表取码后按前缀匹配模块生成接口派生权限；关联行
+// （权限-组、权限-菜单、权限-接口）落库；未分类默认组恒建。
+//
+// 接口码来源为权威表（实施文档 §B3.3/§B4）：此处用已登记的 GET /api/v1/admin/users
+// 取码 user:view；权威表未登记的合成路径属缺项，会被拒绝写入（不再走候选推导）。
 func TestPermissionService_SyncPermissions_MenuAndApiDerived(t *testing.T) {
 	svc, client := newPermissionServiceForTest(t)
 	ctx := testutil.NewSystemViewerCtx(context.Background())
@@ -99,7 +101,7 @@ func TestPermissionService_SyncPermissions_MenuAndApiDerived(t *testing.T) {
 	require.NoError(t, svc.menuRepo.Create(ctx, &permissionV1.CreateMenuRequest{
 		Data: &permissionV1.Menu{
 			Name:   trans.Ptr("PermSvc 目录菜单"),
-			Path:   trans.Ptr("/bizgrp"),
+			Path:   trans.Ptr("/user"),
 			Type:   permissionV1.Menu_CATALOG.Enum(),
 			Status: permissionV1.Menu_ON.Enum(),
 		},
@@ -118,10 +120,10 @@ func TestPermissionService_SyncPermissions_MenuAndApiDerived(t *testing.T) {
 		},
 	}))
 
-	// 接口行：资源段与目录菜单一级段同前缀（状态缺省即 ON）
+	// 接口行：已登记管理路由，权威表取码 user:view；其首段与目录菜单一级段同前缀
 	require.NoError(t, svc.apiRepo.Create(ctx, &permissionV1.CreateApiRequest{
 		Data: &permissionV1.Api{
-			Path:   trans.Ptr("/api/v1/bizgrp/entries"),
+			Path:   trans.Ptr("/api/v1/admin/users"),
 			Method: trans.Ptr("GET"),
 			Scope:  permissionV1.Api_ADMIN.Enum(),
 		},
@@ -146,10 +148,10 @@ func TestPermissionService_SyncPermissions_MenuAndApiDerived(t *testing.T) {
 	}
 	require.Len(t, modules, 2, "两个组的模块标识应互不相同")
 	require.Equal(t, "未分类", uncategorizedName, "未分类组名应为固定文案")
-	bizGroupID, hasBiz := modules["bizgrp"]
-	require.True(t, hasBiz, "目录菜单一级段应派生 bizgrp 组")
+	bizGroupID, hasBiz := modules["user"]
+	require.True(t, hasBiz, "目录菜单一级段应派生 user 组")
 
-	// 权限：菜单派生两条（目录/子页面）+ 接口派生一条，全部归组 bizgrp
+	// 权限：菜单派生两条（目录/子页面）+ 接口派生一条（权威表取码 user:view），全部归组 user
 	perms, err := client.Permission.Query().All(ctx)
 	require.NoError(t, err)
 	require.Len(t, perms, 3, "应落两条菜单派生权限与一条接口派生权限")
@@ -160,8 +162,9 @@ func TestPermissionService_SyncPermissions_MenuAndApiDerived(t *testing.T) {
 		require.Equal(t, bizGroupID, *p.GroupID, "派生权限应归入同模块组")
 		codes[*p.Code] = true
 	}
-	require.True(t, codes["bizgrp:dir"], "目录菜单应派生 <一级段>:dir 代码权限（转换器钉死语义）")
+	require.True(t, codes["user:dir"], "目录菜单应派生 <一级段>:dir 代码权限（转换器钉死语义）")
 	require.True(t, codes["childpg:view"], "子页面菜单应派生 <子段>:view 代码权限（首段丢弃语义）")
+	require.True(t, codes["user:view"], "接口派生应取权威表期望码 user:view（不再走候选推导）")
 
 	// 关联行：权限-菜单两条、权限-接口一条（接口派生权限关联到接口行）
 	menuLinks, err := client.PermissionMenu.Query().Count(ctx)

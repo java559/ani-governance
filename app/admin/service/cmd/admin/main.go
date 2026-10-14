@@ -37,7 +37,7 @@ func run() error {
 
 func runAdmin(ctx context.Context, args []string, stdout io.Writer) error {
 	if len(args) < 1 {
-		return fmt.Errorf("usage: admin <init|check|sync-apis|modeldev-pause> [--username admin] [--password-file PATH] [--dry-run]; connection: ANI_DATABASE_DSN")
+		return fmt.Errorf("usage: admin <init|check|sync-apis|permissions-align|modeldev-pause> [--username admin] [--password-file PATH] [--dry-run]; connection: ANI_DATABASE_DSN")
 	}
 	command := args[0]
 	if command == "modeldev-pause" {
@@ -50,18 +50,18 @@ func runAdmin(ctx context.Context, args []string, stdout io.Writer) error {
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	username := flags.String("username", "admin", "first platform administrator username (init only)")
 	passwordFile := flags.String("password-file", "", "file containing the first administrator password (init only)")
-	dryRun := flags.Bool("dry-run", false, "show API changes and roll back (sync-apis only)")
+	dryRun := flags.Bool("dry-run", false, "show API/permission changes and roll back (sync-apis, permissions-align)")
 	if err := flags.Parse(args[1:]); err != nil {
 		return err
 	}
 	if flags.NArg() != 0 {
 		return fmt.Errorf("unexpected arguments")
 	}
-	if command != "init" && command != "check" && command != "sync-apis" {
+	if command != "init" && command != "check" && command != "sync-apis" && command != "permissions-align" {
 		return fmt.Errorf("unknown command %q", command)
 	}
-	if *dryRun && command != "sync-apis" {
-		return fmt.Errorf("--dry-run applies to sync-apis only")
+	if *dryRun && command != "sync-apis" && command != "permissions-align" {
+		return fmt.Errorf("--dry-run applies to sync-apis and permissions-align only")
 	}
 	var invalidFlag string
 	flags.Visit(func(f *flag.Flag) {
@@ -91,6 +91,31 @@ func runAdmin(ctx context.Context, args []string, stdout io.Writer) error {
 			return err
 		}
 		fmt.Fprintln(stdout, "PASS: platform administrator and required API grants are present")
+		return nil
+	}
+	if command == "permissions-align" {
+		tx, terr := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: *dryRun})
+		if terr != nil {
+			return terr
+		}
+		defer tx.Rollback()
+		result, aerr := dbbootstrap.AlignPermissions(ctx, tx, *dryRun)
+		if aerr != nil {
+			return aerr
+		}
+		for _, change := range result.Changes {
+			fmt.Fprintln(stdout, change)
+		}
+		if *dryRun {
+			fmt.Fprintf(stdout, "DRY RUN: no changes written (matched=%d insert=%d disable=%d link=%d unlink=%d)\n",
+				result.Matched, result.Inserted, result.Disabled, result.Linked, result.Unlinked)
+			return nil
+		}
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		fmt.Fprintf(stdout, "PASS: permissions aligned incrementally (matched=%d insert=%d disable=%d link=%d unlink=%d). Reload running instances to refresh authorization policies.\n",
+			result.Matched, result.Inserted, result.Disabled, result.Linked, result.Unlinked)
 		return nil
 	}
 	catalog, err := dbbootstrap.Catalog(assets.OpenApiData)
