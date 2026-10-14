@@ -7464,12 +7464,12 @@ paths:
                 - ModelDevService
             operationId: ModelDevService_ListExecutions
             parameters:
-                - name: page_size
+                - name: limit
                   in: query
                   schema:
                     type: integer
                     format: uint32
-                - name: page_token
+                - name: cursor
                   in: query
                   schema:
                     type: string
@@ -7528,12 +7528,12 @@ paths:
                   required: true
                   schema:
                     type: string
-                - name: page_size
+                - name: limit
                   in: query
                   schema:
                     type: integer
                     format: uint32
-                - name: page_token
+                - name: cursor
                   in: query
                   schema:
                     type: string
@@ -7598,12 +7598,12 @@ paths:
                 - ModelDevService
             operationId: ModelDevService_ListInputVersions
             parameters:
-                - name: page_size
+                - name: limit
                   in: query
                   schema:
                     type: integer
                     format: uint32
-                - name: page_token
+                - name: cursor
                   in: query
                   schema:
                     type: string
@@ -7642,12 +7642,12 @@ paths:
                 - ModelDevService
             operationId: ModelDevService_ListPresets
             parameters:
-                - name: page_size
+                - name: limit
                   in: query
                   schema:
                     type: integer
                     format: uint32
-                - name: page_token
+                - name: cursor
                   in: query
                   schema:
                     type: string
@@ -12015,20 +12015,24 @@ components:
         ListExecutionArtifactsResponse:
             type: object
             properties:
-                artifacts:
+                items:
                     type: array
                     items:
                         $ref: '#/components/schemas/ArtifactView'
-                next_page_token:
+                next_cursor:
+                    type: string
+                total:
                     type: string
         ListExecutionsResponse:
             type: object
             properties:
-                executions:
+                items:
                     type: array
                     items:
                         $ref: '#/components/schemas/ExecutionView'
-                next_page_token:
+                next_cursor:
+                    type: string
+                total:
                     type: string
         ListImagesResponse:
             type: object
@@ -12044,11 +12048,13 @@ components:
         ListInputVersionsResponse:
             type: object
             properties:
-                input_versions:
+                items:
                     type: array
                     items:
                         $ref: '#/components/schemas/InputVersionView'
-                next_page_token:
+                next_cursor:
+                    type: string
+                total:
                     type: string
         ListInstancesResponse:
             type: object

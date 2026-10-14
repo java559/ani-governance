@@ -15,11 +15,11 @@ func (c *ModelDevClient) ListPresets(ctx context.Context, scope ModelDevResolveS
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListPresets(call, &modeldevv1.ListPresetsRequest{Page: &modeldevv1.PageRequest{PageSize: size, PageToken: token}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListPresets(call, &modeldevv1.ListPresetsRequest{Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Presets) > 100 || len(out.NextPageToken) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Presets) > 100 || len(out.NextCursor) > 2048 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := map[string]bool{}
@@ -72,11 +72,11 @@ func (c *ModelDevClient) ListInputVersions(ctx context.Context, scope ModelDevRe
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListInputVersions(call, &modeldevv1.ListInputVersionsRequest{Page: &modeldevv1.PageRequest{PageSize: size, PageToken: token}, State: state}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListInputVersions(call, &modeldevv1.ListInputVersionsRequest{Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}, State: state}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.InputVersions) > 100 || len(out.NextPageToken) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.InputVersions) > 100 || len(out.NextCursor) > 2048 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := map[string]bool{}

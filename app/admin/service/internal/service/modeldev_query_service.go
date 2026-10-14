@@ -61,16 +61,16 @@ func (s *ModelDevService) ListExecutions(ctx context.Context, in *modeldevv1.Lis
 	if err != nil {
 		return nil, err
 	}
-	if in == nil || in.PageSize > 100 || len(in.PageToken) > 2048 {
+	if in == nil || in.Limit > 100 || len(in.Cursor) > 2048 {
 		return nil, modelDevQueryInvalid()
 	}
-	out, err := s.resolver.ListExecutions(ctx, scope, in.PageSize, in.PageToken)
+	out, err := s.resolver.ListExecutions(ctx, scope, in.Limit, in.Cursor)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
-	reply := &modeldevv1.ListExecutionsResponse{NextPageToken: out.NextPageToken}
+	reply := &modeldevv1.ListExecutionsResponse{NextCursor: out.NextCursor, Total: out.Total}
 	for _, execution := range out.Executions {
-		reply.Executions = append(reply.Executions, modelDevPublicExecution(execution))
+		reply.Items = append(reply.Items, modelDevPublicExecution(execution))
 	}
 	return reply, nil
 }
@@ -114,16 +114,16 @@ func (s *ModelDevService) ListExecutionArtifacts(ctx context.Context, in *modeld
 	if err != nil {
 		return nil, err
 	}
-	if in == nil || !modelDevQueryUUID(in.ExecutionId) || in.PageSize > 100 || len(in.PageToken) > 2048 {
+	if in == nil || !modelDevQueryUUID(in.ExecutionId) || in.Limit > 100 || len(in.Cursor) > 2048 {
 		return nil, modelDevQueryInvalid()
 	}
-	out, err := s.resolver.ListExecutionArtifacts(ctx, scope, in.ExecutionId, in.PageSize, in.PageToken)
+	out, err := s.resolver.ListExecutionArtifacts(ctx, scope, in.ExecutionId, in.Limit, in.Cursor)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
-	reply := &modeldevv1.ListExecutionArtifactsResponse{NextPageToken: out.NextPageToken}
+	reply := &modeldevv1.ListExecutionArtifactsResponse{NextCursor: out.NextCursor, Total: out.Total}
 	for _, artifact := range out.Artifacts {
-		reply.Artifacts = append(reply.Artifacts, modelDevPublicArtifact(artifact))
+		reply.Items = append(reply.Items, modelDevPublicArtifact(artifact))
 	}
 	return reply, nil
 }

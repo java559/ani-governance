@@ -26,13 +26,13 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 		}
 		for name, values := range query {
 			switch name {
-			case "page_size":
-				in.PageSize, err = modelDevQueryPositiveBound(values[0], 100)
-			case "page_token":
+			case "limit":
+				in.Limit, err = modelDevQueryPositiveBound(values[0], 100)
+			case "cursor":
 				if len(values[0]) > 2048 {
 					return invalidModelDevQueryHTTP()
 				}
-				in.PageToken = values[0]
+				in.Cursor = values[0]
 			default:
 				return invalidModelDevQueryHTTP()
 			}
@@ -105,28 +105,24 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 		if ctx.BindVars(&in) != nil {
 			return invalidModelDevQueryHTTP()
 		}
-		query, err := url.ParseQuery(ctx.Request().URL.RawQuery)
+		query, err := modelDevBoundedQuery(ctx.Request())
 		if err != nil {
-			return invalidModelDevQueryHTTP()
+			return err
 		}
 		for name, values := range query {
-			if len(values) != 1 {
-				return invalidModelDevQueryHTTP()
-			}
 			switch name {
-			case "page_size":
-				size, e := strconv.ParseUint(values[0], 10, 32)
-				if e != nil || size > 100 || values[0] != strconv.FormatUint(size, 10) {
-					return invalidModelDevQueryHTTP()
-				}
-				in.PageSize = uint32(size)
-			case "page_token":
+			case "limit":
+				in.Limit, err = modelDevQueryPositiveBound(values[0], 100)
+			case "cursor":
 				if len(values[0]) > 2048 {
 					return invalidModelDevQueryHTTP()
 				}
-				in.PageToken = values[0]
+				in.Cursor = values[0]
 			default:
 				return invalidModelDevQueryHTTP()
+			}
+			if err != nil {
+				return err
 			}
 		}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {

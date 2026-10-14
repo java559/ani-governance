@@ -175,3 +175,8 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )
+
+// Local wiring for the ModelDev limit/cursor migration: consume the sibling
+// ani-modeldev-service working tree so the new PageRequest/limit-cursor proto
+// fields and totals are visible before the module version is republished.
+replace github.com/zhangzhe-ctrl/ani-modeldev-service => ../ani-modeldev-service

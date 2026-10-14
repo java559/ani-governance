@@ -189,8 +189,8 @@ func (x *GeneralParameter) GetValue() string {
 // Catalogue metadata exposes selection and registered parameters only.
 type ListPresetsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,proto3" json:"page_token,omitempty"`
+	Limit         uint32                 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Cursor        string                 `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -225,24 +225,25 @@ func (*ListPresetsRequest) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ListPresetsRequest) GetPageSize() uint32 {
+func (x *ListPresetsRequest) GetLimit() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.Limit
 	}
 	return 0
 }
 
-func (x *ListPresetsRequest) GetPageToken() string {
+func (x *ListPresetsRequest) GetCursor() string {
 	if x != nil {
-		return x.PageToken
+		return x.Cursor
 	}
 	return ""
 }
 
 type ListPresetsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Presets       []*PresetView          `protobuf:"bytes,1,rep,name=presets,proto3" json:"presets,omitempty"`
-	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,proto3" json:"next_page_token,omitempty"`
+	Items         []*PresetView          `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
+	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -277,18 +278,25 @@ func (*ListPresetsResponse) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ListPresetsResponse) GetPresets() []*PresetView {
+func (x *ListPresetsResponse) GetItems() []*PresetView {
 	if x != nil {
-		return x.Presets
+		return x.Items
 	}
 	return nil
 }
 
-func (x *ListPresetsResponse) GetNextPageToken() string {
+func (x *ListPresetsResponse) GetNextCursor() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.NextCursor
 	}
 	return ""
+}
+
+func (x *ListPresetsResponse) GetTotal() uint64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 type PresetView struct {
@@ -573,8 +581,8 @@ func (x *GetInputVersionResponse) GetInputVersion() *InputVersionView {
 
 type ListInputVersionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,proto3" json:"page_token,omitempty"`
+	Limit         uint32                 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Cursor        string                 `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	State         *string                `protobuf:"bytes,3,opt,name=state,proto3,oneof" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -610,16 +618,16 @@ func (*ListInputVersionsRequest) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ListInputVersionsRequest) GetPageSize() uint32 {
+func (x *ListInputVersionsRequest) GetLimit() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.Limit
 	}
 	return 0
 }
 
-func (x *ListInputVersionsRequest) GetPageToken() string {
+func (x *ListInputVersionsRequest) GetCursor() string {
 	if x != nil {
-		return x.PageToken
+		return x.Cursor
 	}
 	return ""
 }
@@ -633,8 +641,9 @@ func (x *ListInputVersionsRequest) GetState() string {
 
 type ListInputVersionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	InputVersions []*InputVersionView    `protobuf:"bytes,1,rep,name=input_versions,proto3" json:"input_versions,omitempty"`
-	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,proto3" json:"next_page_token,omitempty"`
+	Items         []*InputVersionView    `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
+	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -669,18 +678,25 @@ func (*ListInputVersionsResponse) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ListInputVersionsResponse) GetInputVersions() []*InputVersionView {
+func (x *ListInputVersionsResponse) GetItems() []*InputVersionView {
 	if x != nil {
-		return x.InputVersions
+		return x.Items
 	}
 	return nil
 }
 
-func (x *ListInputVersionsResponse) GetNextPageToken() string {
+func (x *ListInputVersionsResponse) GetNextCursor() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.NextCursor
 	}
 	return ""
+}
+
+func (x *ListInputVersionsResponse) GetTotal() uint64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 type InputVersionView struct {
@@ -1098,8 +1114,8 @@ func (x *GetExecutionResponse) GetExecution() *ExecutionView {
 
 type ListExecutionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,proto3" json:"page_token,omitempty"`
+	Limit         uint32                 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Cursor        string                 `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1134,24 +1150,25 @@ func (*ListExecutionsRequest) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *ListExecutionsRequest) GetPageSize() uint32 {
+func (x *ListExecutionsRequest) GetLimit() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.Limit
 	}
 	return 0
 }
 
-func (x *ListExecutionsRequest) GetPageToken() string {
+func (x *ListExecutionsRequest) GetCursor() string {
 	if x != nil {
-		return x.PageToken
+		return x.Cursor
 	}
 	return ""
 }
 
 type ListExecutionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Executions    []*ExecutionView       `protobuf:"bytes,1,rep,name=executions,proto3" json:"executions,omitempty"`
-	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,proto3" json:"next_page_token,omitempty"`
+	Items         []*ExecutionView       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
+	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1186,18 +1203,25 @@ func (*ListExecutionsResponse) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *ListExecutionsResponse) GetExecutions() []*ExecutionView {
+func (x *ListExecutionsResponse) GetItems() []*ExecutionView {
 	if x != nil {
-		return x.Executions
+		return x.Items
 	}
 	return nil
 }
 
-func (x *ListExecutionsResponse) GetNextPageToken() string {
+func (x *ListExecutionsResponse) GetNextCursor() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.NextCursor
 	}
 	return ""
+}
+
+func (x *ListExecutionsResponse) GetTotal() uint64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 type GetExecutionLogsRequest struct {
@@ -1564,8 +1588,8 @@ func (x *ExecutionView) GetObservedAt() string {
 type ListExecutionArtifactsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecutionId   string                 `protobuf:"bytes,1,opt,name=execution_id,proto3" json:"execution_id,omitempty"`
-	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,proto3" json:"page_token,omitempty"`
+	Limit         uint32                 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Cursor        string                 `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1607,24 +1631,25 @@ func (x *ListExecutionArtifactsRequest) GetExecutionId() string {
 	return ""
 }
 
-func (x *ListExecutionArtifactsRequest) GetPageSize() uint32 {
+func (x *ListExecutionArtifactsRequest) GetLimit() uint32 {
 	if x != nil {
-		return x.PageSize
+		return x.Limit
 	}
 	return 0
 }
 
-func (x *ListExecutionArtifactsRequest) GetPageToken() string {
+func (x *ListExecutionArtifactsRequest) GetCursor() string {
 	if x != nil {
-		return x.PageToken
+		return x.Cursor
 	}
 	return ""
 }
 
 type ListExecutionArtifactsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Artifacts     []*ArtifactView        `protobuf:"bytes,1,rep,name=artifacts,proto3" json:"artifacts,omitempty"`
-	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,proto3" json:"next_page_token,omitempty"`
+	Items         []*ArtifactView        `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
+	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1659,18 +1684,25 @@ func (*ListExecutionArtifactsResponse) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{23}
 }
 
-func (x *ListExecutionArtifactsResponse) GetArtifacts() []*ArtifactView {
+func (x *ListExecutionArtifactsResponse) GetItems() []*ArtifactView {
 	if x != nil {
-		return x.Artifacts
+		return x.Items
 	}
 	return nil
 }
 
-func (x *ListExecutionArtifactsResponse) GetNextPageToken() string {
+func (x *ListExecutionArtifactsResponse) GetNextCursor() string {
 	if x != nil {
-		return x.NextPageToken
+		return x.NextCursor
 	}
 	return ""
+}
+
+func (x *ListExecutionArtifactsResponse) GetTotal() uint64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 type ArtifactView struct {
@@ -1897,15 +1929,14 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x10GeneralParameter\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\"R\n" +
-	"\x12ListPresetsRequest\x12\x1c\n" +
-	"\tpage_size\x18\x01 \x01(\rR\tpage_size\x12\x1e\n" +
-	"\n" +
-	"page_token\x18\x02 \x01(\tR\n" +
-	"page_token\"z\n" +
-	"\x13ListPresetsResponse\x129\n" +
-	"\apresets\x18\x01 \x03(\v2\x1f.modeldev.service.v1.PresetViewR\apresets\x12(\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"\xe6\x02\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"B\n" +
+	"\x12ListPresetsRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
+	"\x06cursor\x18\x02 \x01(\tR\x06cursor\"\x84\x01\n" +
+	"\x13ListPresetsResponse\x125\n" +
+	"\x05items\x18\x01 \x03(\v2\x1f.modeldev.service.v1.PresetViewR\x05items\x12 \n" +
+	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05total\"\xe6\x02\n" +
 	"\n" +
 	"PresetView\x12\x1c\n" +
 	"\tpreset_id\x18\x01 \x01(\tR\tpreset_id\x12\x12\n" +
@@ -1927,17 +1958,16 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x16GetInputVersionRequest\x12*\n" +
 	"\x10input_version_id\x18\x01 \x01(\tR\x10input_version_id\"f\n" +
 	"\x17GetInputVersionResponse\x12K\n" +
-	"\rinput_version\x18\x01 \x01(\v2%.modeldev.service.v1.InputVersionViewR\rinput_version\"}\n" +
-	"\x18ListInputVersionsRequest\x12\x1c\n" +
-	"\tpage_size\x18\x01 \x01(\rR\tpage_size\x12\x1e\n" +
-	"\n" +
-	"page_token\x18\x02 \x01(\tR\n" +
-	"page_token\x12\x19\n" +
+	"\rinput_version\x18\x01 \x01(\v2%.modeldev.service.v1.InputVersionViewR\rinput_version\"m\n" +
+	"\x18ListInputVersionsRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
+	"\x06cursor\x18\x02 \x01(\tR\x06cursor\x12\x19\n" +
 	"\x05state\x18\x03 \x01(\tH\x00R\x05state\x88\x01\x01B\b\n" +
-	"\x06_state\"\x94\x01\n" +
-	"\x19ListInputVersionsResponse\x12M\n" +
-	"\x0einput_versions\x18\x01 \x03(\v2%.modeldev.service.v1.InputVersionViewR\x0einput_versions\x12(\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"\x88\x02\n" +
+	"\x06_state\"\x90\x01\n" +
+	"\x19ListInputVersionsResponse\x12;\n" +
+	"\x05items\x18\x01 \x03(\v2%.modeldev.service.v1.InputVersionViewR\x05items\x12 \n" +
+	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05total\"\x88\x02\n" +
 	"\x10InputVersionView\x12*\n" +
 	"\x10input_version_id\x18\x01 \x01(\tR\x10input_version_id\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x16\n" +
@@ -1971,17 +2001,14 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x13GetExecutionRequest\x12\"\n" +
 	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\"X\n" +
 	"\x14GetExecutionResponse\x12@\n" +
-	"\texecution\x18\x01 \x01(\v2\".modeldev.service.v1.ExecutionViewR\texecution\"U\n" +
-	"\x15ListExecutionsRequest\x12\x1c\n" +
-	"\tpage_size\x18\x01 \x01(\rR\tpage_size\x12\x1e\n" +
-	"\n" +
-	"page_token\x18\x02 \x01(\tR\n" +
-	"page_token\"\x86\x01\n" +
-	"\x16ListExecutionsResponse\x12B\n" +
-	"\n" +
-	"executions\x18\x01 \x03(\v2\".modeldev.service.v1.ExecutionViewR\n" +
-	"executions\x12(\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"{\n" +
+	"\texecution\x18\x01 \x01(\v2\".modeldev.service.v1.ExecutionViewR\texecution\"E\n" +
+	"\x15ListExecutionsRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
+	"\x06cursor\x18\x02 \x01(\tR\x06cursor\"\x8a\x01\n" +
+	"\x16ListExecutionsResponse\x128\n" +
+	"\x05items\x18\x01 \x03(\v2\".modeldev.service.v1.ExecutionViewR\x05items\x12 \n" +
+	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05total\"{\n" +
 	"\x17GetExecutionLogsRequest\x12\"\n" +
 	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\x12\x1e\n" +
 	"\n" +
@@ -2017,16 +2044,15 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x10close_generation\x18\x0f \x01(\x04R\x10close_generation\x12 \n" +
 	"\vaccepted_at\x18\x10 \x01(\tR\vaccepted_at\x12 \n" +
 	"\vdeadline_at\x18\x11 \x01(\tR\vdeadline_at\x12 \n" +
-	"\vobserved_at\x18\x12 \x01(\tR\vobserved_at\"\x81\x01\n" +
+	"\vobserved_at\x18\x12 \x01(\tR\vobserved_at\"q\n" +
 	"\x1dListExecutionArtifactsRequest\x12\"\n" +
-	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\x12\x1c\n" +
-	"\tpage_size\x18\x02 \x01(\rR\tpage_size\x12\x1e\n" +
-	"\n" +
-	"page_token\x18\x03 \x01(\tR\n" +
-	"page_token\"\x8b\x01\n" +
-	"\x1eListExecutionArtifactsResponse\x12?\n" +
-	"\tartifacts\x18\x01 \x03(\v2!.modeldev.service.v1.ArtifactViewR\tartifacts\x12(\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"\x86\x02\n" +
+	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\rR\x05limit\x12\x16\n" +
+	"\x06cursor\x18\x03 \x01(\tR\x06cursor\"\x91\x01\n" +
+	"\x1eListExecutionArtifactsResponse\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.modeldev.service.v1.ArtifactViewR\x05items\x12 \n" +
+	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05total\"\x86\x02\n" +
 	"\fArtifactView\x12 \n" +
 	"\vartifact_id\x18\x01 \x01(\tR\vartifact_id\x12\"\n" +
 	"\fexecution_id\x18\x02 \x01(\tR\fexecution_id\x12\x1a\n" +
@@ -2092,18 +2118,18 @@ var file_modeldev_service_v1_execution_proto_goTypes = []any{
 }
 var file_modeldev_service_v1_execution_proto_depIdxs = []int32{
 	1,  // 0: modeldev.service.v1.CreateExecutionRequest.general_parameters:type_name -> modeldev.service.v1.GeneralParameter
-	4,  // 1: modeldev.service.v1.ListPresetsResponse.presets:type_name -> modeldev.service.v1.PresetView
+	4,  // 1: modeldev.service.v1.ListPresetsResponse.items:type_name -> modeldev.service.v1.PresetView
 	5,  // 2: modeldev.service.v1.PresetView.parameter_rules:type_name -> modeldev.service.v1.ParameterRule
 	1,  // 3: modeldev.service.v1.ParameterRule.default_value:type_name -> modeldev.service.v1.GeneralParameter
 	1,  // 4: modeldev.service.v1.ParameterRule.allowed_values:type_name -> modeldev.service.v1.GeneralParameter
 	1,  // 5: modeldev.service.v1.ParameterRule.minimum:type_name -> modeldev.service.v1.GeneralParameter
 	1,  // 6: modeldev.service.v1.ParameterRule.maximum:type_name -> modeldev.service.v1.GeneralParameter
 	10, // 7: modeldev.service.v1.GetInputVersionResponse.input_version:type_name -> modeldev.service.v1.InputVersionView
-	10, // 8: modeldev.service.v1.ListInputVersionsResponse.input_versions:type_name -> modeldev.service.v1.InputVersionView
+	10, // 8: modeldev.service.v1.ListInputVersionsResponse.items:type_name -> modeldev.service.v1.InputVersionView
 	21, // 9: modeldev.service.v1.GetExecutionResponse.execution:type_name -> modeldev.service.v1.ExecutionView
-	21, // 10: modeldev.service.v1.ListExecutionsResponse.executions:type_name -> modeldev.service.v1.ExecutionView
+	21, // 10: modeldev.service.v1.ListExecutionsResponse.items:type_name -> modeldev.service.v1.ExecutionView
 	20, // 11: modeldev.service.v1.GetExecutionLogsResponse.lines:type_name -> modeldev.service.v1.ExecutionLogLine
-	24, // 12: modeldev.service.v1.ListExecutionArtifactsResponse.artifacts:type_name -> modeldev.service.v1.ArtifactView
+	24, // 12: modeldev.service.v1.ListExecutionArtifactsResponse.items:type_name -> modeldev.service.v1.ArtifactView
 	24, // 13: modeldev.service.v1.AuthorizeArtifactDownloadResponse.artifact:type_name -> modeldev.service.v1.ArtifactView
 	14, // [14:14] is the sub-list for method output_type
 	14, // [14:14] is the sub-list for method input_type
