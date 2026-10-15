@@ -47,6 +47,18 @@ spec:
                   key: global-encryption-key
             - name: ANI_ACCESS_KEY_ENCRYPTION_KEY_FILE
               value: /run/secrets/access-key-encryption-key
+            {{- if .Values.auth.consoleOrigins }}
+            - name: GWA_AUTH_CONSOLE_ORIGINS
+              value: {{ join "," .Values.auth.consoleOrigins | quote }}
+            {{- end }}
+            {{- if .Values.auth.bossOrigins }}
+            - name: GWA_AUTH_BOSS_ORIGINS
+              value: {{ join "," .Values.auth.bossOrigins | quote }}
+            {{- end }}
+            {{- if .Values.auth.insecureRefreshCookie }}
+            - name: GWA_AUTH_REFRESH_COOKIE_INSECURE
+              value: "true"
+            {{- end }}
             {{- if .Values.downstream.model.enabled }}
             - name: ANI_MODEL_ADDR
               value: {{ required "downstream.model.address is required" .Values.downstream.model.address | quote }}

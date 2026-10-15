@@ -200,3 +200,55 @@ Accelerator 的存量客户端仍使用独立 URI 身份，启用时应通过
 Gov 的 Model BFF 负责模型、模型版本、ModelScope 导入任务和任务查询；Inference BFF 负责
 CPU/KServe 服务的创建、查询、列表、操作查询和删除。请求中的 tenant/actor 不会透传为权限
 依据，而是从 Gov 登录主体解析后由 mTLS 服务间调用重新注入。
+
+## 认证来源与 Cookie 环境要求
+
+浏览器认证采用双应用会话隔离：Console 与 BOSS 的 refresh token 分属两个 HttpOnly Cookie，
+刷新须携带会话绑定的 CSRF 证明。这套机制依赖两个运行期条件，**不配置会导致浏览器侧
+"登录成功但刷新/后续请求 401 或 403"**，必须按环境设置：
+
+1. **应用来源白名单（必配）**：认证写端点（登录、`/api/v1/auth/csrf`、`refresh`、`logout`
+   及 MFA 验证）校验请求 `Origin`，白名单按 application 绑定。通过 `values.yaml` 的
+   `auth.consoleOrigins` / `auth.bossOrigins` 配置（注入环境变量
+   `GWA_AUTH_CONSOLE_ORIGINS` / `GWA_AUTH_BOSS_ORIGINS`，逗号分隔的精确 origin）。
+   默认值已预置本地调试端口与集群内 Service DNS（`console`/`boss` 各三条），生产环境需
+   在此基础上补齐实际前端地址——**必须用 `-f` 覆盖文件，不能用 `--set` 追加**：
+
+   ```yaml
+   # prod-values.yaml
+   auth:
+     consoleOrigins:
+       - http://localhost:5173
+       - http://127.0.0.1:5173
+       - http://ani-console.ani-system.svc.cluster.local
+       - https://console.example.com   # 追加实际前端
+     bossOrigins:
+       - http://localhost:5174
+       - http://127.0.0.1:5174
+       - http://ani-boss-console.ani-system.svc.cluster.local
+       - https://boss.example.com
+   ```
+
+   ```bash
+   helm upgrade --install ani-governance charts/ani-governance \
+     --namespace ani-system -f prod-values.yaml
+   ```
+
+   - **`--set auth.consoleOrigins[0]=...` 会替换整个列表而非追加**（Helm 对列表的
+     `--set` 是整体赋值），实测只剩该一条，故补多条时务必用 `-f`。
+   - 取值必须是精确 origin（`scheme://host[:port]`，无路径、无结尾斜杠），
+     **与浏览器地址栏一致**，端口非默认必须写。
+   - **某应用配了专属集合后不再回退 `corsOrigins`**：该应用全部前端 Origin（线上域名 +
+     本地调试端口）必须一次配全，漏配的来源一律 403。
+   - 设为空列表时回退全局 `corsOrigins`；其上仍为空则降级放行（并打告警），
+     生产环境不应依赖该降级。
+   - 集群内 Service DNS 项（`*.ani-system.svc.cluster.local`）供集群内调用方使用；
+     浏览器不通过该地址访问前端，故对浏览器侧无实际作用，保留仅为兼容集群内来源。
+
+2. **明文 HTTP 下关闭 Secure Cookie（仅限非 HTTPS 环境）**：refresh cookie 恒带 `Secure`，
+   在明文 HTTP 环境浏览器会拒收。内网 HTTP 测试环境需设 `auth.insecureRefreshCookie=true`
+   （注入 `GWA_AUTH_REFRESH_COOKIE_INSECURE=true`）降级；**生产 HTTPS 保持 `false`**。
+
+跨域部署时还需保证 `corsOrigins`（生成到 `server.yaml` 的 CORS origins）包含前端站点，
+且 CORS 预检放行 `X-CSRF-Token` 自定义头（本 Chart 生成的配置已包含）。前端与 API 同源
+（如前端 nginx 反向代理 `/api`）时不触发 CORS 预检，但仍受上述来源白名单约束。

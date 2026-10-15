@@ -37,6 +37,7 @@ data:
             - Authorization
             - X-Captcha-Id
             - X-Captcha-Value
+            - X-CSRF-Token
           methods:
             - GET
             - POST

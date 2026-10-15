@@ -54,6 +54,25 @@ tolerations: []
 affinity: {}
 corsOrigins: []
 
+# 认证写端点（登录/csrf/refresh/logout）的来源白名单，按应用绑定，注入
+# GWA_AUTH_CONSOLE_ORIGINS / GWA_AUTH_BOSS_ORIGINS（逗号分隔精确 origin）。
+# 默认给本地调试端口与集群内 Service DNS；实际部署按该环境前端地址增补。
+# 注意：某应用配了专属集合后不再回退 corsOrigins，需把该应用全部前端 Origin
+# （线上域名 + 本地调试端口）一次配全，否则该应用未被列出的来源一律 403。
+auth:
+  consoleOrigins:
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+    - http://ani-console.ani-system.svc.cluster.local
+  bossOrigins:
+    - http://localhost:5174
+    - http://127.0.0.1:5174
+    - http://ani-boss-console.ani-system.svc.cluster.local
+  # 仅明文 HTTP 环境（如内网 NodePort 测试环境）置 true，降级 refresh cookie 的
+  # Secure 属性；否则浏览器会拒收该 cookie，表现为"登录成功但刷新永远 401"。
+  # 生产 HTTPS 必须保持 false。
+  insecureRefreshCookie: false
+
 config:
   # 配置文件包含运行账号 DSN、Redis 密码/Asynq URI、JWT 密钥，详见 README。
   existingSecret: ani-governance-config
