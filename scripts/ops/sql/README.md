@@ -14,5 +14,7 @@
 | `register-accelerator-permissions.sql` | 数据修复，API 目录 dry-run 与显式同步后登记权限；不授角色、不开套餐或租户额度。 |
 | `register-model-inference-permissions.sql` | 数据修复，Model/Inference BFF API 目录同步后登记精确权限；不授角色、不开套餐或租户额度。 |
 | `enable-model-inference-access.sql` | 只给显式指定的租户 `tenant:manager` 角色和套餐开放 MODEL、INFERENCE；不会修改其他租户、模板角色或配额。 |
+| `grant-quota-platform-read.sql` | 数据修复，给受保护平台管理员角色（`platform:admin`）补授 `quota-definition:view`、`tenant:quota-read`，修复配额目录/租户配额账户对平台管理员 403；不新建/放宽其它角色，不改权限-API 关联、不开套餐。 |
+| `grant-quota-tenant-self-read.sql` | 数据修复，给租户管理员模板 `template:tenant:manager` 与既有 `tenant:manager` 角色补授 `quota:account:self-read`（自助读本人配额账户）；不触碰平台角色与其它角色码，不代表已开通 TENANT 模块。 |
 
 SQL 中保留旧路径注释以保持迁址前后字节一致；当前调用路径以本表和 [部署指南](../../../docs/deployment.md) 为准。
