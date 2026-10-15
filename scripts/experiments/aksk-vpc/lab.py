@@ -89,7 +89,7 @@ def ready(name):
     if name == 'governance' and S.get('base'):
         for _ in range(30):
             try:
-                urllib.request.urlopen(S['base'] + '/admin/v1/me', timeout=2).close()
+                urllib.request.urlopen(S['base'] + '/api/v1/admin/me', timeout=2).close()
             except urllib.error.HTTPError as exc:
                 if exc.code == 401:
                     return
@@ -299,21 +299,21 @@ def login(label):
 def setup():
     login('platform')
     t = S['tokens']['platform']
-    status, _ = request('/admin/v1/plans', t, {'data': {'name': 'AKSK isolated full', 'version': 'FREE', 'expiryPolicy': 'READONLY'}})
+    status, _ = request('/api/v1/admin/plans', t, {'data': {'name': 'AKSK isolated full', 'version': 'FREE', 'expiryPolicy': 'READONLY'}})
     check('create-dedicated-plan', status == 200, http=status)
     plan = int(sql('governance', "SELECT id FROM sys_plans WHERE name='AKSK isolated full';"))
     for module in ['DASHBOARD', 'OPM', 'SYSTEM', 'NETWORK']:
-        status, _ = request('/admin/v1/plan-modules', t, {'data': {'planId': plan, 'module': module}})
+        status, _ = request('/api/v1/admin/plan-modules', t, {'data': {'planId': plan, 'module': module}})
         check('plan-module-' + module, status == 200, http=status)
-    status, _ = request('/admin/v1/plans', t, {'data': {'name': 'AKSK isolated no-network', 'version': 'FREE', 'expiryPolicy': 'READONLY'}})
+    status, _ = request('/api/v1/admin/plans', t, {'data': {'name': 'AKSK isolated no-network', 'version': 'FREE', 'expiryPolicy': 'READONLY'}})
     check('create-no-network-plan', status == 200, http=status)
     basic = int(sql('governance', "SELECT id FROM sys_plans WHERE name='AKSK isolated no-network';"))
     for module in ['DASHBOARD', 'OPM', 'SYSTEM']:
-        status, _ = request('/admin/v1/plan-modules', t, {'data': {'planId': basic, 'module': module}})
+        status, _ = request('/api/v1/admin/plan-modules', t, {'data': {'planId': basic, 'module': module}})
         check('no-network-plan-module-' + module, status == 200, http=status)
     S['tenants'] = {}
     for label in ['a', 'b', 'empty']:
-        status, _ = request('/admin/v1/tenants:with-admin', t, {'tenant': {'name': 'AKSK ' + label, 'code': 'aksk-' + label, 'status': 'ON', 'plan_id': plan}, 'user': {'username': 'admin', 'status': 'NORMAL'}, 'password': S['passwords'][label], 'activation_mode': 'IMMEDIATE'})
+        status, _ = request('/api/v1/admin/tenants:with-admin', t, {'tenant': {'name': 'AKSK ' + label, 'code': 'aksk-' + label, 'status': 'ON', 'plan_id': plan}, 'user': {'username': 'admin', 'status': 'NORMAL'}, 'password': S['passwords'][label], 'activation_mode': 'IMMEDIATE'})
         check('create-tenant-' + label, status == 200, http=status)
         tenant = json.loads(sql('governance', "SELECT row_to_json(x) FROM (SELECT id,resource_tenant_id AS uuid FROM sys_tenants WHERE code='aksk-" + label + "') x;"))
         tenant['role'] = int(sql('governance', 'SELECT id FROM sys_roles WHERE tenant_id=' + str(tenant['id']) + ' ORDER BY id LIMIT 1;'))
@@ -337,11 +337,11 @@ def setup_roles():
     for label in ['a', 'b', 'empty']:
         login(label)
         for name in ['reader', 'denied']:
-            status, _ = request('/admin/v1/roles', t, {'data': {'tenant_id': S['tenants'][label]['id'], 'name': name, 'code': 'tenant:' + label + ':' + name, 'status': 'ON', 'type': 'TENANT', 'dataScope': 'ALL'}})
+            status, _ = request('/api/v1/admin/roles', t, {'data': {'tenant_id': S['tenants'][label]['id'], 'name': name, 'code': 'tenant:' + label + ':' + name, 'status': 'ON', 'type': 'TENANT', 'dataScope': 'ALL'}})
             check('create-role-' + label + '-' + name, status == 200, http=status)
             S['tenants'][label][name] = int(sql('governance', "SELECT id FROM sys_roles WHERE tenant_id=" + str(S['tenants'][label]['id']) + " AND name='" + name + "';"))
         sql('governance', (GOV / 'scripts/ops/sql/bootstrap-network-access.sql').read_text(), '-v', 'tenant_id=' + str(S['tenants'][label]['id']), '-v', 'role_id=' + str(S['tenants'][label]['reader']))
-    status, _ = request('/admin/v1/tenants/' + str(S['tenants']['empty']['id']), t, {'data': {'plan_id': basic}, 'updateMask': 'planId'}, method='PUT')
+    status, _ = request('/api/v1/admin/tenants/' + str(S['tenants']['empty']['id']), t, {'data': {'plan_id': basic}, 'updateMask': 'planId'}, method='PUT')
     check('assign-no-network-plan', status == 200, http=status)
     save()
     restart()
@@ -403,7 +403,7 @@ def contract():
         ('query', {}, {'path': '/api/v1/networks/vpcs/' + v['id'] + '?x=1'}, 400),
         ('body', {}, {'body': {'x': 1}}, 400),
         ('mixed-credentials', {}, {'headers': {'Authorization': 'Bearer ' + S['tokens']['a']}}, 400),
-        ('user-only', {}, {'path': '/admin/v1/me'}, 403),
+        ('user-only', {}, {'path': '/api/v1/admin/me'}, 403),
         ('key-management', {}, {'path': '/api/v1/auth/api-keys'}, 403),
     ]
     for name, changed, args, want in cases:
@@ -431,7 +431,7 @@ def contract():
     empty = create_key(label='empty', name='no-network')
     check('no-network-plan', signed(empty)[0] == 403)
     for state, want in [('OFF', 403), ('ON', 200)]:
-        status, _ = request('/admin/v1/tenants/' + str(S['tenants']['a']['id']), S['tokens']['platform'], {'data': {'status': state}, 'updateMask': 'status'}, method='PUT')
+        status, _ = request('/api/v1/admin/tenants/' + str(S['tenants']['a']['id']), S['tokens']['platform'], {'data': {'status': state}, 'updateMask': 'status'}, method='PUT')
         check('set-tenant-' + state, status == 200, http=status)
         check('tenant-state-' + state, signed(key)[0] == want)
     status, _ = request('/api/v1/auth/api-keys', S['tokens']['a'], {'data': {'name': 'foreign-role', 'role_id': S['tenants']['b']['reader']}})
@@ -453,13 +453,13 @@ def contract():
     key_update(key, {'role_id': S['tenants']['a']['reader']}, 'roleId')
     check('rebind-reader-role', signed(key)[0] == 200)
     role = S['tenants']['a']['reader']
-    status, _ = request('/admin/v1/roles/' + str(role), S['tokens']['platform'], {'data': {'status': 'OFF'}, 'updateMask': 'status'}, method='PUT')
+    status, _ = request('/api/v1/admin/roles/' + str(role), S['tokens']['platform'], {'data': {'status': 'OFF'}, 'updateMask': 'status'}, method='PUT')
     check('disable-bound-role', status == 200, http=status)
     check('disabled-role-request', signed(key)[0] == 403)
     check('disabled-role-bad-signature', signed({**key, 'sk': 'sk-wrong'})[0] == 401)
     status, _ = request('/api/v1/auth/api-keys', S['tokens']['a'], {'data': {'name': 'off-role', 'role_id': role}})
     check('disabled-role-create', status in [400, 403], http=status)
-    status, _ = request('/admin/v1/roles/' + str(role), S['tokens']['platform'], {'data': {'status': 'ON'}, 'updateMask': 'status'}, method='PUT')
+    status, _ = request('/api/v1/admin/roles/' + str(role), S['tokens']['platform'], {'data': {'status': 'ON'}, 'updateMask': 'status'}, method='PUT')
     check('restore-bound-role', status == 200, http=status)
     check('restored-role-request', signed(key)[0] == 200)
     status, rotated = request('/api/v1/auth/api-keys/' + str(key['id']) + '/secret', S['tokens']['a'], {}, method='PUT')
@@ -478,7 +478,7 @@ def contract():
         status, body = request(path, S['tokens']['a'])
         raw = json.dumps(body)
         check('no-secret-' + ('list' if path.endswith('keys') else 'detail'), status == 200 and not any(sk in raw for sk in S['all_secrets']) and all(term not in raw for term in ['secret_key', 'secret_hash', 'secret_ciphertext']), http=status)
-    status, _ = request('/admin/v1/access-keys/token', data={'access_key': key['ak'], 'secret_key': 'not-a-secret'})
+    status, _ = request('/api/v1/admin/access-keys/token', data={'access_key': key['ak'], 'secret_key': 'not-a-secret'})
     check('exchange-route-removed', status == 404, http=status)
 
 
@@ -553,7 +553,7 @@ def final_checks():
         token = S['tokens'][label]
         status, body = request('/api/v1/auth/logout', token, {})
         check('logout-' + label, status == 200 and body.get('status') == 'revoked', http=status)
-        status, _ = request('/admin/v1/me', token)
+        status, _ = request('/api/v1/admin/me', token)
         check('logout-revokes-jwt-' + label, status == 401, http=status)
     check('logout-does-not-impersonate-key', signed(S['key'])[0] == 200)
     login('a')

@@ -43,11 +43,11 @@ type DictEntryServiceHTTPServer interface {
 
 func RegisterDictEntryServiceHTTPServer(s *http.Server, srv DictEntryServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/dict/entries", _DictEntryService_List5_HTTP_Handler(srv))
-	r.POST("/admin/v1/dict/entries", _DictEntryService_Create3_HTTP_Handler(srv))
-	r.PUT("/admin/v1/dict/entries/{id}", _DictEntryService_Update3_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/dict/entries", _DictEntryService_Delete3_HTTP_Handler(srv))
-	r.GET("/admin/v1/dict/entries/by-type-code", _DictEntryService_ListByTypeCode0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dict/entries", _DictEntryService_List5_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/dict/entries", _DictEntryService_Create3_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/dict/entries/{id}", _DictEntryService_Update3_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/dict/entries", _DictEntryService_Delete3_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dict/entries/by-type-code", _DictEntryService_ListByTypeCode0_HTTP_Handler(srv))
 }
 
 func _DictEntryService_List5_HTTP_Handler(srv DictEntryServiceHTTPServer) func(ctx http.Context) error {
@@ -178,7 +178,7 @@ func NewDictEntryServiceHTTPClient(client *http.Client) DictEntryServiceHTTPClie
 // Create 创建字典条目
 func (c *DictEntryServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateDictEntryRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/dict/entries"
+	pattern := "/api/v1/admin/dict/entries"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationDictEntryServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -192,7 +192,7 @@ func (c *DictEntryServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Cre
 // Delete 删除字典条目
 func (c *DictEntryServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteDictEntryRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/dict/entries"
+	pattern := "/api/v1/admin/dict/entries"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDictEntryServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -206,7 +206,7 @@ func (c *DictEntryServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.Del
 // List 分页查询字典条目列表
 func (c *DictEntryServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListDictEntryResponse, error) {
 	var out v11.ListDictEntryResponse
-	pattern := "/admin/v1/dict/entries"
+	pattern := "/api/v1/admin/dict/entries"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDictEntryServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -220,7 +220,7 @@ func (c *DictEntryServiceHTTPClientImpl) List(ctx context.Context, in *v1.Paging
 // ListByTypeCode 查询启用的字典条目
 func (c *DictEntryServiceHTTPClientImpl) ListByTypeCode(ctx context.Context, in *v11.ListDictEntryByTypeCodeRequest, opts ...http.CallOption) (*v11.ListDictEntryByTypeCodeResponse, error) {
 	var out v11.ListDictEntryByTypeCodeResponse
-	pattern := "/admin/v1/dict/entries/by-type-code"
+	pattern := "/api/v1/admin/dict/entries/by-type-code"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDictEntryServiceListByTypeCode))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -234,7 +234,7 @@ func (c *DictEntryServiceHTTPClientImpl) ListByTypeCode(ctx context.Context, in 
 // Update 更新字典条目
 func (c *DictEntryServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateDictEntryRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/dict/entries/{id}"
+	pattern := "/api/v1/admin/dict/entries/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationDictEntryServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

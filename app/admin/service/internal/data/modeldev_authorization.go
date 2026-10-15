@@ -45,14 +45,14 @@ const (
 )
 
 const (
-	ModelDevGetExecutionPath      = "/admin/v1/modeldev/executions/{execution_id}"
-	ModelDevListArtifactsPath     = "/admin/v1/modeldev/executions/{execution_id}/artifacts"
-	ModelDevDownloadArtifactPath  = "/admin/v1/modeldev/artifacts/{artifact_id}/content"
-	ModelDevListExecutionsPath    = "/admin/v1/modeldev/executions"
-	ModelDevGetExecutionLogsPath  = "/admin/v1/modeldev/executions/{execution_id}/logs"
-	ModelDevListPresetsPath       = "/admin/v1/modeldev/presets"
-	ModelDevGetInputVersionPath   = "/admin/v1/modeldev/input-versions/{input_version_id}"
-	ModelDevListInputVersionsPath = "/admin/v1/modeldev/input-versions"
+	ModelDevGetExecutionPath      = "/api/v1/modeldev/executions/{execution_id}"
+	ModelDevListArtifactsPath     = "/api/v1/modeldev/executions/{execution_id}/artifacts"
+	ModelDevDownloadArtifactPath  = "/api/v1/modeldev/artifacts/{artifact_id}/content"
+	ModelDevListExecutionsPath    = "/api/v1/modeldev/executions"
+	ModelDevGetExecutionLogsPath  = "/api/v1/modeldev/executions/{execution_id}/logs"
+	ModelDevListPresetsPath       = "/api/v1/modeldev/presets"
+	ModelDevGetInputVersionPath   = "/api/v1/modeldev/input-versions/{input_version_id}"
+	ModelDevListInputVersionsPath = "/api/v1/modeldev/input-versions"
 )
 
 // AuthorizeQuery checks the current independent GET grant and ALL data scope.
@@ -100,7 +100,7 @@ func (r *ModelDevAuthorizationRepo) AuthorizeCreate(ctx context.Context, tenantI
 	return r.authorizeCurrent(ctx, tenantID, userID, modelDevCreateAction)
 }
 
-const ModelDevStopExecutionPath = "/admin/v1/modeldev/executions/{execution_id}:stop"
+const ModelDevStopExecutionPath = "/api/v1/modeldev/executions/{execution_id}:stop"
 
 func (r *ModelDevAuthorizationRepo) AuthorizeStop(ctx context.Context, tenantID, userID uint32) error {
 	return r.authorizeCurrent(ctx, tenantID, userID, modelDevStopAction)
@@ -234,7 +234,7 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 		return ErrModelDevAuthorizationDenied
 	}
 	if action != modelDevManageReleaseBindingAction && action != modelDevManageExecutionAction {
-		path, method := "/admin/v1/modeldev/executions", "POST"
+		path, method := "/api/v1/modeldev/executions", "POST"
 		switch action {
 		case modelDevStopAction:
 			path = ModelDevStopExecutionPath

@@ -84,7 +84,7 @@ func TestModelDevStopPersistsBefore202AndReplaysOriginal(t *testing.T) {
 	perm, err := writer.Client().Permission.Create().SetName("stop " + id).SetCode("stop." + id).SetStatus(permission.StatusOn).Save(sys)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return writer.Client().Permission.DeleteOneID(perm.ID).Exec(c) })
-	const route = "/admin/v1/modeldev/executions/{execution_id}:stop"
+	const route = "/api/v1/modeldev/executions/{execution_id}:stop"
 	endpoint, err := writer.Client().Api.Create().SetModule("ModelDevService").SetScope(api.ScopeAdmin).SetPath(route).SetMethod("POST").SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(sys)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return writer.Client().Api.DeleteOneID(endpoint.ID).Exec(c) })
@@ -150,7 +150,7 @@ func TestModelDevStopPersistsBefore202AndReplaysOriginal(t *testing.T) {
 	}
 	web := start()
 	post := func(id, body, accessToken string) (int, map[string]any) {
-		req, e := http.NewRequestWithContext(ctx, "POST", web.URL+"/admin/v1/modeldev/executions/"+id+":stop", bytes.NewBufferString(body))
+		req, e := http.NewRequestWithContext(ctx, "POST", web.URL+"/api/v1/modeldev/executions/"+id+":stop", bytes.NewBufferString(body))
 		require.NoError(t, e)
 		req.Header.Set("Authorization", "Bearer "+accessToken)
 		req.Header.Set("x-ani-tenant-id", uuid.NewString())

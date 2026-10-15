@@ -26,9 +26,9 @@ var File_admin_service_v1_i_redis_cache_monitor_proto protoreflect.FileDescripto
 
 const file_admin_service_v1_i_redis_cache_monitor_proto_rawDesc = "" +
 	"\n" +
-	",admin/service/v1/i_redis_cache_monitor.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a0redis_cache/service/v1/redis_cache_monitor.proto2\xad\x01\n" +
-	"\x18RedisCacheMonitorService\x12\x90\x01\n" +
-	"\x03Get\x123.redis_cache.service.v1.GetRedisCacheMonitorRequest\x1a-.redis_cache.service.v1.RedisCacheMonitorInfo\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/admin/v1/redis-cache-monitorB\xc4\x01\n" +
+	",admin/service/v1/i_redis_cache_monitor.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a0redis_cache/service/v1/redis_cache_monitor.proto2\xb1\x01\n" +
+	"\x18RedisCacheMonitorService\x12\x94\x01\n" +
+	"\x03Get\x123.redis_cache.service.v1.GetRedisCacheMonitorRequest\x1a-.redis_cache.service.v1.RedisCacheMonitorInfo\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/admin/redis-cache-monitorB\xc4\x01\n" +
 	"\x14com.admin.service.v1B\x17IRedisCacheMonitorProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_redis_cache_monitor_proto_goTypes = []any{

@@ -406,12 +406,12 @@ const file_admin_service_v1_i_dashboard_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2\".admin.service.v1.DistributionItemR\x05items\">\n" +
 	"\x10DistributionItem\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\rR\x05count2\xd5\x04\n" +
-	"\x10DashboardService\x12x\n" +
-	"\vGetOverview\x12\x16.google.protobuf.Empty\x1a+.admin.service.v1.DashboardOverviewResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/admin/v1/dashboard/overview\x12\x86\x01\n" +
-	"\rGetLoginTrend\x12&.admin.service.v1.GetLoginTrendRequest\x1a$.admin.service.v1.LoginTrendResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/admin/v1/dashboard/login-trend\x12\xa1\x01\n" +
-	"\x1eGetOperationActionDistribution\x12\x16.google.protobuf.Empty\x1a,.admin.service.v1.ActionDistributionResponse\"9\x82\xd3\xe4\x93\x023\x121/admin/v1/dashboard/operation-action-distribution\x12\x99\x01\n" +
-	"\x1aGetLoginStatusDistribution\x12\x16.google.protobuf.Empty\x1a,.admin.service.v1.StatusDistributionResponse\"5\x82\xd3\xe4\x93\x02/\x12-/admin/v1/dashboard/login-status-distributionB\xbc\x01\n" +
+	"\x05count\x18\x02 \x01(\rR\x05count2\xe5\x04\n" +
+	"\x10DashboardService\x12|\n" +
+	"\vGetOverview\x12\x16.google.protobuf.Empty\x1a+.admin.service.v1.DashboardOverviewResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/dashboard/overview\x12\x8a\x01\n" +
+	"\rGetLoginTrend\x12&.admin.service.v1.GetLoginTrendRequest\x1a$.admin.service.v1.LoginTrendResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/dashboard/login-trend\x12\xa5\x01\n" +
+	"\x1eGetOperationActionDistribution\x12\x16.google.protobuf.Empty\x1a,.admin.service.v1.ActionDistributionResponse\"=\x82\xd3\xe4\x93\x027\x125/api/v1/admin/dashboard/operation-action-distribution\x12\x9d\x01\n" +
+	"\x1aGetLoginStatusDistribution\x12\x16.google.protobuf.Empty\x1a,.admin.service.v1.StatusDistributionResponse\"9\x82\xd3\xe4\x93\x023\x121/api/v1/admin/dashboard/login-status-distributionB\xbc\x01\n" +
 	"\x14com.admin.service.v1B\x0fIDashboardProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var (

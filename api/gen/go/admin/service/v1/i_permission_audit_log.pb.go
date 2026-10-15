@@ -27,10 +27,10 @@ var File_admin_service_v1_i_permission_audit_log_proto protoreflect.FileDescript
 
 const file_admin_service_v1_i_permission_audit_log_proto_rawDesc = "" +
 	"\n" +
-	"-admin/service/v1/i_permission_audit_log.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a+audit/service/v1/permission_audit_log.proto2\xa5\x02\n" +
-	"\x19PermissionAuditLogService\x12|\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a0.audit.service.v1.ListPermissionAuditLogResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/admin/v1/permission-audit-logs\x12\x89\x01\n" +
-	"\x03Get\x12..audit.service.v1.GetPermissionAuditLogRequest\x1a$.audit.service.v1.PermissionAuditLog\",\x82\xd3\xe4\x93\x02&\x12$/admin/v1/permission-audit-logs/{id}B\xc5\x01\n" +
+	"-admin/service/v1/i_permission_audit_log.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a+audit/service/v1/permission_audit_log.proto2\xae\x02\n" +
+	"\x19PermissionAuditLogService\x12\x80\x01\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a0.audit.service.v1.ListPermissionAuditLogResponse\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/permission-audit-logs\x12\x8d\x01\n" +
+	"\x03Get\x12..audit.service.v1.GetPermissionAuditLogRequest\x1a$.audit.service.v1.PermissionAuditLog\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/admin/permission-audit-logs/{id}B\xc5\x01\n" +
 	"\x14com.admin.service.v1B\x18IPermissionAuditLogProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_permission_audit_log_proto_goTypes = []any{

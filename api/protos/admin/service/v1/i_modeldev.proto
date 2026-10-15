@@ -9,23 +9,23 @@ import "modeldev/service/v1/execution.proto";
 // CPU-P01 entry in the existing Governance BFF.
 service ModelDevService {
   rpc ListPresets (modeldev.service.v1.ListPresetsRequest) returns (modeldev.service.v1.ListPresetsResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/presets" };
+    option (google.api.http) = { get: "/api/v1/modeldev/presets" };
   }
   rpc GetInputVersion (modeldev.service.v1.GetInputVersionRequest) returns (modeldev.service.v1.GetInputVersionResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/input-versions/{input_version_id}" response_body: "input_version" };
+    option (google.api.http) = { get: "/api/v1/modeldev/input-versions/{input_version_id}" response_body: "input_version" };
     option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "200" value: { response: { description: "OK" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/InputVersionView" } } } }] } } } }] } };
   }
   rpc ListInputVersions (modeldev.service.v1.ListInputVersionsRequest) returns (modeldev.service.v1.ListInputVersionsResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/input-versions" };
+    option (google.api.http) = { get: "/api/v1/modeldev/input-versions" };
   }
   rpc ListExecutions (modeldev.service.v1.ListExecutionsRequest) returns (modeldev.service.v1.ListExecutionsResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/executions" };
+    option (google.api.http) = { get: "/api/v1/modeldev/executions" };
   }
   rpc GetExecutionLogs (modeldev.service.v1.GetExecutionLogsRequest) returns (modeldev.service.v1.GetExecutionLogsResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/executions/{execution_id}/logs" };
+    option (google.api.http) = { get: "/api/v1/modeldev/executions/{execution_id}/logs" };
   }
   rpc StopExecution (modeldev.service.v1.StopExecutionRequest) returns (modeldev.service.v1.StopExecutionResponse) {
-    option (google.api.http) = { post: "/admin/v1/modeldev/executions/{execution_id}:stop" };
+    option (google.api.http) = { post: "/api/v1/modeldev/executions/{execution_id}:stop" };
     option (gnostic.openapi.v3.operation) = {
       security: { additional_properties: { name: "BearerAuth" value: {} } }
       responses: { response_or_reference: [{ name: "202" value: { response: {
@@ -35,14 +35,14 @@ service ModelDevService {
     };
   }
   rpc GetExecution (modeldev.service.v1.GetExecutionRequest) returns (modeldev.service.v1.GetExecutionResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/executions/{execution_id}" response_body: "execution" };
+    option (google.api.http) = { get: "/api/v1/modeldev/executions/{execution_id}" response_body: "execution" };
     option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "200" value: { response: { description: "OK" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/ExecutionView" } } } }] } } } }] } };
   }
   rpc ListExecutionArtifacts (modeldev.service.v1.ListExecutionArtifactsRequest) returns (modeldev.service.v1.ListExecutionArtifactsResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/executions/{execution_id}/artifacts" };
+    option (google.api.http) = { get: "/api/v1/modeldev/executions/{execution_id}/artifacts" };
   }
   rpc AuthorizeArtifactDownload (modeldev.service.v1.AuthorizeArtifactDownloadRequest) returns (modeldev.service.v1.AuthorizeArtifactDownloadResponse) {
-    option (google.api.http) = { get: "/admin/v1/modeldev/artifacts/{artifact_id}/content" };
+    option (google.api.http) = { get: "/api/v1/modeldev/artifacts/{artifact_id}/content" };
   }
   rpc CreateExecution (modeldev.service.v1.CreateExecutionRequest) returns (modeldev.service.v1.CreateExecutionResponse) {
     option (gnostic.openapi.v3.operation) = {
@@ -53,7 +53,7 @@ service ModelDevService {
       } } }] }
     };
     option (google.api.http) = {
-      post: "/admin/v1/modeldev/executions"
+      post: "/api/v1/modeldev/executions"
       body: "*"
     };
   }

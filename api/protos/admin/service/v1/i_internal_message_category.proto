@@ -14,21 +14,21 @@ service InternalMessageCategoryService {
   // 查询站内信消息分类列表
   rpc List (pagination.PagingRequest) returns (internal_message.service.v1.ListInternalMessageCategoryResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/internal-message/categories"
+      get: "/api/v1/admin/internal-message/categories"
     };
   }
 
   // 查询站内信消息分类详情
   rpc Get (internal_message.service.v1.GetInternalMessageCategoryRequest) returns (internal_message.service.v1.InternalMessageCategory) {
     option (google.api.http) = {
-      get: "/admin/v1/internal-message/categories/{id}"
+      get: "/api/v1/admin/internal-message/categories/{id}"
     };
   }
 
   // 创建站内信消息分类
   rpc Create (internal_message.service.v1.CreateInternalMessageCategoryRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/internal-message/categories"
+      post: "/api/v1/admin/internal-message/categories"
       body: "*"
     };
   }
@@ -36,7 +36,7 @@ service InternalMessageCategoryService {
   // 更新站内信消息分类
   rpc Update (internal_message.service.v1.UpdateInternalMessageCategoryRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/admin/v1/internal-message/categories/{id}"
+      put: "/api/v1/admin/internal-message/categories/{id}"
       body: "*"
     };
   }
@@ -44,7 +44,7 @@ service InternalMessageCategoryService {
   // 删除站内信消息分类
   rpc Delete (internal_message.service.v1.DeleteInternalMessageCategoryRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/admin/v1/internal-message/categories/{id}"
+      delete: "/api/v1/admin/internal-message/categories/{id}"
     };
   }
 }

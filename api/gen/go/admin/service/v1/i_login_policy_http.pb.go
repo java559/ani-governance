@@ -43,11 +43,11 @@ type LoginPolicyServiceHTTPServer interface {
 
 func RegisterLoginPolicyServiceHTTPServer(s *http.Server, srv LoginPolicyServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/login-policies", _LoginPolicyService_List10_HTTP_Handler(srv))
-	r.GET("/admin/v1/login-policies/{id}", _LoginPolicyService_Get10_HTTP_Handler(srv))
-	r.POST("/admin/v1/login-policies", _LoginPolicyService_Create7_HTTP_Handler(srv))
-	r.PUT("/admin/v1/login-policies/{id}", _LoginPolicyService_Update7_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/login-policies/{id}", _LoginPolicyService_Delete7_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/login-policies", _LoginPolicyService_List10_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/login-policies/{id}", _LoginPolicyService_Get10_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/login-policies", _LoginPolicyService_Create7_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/login-policies/{id}", _LoginPolicyService_Update7_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/login-policies/{id}", _LoginPolicyService_Delete7_HTTP_Handler(srv))
 }
 
 func _LoginPolicyService_List10_HTTP_Handler(srv LoginPolicyServiceHTTPServer) func(ctx http.Context) error {
@@ -184,7 +184,7 @@ func NewLoginPolicyServiceHTTPClient(client *http.Client) LoginPolicyServiceHTTP
 // Create 创建登录策略
 func (c *LoginPolicyServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateLoginPolicyRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/login-policies"
+	pattern := "/api/v1/admin/login-policies"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationLoginPolicyServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -198,7 +198,7 @@ func (c *LoginPolicyServiceHTTPClientImpl) Create(ctx context.Context, in *v11.C
 // Delete 删除登录策略
 func (c *LoginPolicyServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteLoginPolicyRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/login-policies/{id}"
+	pattern := "/api/v1/admin/login-policies/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationLoginPolicyServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -212,7 +212,7 @@ func (c *LoginPolicyServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.D
 // Get 查询登录策略详情
 func (c *LoginPolicyServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetLoginPolicyRequest, opts ...http.CallOption) (*v11.LoginPolicy, error) {
 	var out v11.LoginPolicy
-	pattern := "/admin/v1/login-policies/{id}"
+	pattern := "/api/v1/admin/login-policies/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationLoginPolicyServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -226,7 +226,7 @@ func (c *LoginPolicyServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetL
 // List 查询登录策略列表
 func (c *LoginPolicyServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListLoginPolicyResponse, error) {
 	var out v11.ListLoginPolicyResponse
-	pattern := "/admin/v1/login-policies"
+	pattern := "/api/v1/admin/login-policies"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationLoginPolicyServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -240,7 +240,7 @@ func (c *LoginPolicyServiceHTTPClientImpl) List(ctx context.Context, in *v1.Pagi
 // Update 更新登录策略
 func (c *LoginPolicyServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateLoginPolicyRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/login-policies/{id}"
+	pattern := "/api/v1/admin/login-policies/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationLoginPolicyServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

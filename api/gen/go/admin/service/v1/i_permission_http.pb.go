@@ -46,12 +46,12 @@ type PermissionServiceHTTPServer interface {
 
 func RegisterPermissionServiceHTTPServer(s *http.Server, srv PermissionServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/permissions", _PermissionService_List14_HTTP_Handler(srv))
-	r.GET("/admin/v1/permissions/{id}", _PermissionService_Get14_HTTP_Handler(srv))
-	r.POST("/admin/v1/permissions", _PermissionService_Create10_HTTP_Handler(srv))
-	r.PUT("/admin/v1/permissions/{id}", _PermissionService_Update10_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/permissions/{id}", _PermissionService_Delete10_HTTP_Handler(srv))
-	r.POST("/admin/v1/permissions/sync:perms", _PermissionService_SyncPermissions0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/permissions", _PermissionService_List14_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/permissions/{id}", _PermissionService_Get14_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/permissions", _PermissionService_Create10_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/permissions/{id}", _PermissionService_Update10_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/permissions/{id}", _PermissionService_Delete10_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/permissions/sync:perms", _PermissionService_SyncPermissions0_HTTP_Handler(srv))
 }
 
 func _PermissionService_List14_HTTP_Handler(srv PermissionServiceHTTPServer) func(ctx http.Context) error {
@@ -212,7 +212,7 @@ func NewPermissionServiceHTTPClient(client *http.Client) PermissionServiceHTTPCl
 // Create 创建权限点
 func (c *PermissionServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreatePermissionRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/permissions"
+	pattern := "/api/v1/admin/permissions"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPermissionServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -226,7 +226,7 @@ func (c *PermissionServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Cr
 // Delete 删除权限点
 func (c *PermissionServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeletePermissionRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/permissions/{id}"
+	pattern := "/api/v1/admin/permissions/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -240,7 +240,7 @@ func (c *PermissionServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.De
 // Get 查询权限点详情
 func (c *PermissionServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPermissionRequest, opts ...http.CallOption) (*v11.Permission, error) {
 	var out v11.Permission
-	pattern := "/admin/v1/permissions/{id}"
+	pattern := "/api/v1/admin/permissions/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -254,7 +254,7 @@ func (c *PermissionServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPe
 // List 查询权限点列表
 func (c *PermissionServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListPermissionResponse, error) {
 	var out v11.ListPermissionResponse
-	pattern := "/admin/v1/permissions"
+	pattern := "/api/v1/admin/permissions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPermissionServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -268,7 +268,7 @@ func (c *PermissionServiceHTTPClientImpl) List(ctx context.Context, in *v1.Pagin
 // SyncPermissions 同步权限点
 func (c *PermissionServiceHTTPClientImpl) SyncPermissions(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/permissions/sync:perms"
+	pattern := "/api/v1/admin/permissions/sync:perms"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPermissionServiceSyncPermissions))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -282,7 +282,7 @@ func (c *PermissionServiceHTTPClientImpl) SyncPermissions(ctx context.Context, i
 // Update 更新权限点
 func (c *PermissionServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdatePermissionRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/permissions/{id}"
+	pattern := "/api/v1/admin/permissions/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPermissionServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

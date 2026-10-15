@@ -26,7 +26,7 @@ func registerModelDevHTTP(server *http.Server, modeldev *service.ModelDevService
 	registerModelDevStopHTTP(server, modeldev)
 	registerModelDevQueryHTTP(server, modeldev)
 	registerModelDevCatalogueHTTP(server, modeldev)
-	server.Route("/").POST("/admin/v1/modeldev/executions", func(ctx http.Context) error {
+	server.Route("/").POST("/api/v1/modeldev/executions", func(ctx http.Context) error {
 		http.SetOperation(ctx, adminV1.OperationModelDevServiceCreateExecution)
 		request := ctx.Request()
 		mediaType, _, err := mime.ParseMediaType(request.Header.Get("Content-Type"))

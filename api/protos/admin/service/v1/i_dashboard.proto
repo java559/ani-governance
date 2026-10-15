@@ -11,28 +11,28 @@ service DashboardService {
   // 获取概览统计（用户总数 / 角色总数 / 今日登录次数 / 今日操作审计条数）
   rpc GetOverview (google.protobuf.Empty) returns (DashboardOverviewResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/dashboard/overview"
+      get: "/api/v1/admin/dashboard/overview"
     };
   }
 
   // 获取近 N 天每日登录次数趋势
   rpc GetLoginTrend (GetLoginTrendRequest) returns (LoginTrendResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/dashboard/login-trend"
+      get: "/api/v1/admin/dashboard/login-trend"
     };
   }
 
   // 操作审计按 action 分布
   rpc GetOperationActionDistribution (google.protobuf.Empty) returns (ActionDistributionResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/dashboard/operation-action-distribution"
+      get: "/api/v1/admin/dashboard/operation-action-distribution"
     };
   }
 
   // 登录审计按 status 分布
   rpc GetLoginStatusDistribution (google.protobuf.Empty) returns (StatusDistributionResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/dashboard/login-status-distribution"
+      get: "/api/v1/admin/dashboard/login-status-distribution"
     };
   }
 }

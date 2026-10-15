@@ -15,21 +15,21 @@ service PermissionGroupService {
   // 查询权限组列表
   rpc List (pagination.PagingRequest) returns (permission.service.v1.ListPermissionGroupResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/permission-groups"
+      get: "/api/v1/admin/permission-groups"
     };
   }
 
   // 查询权限组详情
   rpc Get (permission.service.v1.GetPermissionGroupRequest) returns (permission.service.v1.PermissionGroup) {
     option (google.api.http) = {
-      get: "/admin/v1/permission-groups/{id}"
+      get: "/api/v1/admin/permission-groups/{id}"
     };
   }
 
   // 创建权限组
   rpc Create (permission.service.v1.CreatePermissionGroupRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/permission-groups"
+      post: "/api/v1/admin/permission-groups"
       body: "*"
     };
   }
@@ -37,7 +37,7 @@ service PermissionGroupService {
   // 更新权限组
   rpc Update (permission.service.v1.UpdatePermissionGroupRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/admin/v1/permission-groups/{id}"
+      put: "/api/v1/admin/permission-groups/{id}"
       body: "*"
     };
   }
@@ -45,7 +45,7 @@ service PermissionGroupService {
   // 删除权限组
   rpc Delete (permission.service.v1.DeletePermissionGroupRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/admin/v1/permission-groups/{id}"
+      delete: "/api/v1/admin/permission-groups/{id}"
     };
   }
 }

@@ -14,14 +14,14 @@ service LoginAuditLogService {
   // 查询登录审计日志列表
   rpc List (pagination.PagingRequest) returns (audit.service.v1.ListLoginAuditLogResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/login-audit-logs"
+      get: "/api/v1/admin/login-audit-logs"
     };
   }
 
   // 查询登录审计日志详情
   rpc Get (audit.service.v1.GetLoginAuditLogRequest) returns (audit.service.v1.LoginAuditLog) {
     option (google.api.http) = {
-      get: "/admin/v1/login-audit-logs/{id}"
+      get: "/api/v1/admin/login-audit-logs/{id}"
     };
   }
 }

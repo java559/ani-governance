@@ -33,8 +33,8 @@ type DataAccessAuditLogServiceHTTPServer interface {
 
 func RegisterDataAccessAuditLogServiceHTTPServer(s *http.Server, srv DataAccessAuditLogServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/data-access-audit-logs", _DataAccessAuditLogService_List4_HTTP_Handler(srv))
-	r.GET("/admin/v1/data-access-audit-logs/{id}", _DataAccessAuditLogService_Get4_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/data-access-audit-logs", _DataAccessAuditLogService_List4_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/data-access-audit-logs/{id}", _DataAccessAuditLogService_Get4_HTTP_Handler(srv))
 }
 
 func _DataAccessAuditLogService_List4_HTTP_Handler(srv DataAccessAuditLogServiceHTTPServer) func(ctx http.Context) error {
@@ -96,7 +96,7 @@ func NewDataAccessAuditLogServiceHTTPClient(client *http.Client) DataAccessAudit
 // Get 查询数据访问审计日志详情
 func (c *DataAccessAuditLogServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetDataAccessAuditLogRequest, opts ...http.CallOption) (*v11.DataAccessAuditLog, error) {
 	var out v11.DataAccessAuditLog
-	pattern := "/admin/v1/data-access-audit-logs/{id}"
+	pattern := "/api/v1/admin/data-access-audit-logs/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDataAccessAuditLogServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -110,7 +110,7 @@ func (c *DataAccessAuditLogServiceHTTPClientImpl) Get(ctx context.Context, in *v
 // List 查询数据访问审计日志列表
 func (c *DataAccessAuditLogServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListDataAccessAuditLogResponse, error) {
 	var out v11.ListDataAccessAuditLogResponse
-	pattern := "/admin/v1/data-access-audit-logs"
+	pattern := "/api/v1/admin/data-access-audit-logs"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDataAccessAuditLogServiceList))
 	opts = append(opts, http.PathTemplate(pattern))

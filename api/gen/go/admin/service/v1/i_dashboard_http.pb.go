@@ -38,10 +38,10 @@ type DashboardServiceHTTPServer interface {
 
 func RegisterDashboardServiceHTTPServer(s *http.Server, srv DashboardServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/dashboard/overview", _DashboardService_GetOverview0_HTTP_Handler(srv))
-	r.GET("/admin/v1/dashboard/login-trend", _DashboardService_GetLoginTrend0_HTTP_Handler(srv))
-	r.GET("/admin/v1/dashboard/operation-action-distribution", _DashboardService_GetOperationActionDistribution0_HTTP_Handler(srv))
-	r.GET("/admin/v1/dashboard/login-status-distribution", _DashboardService_GetLoginStatusDistribution0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dashboard/overview", _DashboardService_GetOverview0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dashboard/login-trend", _DashboardService_GetLoginTrend0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dashboard/operation-action-distribution", _DashboardService_GetOperationActionDistribution0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dashboard/login-status-distribution", _DashboardService_GetLoginStatusDistribution0_HTTP_Handler(srv))
 }
 
 func _DashboardService_GetOverview0_HTTP_Handler(srv DashboardServiceHTTPServer) func(ctx http.Context) error {
@@ -142,7 +142,7 @@ func NewDashboardServiceHTTPClient(client *http.Client) DashboardServiceHTTPClie
 // GetLoginStatusDistribution 登录审计按 status 分布
 func (c *DashboardServiceHTTPClientImpl) GetLoginStatusDistribution(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*StatusDistributionResponse, error) {
 	var out StatusDistributionResponse
-	pattern := "/admin/v1/dashboard/login-status-distribution"
+	pattern := "/api/v1/admin/dashboard/login-status-distribution"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDashboardServiceGetLoginStatusDistribution))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -156,7 +156,7 @@ func (c *DashboardServiceHTTPClientImpl) GetLoginStatusDistribution(ctx context.
 // GetLoginTrend 获取近 N 天每日登录次数趋势
 func (c *DashboardServiceHTTPClientImpl) GetLoginTrend(ctx context.Context, in *GetLoginTrendRequest, opts ...http.CallOption) (*LoginTrendResponse, error) {
 	var out LoginTrendResponse
-	pattern := "/admin/v1/dashboard/login-trend"
+	pattern := "/api/v1/admin/dashboard/login-trend"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDashboardServiceGetLoginTrend))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -170,7 +170,7 @@ func (c *DashboardServiceHTTPClientImpl) GetLoginTrend(ctx context.Context, in *
 // GetOperationActionDistribution 操作审计按 action 分布
 func (c *DashboardServiceHTTPClientImpl) GetOperationActionDistribution(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*ActionDistributionResponse, error) {
 	var out ActionDistributionResponse
-	pattern := "/admin/v1/dashboard/operation-action-distribution"
+	pattern := "/api/v1/admin/dashboard/operation-action-distribution"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDashboardServiceGetOperationActionDistribution))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -184,7 +184,7 @@ func (c *DashboardServiceHTTPClientImpl) GetOperationActionDistribution(ctx cont
 // GetOverview 获取概览统计（用户总数 / 角色总数 / 今日登录次数 / 今日操作审计条数）
 func (c *DashboardServiceHTTPClientImpl) GetOverview(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*DashboardOverviewResponse, error) {
 	var out DashboardOverviewResponse
-	pattern := "/admin/v1/dashboard/overview"
+	pattern := "/api/v1/admin/dashboard/overview"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationDashboardServiceGetOverview))
 	opts = append(opts, http.PathTemplate(pattern))

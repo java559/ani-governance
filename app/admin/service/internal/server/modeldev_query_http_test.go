@@ -18,9 +18,9 @@ import (
 // authentication chain before service work. It is not an authenticated-flow test.
 func TestModelDevQueryRoutesEnterAuthentication(t *testing.T) {
 	testModelDevAuthenticatedRoutes(t, []string{
-		"/admin/v1/modeldev/executions/11111111-2222-4333-8444-555555555555",
-		"/admin/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/artifacts",
-		"/admin/v1/modeldev/artifacts/22222222-3333-4444-8555-666666666666/content",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/artifacts",
+		"/api/v1/modeldev/artifacts/22222222-3333-4444-8555-666666666666/content",
 	})
 }
 
@@ -30,24 +30,29 @@ func TestModelDevListAndLogRejectUnboundedSelectors(t *testing.T) {
 	web := httptest.NewServer(server)
 	t.Cleanup(web.Close)
 	for _, test := range []struct{ path, body string }{
-		{"/admin/v1/modeldev/executions?page_size=101", ""},
-		{"/admin/v1/modeldev/executions?page_size=0", ""},
-		{"/admin/v1/modeldev/executions?page_size=01", ""},
-		{"/admin/v1/modeldev/executions?page_size=1&page_size=2", ""},
-		{"/admin/v1/modeldev/executions?page_token=" + strings.Repeat("x", 2049), ""},
-		{"/admin/v1/modeldev/executions?tenant_id=other", ""},
-		{"/admin/v1/modeldev/executions?compute_state=RUNNING", ""},
-		{"/admin/v1/modeldev/executions", "{}"},
-		{"/admin/v1/modeldev/executions/id/logs?tail_lines=1001", ""},
-		{"/admin/v1/modeldev/executions/id/logs?max_bytes=65537", ""},
-		{"/admin/v1/modeldev/executions/id/logs?tail_lines=0", ""},
-		{"/admin/v1/modeldev/executions/id/logs?max_bytes=-1", ""},
-		{"/admin/v1/modeldev/executions/id/logs?tail_lines=1&tail_lines=2", ""},
-		{"/admin/v1/modeldev/executions/id/logs?namespace=other", ""},
-		{"/admin/v1/modeldev/executions/id/logs?pod=other", ""},
-		{"/admin/v1/modeldev/executions/id/logs?log_id=other", ""},
-		{"/admin/v1/modeldev/executions/id/logs?follow=true", ""},
-		{"/admin/v1/modeldev/executions/id/logs", "{}"},
+		{"/api/v1/modeldev/executions?page_size=101", ""},
+		{"/api/v1/modeldev/executions?page_size=0", ""},
+		{"/api/v1/modeldev/executions?page_size=01", ""},
+		{"/api/v1/modeldev/executions?page_size=1&page_size=2", ""},
+		{"/api/v1/modeldev/executions?page_token=" + strings.Repeat("x", 2049), ""},
+		{"/api/v1/modeldev/executions/id/artifacts?page_size=0", ""},
+		{"/api/v1/modeldev/executions/id/artifacts?page_size=101", ""},
+		{"/api/v1/modeldev/executions/id/artifacts?page_token=" + strings.Repeat("x", 2049), ""},
+		{"/api/v1/modeldev/executions/id/artifacts?unknown=1", ""},
+		{"/api/v1/modeldev/executions?id=1", "{}"},
+		{"/api/v1/modeldev/executions?tenant_id=other", ""},
+		{"/api/v1/modeldev/executions?compute_state=RUNNING", ""},
+		{"/api/v1/modeldev/executions", "{}"},
+		{"/api/v1/modeldev/executions/id/logs?tail_lines=1001", ""},
+		{"/api/v1/modeldev/executions/id/logs?max_bytes=65537", ""},
+		{"/api/v1/modeldev/executions/id/logs?tail_lines=0", ""},
+		{"/api/v1/modeldev/executions/id/logs?max_bytes=-1", ""},
+		{"/api/v1/modeldev/executions/id/logs?tail_lines=1&tail_lines=2", ""},
+		{"/api/v1/modeldev/executions/id/logs?namespace=other", ""},
+		{"/api/v1/modeldev/executions/id/logs?pod=other", ""},
+		{"/api/v1/modeldev/executions/id/logs?log_id=other", ""},
+		{"/api/v1/modeldev/executions/id/logs?follow=true", ""},
+		{"/api/v1/modeldev/executions/id/logs", "{}"},
 	} {
 		t.Run(test.path, func(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, web.URL+test.path, strings.NewReader(test.body))
@@ -63,8 +68,8 @@ func TestModelDevListAndLogRejectUnboundedSelectors(t *testing.T) {
 
 func TestModelDevListAndLogRoutesEnterAuthentication(t *testing.T) {
 	testModelDevAuthenticatedRoutes(t, []string{
-		"/admin/v1/modeldev/executions",
-		"/admin/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs",
+		"/api/v1/modeldev/executions",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs",
 	})
 }
 

@@ -345,10 +345,8 @@ github.com/zhangzhe-ctrl/ani-governance/api/quota v0.0.0-20261009133356-1ab46160
 github.com/zhangzhe-ctrl/ani-governance/api/quota v0.0.0-20261009133356-1ab461604c74/go.mod h1:OmpTNUUTOEMzeXx5cOUdOYqNxrmA+KBthlt44mfZ4s8=
 github.com/zhangzhe-ctrl/ani-inference-service v0.0.0-20261009141630-cbeb2a6c6fa1 h1:am8snqLVePSLLurw+wSGdFlPkAxIGv/2BsB7obyGLSw=
 github.com/zhangzhe-ctrl/ani-inference-service v0.0.0-20261009141630-cbeb2a6c6fa1/go.mod h1:XHxBcsdlAk/nFgUmG4a1lfcd8gwL7Ye/ccV6BYzusWE=
-github.com/zhangzhe-ctrl/ani-modeldev-service v0.0.0-20261005092412-218f5e5efedf h1:CedQ4OwQsiwi36epEGz4090aTWRyMoFcfzcJyvoSbZI=
-github.com/zhangzhe-ctrl/ani-modeldev-service v0.0.0-20261005092412-218f5e5efedf/go.mod h1:JLfy2wwoIxD4hIsdtbCSDeDboGy/dKD62OylHxmK3qw=
-github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261013081723-64bae5d28420 h1:syrwnYijHQk4jWb9Wf/OVCwy9BDlJSXOScAVAaV+EjY=
-github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261013081723-64bae5d28420/go.mod h1:DXqtxWJ+IEu9gZIgGVHTbFONYQc9hcuaeXOUzmY5Yjw=
+github.com/zhangzhe-ctrl/ani-modeldev-service v0.0.0-20261014073039-acd8a5cb2b25 h1:8xI04uMRZCmISbGDvnVdyqhJdW/XMfUUiqqQiaZOamA=
+github.com/zhangzhe-ctrl/ani-modeldev-service v0.0.0-20261014073039-acd8a5cb2b25/go.mod h1:Z2/IqgMC1UdiV8rWIACl3ZbCpTxhb91ETwkjO/wmuDc=
 github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261013082823-b4d87d8e2f0a h1:thB5xDqAPtvCjVsDapuLsEMOc60Bf6ELh8vcP9Vl0FI=
 github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261013082823-b4d87d8e2f0a/go.mod h1:DXqtxWJ+IEu9gZIgGVHTbFONYQc9hcuaeXOUzmY5Yjw=
 github.com/zhangzhe-ctrl/ani-resource-service/api/instance/terminal v0.0.0-20261013075021-0937f5aa9c6c h1:+Z/R4AX9U0RpY+smnrCO9cVFTxLqjjp0r7NbUWdchNE=

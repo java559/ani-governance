@@ -35,8 +35,8 @@ func TestDetailHTTPResponsesReturnResourceObjects(t *testing.T) {
 		{"ImageSpace", "/api/v1/images/space", "space", "spaceId", "space_x", &catalogv1.GetImageSpaceResponse{Space: &catalogv1.ImageSpace{SpaceId: "space_x"}}},
 		{"PublisherCredential", "/api/v1/images/publisher-credential", "credential", "username", "publisher_x", &catalogv1.GetPublisherCredentialResponse{Credential: &catalogv1.PublisherCredential{Username: "publisher_x"}}},
 		{"Image", "/api/v1/images/registrations/img_x?scope=tenant", "image", "image_id", "img_x", &catalogv1.GetImageResponse{Image: &catalogv1.ImageRegistration{ImageId: "img_x"}}},
-		{"InputVersion", "/admin/v1/modeldev/input-versions/input_x", "input_version", "input_version_id", "input_x", &modeldevv1.GetInputVersionResponse{InputVersion: &modeldevv1.InputVersionView{InputVersionId: "input_x"}}},
-		{"Execution", "/admin/v1/modeldev/executions/execution_x", "execution", "execution_id", "execution_x", &modeldevv1.GetExecutionResponse{Execution: &modeldevv1.ExecutionView{ExecutionId: "execution_x"}}},
+		{"InputVersion", "/api/v1/modeldev/input-versions/input_x", "input_version", "input_version_id", "input_x", &modeldevv1.GetInputVersionResponse{InputVersion: &modeldevv1.InputVersionView{InputVersionId: "input_x"}}},
+		{"Execution", "/api/v1/modeldev/executions/execution_x", "execution", "execution_id", "execution_x", &modeldevv1.GetExecutionResponse{Execution: &modeldevv1.ExecutionView{ExecutionId: "execution_x"}}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -97,15 +97,15 @@ func TestDetailOpenAPIResponsesDescribeResourceObjects(t *testing.T) {
 	}
 	require.NoError(t, yaml.Unmarshal(assets.OpenApiData, &document))
 	for path, schema := range map[string]string{
-		"/api/v1/networks/vpcs/{vpc_id}":                       "VPC",
-		"/api/v1/networks/eips/{eip_id}":                       "EIP",
-		"/api/v1/networks/operations/{operation_id}":           "NetworkOperation",
-		"/api/v1/networks/vpcs/{vpc_id}/snat":                  "VPCSnat",
-		"/api/v1/images/space":                                 "ImageSpace",
-		"/api/v1/images/publisher-credential":                  "PublisherCredential",
-		"/api/v1/images/registrations/{image_id}":              "ImageRegistration",
-		"/admin/v1/modeldev/input-versions/{input_version_id}": "InputVersionView",
-		"/admin/v1/modeldev/executions/{execution_id}":         "ExecutionView",
+		"/api/v1/networks/vpcs/{vpc_id}":                     "VPC",
+		"/api/v1/networks/eips/{eip_id}":                     "EIP",
+		"/api/v1/networks/operations/{operation_id}":         "NetworkOperation",
+		"/api/v1/networks/vpcs/{vpc_id}/snat":                "VPCSnat",
+		"/api/v1/images/space":                               "ImageSpace",
+		"/api/v1/images/publisher-credential":                "PublisherCredential",
+		"/api/v1/images/registrations/{image_id}":            "ImageRegistration",
+		"/api/v1/modeldev/input-versions/{input_version_id}": "InputVersionView",
+		"/api/v1/modeldev/executions/{execution_id}":         "ExecutionView",
 	} {
 		t.Run(schema, func(t *testing.T) {
 			require.Equal(t, "#/components/schemas/"+schema, document.Paths[path].Get.Responses["200"].Content["application/json"].Schema.Ref)

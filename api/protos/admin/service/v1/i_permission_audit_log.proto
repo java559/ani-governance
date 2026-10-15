@@ -12,14 +12,14 @@ service PermissionAuditLogService {
   // 查询权限变更审计日志列表
   rpc List (pagination.PagingRequest) returns (audit.service.v1.ListPermissionAuditLogResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/permission-audit-logs"
+      get: "/api/v1/admin/permission-audit-logs"
     };
   }
 
   // 查询权限变更审计日志详情
   rpc Get (audit.service.v1.GetPermissionAuditLogRequest) returns (audit.service.v1.PermissionAuditLog) {
     option (google.api.http) = {
-      get: "/admin/v1/permission-audit-logs/{id}"
+      get: "/api/v1/admin/permission-audit-logs/{id}"
     };
   }
 }

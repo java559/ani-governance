@@ -27,21 +27,21 @@ var File_admin_service_v1_i_accelerator_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_accelerator_proto_rawDesc = "" +
 	"\n" +
-	"$admin/service/v1/i_accelerator.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$catalog/service/v1/accelerator.proto\x1a\"admin/service/v1/quota_types.proto\x1a\x1bgoogle/protobuf/empty.proto2\xb0\x0e\n" +
-	"\x17AcceleratorAdminService\x12\x8b\x01\n" +
-	"\fListClusters\x12*.catalog.service.v1.AcceleratorPageRequest\x1a'.catalog.service.v1.AcceleratorClusters\"&\x82\xd3\xe4\x93\x02 \x12\x1e/admin/v1/accelerator/clusters\x12\x9b\x01\n" +
-	"\x0fRegisterCluster\x125.catalog.service.v1.RegisterAcceleratorClusterRequest\x1a&.catalog.service.v1.AcceleratorCluster\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/admin/v1/accelerator/clusters\x12\x82\x01\n" +
-	"\tListPools\x12*.catalog.service.v1.AcceleratorPageRequest\x1a$.catalog.service.v1.AcceleratorPools\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/admin/v1/accelerator/pools\x12\x8b\x01\n" +
+	"$admin/service/v1/i_accelerator.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$catalog/service/v1/accelerator.proto\x1a\"admin/service/v1/quota_types.proto\x1a\x1bgoogle/protobuf/empty.proto2\xe0\x0e\n" +
+	"\x17AcceleratorAdminService\x12\x8f\x01\n" +
+	"\fListClusters\x12*.catalog.service.v1.AcceleratorPageRequest\x1a'.catalog.service.v1.AcceleratorClusters\"*\x82\xd3\xe4\x93\x02$\x12\"/api/v1/admin/accelerator/clusters\x12\x9f\x01\n" +
+	"\x0fRegisterCluster\x125.catalog.service.v1.RegisterAcceleratorClusterRequest\x1a&.catalog.service.v1.AcceleratorCluster\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/admin/accelerator/clusters\x12\x86\x01\n" +
+	"\tListPools\x12*.catalog.service.v1.AcceleratorPageRequest\x1a$.catalog.service.v1.AcceleratorPools\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/accelerator/pools\x12\x8f\x01\n" +
 	"\n" +
-	"CreatePool\x120.catalog.service.v1.CreateAcceleratorPoolRequest\x1a#.catalog.service.v1.AcceleratorPool\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/admin/v1/accelerator/pools\x12\x94\x01\n" +
-	"\x10ListSupplyGroups\x12*.catalog.service.v1.AcceleratorPageRequest\x1a'.catalog.service.v1.AcceleratorSupplies\"+\x82\xd3\xe4\x93\x02%\x12#/admin/v1/accelerator/supply-groups\x12\xa2\x01\n" +
-	"\x10AdoptSupplyGroup\x121.catalog.service.v1.AdoptAcceleratorSupplyRequest\x1a%.catalog.service.v1.AcceleratorSupply\"4\x82\xd3\xe4\x93\x02.:\x01*\")/admin/v1/accelerator/supply-groups:adopt\x12\xb2\x01\n" +
-	"\fSetAdmission\x122.catalog.service.v1.SetAcceleratorAdmissionRequest\x1a%.catalog.service.v1.AcceleratorSupply\"G\x82\xd3\xe4\x93\x02A:\x01*\"</admin/v1/accelerator/supply-groups/{group_id}:set-admission\x12\x90\x01\n" +
-	"\x11AdminListProfiles\x12*.catalog.service.v1.AcceleratorPageRequest\x1a'.catalog.service.v1.AcceleratorProfiles\"&\x82\xd3\xe4\x93\x02 \x12\x1e/admin/v1/accelerator/profiles\x12\x99\x01\n" +
-	"\x0ePublishProfile\x124.catalog.service.v1.PublishAcceleratorProfileRequest\x1a&.catalog.service.v1.AcceleratorProfile\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/admin/v1/accelerator/profiles\x12\x88\x01\n" +
-	"\vListDevices\x12*.catalog.service.v1.AcceleratorPageRequest\x1a&.catalog.service.v1.AcceleratorDevices\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/admin/v1/accelerator/devices\x12\x95\x01\n" +
-	"\x11AdminListBindings\x12*.catalog.service.v1.AcceleratorPageRequest\x1a,.catalog.service.v1.AcceleratorAdminBindings\"&\x82\xd3\xe4\x93\x02 \x12\x1e/admin/v1/accelerator/bindings\x12\x92\x01\n" +
-	"\x10AdminGetCapacity\x12-.catalog.service.v1.AcceleratorVersionRequest\x1a'.catalog.service.v1.AcceleratorCapacity\"&\x82\xd3\xe4\x93\x02 \x12\x1e/admin/v1/accelerator/capacity2\xdd\b\n" +
+	"CreatePool\x120.catalog.service.v1.CreateAcceleratorPoolRequest\x1a#.catalog.service.v1.AcceleratorPool\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/accelerator/pools\x12\x98\x01\n" +
+	"\x10ListSupplyGroups\x12*.catalog.service.v1.AcceleratorPageRequest\x1a'.catalog.service.v1.AcceleratorSupplies\"/\x82\xd3\xe4\x93\x02)\x12'/api/v1/admin/accelerator/supply-groups\x12\xa6\x01\n" +
+	"\x10AdoptSupplyGroup\x121.catalog.service.v1.AdoptAcceleratorSupplyRequest\x1a%.catalog.service.v1.AcceleratorSupply\"8\x82\xd3\xe4\x93\x022:\x01*\"-/api/v1/admin/accelerator/supply-groups:adopt\x12\xb6\x01\n" +
+	"\fSetAdmission\x122.catalog.service.v1.SetAcceleratorAdmissionRequest\x1a%.catalog.service.v1.AcceleratorSupply\"K\x82\xd3\xe4\x93\x02E:\x01*\"@/api/v1/admin/accelerator/supply-groups/{group_id}:set-admission\x12\x94\x01\n" +
+	"\x11AdminListProfiles\x12*.catalog.service.v1.AcceleratorPageRequest\x1a'.catalog.service.v1.AcceleratorProfiles\"*\x82\xd3\xe4\x93\x02$\x12\"/api/v1/admin/accelerator/profiles\x12\x9d\x01\n" +
+	"\x0ePublishProfile\x124.catalog.service.v1.PublishAcceleratorProfileRequest\x1a&.catalog.service.v1.AcceleratorProfile\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/admin/accelerator/profiles\x12\x8c\x01\n" +
+	"\vListDevices\x12*.catalog.service.v1.AcceleratorPageRequest\x1a&.catalog.service.v1.AcceleratorDevices\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/admin/accelerator/devices\x12\x99\x01\n" +
+	"\x11AdminListBindings\x12*.catalog.service.v1.AcceleratorPageRequest\x1a,.catalog.service.v1.AcceleratorAdminBindings\"*\x82\xd3\xe4\x93\x02$\x12\"/api/v1/admin/accelerator/bindings\x12\x96\x01\n" +
+	"\x10AdminGetCapacity\x12-.catalog.service.v1.AcceleratorVersionRequest\x1a'.catalog.service.v1.AcceleratorCapacity\"*\x82\xd3\xe4\x93\x02$\x12\"/api/v1/admin/accelerator/capacity2\xdd\b\n" +
 	"\x12AcceleratorService\x12\x8f\x01\n" +
 	"\fListProfiles\x120.catalog.service.v1.AcceleratorTenantPageRequest\x1a'.catalog.service.v1.AcceleratorProfiles\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/accelerator/profiles\x12\x9c\x01\n" +
 	"\n" +

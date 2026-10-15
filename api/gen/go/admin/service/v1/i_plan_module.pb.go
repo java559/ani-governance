@@ -28,13 +28,13 @@ var File_admin_service_v1_i_plan_module_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_plan_module_proto_rawDesc = "" +
 	"\n" +
-	"$admin/service/v1/i_plan_module.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a%identity/service/v1/plan_module.proto2\xd6\x04\n" +
-	"\x11PlanModuleService\x12n\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a+.identity.service.v1.ListPlanModuleResponse\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/admin/v1/plan-modules\x12v\n" +
-	"\x03Get\x12).identity.service.v1.GetPlanModuleRequest\x1a\x1f.identity.service.v1.PlanModule\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/admin/v1/plan-modules/{id}\x12q\n" +
-	"\x06Create\x12,.identity.service.v1.CreatePlanModuleRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/admin/v1/plan-modules\x12v\n" +
-	"\x06Update\x12,.identity.service.v1.UpdatePlanModuleRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\x1a\x1b/admin/v1/plan-modules/{id}\x12n\n" +
-	"\x06Delete\x12,.identity.service.v1.DeletePlanModuleRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/admin/v1/plan-modulesB\xbd\x01\n" +
+	"$admin/service/v1/i_plan_module.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a%identity/service/v1/plan_module.proto2\xea\x04\n" +
+	"\x11PlanModuleService\x12r\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a+.identity.service.v1.ListPlanModuleResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/plan-modules\x12z\n" +
+	"\x03Get\x12).identity.service.v1.GetPlanModuleRequest\x1a\x1f.identity.service.v1.PlanModule\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/plan-modules/{id}\x12u\n" +
+	"\x06Create\x12,.identity.service.v1.CreatePlanModuleRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/plan-modules\x12z\n" +
+	"\x06Update\x12,.identity.service.v1.UpdatePlanModuleRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\x1a\x1f/api/v1/admin/plan-modules/{id}\x12r\n" +
+	"\x06Delete\x12,.identity.service.v1.DeletePlanModuleRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c*\x1a/api/v1/admin/plan-modulesB\xbd\x01\n" +
 	"\x14com.admin.service.v1B\x10IPlanModuleProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_plan_module_proto_goTypes = []any{

@@ -20,7 +20,7 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListPresetsRequest{PageSize: size, PageToken: token}
+		in := &modeldevv1.ListPresetsRequest{Limit: size, Cursor: token}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.ListPresets(c, v.(*modeldevv1.ListPresetsRequest))
 		})
@@ -37,7 +37,7 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListInputVersionsRequest{PageSize: size, PageToken: token, State: state}
+		in := &modeldevv1.ListInputVersionsRequest{Limit: size, Cursor: token, State: state}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.ListInputVersions(c, v.(*modeldevv1.ListInputVersionsRequest))
 		})
@@ -78,9 +78,9 @@ func modelDevCatalogueSelectors(request *http.Request, allowState bool) (uint32,
 	var state *string
 	for name, values := range query {
 		switch name {
-		case "page_size":
+		case "limit":
 			size, err = modelDevQueryPositiveBound(values[0], 100)
-		case "page_token":
+		case "cursor":
 			if len(values[0]) > 2048 {
 				return 0, "", nil, invalidModelDevQueryHTTP()
 			}

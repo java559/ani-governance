@@ -13,7 +13,7 @@ import (
 	permissionV1 "go-wind-admin/api/gen/go/permission/service/v1"
 )
 
-// /admin/v1/roles 游标分页的资源与列约定。
+// /api/v1/admin/roles 游标分页的资源与列约定。
 const (
 	// roleCursorResource 是游标绑定的资源标识：不同资源的游标不可互相复用。
 	roleCursorResource = "permission.role"

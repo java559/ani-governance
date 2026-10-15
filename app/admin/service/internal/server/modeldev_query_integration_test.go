@@ -242,7 +242,7 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 	type apiRoute struct{ path, method string }
 	routes := []apiRoute{{data.ModelDevGetExecutionPath, "GET"}, {data.ModelDevListArtifactsPath, "GET"}, {data.ModelDevDownloadArtifactPath, "GET"}}
 	if startup != nil {
-		routes = append(routes, apiRoute{"/admin/v1/modeldev/executions", "POST"})
+		routes = append(routes, apiRoute{"/api/v1/modeldev/executions", "POST"})
 	}
 	if stopping {
 		routes = append(routes, apiRoute{data.ModelDevStopExecutionPath, "POST"})
@@ -376,7 +376,7 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 			IdempotencyKey string `json:"idempotency_key"`
 		}{startup.Intent, key})
 		require.NoError(t, e)
-		request, e := http.NewRequestWithContext(ctx, "POST", web.URL+"/admin/v1/modeldev/executions", bytes.NewReader(body))
+		request, e := http.NewRequestWithContext(ctx, "POST", web.URL+"/api/v1/modeldev/executions", bytes.NewReader(body))
 		require.NoError(t, e)
 		request.Header.Set("Content-Type", "application/json")
 		request.Header.Set("Authorization", "Bearer "+token)
@@ -460,9 +460,9 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 		require.Equal(t, "no-store", response.Header.Get("Cache-Control"))
 		return response.StatusCode, body
 	}
-	detailPath := "/admin/v1/modeldev/executions/" + provider.ExecutionID
+	detailPath := "/api/v1/modeldev/executions/" + provider.ExecutionID
 	artifactsPath := detailPath + "/artifacts"
-	downloadPath := "/admin/v1/modeldev/artifacts/" + provider.Artifact.ID + "/content"
+	downloadPath := "/api/v1/modeldev/artifacts/" + provider.Artifact.ID + "/content"
 	logsPath := detailPath + "/logs"
 	if listLogs {
 		for _, path := range []string{data.ModelDevListExecutionsPath, logsPath} {
@@ -471,20 +471,20 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 			code, _ = get(path, deniedToken)
 			require.Equal(t, http.StatusForbidden, code)
 		}
-		code, body := get(data.ModelDevListExecutionsPath+"?page_size=1", token)
+		code, body := get(data.ModelDevListExecutionsPath+"?limit=1", token)
 		require.Equal(t, http.StatusOK, code, "CPU09_BFF_LIST_NOT_IMPLEMENTED")
 		var executions modeldevv1.ListExecutionsResponse
 		require.NoError(t, protojson.Unmarshal(body, &executions))
-		require.Len(t, executions.Executions, 1)
-		require.Equal(t, provider.ExecutionID, executions.Executions[0].ExecutionId)
-		require.Equal(t, "PUBLISHED", executions.Executions[0].DeliveryState)
-		require.Empty(t, executions.NextPageToken)
+		require.Len(t, executions.Items, 1)
+		require.Equal(t, provider.ExecutionID, executions.Items[0].ExecutionId)
+		require.Equal(t, "PUBLISHED", executions.Items[0].DeliveryState)
+		require.Empty(t, executions.NextCursor)
 		code, body = get(data.ModelDevListExecutionsPath, otherToken)
 		require.Equal(t, http.StatusOK, code)
 		executions.Reset()
 		require.NoError(t, protojson.Unmarshal(body, &executions))
-		require.Empty(t, executions.Executions)
-		require.Empty(t, executions.NextPageToken)
+		require.Empty(t, executions.Items)
+		require.Empty(t, executions.NextCursor)
 		code, _ = get(logsPath, otherToken)
 		require.Equal(t, http.StatusNotFound, code)
 		code, body = get(logsPath, token)
@@ -555,8 +555,8 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 	require.Equal(t, http.StatusOK, code)
 	var listed modeldevv1.ListExecutionArtifactsResponse
 	require.NoError(t, protojson.Unmarshal(body, &listed))
-	require.Empty(t, listed.NextPageToken)
-	require.GreaterOrEqual(t, len(listed.Artifacts), 2)
+	require.Empty(t, listed.NextCursor)
+	require.GreaterOrEqual(t, len(listed.Items), 2)
 	roots := x509.NewCertPool()
 	ca, err := os.ReadFile(provider.StorageCAFile)
 	require.NoError(t, err)
@@ -570,8 +570,8 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 	}
 	require.NoError(t, os.Mkdir(output, 0700))
 	found := map[string]bool{}
-	for _, artifact := range listed.Artifacts {
-		code, body = get("/admin/v1/modeldev/artifacts/"+artifact.ArtifactId+"/content", token)
+	for _, artifact := range listed.Items {
+		code, body = get("/api/v1/modeldev/artifacts/"+artifact.ArtifactId+"/content", token)
 		require.Equal(t, http.StatusOK, code)
 		var grant modeldevv1.AuthorizeArtifactDownloadResponse
 		err = protojson.Unmarshal(body, &grant)

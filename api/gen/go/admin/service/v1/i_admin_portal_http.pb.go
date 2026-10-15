@@ -35,9 +35,9 @@ type AdminPortalServiceHTTPServer interface {
 
 func RegisterAdminPortalServiceHTTPServer(s *http.Server, srv AdminPortalServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/routes", _AdminPortalService_GetNavigation0_HTTP_Handler(srv))
-	r.GET("/admin/v1/perm-codes", _AdminPortalService_GetMyPermissionCode0_HTTP_Handler(srv))
-	r.GET("/admin/v1/initial-context", _AdminPortalService_GetInitialContext0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/routes", _AdminPortalService_GetNavigation0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/perm-codes", _AdminPortalService_GetMyPermissionCode0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/initial-context", _AdminPortalService_GetInitialContext0_HTTP_Handler(srv))
 }
 
 func _AdminPortalService_GetNavigation0_HTTP_Handler(srv AdminPortalServiceHTTPServer) func(ctx http.Context) error {
@@ -117,7 +117,7 @@ func NewAdminPortalServiceHTTPClient(client *http.Client) AdminPortalServiceHTTP
 // GetInitialContext 一次性获取进入后台所需的所有上下文
 func (c *AdminPortalServiceHTTPClientImpl) GetInitialContext(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*InitialContextResponse, error) {
 	var out InitialContextResponse
-	pattern := "/admin/v1/initial-context"
+	pattern := "/api/v1/admin/initial-context"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAdminPortalServiceGetInitialContext))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -131,7 +131,7 @@ func (c *AdminPortalServiceHTTPClientImpl) GetInitialContext(ctx context.Context
 // GetMyPermissionCode 查询权限码列表
 func (c *AdminPortalServiceHTTPClientImpl) GetMyPermissionCode(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*ListPermissionCodeResponse, error) {
 	var out ListPermissionCodeResponse
-	pattern := "/admin/v1/perm-codes"
+	pattern := "/api/v1/admin/perm-codes"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAdminPortalServiceGetMyPermissionCode))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -145,7 +145,7 @@ func (c *AdminPortalServiceHTTPClientImpl) GetMyPermissionCode(ctx context.Conte
 // GetNavigation 查询前端路由表
 func (c *AdminPortalServiceHTTPClientImpl) GetNavigation(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*ListRouteResponse, error) {
 	var out ListRouteResponse
-	pattern := "/admin/v1/routes"
+	pattern := "/api/v1/admin/routes"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAdminPortalServiceGetNavigation))
 	opts = append(opts, http.PathTemplate(pattern))

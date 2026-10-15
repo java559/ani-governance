@@ -49,15 +49,15 @@ type UserServiceHTTPServer interface {
 
 func RegisterUserServiceHTTPServer(s *http.Server, srv UserServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/users", _UserService_List25_HTTP_Handler(srv))
-	r.GET("/admin/v1/users/username/{username}", _UserService_Get27_HTTP_Handler(srv))
-	r.GET("/admin/v1/users/{id}", _UserService_Get28_HTTP_Handler(srv))
-	r.POST("/admin/v1/users", _UserService_Create19_HTTP_Handler(srv))
-	r.PUT("/admin/v1/users/{id}", _UserService_Update19_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/users/username/{username}", _UserService_Delete19_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/users/{id}", _UserService_Delete20_HTTP_Handler(srv))
-	r.GET("/admin/v1/users:exists", _UserService_UserExists0_HTTP_Handler(srv))
-	r.POST("/admin/v1/users/{user_id}/password", _UserService_EditUserPassword0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/users", _UserService_List25_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/users/username/{username}", _UserService_Get27_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/users/{id}", _UserService_Get28_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/users", _UserService_Create19_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/users/{id}", _UserService_Update19_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/users/username/{username}", _UserService_Delete19_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/users/{id}", _UserService_Delete20_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/users:exists", _UserService_UserExists0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/users/{user_id}/password", _UserService_EditUserPassword0_HTTP_Handler(srv))
 }
 
 func _UserService_List25_HTTP_Handler(srv UserServiceHTTPServer) func(ctx http.Context) error {
@@ -286,7 +286,7 @@ func NewUserServiceHTTPClient(client *http.Client) UserServiceHTTPClient {
 // Create 创建用户
 func (c *UserServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateUserRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/users"
+	pattern := "/api/v1/admin/users"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -300,7 +300,7 @@ func (c *UserServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateUs
 // Delete 删除用户
 func (c *UserServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteUserRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/users/{id}"
+	pattern := "/api/v1/admin/users/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationUserServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -314,7 +314,7 @@ func (c *UserServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteUs
 // EditUserPassword 修改用户密码
 func (c *UserServiceHTTPClientImpl) EditUserPassword(ctx context.Context, in *v11.EditUserPasswordRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/users/{user_id}/password"
+	pattern := "/api/v1/admin/users/{user_id}/password"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserServiceEditUserPassword))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -328,7 +328,7 @@ func (c *UserServiceHTTPClientImpl) EditUserPassword(ctx context.Context, in *v1
 // Get 获取用户数据
 func (c *UserServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetUserRequest, opts ...http.CallOption) (*v11.User, error) {
 	var out v11.User
-	pattern := "/admin/v1/users/{id}"
+	pattern := "/api/v1/admin/users/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationUserServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -342,7 +342,7 @@ func (c *UserServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetUserRequ
 // List 获取用户列表
 func (c *UserServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListUserResponse, error) {
 	var out v11.ListUserResponse
-	pattern := "/admin/v1/users"
+	pattern := "/api/v1/admin/users"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationUserServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -356,7 +356,7 @@ func (c *UserServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingReque
 // Update 更新用户
 func (c *UserServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateUserRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/users/{id}"
+	pattern := "/api/v1/admin/users/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -370,7 +370,7 @@ func (c *UserServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateUs
 // UserExists 用户是否存在
 func (c *UserServiceHTTPClientImpl) UserExists(ctx context.Context, in *v11.UserExistsRequest, opts ...http.CallOption) (*v11.UserExistsResponse, error) {
 	var out v11.UserExistsResponse
-	pattern := "/admin/v1/users:exists"
+	pattern := "/api/v1/admin/users:exists"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationUserServiceUserExists))
 	opts = append(opts, http.PathTemplate(pattern))

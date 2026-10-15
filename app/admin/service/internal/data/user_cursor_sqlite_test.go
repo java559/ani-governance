@@ -227,7 +227,7 @@ func TestUserRepoSqlite_ListCursorRejectsInvalidRequest(t *testing.T) {
 }
 
 // TestUserRepoSqlite_ListCursorDoesNotRequireWindowParams 验证不传任何分页参数时
-// 走游标分页且默认 limit=20：这是 /admin/v1/users 改为 limit+cursor 后的默认行为。
+// 走游标分页且默认 limit=20：这是 /api/v1/admin/users 改为 limit+cursor 后的默认行为。
 func TestUserRepoSqlite_ListCursorDoesNotRequireWindowParams(t *testing.T) {
 	repo := newUserRepoSqlite(t)
 	ctx := testutil.NewSystemViewerCtx(context.Background())

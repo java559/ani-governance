@@ -43,11 +43,11 @@ type RoleServiceHTTPServer interface {
 
 func RegisterRoleServiceHTTPServer(s *http.Server, srv RoleServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/roles", _RoleService_List22_HTTP_Handler(srv))
-	r.GET("/admin/v1/roles/{id}", _RoleService_Get22_HTTP_Handler(srv))
-	r.POST("/admin/v1/roles", _RoleService_Create16_HTTP_Handler(srv))
-	r.PUT("/admin/v1/roles/{id}", _RoleService_Update16_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/roles/{id}", _RoleService_Delete16_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/roles", _RoleService_List22_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/roles/{id}", _RoleService_Get22_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/roles", _RoleService_Create16_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/roles/{id}", _RoleService_Update16_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/roles/{id}", _RoleService_Delete16_HTTP_Handler(srv))
 }
 
 func _RoleService_List22_HTTP_Handler(srv RoleServiceHTTPServer) func(ctx http.Context) error {
@@ -184,7 +184,7 @@ func NewRoleServiceHTTPClient(client *http.Client) RoleServiceHTTPClient {
 // Create 创建角色
 func (c *RoleServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateRoleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/roles"
+	pattern := "/api/v1/admin/roles"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationRoleServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -198,7 +198,7 @@ func (c *RoleServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateRo
 // Delete 删除角色
 func (c *RoleServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteRoleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/roles/{id}"
+	pattern := "/api/v1/admin/roles/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationRoleServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -212,7 +212,7 @@ func (c *RoleServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteRo
 // Get 查询角色详情
 func (c *RoleServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetRoleRequest, opts ...http.CallOption) (*v11.Role, error) {
 	var out v11.Role
-	pattern := "/admin/v1/roles/{id}"
+	pattern := "/api/v1/admin/roles/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationRoleServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -226,7 +226,7 @@ func (c *RoleServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetRoleRequ
 // List 查询角色列表
 func (c *RoleServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListRoleResponse, error) {
 	var out v11.ListRoleResponse
-	pattern := "/admin/v1/roles"
+	pattern := "/api/v1/admin/roles"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationRoleServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -240,7 +240,7 @@ func (c *RoleServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingReque
 // Update 更新角色
 func (c *RoleServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateRoleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/roles/{id}"
+	pattern := "/api/v1/admin/roles/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationRoleServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

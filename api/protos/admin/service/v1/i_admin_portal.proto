@@ -12,21 +12,21 @@ service AdminPortalService {
   // 查询前端路由表
   rpc GetNavigation (google.protobuf.Empty) returns (ListRouteResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/routes"
+      get: "/api/v1/admin/routes"
     };
   }
 
   // 查询权限码列表
   rpc GetMyPermissionCode (google.protobuf.Empty) returns (ListPermissionCodeResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/perm-codes"
+      get: "/api/v1/admin/perm-codes"
     };
   }
 
   // 一次性获取进入后台所需的所有上下文
   rpc GetInitialContext (google.protobuf.Empty) returns (InitialContextResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/initial-context"
+      get: "/api/v1/admin/initial-context"
     };
   }
 }

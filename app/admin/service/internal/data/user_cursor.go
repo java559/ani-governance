@@ -18,7 +18,7 @@ import (
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
 )
 
-// /admin/v1/users 游标分页的资源与列约定。
+// /api/v1/admin/users 游标分页的资源与列约定。
 const (
 	// userCursorResource 是游标绑定的资源标识：不同资源的游标不可互相复用。
 	userCursorResource = "identity.user"

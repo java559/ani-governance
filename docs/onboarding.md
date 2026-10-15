@@ -4,7 +4,7 @@ Governance 当前提供两种开通方式，复用现有用户、角色、租户
 
 ## 实现行为与验证范围
 
-1. `POST /admin/v1/users` 与 `POST /admin/v1/tenants:with-admin` 增加 `activationMode`：默认 `IMMEDIATE`，可选 `EMAIL_INVITATION`。
+1. `POST /api/v1/admin/users` 与 `POST /api/v1/admin/tenants:with-admin` 增加 `activationMode`：默认 `IMMEDIATE`，可选 `EMAIL_INVITATION`。
 2. 邀请使用现有凭证表 `activate_token_*` 字段：仅保存随机令牌 SHA-256，24 小时有效；账号为 PENDING，用户名凭证禁用，不设置默认密码。
 3. Governance 提供简洁设密页与 `POST /api/v1/auth/invitations/accept`；令牌校验、设密、启用凭证、确认邮箱和激活账号在同一事务完成。
 4. 定向验证默认模式无 SMTP、平台/租户邀请、错误及过期令牌、单次消费、密码策略、租户边界和失败回滚。

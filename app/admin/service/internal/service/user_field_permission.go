@@ -24,7 +24,7 @@ const fieldPermissionUserResource = "User"
 //   - Create/Update 请求：剥离命中字段的值并同步剔除 field_mask 路径，
 //     语义为"静默忽略"（与读路径一致，不暴露字段受控事实）。
 //
-// 刻意不裁剪 /admin/v1/me 系端点（UserProfileService）：本人资料页需要
+// 刻意不裁剪 /api/v1/admin/me 系端点（UserProfileService）：本人资料页需要
 // 完整字段才能自编辑，字段权限管控的是"对他人/管理视角的可见性"。
 // 平台管理员（tenantId==0）登录期即不聚合隐藏集，此处天然放行。
 type FieldPermissionUserServiceServer struct {

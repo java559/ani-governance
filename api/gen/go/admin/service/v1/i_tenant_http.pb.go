@@ -55,15 +55,15 @@ type TenantServiceHTTPServer interface {
 
 func RegisterTenantServiceHTTPServer(s *http.Server, srv TenantServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/tenants", _TenantService_List24_HTTP_Handler(srv))
-	r.GET("/admin/v1/tenants/{id}", _TenantService_Get26_HTTP_Handler(srv))
-	r.POST("/admin/v1/tenants", _TenantService_Create18_HTTP_Handler(srv))
-	r.PUT("/admin/v1/tenants/{id}", _TenantService_Update18_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/tenants/{id}", _TenantService_Delete18_HTTP_Handler(srv))
-	r.POST("/admin/v1/tenants:with-admin", _TenantService_CreateTenantWithAdminUser0_HTTP_Handler(srv))
-	r.GET("/admin/v1/tenants:exists", _TenantService_TenantExists0_HTTP_Handler(srv))
-	r.GET("/admin/v1/tenants/{id}/usage", _TenantService_GetUsage0_HTTP_Handler(srv))
-	r.POST("/admin/v1/tenants/{id}/cleanup", _TenantService_CleanupData0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants", _TenantService_List24_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/{id}", _TenantService_Get26_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants", _TenantService_Create18_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/tenants/{id}", _TenantService_Update18_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/tenants/{id}", _TenantService_Delete18_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants:with-admin", _TenantService_CreateTenantWithAdminUser0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants:exists", _TenantService_TenantExists0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/{id}/usage", _TenantService_GetUsage0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants/{id}/cleanup", _TenantService_CleanupData0_HTTP_Handler(srv))
 }
 
 func _TenantService_List24_HTTP_Handler(srv TenantServiceHTTPServer) func(ctx http.Context) error {
@@ -296,7 +296,7 @@ func NewTenantServiceHTTPClient(client *http.Client) TenantServiceHTTPClient {
 // CleanupData 清理租户数据
 func (c *TenantServiceHTTPClientImpl) CleanupData(ctx context.Context, in *v11.CleanupTenantDataRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tenants/{id}/cleanup"
+	pattern := "/api/v1/admin/tenants/{id}/cleanup"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTenantServiceCleanupData))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -310,7 +310,7 @@ func (c *TenantServiceHTTPClientImpl) CleanupData(ctx context.Context, in *v11.C
 // Create 创建租户
 func (c *TenantServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateTenantRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tenants"
+	pattern := "/api/v1/admin/tenants"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTenantServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -324,7 +324,7 @@ func (c *TenantServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Create
 // CreateTenantWithAdminUser 创建租户及管理员用户
 func (c *TenantServiceHTTPClientImpl) CreateTenantWithAdminUser(ctx context.Context, in *v11.CreateTenantWithAdminUserRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tenants:with-admin"
+	pattern := "/api/v1/admin/tenants:with-admin"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTenantServiceCreateTenantWithAdminUser))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -338,7 +338,7 @@ func (c *TenantServiceHTTPClientImpl) CreateTenantWithAdminUser(ctx context.Cont
 // Delete 删除租户
 func (c *TenantServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteTenantRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tenants/{id}"
+	pattern := "/api/v1/admin/tenants/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTenantServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -352,7 +352,7 @@ func (c *TenantServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.Delete
 // Get 获取租户数据
 func (c *TenantServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetTenantRequest, opts ...http.CallOption) (*v11.Tenant, error) {
 	var out v11.Tenant
-	pattern := "/admin/v1/tenants/{id}"
+	pattern := "/api/v1/admin/tenants/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTenantServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -366,7 +366,7 @@ func (c *TenantServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetTenant
 // GetUsage 查询租户用量与配额
 func (c *TenantServiceHTTPClientImpl) GetUsage(ctx context.Context, in *v11.GetTenantUsageRequest, opts ...http.CallOption) (*v11.TenantUsage, error) {
 	var out v11.TenantUsage
-	pattern := "/admin/v1/tenants/{id}/usage"
+	pattern := "/api/v1/admin/tenants/{id}/usage"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTenantServiceGetUsage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -380,7 +380,7 @@ func (c *TenantServiceHTTPClientImpl) GetUsage(ctx context.Context, in *v11.GetT
 // List 获取租户列表
 func (c *TenantServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListTenantResponse, error) {
 	var out v11.ListTenantResponse
-	pattern := "/admin/v1/tenants"
+	pattern := "/api/v1/admin/tenants"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTenantServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -394,7 +394,7 @@ func (c *TenantServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingReq
 // TenantExists 租户是否存在
 func (c *TenantServiceHTTPClientImpl) TenantExists(ctx context.Context, in *v11.TenantExistsRequest, opts ...http.CallOption) (*v11.TenantExistsResponse, error) {
 	var out v11.TenantExistsResponse
-	pattern := "/admin/v1/tenants:exists"
+	pattern := "/api/v1/admin/tenants:exists"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationTenantServiceTenantExists))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -408,7 +408,7 @@ func (c *TenantServiceHTTPClientImpl) TenantExists(ctx context.Context, in *v11.
 // Update 更新租户
 func (c *TenantServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateTenantRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/tenants/{id}"
+	pattern := "/api/v1/admin/tenants/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationTenantServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

@@ -74,7 +74,7 @@ func verifyModelDevBFFStopMainFlow(t *testing.T, ctx context.Context, web *httpt
 		require.Equal(t, "no-store", res.Header.Get("Cache-Control"))
 		return res.StatusCode, raw
 	}
-	path := "/admin/v1/modeldev/executions/" + executionID
+	path := "/api/v1/modeldev/executions/" + executionID
 	status, _ := request("POST", path+":stop", otherToken)
 	require.Equal(t, http.StatusNotFound, status)
 	status, _ = request("POST", path+":stop", deniedToken)

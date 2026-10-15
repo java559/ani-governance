@@ -28,18 +28,18 @@ var File_admin_service_v1_i_task_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_task_proto_rawDesc = "" +
 	"\n" +
-	"\x1dadmin/service/v1/i_task.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1atask/service/v1/task.proto2\xc4\b\n" +
-	"\vTaskService\x12]\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a!.task.service.v1.ListTaskResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/admin/v1/tasks\x12\x84\x01\n" +
-	"\x03Get\x12\x1f.task.service.v1.GetTaskRequest\x1a\x15.task.service.v1.Task\"E\x82\xd3\xe4\x93\x02?Z'\x12%/admin/v1/tasks/type-name/{type_name}\x12\x14/admin/v1/tasks/{id}\x12`\n" +
-	"\x06Create\x12\".task.service.v1.CreateTaskRequest\x1a\x16.google.protobuf.Empty\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/admin/v1/tasks\x12e\n" +
-	"\x06Update\x12\".task.service.v1.UpdateTaskRequest\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\x1a\x14/admin/v1/tasks/{id}\x12b\n" +
-	"\x06Delete\x12\".task.service.v1.DeleteTaskRequest\x1a\x16.google.protobuf.Empty\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/admin/v1/tasks/{id}\x12y\n" +
-	"\x10ListTaskTypeName\x12\x16.google.protobuf.Empty\x1a).task.service.v1.ListTaskTypeNameResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/admin/v1/tasks:type-names\x12u\n" +
-	"\x0eRestartAllTask\x12\x16.google.protobuf.Empty\x1a'.task.service.v1.RestartAllTaskResponse\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/admin/v1/tasks:restart\x12`\n" +
-	"\fStartAllTask\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/admin/v1/tasks:start\x12^\n" +
-	"\vStopAllTask\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/admin/v1/tasks:stop\x12n\n" +
-	"\vControlTask\x12#.task.service.v1.ControlTaskRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/admin/v1/tasks:controlB\xb7\x01\n" +
+	"\x1dadmin/service/v1/i_task.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1atask/service/v1/task.proto2\xf0\b\n" +
+	"\vTaskService\x12a\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a!.task.service.v1.ListTaskResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/admin/tasks\x12\x8c\x01\n" +
+	"\x03Get\x12\x1f.task.service.v1.GetTaskRequest\x1a\x15.task.service.v1.Task\"M\x82\xd3\xe4\x93\x02GZ+\x12)/api/v1/admin/tasks/type-name/{type_name}\x12\x18/api/v1/admin/tasks/{id}\x12d\n" +
+	"\x06Create\x12\".task.service.v1.CreateTaskRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/admin/tasks\x12i\n" +
+	"\x06Update\x12\".task.service.v1.UpdateTaskRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\x1a\x18/api/v1/admin/tasks/{id}\x12f\n" +
+	"\x06Delete\x12\".task.service.v1.DeleteTaskRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a*\x18/api/v1/admin/tasks/{id}\x12}\n" +
+	"\x10ListTaskTypeName\x12\x16.google.protobuf.Empty\x1a).task.service.v1.ListTaskTypeNameResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/tasks:type-names\x12y\n" +
+	"\x0eRestartAllTask\x12\x16.google.protobuf.Empty\x1a'.task.service.v1.RestartAllTaskResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/tasks:restart\x12d\n" +
+	"\fStartAllTask\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/tasks:start\x12b\n" +
+	"\vStopAllTask\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/tasks:stop\x12r\n" +
+	"\vControlTask\x12#.task.service.v1.ControlTaskRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/tasks:controlB\xb7\x01\n" +
 	"\x14com.admin.service.v1B\n" +
 	"ITaskProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 

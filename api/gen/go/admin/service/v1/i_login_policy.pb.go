@@ -28,13 +28,13 @@ var File_admin_service_v1_i_login_policy_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_login_policy_proto_rawDesc = "" +
 	"\n" +
-	"%admin/service/v1/i_login_policy.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a,authentication/service/v1/login_policy.proto2\x91\x05\n" +
-	"\x12LoginPolicyService\x12w\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a2.authentication.service.v1.ListLoginPolicyResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/admin/v1/login-policies\x12\x86\x01\n" +
-	"\x03Get\x120.authentication.service.v1.GetLoginPolicyRequest\x1a&.authentication.service.v1.LoginPolicy\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/admin/v1/login-policies/{id}\x12z\n" +
-	"\x06Create\x123.authentication.service.v1.CreateLoginPolicyRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/admin/v1/login-policies\x12\x7f\n" +
-	"\x06Update\x123.authentication.service.v1.UpdateLoginPolicyRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/admin/v1/login-policies/{id}\x12|\n" +
-	"\x06Delete\x123.authentication.service.v1.DeleteLoginPolicyRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/admin/v1/login-policies/{id}B\xbe\x01\n" +
+	"%admin/service/v1/i_login_policy.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a,authentication/service/v1/login_policy.proto2\xa7\x05\n" +
+	"\x12LoginPolicyService\x12{\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a2.authentication.service.v1.ListLoginPolicyResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/admin/login-policies\x12\x8a\x01\n" +
+	"\x03Get\x120.authentication.service.v1.GetLoginPolicyRequest\x1a&.authentication.service.v1.LoginPolicy\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/admin/login-policies/{id}\x12~\n" +
+	"\x06Create\x123.authentication.service.v1.CreateLoginPolicyRequest\x1a\x16.google.protobuf.Empty\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/api/v1/admin/login-policies\x12\x83\x01\n" +
+	"\x06Update\x123.authentication.service.v1.UpdateLoginPolicyRequest\x1a\x16.google.protobuf.Empty\",\x82\xd3\xe4\x93\x02&:\x01*\x1a!/api/v1/admin/login-policies/{id}\x12\x80\x01\n" +
+	"\x06Delete\x123.authentication.service.v1.DeleteLoginPolicyRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#*!/api/v1/admin/login-policies/{id}B\xbe\x01\n" +
 	"\x14com.admin.service.v1B\x11ILoginPolicyProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_login_policy_proto_goTypes = []any{

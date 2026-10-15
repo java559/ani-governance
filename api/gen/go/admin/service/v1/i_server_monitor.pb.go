@@ -26,9 +26,9 @@ var File_admin_service_v1_i_server_monitor_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_server_monitor_proto_rawDesc = "" +
 	"\n" +
-	"'admin/service/v1/i_server_monitor.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a.server_monitor/service/v1/server_monitor.proto2\xa2\x01\n" +
-	"\x14ServerMonitorService\x12\x89\x01\n" +
-	"\x03Get\x122.server_monitor.service.v1.GetServerMonitorRequest\x1a,.server_monitor.service.v1.ServerMonitorInfo\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/admin/v1/server-monitorB\xc0\x01\n" +
+	"'admin/service/v1/i_server_monitor.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a.server_monitor/service/v1/server_monitor.proto2\xa6\x01\n" +
+	"\x14ServerMonitorService\x12\x8d\x01\n" +
+	"\x03Get\x122.server_monitor.service.v1.GetServerMonitorRequest\x1a,.server_monitor.service.v1.ServerMonitorInfo\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/admin/server-monitorB\xc0\x01\n" +
 	"\x14com.admin.service.v1B\x13IServerMonitorProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_server_monitor_proto_goTypes = []any{

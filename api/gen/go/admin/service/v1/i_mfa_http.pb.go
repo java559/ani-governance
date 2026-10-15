@@ -53,13 +53,13 @@ type MfaServiceHTTPServer interface {
 
 func RegisterMfaServiceHTTPServer(s *http.Server, srv MfaServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/mfa/status", _MfaService_GetMFAStatus0_HTTP_Handler(srv))
-	r.GET("/admin/v1/mfa/methods", _MfaService_ListEnrolledMethods0_HTTP_Handler(srv))
-	r.POST("/admin/v1/mfa/enroll/start", _MfaService_StartEnrollMethod0_HTTP_Handler(srv))
-	r.POST("/admin/v1/mfa/enroll/confirm", _MfaService_ConfirmEnrollMethod0_HTTP_Handler(srv))
-	r.POST("/admin/v1/mfa/disable", _MfaService_DisableMFA0_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/mfa/{credential_id}", _MfaService_RevokeMFADevice0_HTTP_Handler(srv))
-	r.POST("/admin/v1/mfa/verify", _MfaService_VerifyMFAChallenge0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/mfa/status", _MfaService_GetMFAStatus0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/mfa/methods", _MfaService_ListEnrolledMethods0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/mfa/enroll/start", _MfaService_StartEnrollMethod0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/mfa/enroll/confirm", _MfaService_ConfirmEnrollMethod0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/mfa/disable", _MfaService_DisableMFA0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/mfa/{credential_id}", _MfaService_RevokeMFADevice0_HTTP_Handler(srv))
+	r.POST("/api/v1/auth/mfa/verify", _MfaService_VerifyMFAChallenge0_HTTP_Handler(srv))
 }
 
 func _MfaService_GetMFAStatus0_HTTP_Handler(srv MfaServiceHTTPServer) func(ctx http.Context) error {
@@ -243,7 +243,7 @@ func NewMfaServiceHTTPClient(client *http.Client) MfaServiceHTTPClient {
 // ConfirmEnrollMethod 确认注册 MFA 方法（提交首码完成绑定）
 func (c *MfaServiceHTTPClientImpl) ConfirmEnrollMethod(ctx context.Context, in *v1.ConfirmEnrollMethodRequest, opts ...http.CallOption) (*v1.ConfirmEnrollMethodResponse, error) {
 	var out v1.ConfirmEnrollMethodResponse
-	pattern := "/admin/v1/mfa/enroll/confirm"
+	pattern := "/api/v1/admin/mfa/enroll/confirm"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationMfaServiceConfirmEnrollMethod))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -259,7 +259,7 @@ func (c *MfaServiceHTTPClientImpl) ConfirmEnrollMethod(ctx context.Context, in *
 // 而 TS 生成器默认把 message 序列化为 body——为两端一致改用 POST + body。
 func (c *MfaServiceHTTPClientImpl) DisableMFA(ctx context.Context, in *v1.DisableMFARequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/mfa/disable"
+	pattern := "/api/v1/admin/mfa/disable"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationMfaServiceDisableMFA))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -273,7 +273,7 @@ func (c *MfaServiceHTTPClientImpl) DisableMFA(ctx context.Context, in *v1.Disabl
 // GetMFAStatus 查询当前登录用户 MFA 总览
 func (c *MfaServiceHTTPClientImpl) GetMFAStatus(ctx context.Context, in *v1.GetMFAStatusRequest, opts ...http.CallOption) (*v1.GetMFAStatusResponse, error) {
 	var out v1.GetMFAStatusResponse
-	pattern := "/admin/v1/mfa/status"
+	pattern := "/api/v1/admin/mfa/status"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationMfaServiceGetMFAStatus))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -287,7 +287,7 @@ func (c *MfaServiceHTTPClientImpl) GetMFAStatus(ctx context.Context, in *v1.GetM
 // ListEnrolledMethods 列出已注册的 MFA 凭证
 func (c *MfaServiceHTTPClientImpl) ListEnrolledMethods(ctx context.Context, in *v1.ListEnrolledMethodsRequest, opts ...http.CallOption) (*v1.ListEnrolledMethodsResponse, error) {
 	var out v1.ListEnrolledMethodsResponse
-	pattern := "/admin/v1/mfa/methods"
+	pattern := "/api/v1/admin/mfa/methods"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationMfaServiceListEnrolledMethods))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -303,7 +303,7 @@ func (c *MfaServiceHTTPClientImpl) ListEnrolledMethods(ctx context.Context, in *
 // （发 body）之间不一致，贸然对接会静默丢参——需要时应改 POST（参见 DisableMFA）。
 func (c *MfaServiceHTTPClientImpl) RevokeMFADevice(ctx context.Context, in *v1.RevokeMFADeviceRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/mfa/{credential_id}"
+	pattern := "/api/v1/admin/mfa/{credential_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationMfaServiceRevokeMFADevice))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -317,7 +317,7 @@ func (c *MfaServiceHTTPClientImpl) RevokeMFADevice(ctx context.Context, in *v1.R
 // StartEnrollMethod 开始注册 MFA 方法（返回 secret/QR，仅 TOTP 本轮实现）
 func (c *MfaServiceHTTPClientImpl) StartEnrollMethod(ctx context.Context, in *v1.StartEnrollMethodRequest, opts ...http.CallOption) (*v1.StartEnrollMethodResponse, error) {
 	var out v1.StartEnrollMethodResponse
-	pattern := "/admin/v1/mfa/enroll/start"
+	pattern := "/api/v1/admin/mfa/enroll/start"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationMfaServiceStartEnrollMethod))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -332,7 +332,7 @@ func (c *MfaServiceHTTPClientImpl) StartEnrollMethod(ctx context.Context, in *v1
 // 免鉴权：登录流程在密码校验通过、待二次验证阶段调用。
 func (c *MfaServiceHTTPClientImpl) VerifyMFAChallenge(ctx context.Context, in *v1.VerifyMFAChallengeRequest, opts ...http.CallOption) (*v1.LoginResponse, error) {
 	var out v1.LoginResponse
-	pattern := "/admin/v1/mfa/verify"
+	pattern := "/api/v1/auth/mfa/verify"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationMfaServiceVerifyMFAChallenge))
 	opts = append(opts, http.PathTemplate(pattern))

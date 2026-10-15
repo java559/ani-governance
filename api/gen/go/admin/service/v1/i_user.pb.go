@@ -29,16 +29,16 @@ var File_admin_service_v1_i_user_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_user_proto_rawDesc = "" +
 	"\n" +
-	"\x1dadmin/service/v1/i_user.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x16redact/v1/redact.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1eidentity/service/v1/user.proto2\xfc\x06\n" +
-	"\vUserService\x12a\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a%.identity.service.v1.ListUserResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/admin/v1/users\x12\x8a\x01\n" +
-	"\x03Get\x12#.identity.service.v1.GetUserRequest\x1a\x19.identity.service.v1.User\"C\x82\xd3\xe4\x93\x02=Z%\x12#/admin/v1/users/username/{username}\x12\x14/admin/v1/users/{id}\x12h\n" +
-	"\x06Create\x12&.identity.service.v1.CreateUserRequest\x1a\x16.google.protobuf.Empty\"\x1eض\x1a\x01\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/admin/v1/users\x12m\n" +
-	"\x06Update\x12&.identity.service.v1.UpdateUserRequest\x1a\x16.google.protobuf.Empty\"#ض\x1a\x01\x82\xd3\xe4\x93\x02\x19:\x01*\x1a\x14/admin/v1/users/{id}\x12\x91\x01\n" +
-	"\x06Delete\x12&.identity.service.v1.DeleteUserRequest\x1a\x16.google.protobuf.Empty\"Gض\x1a\x01\x82\xd3\xe4\x93\x02=Z%*#/admin/v1/users/username/{username}*\x14/admin/v1/users/{id}\x12\x81\x01\n" +
+	"\x1dadmin/service/v1/i_user.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x16redact/v1/redact.proto\x1a\x1epagination/v1/pagination.proto\x1a\x1eidentity/service/v1/user.proto2\xa0\a\n" +
+	"\vUserService\x12e\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a%.identity.service.v1.ListUserResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/admin/users\x12\x92\x01\n" +
+	"\x03Get\x12#.identity.service.v1.GetUserRequest\x1a\x19.identity.service.v1.User\"K\x82\xd3\xe4\x93\x02EZ)\x12'/api/v1/admin/users/username/{username}\x12\x18/api/v1/admin/users/{id}\x12l\n" +
+	"\x06Create\x12&.identity.service.v1.CreateUserRequest\x1a\x16.google.protobuf.Empty\"\"ض\x1a\x01\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/admin/users\x12q\n" +
+	"\x06Update\x12&.identity.service.v1.UpdateUserRequest\x1a\x16.google.protobuf.Empty\"'ض\x1a\x01\x82\xd3\xe4\x93\x02\x1d:\x01*\x1a\x18/api/v1/admin/users/{id}\x12\x99\x01\n" +
+	"\x06Delete\x12&.identity.service.v1.DeleteUserRequest\x1a\x16.google.protobuf.Empty\"Oض\x1a\x01\x82\xd3\xe4\x93\x02EZ)*'/api/v1/admin/users/username/{username}*\x18/api/v1/admin/users/{id}\x12\x85\x01\n" +
 	"\n" +
-	"UserExists\x12&.identity.service.v1.UserExistsRequest\x1a'.identity.service.v1.UserExistsResponse\"\"ض\x1a\x01\x82\xd3\xe4\x93\x02\x18\x12\x16/admin/v1/users:exists\x12\x8b\x01\n" +
-	"\x10EditUserPassword\x12,.identity.service.v1.EditUserPasswordRequest\x1a\x16.google.protobuf.Empty\"1ض\x1a\x01\x82\xd3\xe4\x93\x02':\x01*\"\"/admin/v1/users/{user_id}/passwordB\xb7\x01\n" +
+	"UserExists\x12&.identity.service.v1.UserExistsRequest\x1a'.identity.service.v1.UserExistsResponse\"&ض\x1a\x01\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/users:exists\x12\x8f\x01\n" +
+	"\x10EditUserPassword\x12,.identity.service.v1.EditUserPasswordRequest\x1a\x16.google.protobuf.Empty\"5ض\x1a\x01\x82\xd3\xe4\x93\x02+:\x01*\"&/api/v1/admin/users/{user_id}/passwordB\xb7\x01\n" +
 	"\x14com.admin.service.v1B\n" +
 	"IUserProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 

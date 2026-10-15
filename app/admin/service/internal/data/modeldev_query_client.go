@@ -64,11 +64,11 @@ func (c *ModelDevClient) ListExecutionArtifacts(ctx context.Context, scope Model
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutionArtifacts(call, &modeldevv1.ListExecutionArtifactsRequest{ExecutionId: id, Page: &modeldevv1.PageRequest{PageSize: size, PageToken: token}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutionArtifacts(call, &modeldevv1.ListExecutionArtifactsRequest{ExecutionId: id, Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Artifacts) > 100 || len(out.NextPageToken) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Artifacts) > 100 || len(out.NextCursor) > 2048 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := map[string]bool{}

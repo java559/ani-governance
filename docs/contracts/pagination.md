@@ -4,7 +4,7 @@
 
 ## 适用范围与强制要求
 
-已采用 `limit/cursor` 的 Governance 自管列表，以及明确纳入同类分页改造批次的列表，遵守本节。新增列表先登记采用的分页协议、默认值、上限、排序、过滤及授权范围；复用下面的游标基线时完整落实其要求。本文不决定将全部历史列表统一迁移，也不将已冻结的 Network、ModelDev、Accelerator 或 Quota 协议改名。
+已采用 `limit/cursor` 的 Governance 自管列表，以及明确纳入同类分页改造批次的列表，遵守本节。新增列表先登记采用的分页协议、默认值、上限、排序、过滤及授权范围；复用下面的游标基线时完整落实其要求。本文不决定将全部历史列表统一迁移，也不将已冻结的 Network、Accelerator 或 Quota 协议改名。
 
 仅修改既有列表的业务字段、筛选或鉴权时，保持已接受的窗口协议；若需要改变协议，先确定具体接口、兼容与迁移批次。共享 `pagination.PagingRequest` 出现某个字段，不代表每个 RPC 都实现该字段的语义。
 
@@ -41,7 +41,7 @@
 
 ### users：已接入游标，保留显式旧窗口
 
-`GET /admin/v1/users` 使用 [PagingRequest](../../api/localdeps/pagination/pagination/v1/pagination.proto)，返回 [ListUserResponse](../../api/protos/identity/service/v1/user.proto)。[UserService.List](../../app/admin/service/internal/service/user_service.go) 委托 [userRepo.List](../../app/admin/service/internal/data/user_repo.go)，游标细节由 [user_cursor.go](../../app/admin/service/internal/data/user_cursor.go) 和本地 [ListWithCursor](../../pkg/localdeps/go-crud/entgo/cursor.go) 实现。
+`GET /api/v1/admin/users` 使用 [PagingRequest](../../api/localdeps/pagination/pagination/v1/pagination.proto)，返回 [ListUserResponse](../../api/protos/identity/service/v1/user.proto)。[UserService.List](../../app/admin/service/internal/service/user_service.go) 委托 [userRepo.List](../../app/admin/service/internal/data/user_repo.go)，游标细节由 [user_cursor.go](../../app/admin/service/internal/data/user_cursor.go) 和本地 [ListWithCursor](../../pkg/localdeps/go-crud/entgo/cursor.go) 实现。
 
 普通分页请求未显式提供 `page`、`pageSize`、`offset` 或 `token` 时进入游标分支，limit 默认 20、范围 1～100；存在非空 cursor 且同时提供上述窗口字段或 `noPaging` 时报错。显式提供旧窗口字段时仍走 `ListWithPaging`，例如 `?page=1&pageSize=20`；该分支返回 items/total，不具备新游标续页语义。
 
@@ -64,7 +64,7 @@ total 为 uint64，HTTP JSON 为字符串。查询侧 Ent TenantPrivacy 继续�
 | Network 的 VPC、EIP、Subnet、LB 列表 | 保留 limit/cursor 与 items/next_cursor/total。total 为 int64 字符串，遵守同可信租户、权限和筛选的计数要求；HTTP 对显式 limit 接受规范十进制 1～100 | [Network 策略](../../pkg/middleware/auth/network_policy.go)、[Network BFF](../../app/admin/service/internal/service/network_service.go) |
 | 平台网络 VLAN、网关、Public/Intranet 池 | limit/cursor 与 items/next_cursor/total，沿用 VPC 默认 20、1～100 和下游签名游标；节点网卡清单不分页 | [平台网络合同](platform-network.md) |
 | Image registrations | 保留领域已接受的 limit/cursor 与 items/next_cursor/total，按 Image 策略限制参数并透传已验证下游结果；不强制改为 users 的 c1 编码 | [Image 策略](../../pkg/middleware/auth/image_policy.go)、[Image BFF](../../app/admin/service/internal/service/image_service.go) |
-| ModelDev execution 列表 | 保留 page_size/page_token 与 next_page_token；execution 列表默认 20、上限 100，token 上限 2048 字节，不附加虚构 total。产物、preset 和 input-version 列表按各自专用合同 | [ModelDev 查询 HTTP](../../app/admin/service/internal/server/modeldev_query_http.go)、[目录 HTTP](../../app/admin/service/internal/server/modeldev_catalogue_http.go)、登记中的 MODELDEV-03/06/07 |
+| ModelDev execution 列表 | 已接入 limit/cursor 与 items/next_cursor/total（与 users/VPC 同一对外形状）。execution/preset/input-version/artifact 四个列表默认 20、上限 100，token 上限 2048 字节。游标为下游不透明 ID（同 VPC 的“下游游标”，非 Governance 的 c1 编码）：换筛选/排序复用旧游标不报错，客户端应改从首页取数。total 与筛选一致，由下游在可信租户内计算 | [ModelDev 查询 HTTP](../../app/admin/service/internal/server/modeldev_query_http.go)、[目录 HTTP](../../app/admin/service/internal/server/modeldev_catalogue_http.go)、登记 MODELDEV-03/06/07/09/10 |
 | Accelerator 领域列表 | 保留 page_size/page_token 与 next_page_token，page_size 为 0 时默认 50、最大 200；不伪造 total。下游 token 不替换成 Governance c1 | [Accelerator BFF](../../app/admin/service/internal/service/accelerator_service.go)、登记中的 GOV-ACC-V12-01 |
 | Quota 管理目录及套餐配额列表 | 核对对应 Repo 的现有 PagingRequest 实现，不据共享 cursor 自动改造，也不改写领域专项 token 合同 | [quota_admin_repo.go](../../app/admin/service/internal/data/quota_admin_repo.go)、[plan_quota_list.go](../../app/admin/service/internal/data/plan_quota_list.go) |
 
@@ -74,7 +74,7 @@ total 为 uint64，HTTP JSON 为字符串。查询侧 Ent TenantPrivacy 继续�
 
 ## 待迁移范围与已知差异
 
-1. **其他历史列表未迁移。** LIST-CURSOR-01 仅改变 users；LIST-CURSOR-02 新增 roles 与 api-keys 两个接口。逐接口明确改造范围、业务排序和兼容策略后再实施。Network、ModelDev、Accelerator 与 Quota 的字段和 token 格式按其专项合同维护，本文不授权统一改名。
+1. **其他历史列表未迁移。** LIST-CURSOR-01 仅改变 users；LIST-CURSOR-02 新增 roles 与 api-keys 两个接口；ModelDev 四个列表的 limit/cursor 迁移见 MODELDEV-10。逐接口明确改造范围、业务排序和兼容策略后再实施。Network、Accelerator 与 Quota 的字段和 token 格式按其专项合同维护，本文不授权统一改名。
 2. **同快照计数未由游标实现保证。** 当前 list/count 的谓词一致，但分别执行；本文只记录实际一致性边界，不据此引入全仓事务迁移。若具体业务要求同一次响应的强快照或跨页冻结结果，先确定合同与相应实现。
 3. **多字段筛选的指纹稳定性依赖规范化。** `QueryStringConverter` 按 Go map 随机顺序追加 `Conditions`，因此指纹计算前须经 `NormalizeFilterExpr` 重排（`entgo.CursorFilterKey` 已接入）。新增或重写筛选解析路径时必须保持该规范化，否则语义相同的 query 会产生不同指纹，使原样回传的 `next_cursor` 被误判为篡改。
 

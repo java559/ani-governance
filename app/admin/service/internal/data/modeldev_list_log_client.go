@@ -20,11 +20,11 @@ func (c *ModelDevClient) ListExecutions(ctx context.Context, scope ModelDevResol
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutions(call, &modeldevv1.ListExecutionsRequest{Page: &modeldevv1.PageRequest{PageSize: size, PageToken: token}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutions(call, &modeldevv1.ListExecutionsRequest{Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Executions) > int(size) || len(out.NextPageToken) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Executions) > int(size) || len(out.NextCursor) > 2048 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := make(map[string]bool, len(out.Executions))

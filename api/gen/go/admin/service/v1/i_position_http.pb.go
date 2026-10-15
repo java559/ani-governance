@@ -43,11 +43,11 @@ type PositionServiceHTTPServer interface {
 
 func RegisterPositionServiceHTTPServer(s *http.Server, srv PositionServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/positions", _PositionService_List21_HTTP_Handler(srv))
-	r.GET("/admin/v1/positions/{id}", _PositionService_Get20_HTTP_Handler(srv))
-	r.POST("/admin/v1/positions", _PositionService_Create15_HTTP_Handler(srv))
-	r.PUT("/admin/v1/positions/{id}", _PositionService_Update15_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/positions/{id}", _PositionService_Delete15_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/positions", _PositionService_List21_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/positions/{id}", _PositionService_Get20_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/positions", _PositionService_Create15_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/positions/{id}", _PositionService_Update15_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/positions/{id}", _PositionService_Delete15_HTTP_Handler(srv))
 }
 
 func _PositionService_List21_HTTP_Handler(srv PositionServiceHTTPServer) func(ctx http.Context) error {
@@ -184,7 +184,7 @@ func NewPositionServiceHTTPClient(client *http.Client) PositionServiceHTTPClient
 // Create 创建职位
 func (c *PositionServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreatePositionRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/positions"
+	pattern := "/api/v1/admin/positions"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPositionServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -198,7 +198,7 @@ func (c *PositionServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Crea
 // Delete 删除职位
 func (c *PositionServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeletePositionRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/positions/{id}"
+	pattern := "/api/v1/admin/positions/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPositionServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -212,7 +212,7 @@ func (c *PositionServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.Dele
 // Get 查询职位详情
 func (c *PositionServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPositionRequest, opts ...http.CallOption) (*v11.Position, error) {
 	var out v11.Position
-	pattern := "/admin/v1/positions/{id}"
+	pattern := "/api/v1/admin/positions/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPositionServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -226,7 +226,7 @@ func (c *PositionServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetPosi
 // List 查询职位列表
 func (c *PositionServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListPositionResponse, error) {
 	var out v11.ListPositionResponse
-	pattern := "/admin/v1/positions"
+	pattern := "/api/v1/admin/positions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPositionServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -240,7 +240,7 @@ func (c *PositionServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingR
 // Update 更新职位
 func (c *PositionServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdatePositionRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/positions/{id}"
+	pattern := "/api/v1/admin/positions/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPositionServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

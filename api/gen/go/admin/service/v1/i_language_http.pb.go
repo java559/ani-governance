@@ -46,12 +46,12 @@ type LanguageServiceHTTPServer interface {
 
 func RegisterLanguageServiceHTTPServer(s *http.Server, srv LanguageServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/dict/langs", _LanguageService_List8_HTTP_Handler(srv))
-	r.GET("/admin/v1/dict/langs/{id}", _LanguageService_Get8_HTTP_Handler(srv))
-	r.POST("/admin/v1/dict/langs", _LanguageService_Create6_HTTP_Handler(srv))
-	r.PUT("/admin/v1/dict/langs/{id}", _LanguageService_Update6_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/dict/langs", _LanguageService_Delete6_HTTP_Handler(srv))
-	r.POST("/admin/v1/dict/langs/batch", _LanguageService_BatchCreate0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dict/langs", _LanguageService_List8_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/dict/langs/{id}", _LanguageService_Get8_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/dict/langs", _LanguageService_Create6_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/dict/langs/{id}", _LanguageService_Update6_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/dict/langs", _LanguageService_Delete6_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/dict/langs/batch", _LanguageService_BatchCreate0_HTTP_Handler(srv))
 }
 
 func _LanguageService_List8_HTTP_Handler(srv LanguageServiceHTTPServer) func(ctx http.Context) error {
@@ -209,7 +209,7 @@ func NewLanguageServiceHTTPClient(client *http.Client) LanguageServiceHTTPClient
 // BatchCreate 批量创建语言
 func (c *LanguageServiceHTTPClientImpl) BatchCreate(ctx context.Context, in *v11.BatchCreateLanguagesRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/dict/langs/batch"
+	pattern := "/api/v1/admin/dict/langs/batch"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationLanguageServiceBatchCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -223,7 +223,7 @@ func (c *LanguageServiceHTTPClientImpl) BatchCreate(ctx context.Context, in *v11
 // Create 创建语言
 func (c *LanguageServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateLanguageRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/dict/langs"
+	pattern := "/api/v1/admin/dict/langs"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationLanguageServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -237,7 +237,7 @@ func (c *LanguageServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Crea
 // Delete 删除语言
 func (c *LanguageServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteLanguageRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/dict/langs"
+	pattern := "/api/v1/admin/dict/langs"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationLanguageServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -251,7 +251,7 @@ func (c *LanguageServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.Dele
 // Get 查询语言详情
 func (c *LanguageServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetLanguageRequest, opts ...http.CallOption) (*v11.Language, error) {
 	var out v11.Language
-	pattern := "/admin/v1/dict/langs/{id}"
+	pattern := "/api/v1/admin/dict/langs/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationLanguageServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -265,7 +265,7 @@ func (c *LanguageServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetLang
 // List 分页查询语言列表
 func (c *LanguageServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListLanguageResponse, error) {
 	var out v11.ListLanguageResponse
-	pattern := "/admin/v1/dict/langs"
+	pattern := "/api/v1/admin/dict/langs"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationLanguageServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -279,7 +279,7 @@ func (c *LanguageServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingR
 // Update 更新语言
 func (c *LanguageServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateLanguageRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/dict/langs/{id}"
+	pattern := "/api/v1/admin/dict/langs/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationLanguageServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

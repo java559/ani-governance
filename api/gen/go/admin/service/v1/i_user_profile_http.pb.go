@@ -42,11 +42,11 @@ type UserProfileServiceHTTPServer interface {
 
 func RegisterUserProfileServiceHTTPServer(s *http.Server, srv UserProfileServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/me", _UserProfileService_GetUser0_HTTP_Handler(srv))
-	r.PUT("/admin/v1/me", _UserProfileService_UpdateUser0_HTTP_Handler(srv))
-	r.POST("/admin/v1/me/password", _UserProfileService_ChangePassword0_HTTP_Handler(srv))
-	r.POST("/admin/v1/me/contact", _UserProfileService_BindContact0_HTTP_Handler(srv))
-	r.POST("/admin/v1/me/contact/verify", _UserProfileService_VerifyContact0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/me", _UserProfileService_GetUser0_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/me", _UserProfileService_UpdateUser0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/me/password", _UserProfileService_ChangePassword0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/me/contact", _UserProfileService_BindContact0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/me/contact/verify", _UserProfileService_VerifyContact0_HTTP_Handler(srv))
 }
 
 func _UserProfileService_GetUser0_HTTP_Handler(srv UserProfileServiceHTTPServer) func(ctx http.Context) error {
@@ -180,7 +180,7 @@ func NewUserProfileServiceHTTPClient(client *http.Client) UserProfileServiceHTTP
 // BindContact 绑定手机号码/邮箱
 func (c *UserProfileServiceHTTPClientImpl) BindContact(ctx context.Context, in *v1.BindContactRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/me/contact"
+	pattern := "/api/v1/admin/me/contact"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserProfileServiceBindContact))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -194,7 +194,7 @@ func (c *UserProfileServiceHTTPClientImpl) BindContact(ctx context.Context, in *
 // ChangePassword 修改用户密码
 func (c *UserProfileServiceHTTPClientImpl) ChangePassword(ctx context.Context, in *v1.ChangePasswordRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/me/password"
+	pattern := "/api/v1/admin/me/password"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserProfileServiceChangePassword))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -208,7 +208,7 @@ func (c *UserProfileServiceHTTPClientImpl) ChangePassword(ctx context.Context, i
 // GetUser 获取用户资料
 func (c *UserProfileServiceHTTPClientImpl) GetUser(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*v1.User, error) {
 	var out v1.User
-	pattern := "/admin/v1/me"
+	pattern := "/api/v1/admin/me"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationUserProfileServiceGetUser))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -222,7 +222,7 @@ func (c *UserProfileServiceHTTPClientImpl) GetUser(ctx context.Context, in *empt
 // UpdateUser 更新用户资料
 func (c *UserProfileServiceHTTPClientImpl) UpdateUser(ctx context.Context, in *v1.UpdateUserRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/me"
+	pattern := "/api/v1/admin/me"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserProfileServiceUpdateUser))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -236,7 +236,7 @@ func (c *UserProfileServiceHTTPClientImpl) UpdateUser(ctx context.Context, in *v
 // VerifyContact 验证手机号码/邮箱
 func (c *UserProfileServiceHTTPClientImpl) VerifyContact(ctx context.Context, in *v1.VerifyContactRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/me/contact/verify"
+	pattern := "/api/v1/admin/me/contact/verify"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationUserProfileServiceVerifyContact))
 	opts = append(opts, http.PathTemplate(pattern))

@@ -19,13 +19,13 @@ func (s *ModelDevService) ListPresets(ctx context.Context, in *modeldevv1.ListPr
 	if err != nil {
 		return nil, err
 	}
-	if in == nil || in.PageSize > 100 || len(in.PageToken) > 2048 {
+	if in == nil || in.Limit > 100 || len(in.Cursor) > 2048 {
 		return nil, modelDevQueryInvalid()
 	}
 	if s.bindings == nil {
 		return nil, modelDevQueryFailure(nil)
 	}
-	out, err := s.resolver.ListPresets(ctx, scope, in.PageSize, in.PageToken)
+	out, err := s.resolver.ListPresets(ctx, scope, in.Limit, in.Cursor)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
@@ -33,7 +33,7 @@ func (s *ModelDevService) ListPresets(ctx context.Context, in *modeldevv1.ListPr
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
-	reply := &modeldevv1.ListPresetsResponse{NextPageToken: out.NextPageToken}
+	reply := &modeldevv1.ListPresetsResponse{NextCursor: out.NextCursor, Total: out.Total}
 	for _, preset := range out.Presets {
 		view := &modeldevv1.PresetView{PresetId: preset.PresetId, Name: preset.Name, Kind: strings.TrimPrefix(preset.Kind.String(), "EXECUTION_KIND_"), ImageVersionIds: preset.ImageVersionIds}
 		binding, err := s.bindings.Get(ctx, data.ModelDevReleaseBindingScope{TenantID: principal.TenantID, ResourceTenantID: scope.ResourceTenantID, PresetID: preset.PresetId})
@@ -52,7 +52,7 @@ func (s *ModelDevService) ListPresets(ctx context.Context, in *modeldevv1.ListPr
 				view.ParameterRules[n].AllowedValues = append(view.ParameterRules[n].AllowedValues, modelDevPublicParameter(allowed))
 			}
 		}
-		reply.Presets = append(reply.Presets, view)
+		reply.Items = append(reply.Items, view)
 	}
 	return reply, nil
 }
@@ -99,7 +99,7 @@ func (s *ModelDevService) ListInputVersions(ctx context.Context, in *modeldevv1.
 	if err != nil {
 		return nil, err
 	}
-	if in == nil || in.PageSize > 100 || len(in.PageToken) > 2048 {
+	if in == nil || in.Limit > 100 || len(in.Cursor) > 2048 {
 		return nil, modelDevQueryInvalid()
 	}
 	var state *modeldevcontractv1.InputState
@@ -111,13 +111,13 @@ func (s *ModelDevService) ListInputVersions(ctx context.Context, in *modeldevv1.
 		parsed := modeldevcontractv1.InputState(value)
 		state = &parsed
 	}
-	out, err := s.resolver.ListInputVersions(ctx, scope, in.PageSize, in.PageToken, state)
+	out, err := s.resolver.ListInputVersions(ctx, scope, in.Limit, in.Cursor, state)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
-	reply := &modeldevv1.ListInputVersionsResponse{NextPageToken: out.NextPageToken}
+	reply := &modeldevv1.ListInputVersionsResponse{NextCursor: out.NextCursor, Total: out.Total}
 	for _, input := range out.InputVersions {
-		reply.InputVersions = append(reply.InputVersions, modelDevPublicInput(input))
+		reply.Items = append(reply.Items, modelDevPublicInput(input))
 	}
 	return reply, nil
 }

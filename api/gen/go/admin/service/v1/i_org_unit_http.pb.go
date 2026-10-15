@@ -43,11 +43,11 @@ type OrgUnitServiceHTTPServer interface {
 
 func RegisterOrgUnitServiceHTTPServer(s *http.Server, srv OrgUnitServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/org-units", _OrgUnitService_List13_HTTP_Handler(srv))
-	r.GET("/admin/v1/org-units/{id}", _OrgUnitService_Get13_HTTP_Handler(srv))
-	r.POST("/admin/v1/org-units", _OrgUnitService_Create9_HTTP_Handler(srv))
-	r.PUT("/admin/v1/org-units/{id}", _OrgUnitService_Update9_HTTP_Handler(srv))
-	r.DELETE("/admin/v1/org-units/{id}", _OrgUnitService_Delete9_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/org-units", _OrgUnitService_List13_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/org-units/{id}", _OrgUnitService_Get13_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/org-units", _OrgUnitService_Create9_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/org-units/{id}", _OrgUnitService_Update9_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/org-units/{id}", _OrgUnitService_Delete9_HTTP_Handler(srv))
 }
 
 func _OrgUnitService_List13_HTTP_Handler(srv OrgUnitServiceHTTPServer) func(ctx http.Context) error {
@@ -184,7 +184,7 @@ func NewOrgUnitServiceHTTPClient(client *http.Client) OrgUnitServiceHTTPClient {
 // Create 创建组织单元
 func (c *OrgUnitServiceHTTPClientImpl) Create(ctx context.Context, in *v11.CreateOrgUnitRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/org-units"
+	pattern := "/api/v1/admin/org-units"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationOrgUnitServiceCreate))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -198,7 +198,7 @@ func (c *OrgUnitServiceHTTPClientImpl) Create(ctx context.Context, in *v11.Creat
 // Delete 删除组织单元
 func (c *OrgUnitServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.DeleteOrgUnitRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/org-units/{id}"
+	pattern := "/api/v1/admin/org-units/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationOrgUnitServiceDelete))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -212,7 +212,7 @@ func (c *OrgUnitServiceHTTPClientImpl) Delete(ctx context.Context, in *v11.Delet
 // Get 查询组织单元详情
 func (c *OrgUnitServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetOrgUnitRequest, opts ...http.CallOption) (*v11.OrgUnit, error) {
 	var out v11.OrgUnit
-	pattern := "/admin/v1/org-units/{id}"
+	pattern := "/api/v1/admin/org-units/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationOrgUnitServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -226,7 +226,7 @@ func (c *OrgUnitServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetOrgUn
 // List 查询组织单元列表
 func (c *OrgUnitServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListOrgUnitResponse, error) {
 	var out v11.ListOrgUnitResponse
-	pattern := "/admin/v1/org-units"
+	pattern := "/api/v1/admin/org-units"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationOrgUnitServiceList))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -240,7 +240,7 @@ func (c *OrgUnitServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRe
 // Update 更新组织单元
 func (c *OrgUnitServiceHTTPClientImpl) Update(ctx context.Context, in *v11.UpdateOrgUnitRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
-	pattern := "/admin/v1/org-units/{id}"
+	pattern := "/api/v1/admin/org-units/{id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationOrgUnitServiceUpdate))
 	opts = append(opts, http.PathTemplate(pattern))

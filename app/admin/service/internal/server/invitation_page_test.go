@@ -41,7 +41,7 @@ func TestInvitationPublicSelector(t *testing.T) {
 		status int
 	}{
 		{service.InvitationPath, 400}, // reaches request validation without login
-		{"/admin/v1/users", 401},      // creation remains authenticated
+		{"/api/v1/admin/users", 401},  // creation remains authenticated
 	} {
 		rr := httptest.NewRecorder()
 		req := httptest.NewRequest("POST", test.path, strings.NewReader(`{}`))

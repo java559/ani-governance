@@ -11,14 +11,14 @@ service OnlineSessionService {
   // 查询在线会话列表
   rpc ListOnlineSession(online_session.service.v1.ListOnlineSessionRequest) returns (online_session.service.v1.ListOnlineSessionResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/online-session/sessions"
+      get: "/api/v1/admin/online-session/sessions"
     };
   }
 
   // 强制下线指定会话
   rpc ForceLogoutSession(online_session.service.v1.ForceLogoutSessionRequest) returns (online_session.service.v1.ForceLogoutSessionResponse) {
     option (google.api.http) = {
-      post: "/admin/v1/online-session/force-logout"
+      post: "/api/v1/admin/online-session/force-logout"
       body: "*"
     };
   }
@@ -26,14 +26,14 @@ service OnlineSessionService {
   // 查询当前登录用户的在线会话（个人中心自助视图）
   rpc ListMyOnlineSession(online_session.service.v1.ListMyOnlineSessionRequest) returns (online_session.service.v1.ListOnlineSessionResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/online-session/my-sessions"
+      get: "/api/v1/admin/online-session/my-sessions"
     };
   }
 
   // 当前用户强制下线自己的指定会话
   rpc RevokeMyOnlineSession(online_session.service.v1.RevokeMyOnlineSessionRequest) returns (online_session.service.v1.RevokeMyOnlineSessionResponse) {
     option (google.api.http) = {
-      post: "/admin/v1/online-session/my-sessions/revoke"
+      post: "/api/v1/admin/online-session/my-sessions/revoke"
       body: "*"
     };
   }

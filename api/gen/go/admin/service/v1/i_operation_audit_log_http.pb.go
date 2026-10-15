@@ -33,8 +33,8 @@ type OperationAuditLogServiceHTTPServer interface {
 
 func RegisterOperationAuditLogServiceHTTPServer(s *http.Server, srv OperationAuditLogServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/admin/v1/operation-audit-logs", _OperationAuditLogService_List12_HTTP_Handler(srv))
-	r.GET("/admin/v1/operation-audit-logs/{id}", _OperationAuditLogService_Get12_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/operation-audit-logs", _OperationAuditLogService_List12_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/operation-audit-logs/{id}", _OperationAuditLogService_Get12_HTTP_Handler(srv))
 }
 
 func _OperationAuditLogService_List12_HTTP_Handler(srv OperationAuditLogServiceHTTPServer) func(ctx http.Context) error {
@@ -96,7 +96,7 @@ func NewOperationAuditLogServiceHTTPClient(client *http.Client) OperationAuditLo
 // Get 查询操作审计日志详情
 func (c *OperationAuditLogServiceHTTPClientImpl) Get(ctx context.Context, in *v11.GetOperationAuditLogRequest, opts ...http.CallOption) (*v11.OperationAuditLog, error) {
 	var out v11.OperationAuditLog
-	pattern := "/admin/v1/operation-audit-logs/{id}"
+	pattern := "/api/v1/admin/operation-audit-logs/{id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationOperationAuditLogServiceGet))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -110,7 +110,7 @@ func (c *OperationAuditLogServiceHTTPClientImpl) Get(ctx context.Context, in *v1
 // List 查询操作审计日志列表
 func (c *OperationAuditLogServiceHTTPClientImpl) List(ctx context.Context, in *v1.PagingRequest, opts ...http.CallOption) (*v11.ListOperationAuditLogResponse, error) {
 	var out v11.ListOperationAuditLogResponse
-	pattern := "/admin/v1/operation-audit-logs"
+	pattern := "/api/v1/admin/operation-audit-logs"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationOperationAuditLogServiceList))
 	opts = append(opts, http.PathTemplate(pattern))

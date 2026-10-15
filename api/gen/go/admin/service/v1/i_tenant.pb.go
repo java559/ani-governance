@@ -28,17 +28,17 @@ var File_admin_service_v1_i_tenant_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_tenant_proto_rawDesc = "" +
 	"\n" +
-	"\x1fadmin/service/v1/i_tenant.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a identity/service/v1/tenant.proto2\xc5\b\n" +
-	"\rTenantService\x12e\n" +
-	"\x04List\x12\x19.pagination.PagingRequest\x1a'.identity.service.v1.ListTenantResponse\"\x19\x82\xd3\xe4\x93\x02\x13\x12\x11/admin/v1/tenants\x12i\n" +
-	"\x03Get\x12%.identity.service.v1.GetTenantRequest\x1a\x1b.identity.service.v1.Tenant\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/admin/v1/tenants/{id}\x12h\n" +
-	"\x06Create\x12(.identity.service.v1.CreateTenantRequest\x1a\x16.google.protobuf.Empty\"\x1c\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/admin/v1/tenants\x12m\n" +
-	"\x06Update\x12(.identity.service.v1.UpdateTenantRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\x1a\x16/admin/v1/tenants/{id}\x12j\n" +
-	"\x06Delete\x12(.identity.service.v1.DeleteTenantRequest\x1a\x16.google.protobuf.Empty\"\x1e\x82\xd3\xe4\x93\x02\x18*\x16/admin/v1/tenants/{id}\x12\x93\x01\n" +
-	"\x19CreateTenantWithAdminUser\x125.identity.service.v1.CreateTenantWithAdminUserRequest\x1a\x16.google.protobuf.Empty\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/admin/v1/tenants:with-admin\x12\x85\x01\n" +
-	"\fTenantExists\x12(.identity.service.v1.TenantExistsRequest\x1a).identity.service.v1.TenantExistsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/admin/v1/tenants:exists\x12~\n" +
-	"\bGetUsage\x12*.identity.service.v1.GetTenantUsageRequest\x1a .identity.service.v1.TenantUsage\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/admin/v1/tenants/{id}/usage\x12\x7f\n" +
-	"\vCleanupData\x12-.identity.service.v1.CleanupTenantDataRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/admin/v1/tenants/{id}/cleanupB\xb9\x01\n" +
+	"\x1fadmin/service/v1/i_tenant.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1epagination/v1/pagination.proto\x1a identity/service/v1/tenant.proto2\xeb\b\n" +
+	"\rTenantService\x12i\n" +
+	"\x04List\x12\x19.pagination.PagingRequest\x1a'.identity.service.v1.ListTenantResponse\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/admin/tenants\x12m\n" +
+	"\x03Get\x12%.identity.service.v1.GetTenantRequest\x1a\x1b.identity.service.v1.Tenant\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/tenants/{id}\x12l\n" +
+	"\x06Create\x12(.identity.service.v1.CreateTenantRequest\x1a\x16.google.protobuf.Empty\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/admin/tenants\x12q\n" +
+	"\x06Update\x12(.identity.service.v1.UpdateTenantRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\x1a\x1a/api/v1/admin/tenants/{id}\x12n\n" +
+	"\x06Delete\x12(.identity.service.v1.DeleteTenantRequest\x1a\x16.google.protobuf.Empty\"\"\x82\xd3\xe4\x93\x02\x1c*\x1a/api/v1/admin/tenants/{id}\x12\x97\x01\n" +
+	"\x19CreateTenantWithAdminUser\x125.identity.service.v1.CreateTenantWithAdminUserRequest\x1a\x16.google.protobuf.Empty\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/admin/tenants:with-admin\x12\x89\x01\n" +
+	"\fTenantExists\x12(.identity.service.v1.TenantExistsRequest\x1a).identity.service.v1.TenantExistsResponse\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/admin/tenants:exists\x12\x82\x01\n" +
+	"\bGetUsage\x12*.identity.service.v1.GetTenantUsageRequest\x1a .identity.service.v1.TenantUsage\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/tenants/{id}/usage\x12\x83\x01\n" +
+	"\vCleanupData\x12-.identity.service.v1.CleanupTenantDataRequest\x1a\x16.google.protobuf.Empty\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/admin/tenants/{id}/cleanupB\xb9\x01\n" +
 	"\x14com.admin.service.v1B\fITenantProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_tenant_proto_goTypes = []any{

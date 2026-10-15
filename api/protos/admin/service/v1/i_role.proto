@@ -14,21 +14,21 @@ service RoleService {
   // 查询角色列表
   rpc List (pagination.PagingRequest) returns (permission.service.v1.ListRoleResponse) {
     option (google.api.http) = {
-      get: "/admin/v1/roles"
+      get: "/api/v1/admin/roles"
     };
   }
 
   // 查询角色详情
   rpc Get (permission.service.v1.GetRoleRequest) returns (permission.service.v1.Role) {
     option (google.api.http) = {
-      get: "/admin/v1/roles/{id}"
+      get: "/api/v1/admin/roles/{id}"
     };
   }
 
   // 创建角色
   rpc Create (permission.service.v1.CreateRoleRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/admin/v1/roles"
+      post: "/api/v1/admin/roles"
       body: "*"
     };
   }
@@ -36,7 +36,7 @@ service RoleService {
   // 更新角色
   rpc Update (permission.service.v1.UpdateRoleRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      put: "/admin/v1/roles/{id}"
+      put: "/api/v1/admin/roles/{id}"
       body: "*"
     };
   }
@@ -44,7 +44,7 @@ service RoleService {
   // 删除角色
   rpc Delete (permission.service.v1.DeleteRoleRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      delete: "/admin/v1/roles/{id}"
+      delete: "/api/v1/admin/roles/{id}"
     };
   }
 }

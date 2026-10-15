@@ -77,7 +77,7 @@ func TestModelDevAuthorizationUsesCurrentRoleMembership(t *testing.T) {
 	})
 
 	createAPI, err := client.Client().Api.Create().
-		SetModule("modeldev-auth-" + fixtureID).SetPath("/admin/v1/modeldev/executions").
+		SetModule("modeldev-auth-" + fixtureID).SetPath("/api/v1/modeldev/executions").
 		SetMethod("POST").SetScope(api.ScopeAdmin).
 		SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(ctx)
 	require.NoError(t, err, "PG fixture preparation is not authorization RED")
@@ -139,7 +139,7 @@ func TestModelDevAuthorizationUsesCurrentRoleMembership(t *testing.T) {
 	storedAPI, err := reader.Client().Api.Get(ctx, createAPI.ID)
 	require.NoError(t, err)
 	apiOn, model, admin := api.StatusOn, api.BusinessModuleModel, api.ScopeAdmin
-	path, method := "/admin/v1/modeldev/executions", "POST"
+	path, method := "/api/v1/modeldev/executions", "POST"
 	require.Equal(t, &apiOn, storedAPI.Status)
 	require.Equal(t, &model, storedAPI.BusinessModule)
 	require.Equal(t, &admin, storedAPI.Scope)

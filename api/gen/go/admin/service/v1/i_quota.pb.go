@@ -26,10 +26,10 @@ var File_admin_service_v1_i_quota_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_quota_proto_rawDesc = "" +
 	"\n" +
-	"\x1eadmin/service/v1/i_quota.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a\"admin/service/v1/quota_types.proto2\xcb\x02\n" +
-	"\x11QuotaAdminService\x12\x86\x01\n" +
-	"\x14ListQuotaDefinitions\x12\x19.pagination.PagingRequest\x1a..admin.service.v1.ListQuotaDefinitionsResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/admin/v1/quota-definitions\x12\xac\x01\n" +
-	"\x17ListTenantQuotaAccounts\x12/.admin.service.v1.GetTenantQuotaAccountsRequest\x1a1.admin.service.v1.ListTenantQuotaAccountsResponse\"-\x82\xd3\xe4\x93\x02'\x12%/admin/v1/tenants/{id}/quota-accountsB\xb8\x01\n" +
+	"\x1eadmin/service/v1/i_quota.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a\"admin/service/v1/quota_types.proto2\xd3\x02\n" +
+	"\x11QuotaAdminService\x12\x8a\x01\n" +
+	"\x14ListQuotaDefinitions\x12\x19.pagination.PagingRequest\x1a..admin.service.v1.ListQuotaDefinitionsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/quota-definitions\x12\xb0\x01\n" +
+	"\x17ListTenantQuotaAccounts\x12/.admin.service.v1.GetTenantQuotaAccountsRequest\x1a1.admin.service.v1.ListTenantQuotaAccountsResponse\"1\x82\xd3\xe4\x93\x02+\x12)/api/v1/admin/tenants/{id}/quota-accountsB\xb8\x01\n" +
 	"\x14com.admin.service.v1B\vIQuotaProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1P\x02b\x06proto3"
 
 var file_admin_service_v1_i_quota_proto_goTypes = []any{
