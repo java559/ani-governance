@@ -7,6 +7,7 @@
 package adminpb
 
 import (
+	v11 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	v1 "go-wind-admin/api/gen/go/inference/service/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -26,24 +27,39 @@ var File_admin_service_v1_i_inference_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_inference_proto_rawDesc = "" +
 	"\n" +
-	"\"admin/service/v1/i_inference.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a inference/service/v1/owner.proto2\xd4\x02\n" +
+	"\"admin/service/v1/i_inference.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a inference/service/v1/owner.proto\x1a\x1cinference/v1/inference.proto2\x92\x06\n" +
 	"\x10InferenceService\x12\x91\x01\n" +
 	"\x0fCreateInference\x12,.inference.service.v1.CreateInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/inference/services\x12\xab\x01\n" +
-	"\x0fDeleteInference\x12,.inference.service.v1.DeleteInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/inference/services/{data.resource_id}:deleteB\xbc\x01\n" +
+	"\x0fDeleteInference\x12,.inference.service.v1.DeleteInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/inference/services/{data.resource_id}:delete\x12\x90\x01\n" +
+	"\fGetInference\x12).inference.service.v1.GetInferenceRequest\x1a#.inference.service.v1.InferenceView\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/inference/services/{resource_id}\x12\x8c\x01\n" +
+	"\rListInference\x12*.inference.service.v1.ListInferenceRequest\x1a+.inference.service.v1.ListInferenceResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/inference/services\x12\x99\x01\n" +
+	"\x15GetInferenceOperation\x122.inference.service.v1.GetInferenceOperationRequest\x1a\x17.inference.v1.Operation\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/inference/operations/{operation_id}B\xbc\x01\n" +
 	"\x14com.admin.service.v1B\x0fIInferenceProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_inference_proto_goTypes = []any{
-	(*v1.CreateInferenceRequest)(nil), // 0: inference.service.v1.CreateInferenceRequest
-	(*v1.DeleteInferenceRequest)(nil), // 1: inference.service.v1.DeleteInferenceRequest
-	(*v1.InferenceAcceptance)(nil),    // 2: inference.service.v1.InferenceAcceptance
+	(*v1.CreateInferenceRequest)(nil),       // 0: inference.service.v1.CreateInferenceRequest
+	(*v1.DeleteInferenceRequest)(nil),       // 1: inference.service.v1.DeleteInferenceRequest
+	(*v1.GetInferenceRequest)(nil),          // 2: inference.service.v1.GetInferenceRequest
+	(*v1.ListInferenceRequest)(nil),         // 3: inference.service.v1.ListInferenceRequest
+	(*v1.GetInferenceOperationRequest)(nil), // 4: inference.service.v1.GetInferenceOperationRequest
+	(*v1.InferenceAcceptance)(nil),          // 5: inference.service.v1.InferenceAcceptance
+	(*v1.InferenceView)(nil),                // 6: inference.service.v1.InferenceView
+	(*v1.ListInferenceResponse)(nil),        // 7: inference.service.v1.ListInferenceResponse
+	(*v11.Operation)(nil),                   // 8: inference.v1.Operation
 }
 var file_admin_service_v1_i_inference_proto_depIdxs = []int32{
 	0, // 0: admin.service.v1.InferenceService.CreateInference:input_type -> inference.service.v1.CreateInferenceRequest
 	1, // 1: admin.service.v1.InferenceService.DeleteInference:input_type -> inference.service.v1.DeleteInferenceRequest
-	2, // 2: admin.service.v1.InferenceService.CreateInference:output_type -> inference.service.v1.InferenceAcceptance
-	2, // 3: admin.service.v1.InferenceService.DeleteInference:output_type -> inference.service.v1.InferenceAcceptance
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	2, // 2: admin.service.v1.InferenceService.GetInference:input_type -> inference.service.v1.GetInferenceRequest
+	3, // 3: admin.service.v1.InferenceService.ListInference:input_type -> inference.service.v1.ListInferenceRequest
+	4, // 4: admin.service.v1.InferenceService.GetInferenceOperation:input_type -> inference.service.v1.GetInferenceOperationRequest
+	5, // 5: admin.service.v1.InferenceService.CreateInference:output_type -> inference.service.v1.InferenceAcceptance
+	5, // 6: admin.service.v1.InferenceService.DeleteInference:output_type -> inference.service.v1.InferenceAcceptance
+	6, // 7: admin.service.v1.InferenceService.GetInference:output_type -> inference.service.v1.InferenceView
+	7, // 8: admin.service.v1.InferenceService.ListInference:output_type -> inference.service.v1.ListInferenceResponse
+	8, // 9: admin.service.v1.InferenceService.GetInferenceOperation:output_type -> inference.v1.Operation
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

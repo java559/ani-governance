@@ -1,0 +1,14 @@
+{
+  "data": {
+    "idempotency_key": "req-001",
+    "name": "qwen-inference",
+    "model_version_id": "version-1",
+    "served_model_name": "qwen2.5-1.5b-instruct",
+    "engine_image": "registry.example/vllm:latest",
+    "engine_type": "vllm",
+    "command": "exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096",
+    "cpu": "8",
+    "memory": "32Gi",
+    "replicas": 1
+  }
+}

@@ -1,0 +1,113 @@
+# server、admin CLI、Atlas 迁移镜像；使用明确 tag 或 digest。
+image:
+  repository: docker.changqingyun.cn/ani/governance
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+adminImage:
+  repository: docker.changqingyun.cn/ani/governance-admin
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+atlasImage:
+  repository: docker.changqingyun.cn/ani/governance-atlas
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Casbin 策略刷新和 SSE 连接目前在进程内维护，先部署单副本。
+replicaCount: 1
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+podAnnotations: {}
+podLabels: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
+service:
+  type: ClusterIP
+  httpPort: 7788
+  ssePort: 7789
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+nodeSelector: {}
+tolerations: []
+affinity: {}
+corsOrigins: []
+
+config:
+  # 配置文件包含运行账号 DSN、Redis 密码/Asynq URI、JWT 密钥，详见 README。
+  existingSecret: ani-governance-config
+  secretKey: zz-secrets.yaml
+  authSecret: ani-governance-auth
+  accessKeyKey: access-key-encryption-key
+database:
+  # Atlas/admin 使用独立迁移账号。业务运行账号只在上述配置 Secret 中配置。
+  migrationSecret: ani-governance-migration
+  dsnKey: dsn
+# PostgreSQL / Redis 独立安装，本 Chart 不创建基础设施。
+redis:
+  address: redis.ani-infra.svc.cluster.local:6379
+bootstrap:
+  migration:
+    enabled: true
+    hookWeight: "-10"
+  adminInit:
+    enabled: true
+    hookWeight: "-5"
+    username: admin
+    passwordSecret: ani-governance-auth
+    passwordKey: admin-password
+# API 增量同步按 docs/deployment.md 显式预览、执行，不随升级自动授权。
+
+downstream:
+  model:
+    enabled: false
+    address: ""
+    serverName: ""
+    caSecret: ""
+    caKey: ca.crt
+    clientCertificateSecret: governance-client-tls
+  inference:
+    enabled: false
+    address: ""
+    serverName: ""
+    caSecret: ""
+    caKey: ca.crt
+    clientCertificateSecret: governance-client-tls
+  accelerator:
+    enabled: false
+    address: ""
+    serverName: ""
+    caSecret: ""
+    caKey: ca.crt
+    clientCertificateSecret: governance-client-tls
+certificate:
+  enabled: false
+  issuerRef:
+    name: ani-internal
+    kind: ClusterIssuer
+  secretName: governance-client-tls
+  dnsNames:
+    - ani-governance
+  duration: 72h
+  renewBefore: 24h

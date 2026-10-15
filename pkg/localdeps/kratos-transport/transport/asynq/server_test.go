@@ -3,28 +3,21 @@ package asynq
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/hibiken/asynq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	// localRedisURI was the upstream developer address. The localized tests refuse
-	// to use it: see testRedisURI, which only accepts the task-owned disposable
-	// instance that scripts/ci/with-redis.sh starts.
-	localRedisURI = "redis://:*Abcd123456@127.0.0.1:6379"
-
 	testTask1        = "test_task_1"
 	testDelayTask    = "test_delay_task"
 	testPeriodicTask = "test_periodic_task"
-
-	testRedisURIEnv = "ANI_TEST_REDIS_URI"
 )
 
 type TaskPayload struct {
@@ -46,24 +39,12 @@ func handlePeriodicTask(taskType string, taskData *TaskPayload) error {
 	return nil
 }
 
-// testRedisURI returns the URI of the task-owned disposable Redis, or fails the
-// test. There is deliberately no fallback to a default address, and no skip: an
-// environment that is not the task's own must never be written to.
+// testRedisURI starts an isolated in-process Redis for this test. Each test owns
+// its server, so it cannot write to a developer or shared environment.
 func testRedisURI(t *testing.T) string {
 	t.Helper()
-	raw := strings.TrimSpace(os.Getenv(testRedisURIEnv))
-	if raw == "" {
-		t.Fatalf("%s is not set: start the task-owned Redis with "+
-			"'bash scripts/ci/with-redis.sh run -- go test ./pkg/localdeps/kratos-transport/...' "+
-			"(the upstream hard-coded 127.0.0.1:6379 is never used here)", testRedisURIEnv)
-	}
-	if !strings.Contains(raw, "://") {
-		raw = "redis://" + raw
-	}
-	if _, err := asynq.ParseRedisURI(raw); err != nil {
-		t.Fatalf("%s is not a usable Redis URI: %v", testRedisURIEnv, err)
-	}
-	return raw
+	redis := miniredis.RunT(t)
+	return "redis://" + redis.Addr() + "/0"
 }
 
 // recorder is the verifiable completion condition that replaces the upstream

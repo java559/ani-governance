@@ -3,7 +3,7 @@
 // 关闭 task_service_sqlite_test.go 明确记录的跳过项「真实 asynq 调度器与 Redis 队列」：
 // StartAllTask / RestartAllTask / StopAllTask 不再走本地桩，而是装配
 // go-wind-admin/pkg/localdeps/kratos-transport/transport/asynq 的真实 Server，
-// 连接 scripts/ci/with-redis.sh 启动的任务专用一次性 Redis，并真的消费消息。
+// 连接每个测试自己启动的隔离 Redis，并真的消费消息。
 //
 // 顺序与生产一致：NewAsynqServer 先注册 handler、再 StartAllTask，最后由 kratos
 // app 启动 transport.Server（Scheduler 只在 Start 时才运行，这是 v1.3.14 的既有行为，
@@ -12,12 +12,11 @@ package service
 
 import (
 	"context"
-	"os"
-	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/hibiken/asynq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,24 +29,12 @@ import (
 	"go-wind-admin/pkg/task"
 )
 
-const testRedisURIEnv = "ANI_TEST_REDIS_URI"
-
-// taskRedisURI 返回任务自有的一次性 Redis 地址；环境缺失即失败，不 skip、
-// 不回落默认 127.0.0.1:6379（那是开发者实例，属禁止写入的范围）。
+// taskRedisURI starts an isolated Redis owned by this test. It never uses a
+// developer or shared Redis instance.
 func taskRedisURI(t *testing.T) string {
 	t.Helper()
-	raw := strings.TrimSpace(os.Getenv(testRedisURIEnv))
-	if raw == "" {
-		t.Fatalf("%s is not set: run this package through 'bash scripts/ci/with-redis.sh run -- ...' "+
-			"(the Makefile verify-gpu-regressions recipe does that as well)", testRedisURIEnv)
-	}
-	if !strings.Contains(raw, "://") {
-		raw = "redis://" + raw
-	}
-	if _, err := asynq.ParseRedisURI(raw); err != nil {
-		t.Fatalf("%s 不是可用的 Redis URI: %v", testRedisURIEnv, err)
-	}
-	return raw
+	redis := miniredis.RunT(t)
+	return "redis://" + redis.Addr() + "/0"
 }
 
 // acceptedPayload 是业务任务载荷在队列往返后的类型化形态：seed 行写入

@@ -18,7 +18,7 @@ func stageInferenceImports(ctx context.Context, root, apiPath string) error {
 		return nil
 	}
 	for _, input := range []struct{ module, source, target string }{
-		{"github.com/zhangzhe-ctrl/ani-inference-service", "api", "inference"},
+		{"github.com/liangzai006/ani-inference-service", "api", "inference"},
 		{"github.com/zhangzhe-ctrl/ani-accelerator-service", "api/protos", "accelerator"},
 	} {
 		cmd := exec.CommandContext(ctx, "go", "list", "-m", "-f", "{{.Dir}}", input.module)

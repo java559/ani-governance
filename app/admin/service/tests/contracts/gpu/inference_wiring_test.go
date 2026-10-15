@@ -25,11 +25,11 @@ import (
 
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/google/uuid"
+	inferencev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	quota "github.com/zhangzhe-ctrl/ani-governance/api/quota/gen/go/quota/service/v1"
-	inferencev1 "github.com/zhangzhe-ctrl/ani-inference-service/api/inference/v1"
 	authv1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityv1 "go-wind-admin/api/gen/go/identity/service/v1"
 	view "go-wind-admin/api/gen/go/inference/service/v1"
@@ -148,7 +148,7 @@ func TestActualInferenceOwnerWiring(t *testing.T) {
 	seed.Request.ContainerName = "kserve-container"
 	seed.Request.Replicas = 1
 	fixtureName := "inference-wiring-" + uuid.NewString()
-	input := &view.CreateInferenceRequest{Data: &view.CreateInferenceData{IdempotencyKey: uuid.NewString(), Name: fixtureName, ModelVersionId: "30000000-0000-4000-8000-000000000001", Resource: &inferencev1.ResourceSpec{Requests: map[string]string{"cpu": "1", "memory": "1Gi"}, Limits: map[string]string{"cpu": "2", "memory": "2Gi"}, Gpu: seed.Request}, Replicas: int32(seed.Request.Replicas), Engine: &inferencev1.EngineSpec{Type: "vllm", Image: "fixture.invalid/held-model:software-only", Command: []string{"owner-supplied-engine"}}, Runtime: &inferencev1.RuntimeSpec{Mode: inferencev1.RuntimeMode_RUNTIME_MODE_DEPLOYMENT, Provider: "kserve"}}}
+	input := &view.CreateInferenceRequest{Data: &view.CreateInferenceData{IdempotencyKey: uuid.NewString(), Name: fixtureName, ModelVersionId: "30000000-0000-4000-8000-000000000001", ServedModelName: fixtureName, EngineType: "vllm", EngineImage: "fixture.invalid/held-model:software-only", Command: "owner-supplied-engine", Cpu: "1", Memory: "1Gi", Replicas: int32(seed.Request.Replicas), RuntimeMode: inferencev1.RuntimeMode_RUNTIME_MODE_DEPLOYMENT, Gpu: &view.GpuSelection{ClusterId: seed.Request.ClusterId, PoolId: seed.Request.PoolId, ProfileId: seed.Request.ProfileId, ProfileVersion: seed.Request.ProfileVersion}}}
 	requestCtx := viewer.WithContext(ctx, appViewer.NewUserViewer(1, 1, 0, "", []viewer.DataScope{{ScopeType: viewer.ScopeTypeAll}}))
 	principalCtx := auth.NewPrincipalContext(requestCtx, &auth.Principal{Type: auth.SubjectUser, ID: 1, TenantID: 1})
 	fixtureCtx := appViewer.NewSystemViewerContext(ctx)
@@ -424,18 +424,37 @@ func TestActualInferenceOwnerWiring(t *testing.T) {
 	runInjected := func(label, expectedCode string) []struct {
 		ChargeID                    string
 		AppliedDelta, ReleasedTotal int64
-	} { t.Helper(); noticePath := filepath.Join(jointDir, "injected-refund-"+label+".json"); raw, err := json.Marshal(notice); require.NoError(t, err); require.NoError(t, os.WriteFile(noticePath, raw, 0600)); resultPath := filepath.Join(jointDir, "injected-refund-result-"+label+".json"); refund := exec.CommandContext(ctx, binary, "-test.run=^TestInjectedQuotaRefund$", "-test.v"); refund.Env = append(os.Environ(), "INFERENCE_REFUND_NOTIFICATION_FILE="+noticePath, "INFERENCE_REFUND_CONFIG_FILE="+refundConfigFile, "INFERENCE_REFUND_RESULT_FILE="+resultPath); output, callErr := refund.CombinedOutput(); var result struct {
-		Code    string `json:"code"`
-		Receipt *struct {
-			Items []struct {
-				ChargeID                    string
-				AppliedDelta, ReleasedTotal int64
-			}
-		} `json:"receipt"`
-	}; raw, err = os.ReadFile(resultPath); require.NoError(t, err, "read actual client result: %s", output); require.NoError(t, json.Unmarshal(raw, &result)); require.Equal(t, expectedCode, result.Code, "actual client result: %s", output); if expectedCode != "OK" {
-		require.Error(t, callErr)
-		return nil
-	}; require.NoError(t, callErr, "actual refund invocation: %s", output); require.NotNil(t, result.Receipt); return result.Receipt.Items }
+	} {
+		t.Helper()
+		noticePath := filepath.Join(jointDir, "injected-refund-"+label+".json")
+		raw, err := json.Marshal(notice)
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(noticePath, raw, 0600))
+		resultPath := filepath.Join(jointDir, "injected-refund-result-"+label+".json")
+		refund := exec.CommandContext(ctx, binary, "-test.run=^TestInjectedQuotaRefund$", "-test.v")
+		refund.Env = append(os.Environ(), "INFERENCE_REFUND_NOTIFICATION_FILE="+noticePath, "INFERENCE_REFUND_CONFIG_FILE="+refundConfigFile, "INFERENCE_REFUND_RESULT_FILE="+resultPath)
+		output, callErr := refund.CombinedOutput()
+		var result struct {
+			Code    string `json:"code"`
+			Receipt *struct {
+				Items []struct {
+					ChargeID                    string
+					AppliedDelta, ReleasedTotal int64
+				}
+			} `json:"receipt"`
+		}
+		raw, err = os.ReadFile(resultPath)
+		require.NoError(t, err, "read actual client result: %s", output)
+		require.NoError(t, json.Unmarshal(raw, &result))
+		require.Equal(t, expectedCode, result.Code, "actual client result: %s", output)
+		if expectedCode != "OK" {
+			require.Error(t, callErr)
+			return nil
+		}
+		require.NoError(t, callErr, "actual refund invocation: %s", output)
+		require.NotNil(t, result.Receipt)
+		return result.Receipt.Items
+	}
 	// The real Inference port independently requires its persisted DELETE.
 	runInjected("no-delete", "InvalidArgument")
 	// The actual Gov receiver also requires its own persisted DELETE, even when

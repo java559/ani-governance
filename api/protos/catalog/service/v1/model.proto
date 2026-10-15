@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package catalog.service.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message ModelVersion {
+  string id = 1;
+  string model_id = 2 [json_name = "model_id"];
+  string version = 3;
+  string format = 4;
+  bool is_encrypted = 5 [json_name = "is_encrypted"];
+  string encrypt_algo = 6 [json_name = "encrypt_algo"];
+  string encrypt_hint = 7 [json_name = "encrypt_hint"];
+  int64 size_bytes = 8 [json_name = "size_bytes"];
+  string checksum_sha256 = 9 [json_name = "checksum_sha256"];
+  string storage_path = 10 [json_name = "storage_path"];
+  google.protobuf.Timestamp created_at = 11 [json_name = "created_at"];
+  string status = 12;
+  string engine_type = 13 [json_name = "engine_type"];
+  string startup_command = 14 [json_name = "startup_command"];
+  reserved 15;
+  string engine_image = 16 [json_name = "engine_image"];
+}
+
+message Model {
+  string id = 1;
+  string name = 2;
+  string display_name = 3 [json_name = "display_name"];
+  string description = 4;
+  string source = 5;
+  string source_repo_id = 6 [json_name = "source_repo_id"];
+  repeated string capabilities = 7;
+  string status = 8;
+  string error_message = 9 [json_name = "error_message"];
+  int64 total_size_bytes = 10 [json_name = "total_size_bytes"];
+  repeated ModelVersion versions = 11;
+  google.protobuf.Timestamp created_at = 12 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 13 [json_name = "updated_at"];
+  string model_id = 14 [json_name = "model_id"];
+}
+
+message ImportTask {
+  string task_id = 1 [json_name = "task_id"];
+  string task_type = 2 [json_name = "task_type"];
+  string status = 3;
+  string location_url = 4 [json_name = "location_url"];
+  string model_id = 5 [json_name = "model_id"];
+  string model_version_id = 6 [json_name = "model_version_id"];
+  int32 attempt_count = 7 [json_name = "attempt_count"];
+  int32 progress_pct = 8 [json_name = "progress_pct"];
+  string error_message = 9 [json_name = "error_message"];
+  google.protobuf.Timestamp created_at = 10 [json_name = "created_at"];
+  google.protobuf.Timestamp completed_at = 11 [json_name = "completed_at"];
+}
+
+message CursorPage {
+  int32 limit = 1;
+  string cursor = 2;
+}
+
+message CursorPageMeta {
+  string next_cursor = 1 [json_name = "next_cursor"];
+  bool has_more = 2 [json_name = "has_more"];
+}
+
+message CreateModelData {
+  string name = 1;
+  string display_name = 2 [json_name = "display_name"];
+  string description = 3;
+  repeated string capabilities = 4;
+  string idempotency_key = 5 [json_name = "idempotency_key"];
+  string model_id = 6 [json_name = "model_id"];
+}
+message CreateModelRequest { CreateModelData data = 1; }
+message CreateModelResponse { Model model = 1; }
+
+message GetModelRequest { string model_id = 1 [json_name = "model_id"]; }
+message GetModelResponse { Model model = 1; }
+
+message ListModelsRequest {
+  string status = 1;
+  CursorPage page = 2;
+  string keyword = 3;
+  string source = 4;
+  string capability = 5;
+}
+message ListModelsResponse {
+  repeated Model models = 1;
+  CursorPageMeta meta = 2;
+}
+
+message CreateModelVersionData {
+  string model_id = 1 [json_name = "model_id"];
+  string version = 2;
+  string format = 3;
+  string storage_path = 4 [json_name = "storage_path"];
+  string checksum_sha256 = 5 [json_name = "checksum_sha256"];
+  int64 size_bytes = 6 [json_name = "size_bytes"];
+  bool is_encrypted = 7 [json_name = "is_encrypted"];
+  string encrypt_algo = 8 [json_name = "encrypt_algo"];
+  string encrypt_hint = 9 [json_name = "encrypt_hint"];
+  string idempotency_key = 10 [json_name = "idempotency_key"];
+  string engine_type = 11 [json_name = "engine_type"];
+  string startup_command = 12 [json_name = "startup_command"];
+  reserved 13;
+  string engine_image = 14 [json_name = "engine_image"];
+}
+message CreateModelVersionRequest { CreateModelVersionData data = 1; }
+message CreateModelVersionResponse { ModelVersion version = 1; }
+
+message GetModelVersionRequest {
+  string model_version_id = 1 [json_name = "model_version_id"];
+  string model_id = 2 [json_name = "model_id"];
+  string version = 3;
+}
+message GetModelVersionResponse {
+  Model model = 1;
+  ModelVersion version = 2;
+}
+
+message ListModelVersionsRequest {
+  string model_id = 1 [json_name = "model_id"];
+  CursorPage page = 2;
+}
+message ListModelVersionsResponse {
+  repeated ModelVersion versions = 1;
+  CursorPageMeta meta = 2;
+}
+
+message ImportModelData {
+  string source = 1;
+  string repo_id = 2 [json_name = "repo_id"];
+  string revision = 3;
+  string idempotency_key = 4 [json_name = "idempotency_key"];
+  string webhook_url = 5 [json_name = "webhook_url"];
+  string model_id = 6 [json_name = "model_id"];
+  string model_version_id = 7 [json_name = "model_version_id"];
+}
+message ImportModelRequest { ImportModelData data = 1; }
+message ImportModelResponse { ImportTask task = 1; }
+
+message GetImportTaskRequest { string task_id = 1 [json_name = "task_id"]; }
+message GetImportTaskResponse { ImportTask task = 1; }
+message RetryImportTaskRequest { string task_id = 1 [json_name = "task_id"]; }
+message RetryImportTaskResponse { ImportTask task = 1; }

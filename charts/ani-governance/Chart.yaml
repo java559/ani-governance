@@ -1,0 +1,8 @@
+apiVersion: v2
+name: ani-governance
+description: ANI Gov BFF with explicit database migration and initialization hooks
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: ANI

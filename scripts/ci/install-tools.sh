@@ -21,7 +21,7 @@ case "${1:-}" in
     GOWORK=off go mod download github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2@v2.0.0-20251205160234-b9fab9a5a5ab
     # 固定的上游 Proto 模块由 `go list -m` 定位，而该命令在模块未缓存时
     # 返回空目录且退出码为 0、不会触发下载。冷缓存下必须显式预取。
-    GOWORK=off go mod download github.com/zhangzhe-ctrl/ani-inference-service github.com/zhangzhe-ctrl/ani-accelerator-service
+    GOWORK=off go mod download github.com/liangzai006/ani-inference-service github.com/zhangzhe-ctrl/ani-accelerator-service
     work=$(mktemp -d "${TMPDIR:-/tmp}/ani-protoc.XXXXXXXX")
     trap 'rm -rf "$work"' EXIT
     curl --http1.1 --fail --location --silent --show-error \

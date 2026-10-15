@@ -7227,7 +7227,46 @@ paths:
                 - AccessKeyAuth: []
                   SignatureAuth: []
                   SignatureTime: []
+    /api/v1/inference/operations/{operation_id}:
+        get:
+            tags:
+                - InferenceService
+            operationId: InferenceService_GetInferenceOperation
+            parameters:
+                - name: operation_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Operation'
     /api/v1/inference/services:
+        get:
+            tags:
+                - InferenceService
+            operationId: InferenceService_ListInference
+            parameters:
+                - name: page_size
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page_token
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListInferenceResponse'
         post:
             tags:
                 - InferenceService
@@ -7269,6 +7308,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{resource_id}:
+        get:
+            tags:
+                - InferenceService
+            operationId: InferenceService_GetInference
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceView'
     /api/v1/instance-operations/{operation_id}:
         get:
             tags:
@@ -7464,6 +7521,50 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListTenantQuotaAccountsResponse'
+    /api/v1/model-versions:
+        post:
+            tags:
+                - ModelService
+            operationId: ModelService_CreateModelVersion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateModelVersionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateModelVersionResponse'
+    /api/v1/model-versions/{model_version_id}:
+        get:
+            tags:
+                - ModelService
+            operationId: ModelService_GetModelVersion
+            parameters:
+                - name: model_version_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: model_id
+                  in: query
+                  schema:
+                    type: string
+                - name: version
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetModelVersionResponse'
     /api/v1/modeldev/artifacts/{artifact_id}/content:
         get:
             tags:
@@ -7682,6 +7783,166 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListPresetsResponse'
+    /api/v1/models:
+        get:
+            tags:
+                - ModelService
+            operationId: ModelService_ListModels
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page.limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page.cursor
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: source
+                  in: query
+                  schema:
+                    type: string
+                - name: capability
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListModelsResponse'
+        post:
+            tags:
+                - ModelService
+            operationId: ModelService_CreateModel
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateModelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateModelResponse'
+    /api/v1/models/import-tasks/{task_id}:
+        get:
+            tags:
+                - ModelService
+            operationId: ModelService_GetImportTask
+            parameters:
+                - name: task_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetImportTaskResponse'
+    /api/v1/models/import-tasks/{task_id}:retry:
+        post:
+            tags:
+                - ModelService
+            operationId: ModelService_RetryImportTask
+            parameters:
+                - name: task_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RetryImportTaskRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RetryImportTaskResponse'
+    /api/v1/models/{model_id}:
+        get:
+            tags:
+                - ModelService
+            operationId: ModelService_GetModel
+            parameters:
+                - name: model_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetModelResponse'
+    /api/v1/models/{model_id}/versions:
+        get:
+            tags:
+                - ModelService
+            operationId: ModelService_ListModelVersions
+            parameters:
+                - name: model_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page.limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page.cursor
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListModelVersionsResponse'
+    /api/v1/models:import:
+        post:
+            tags:
+                - ModelService
+            operationId: ModelService_ImportModel
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ImportModelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ImportModelResponse'
     /api/v1/networks/eips:
         get:
             tags:
@@ -9882,20 +10143,35 @@ components:
                     type: string
                 model_version_id:
                     type: string
-                resource:
-                    $ref: '#/components/schemas/ResourceSpec'
+                served_model_name:
+                    type: string
+                engine_image:
+                    type: string
+                engine_type:
+                    type: string
+                command:
+                    type: string
+                cpu:
+                    type: string
+                memory:
+                    type: string
                 replicas:
                     type: integer
                     format: int32
-                runtime:
-                    $ref: '#/components/schemas/RuntimeSpec'
-                model_artifact:
-                    $ref: '#/components/schemas/ModelArtifact'
-                engine:
-                    $ref: '#/components/schemas/EngineSpec'
-                served_model_name:
+                gpu:
+                    $ref: '#/components/schemas/GpuSelection'
+                runtime_mode:
+                    enum:
+                        - RUNTIME_MODE_UNSPECIFIED
+                        - RUNTIME_MODE_DEPLOYMENT
+                        - RUNTIME_MODE_LEADER_WORKER_SET
                     type: string
+                    format: enum
+                worker_replicas:
+                    type: integer
+                    format: int32
         CreateInferenceRequest:
+            example: {"data": {"idempotency_key": "req-001", "name": "qwen-inference", "model_version_id": "version-1", "served_model_name": "qwen2.5-1.5b-instruct", "engine_image": "registry.example/vllm:latest", "engine_type": "vllm", "command": "exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096", "cpu": "8", "memory": "32Gi", "replicas": 1}}
             type: object
             properties:
                 data:
@@ -10026,6 +10302,72 @@ components:
                 data:
                     $ref: '#/components/schemas/Menu'
             description: 创建菜单 - 请求
+        CreateModelData:
+            type: object
+            properties:
+                name:
+                    type: string
+                display_name:
+                    type: string
+                description:
+                    type: string
+                capabilities:
+                    type: array
+                    items:
+                        type: string
+                idempotency_key:
+                    type: string
+                model_id:
+                    type: string
+        CreateModelRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateModelData'
+        CreateModelResponse:
+            type: object
+            properties:
+                model:
+                    $ref: '#/components/schemas/Model'
+        CreateModelVersionData:
+            type: object
+            properties:
+                model_id:
+                    type: string
+                version:
+                    type: string
+                format:
+                    type: string
+                storage_path:
+                    type: string
+                checksum_sha256:
+                    type: string
+                size_bytes:
+                    type: string
+                is_encrypted:
+                    type: boolean
+                encrypt_algo:
+                    type: string
+                encrypt_hint:
+                    type: string
+                idempotency_key:
+                    type: string
+                engine_type:
+                    type: string
+                startup_command:
+                    type: string
+                engine_image:
+                    type: string
+        CreateModelVersionRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateModelVersionData'
+        CreateModelVersionResponse:
+            type: object
+            properties:
+                version:
+                    $ref: '#/components/schemas/ModelVersion'
         CreateNotificationChannelRequest:
             type: object
             properties:
@@ -10248,6 +10590,13 @@ components:
                     type: string
                     description: 绑定当前逻辑会话的 CSRF 证明，写请求时放入 X-CSRF-Token 头；不含身份授权
             description: 获取 CSRF 证明 - 回应
+        CursorPageMeta:
+            type: object
+            properties:
+                next_cursor:
+                    type: string
+                has_more:
+                    type: boolean
         DashboardOverviewResponse:
             type: object
             properties:
@@ -10435,6 +10784,8 @@ components:
                 idempotency_key:
                     type: string
                 resource_id:
+                    type: string
+                expected_generation:
                     type: string
         DeleteInferenceRequest:
             type: object
@@ -10881,37 +11232,6 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/NamedEncoding'
-        EndpointSpec:
-            type: object
-            properties:
-                containerPort:
-                    type: integer
-                    format: int32
-                servicePort:
-                    type: integer
-                    format: int32
-                targetPort:
-                    type: string
-                protocol:
-                    type: string
-            description: |-
-                EndpointSpec describes the optional Kubernetes Service exposed for this
-                 runtime. Ports are explicit; an omitted endpoint means no Service is owned.
-        EngineSpec:
-            type: object
-            properties:
-                type:
-                    type: string
-                image:
-                    type: string
-                command:
-                    type: array
-                    items:
-                        type: string
-                args:
-                    type: array
-                    items:
-                        type: string
         EnrolledMethod:
             type: object
             properties:
@@ -11161,6 +11481,11 @@ components:
             properties:
                 space:
                     $ref: '#/components/schemas/ImageSpace'
+        GetImportTaskResponse:
+            type: object
+            properties:
+                task:
+                    $ref: '#/components/schemas/ImportTask'
         GetInputVersionResponse:
             type: object
             properties:
@@ -11197,6 +11522,18 @@ components:
                         - MFA_REQUIRED
                     type: string
                     format: enum
+        GetModelResponse:
+            type: object
+            properties:
+                model:
+                    $ref: '#/components/schemas/Model'
+        GetModelVersionResponse:
+            type: object
+            properties:
+                model:
+                    $ref: '#/components/schemas/Model'
+                version:
+                    $ref: '#/components/schemas/ModelVersion'
         GetNetworkDeviceResponse:
             type: object
             properties:
@@ -11308,30 +11645,17 @@ components:
                     type: string
                 units:
                     type: string
-        GpuRequest:
+        GpuSelection:
             type: object
             properties:
-                clusterId:
+                cluster_id:
                     type: string
-                poolId:
+                pool_id:
                     type: string
-                profileId:
+                profile_id:
                     type: string
-                profileVersion:
+                profile_version:
                     type: string
-                replicas:
-                    type: integer
-                    description: Number of GPU-bearing Pods. For LWS this is groups * (leader + workers).
-                    format: uint32
-                devicesPerReplica:
-                    type: integer
-                    format: uint32
-                containerName:
-                    type: string
-            description: |-
-                GPU placement is resolved by the accelerator service. The inference API
-                 carries the immutable request shape; it does not accept physical devices or
-                 synthesize provider flags.
         Header:
             type: object
             properties:
@@ -11467,6 +11791,62 @@ components:
                 updatedAt:
                     type: string
                     format: date-time
+        ImportModelData:
+            type: object
+            properties:
+                source:
+                    type: string
+                repo_id:
+                    type: string
+                revision:
+                    type: string
+                idempotency_key:
+                    type: string
+                webhook_url:
+                    type: string
+                model_id:
+                    type: string
+                model_version_id:
+                    type: string
+        ImportModelRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ImportModelData'
+        ImportModelResponse:
+            type: object
+            properties:
+                task:
+                    $ref: '#/components/schemas/ImportTask'
+        ImportTask:
+            type: object
+            properties:
+                task_id:
+                    type: string
+                task_type:
+                    type: string
+                status:
+                    type: string
+                location_url:
+                    type: string
+                model_id:
+                    type: string
+                model_version_id:
+                    type: string
+                attempt_count:
+                    type: integer
+                    format: int32
+                progress_pct:
+                    type: integer
+                    format: int32
+                error_message:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                completed_at:
+                    type: string
+                    format: date-time
         InferenceAcceptance:
             type: object
             properties:
@@ -11481,6 +11861,61 @@ components:
                     description: Durable Governance admission; this is not model readiness.
                 dispatch_operation_id:
                     type: string
+        InferenceView:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                desired_state:
+                    type: string
+                generation:
+                    type: string
+                model_version_id:
+                    type: string
+                served_model_name:
+                    type: string
+                phase:
+                    type: string
+                health:
+                    type: string
+                observed_at:
+                    type: string
+                    format: date-time
+                engine_image:
+                    type: string
+                engine_type:
+                    type: string
+                command:
+                    type: string
+                cpu:
+                    type: string
+                memory:
+                    type: string
+                replicas:
+                    type: integer
+                    format: int32
+                runtime_mode:
+                    enum:
+                        - RUNTIME_MODE_UNSPECIFIED
+                        - RUNTIME_MODE_DEPLOYMENT
+                        - RUNTIME_MODE_LEADER_WORKER_SET
+                    type: string
+                    format: enum
+                worker_replicas:
+                    type: integer
+                    format: int32
+                gpu:
+                    $ref: '#/components/schemas/GpuSelection'
+                publication_phase:
+                    type: string
+                applied_generation:
+                    type: string
+            description: |-
+                InferenceView is the Governance-owned read projection for UI consumers.
+                 It intentionally keeps the business-facing flat fields while hiding
+                 Inference's resource, runtime, engine, artifact and admission internals.
         InfoEntry:
             type: object
             properties:
@@ -12095,6 +12530,15 @@ components:
                     type: string
                 total:
                     type: string
+        ListInferenceResponse:
+            type: object
+            properties:
+                services:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/InferenceView'
+                next_page_token:
+                    type: string
         ListInputVersionsResponse:
             type: object
             properties:
@@ -12197,6 +12641,24 @@ components:
                 total:
                     type: string
             description: 查询菜单列表 - 回应
+        ListModelVersionsResponse:
+            type: object
+            properties:
+                versions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ModelVersion'
+                meta:
+                    $ref: '#/components/schemas/CursorPageMeta'
+        ListModelsResponse:
+            type: object
+            properties:
+                models:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Model'
+                meta:
+                    $ref: '#/components/schemas/CursorPageMeta'
         ListNodeInterfacesResponse:
             type: object
             properties:
@@ -13279,14 +13741,76 @@ components:
                 meta:
                     $ref: '#/components/schemas/MenuMeta'
             description: 路由项
-        ModelArtifact:
+        Model:
             type: object
             properties:
-                provider:
+                id:
                     type: string
-                reference:
+                name:
                     type: string
-                sha256:
+                display_name:
+                    type: string
+                description:
+                    type: string
+                source:
+                    type: string
+                source_repo_id:
+                    type: string
+                capabilities:
+                    type: array
+                    items:
+                        type: string
+                status:
+                    type: string
+                error_message:
+                    type: string
+                total_size_bytes:
+                    type: string
+                versions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ModelVersion'
+                created_at:
+                    type: string
+                    format: date-time
+                updated_at:
+                    type: string
+                    format: date-time
+                model_id:
+                    type: string
+        ModelVersion:
+            type: object
+            properties:
+                id:
+                    type: string
+                model_id:
+                    type: string
+                version:
+                    type: string
+                format:
+                    type: string
+                is_encrypted:
+                    type: boolean
+                encrypt_algo:
+                    type: string
+                encrypt_hint:
+                    type: string
+                size_bytes:
+                    type: string
+                checksum_sha256:
+                    type: string
+                storage_path:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                status:
+                    type: string
+                engine_type:
+                    type: string
+                startup_command:
+                    type: string
+                engine_image:
                     type: string
         NamedAny:
             type: object
@@ -15000,19 +15524,6 @@ components:
                 replayUntil:
                     type: string
                     format: date-time
-        ResourceSpec:
-            type: object
-            properties:
-                requests:
-                    type: object
-                    additionalProperties:
-                        type: string
-                limits:
-                    type: object
-                    additionalProperties:
-                        type: string
-                gpu:
-                    $ref: '#/components/schemas/GpuRequest'
         Response:
             type: object
             properties:
@@ -15057,6 +15568,16 @@ components:
                     type: integer
                     format: int32
             description: 重启调度任务 - 回应
+        RetryImportTaskRequest:
+            type: object
+            properties:
+                task_id:
+                    type: string
+        RetryImportTaskResponse:
+            type: object
+            properties:
+                task:
+                    $ref: '#/components/schemas/ImportTask'
         RevokeJtiRequest:
             type: object
             properties:
@@ -15229,30 +15750,6 @@ components:
                         type: string
                     description: 隐藏字段列表（proto 字段 json_name，如 email）
             description: 角色字段权限条目：角色在某资源上隐藏的字段集（黑名单语义）
-        RuntimeSpec:
-            type: object
-            properties:
-                mode:
-                    enum:
-                        - RUNTIME_MODE_UNSPECIFIED
-                        - RUNTIME_MODE_DEPLOYMENT
-                        - RUNTIME_MODE_LEADER_WORKER_SET
-                    type: string
-                    format: enum
-                workerReplicas:
-                    type: integer
-                    description: |-
-                        Number of workers in each LeaderWorkerSet group. It is ignored for a
-                         Deployment and must be positive for the distributed mode.
-                    format: int32
-                endpoint:
-                    $ref: '#/components/schemas/EndpointSpec'
-                provider:
-                    type: string
-                    description: |-
-                        Runtime provider for new requests is KServe. Create omits this field to
-                         use KServe; update treats empty as inherit for an existing generation.
-                         The legacy deployment value is persisted only for old generations.
         SMSResult:
             type: object
             properties:
@@ -16896,6 +17393,11 @@ tags:
          登录挑战侧 RPC（VerifyMFAChallenge）免鉴权，加 security:{} 并加入 rest_server 白名单。
     - name: ModelDevService
       description: CPU-P01 entry in the existing Governance BFF.
+    - name: ModelService
+      description: |-
+        Model is the tenant-facing BFF for the Model Service. Tenant and actor
+         identity come from the authenticated Governance principal; they are never
+         accepted in the public DTOs.
     - name: NetworkService
     - name: NotificationChannelService
       description: 通知渠道管理服务（平台级配置）

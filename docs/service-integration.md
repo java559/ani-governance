@@ -3,8 +3,8 @@
 本指南说明"把一个业务微服务的 API 接入 governance，让租户用户经治理中心拿到结果"的装配步骤，并索引现有客户端实现。新增或修改调用先遵守 [服务间调用规范](contracts/service-to-service-calls.md)；本文的当前身份差异和 Network 示例不是新规范的例外。存量证书、接收端和调用者按 [迁移边界](contracts/service-to-service-calls.md#current-differences) 独立接线、联调与验收。参照实现：
 
 - **Network（Resource 的网络领域，可选依赖）**：[i_network.proto](../api/protos/admin/service/v1/i_network.proto) + [network_client.go](../app/admin/service/internal/data/network_client.go) + [network_service.go](../app/admin/service/internal/service/network_service.go)。地址为空则跳过客户端装配。当前租户面 25 方法（包括 NET-25 VPC CIDR 预设）及 JWT/AK 合同见 [接口登记](interface-integration-register.md)，部署与运行是否可用以实际验收为准。
-- **ModelDev（当前使用 MODEL 模块）**：[modeldev_client.go](../app/admin/service/internal/data/modeldev_client.go) 与 [CPU-P01 接口登记](interface-integration-register.md) 记录受理、投递、查询和受管目录操作。旧 Model 的 `GET /api/v1/models` 路由、客户端与 Proto 仍已暂摘；ModelDev 承接 `identityV1.Module_MODEL` 不等于恢复该旧接口。
-- **Accelerator / Inference**：[GPU owner 接入指南](contracts/gpu-owner-integration-guide.md) 记录唯一 URI SAN、typed context、冻结命令及退款 listener 等专项合同。
+- **Model / ModelDev（共享 MODEL 模块）**：[model_client.go](../app/admin/service/internal/data/model_client.go) 接入模型目录、版本和导入生命周期；[modeldev_client.go](../app/admin/service/internal/data/modeldev_client.go) 与 [CPU-P01 接口登记](interface-integration-register.md) 记录训练受理、投递、查询和受管目录操作。Model BFF 的恢复范围以 [GOV-MODEL-INF 接口登记](interface-integration-register.md#gov-model-inf-20261012model--inference-bff-接入) 为准。
+- **Accelerator / Inference**：[GPU owner 接入指南](contracts/gpu-owner-integration-guide.md) 记录 typed context、冻结命令及退款 listener 等专项合同。此次 Model / Inference 出站客户端使用唯一 DNS SAN `ani-governance`；Accelerator 与内部退款 listener 的存量 URI 身份差异按服务间调用规范单独迁移。
 
 下游在目标环境可能缺席时可参考 Network 的可选装配模式；是否属于启动必需依赖由本次接入合同决定。旧 Model 的强制依赖装配仅是历史先例，重接时须重新确定授权范围和启动条件。
 

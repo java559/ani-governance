@@ -267,6 +267,9 @@ func TestWriteBackRefusesADestinationCollisionBeforeWritingAnything(t *testing.T
 // TestWriteBackUndoesAPartialWrite is F3's second case: once the first output is safely in place a
 // later one can still fail on the filesystem, and the run has to take back what it already did.
 func TestWriteBackUndoesAPartialWrite(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("requires an unprivileged user: root bypasses the chmod 0555 failure this test simulates")
+	}
 	const managed = "api/gen/go"
 	f := newWriteBackFixture(t, nil, managed)
 	f.write(managed+"/a.pb.go", "old-a\n")

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ani-governance-redis
+description: Dedicated Redis dependency for ANI Governance
+type: application
+version: 0.1.0
+appVersion: "7.0"

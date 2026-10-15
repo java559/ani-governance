@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ani-governance.fullname" . }}-config
+  labels:
+    {{- include "ani-governance.labels" . | nindent 4 }}
+data:
+  data.yaml: |-
+    data:
+      database:
+        driver: postgres
+        migrate: false
+        debug: false
+        enable_trace: false
+        enable_metrics: false
+        max_idle_connections: 25
+        max_open_connections: 25
+        connection_max_lifetime: 300s
+      redis:
+        addr: {{ .Values.redis.address | quote }}
+        dial_timeout: 10s
+        read_timeout: 0.4s
+        write_timeout: 0.6s
+  server.yaml: |-
+    server:
+      rest:
+        addr: ":{{ .Values.service.httpPort }}"
+        timeout: 10s
+        enable_swagger: false
+        enable_pprof: false
+        cors:
+          allow_credentials: true
+          headers:
+            - X-Requested-With
+            - X-Request-ID
+            - Content-Type
+            - Authorization
+            - X-Captcha-Id
+            - X-Captcha-Value
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - HEAD
+            - OPTIONS
+          origins: {{ .Values.corsOrigins | toJson }}
+        middleware:
+          enable_logging: true
+          enable_recovery: true
+          enable_tracing: true
+          enable_validate: true
+          enable_circuit_breaker: true
+          enable_metadata: true
+      asynq:
+        codec: json
+        concurrency: 10
+        shutdown_timeout: 10s
+        enable_gracefully_shutdown: true
+        enable_strict_priority: true
+        location: UTC
+        queues:
+          critical: 10
+          default: 5
+          low: 1
+      sse:
+        addr: ":{{ .Values.service.ssePort }}"
+        codec: json
+        path: /events
+        auto_stream: true
+        auto_reply: false
+  auth.yaml: |-
+    authn:
+      type: jwt
+      jwt:
+        method: RS256
+        access_token_expires: 5400s
+        refresh_token_expires: 43200s
+    authz:
+      type: casbin
+      casbin: {}
+  logger.yaml: |-
+    logger:
+      type: std

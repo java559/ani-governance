@@ -13,8 +13,8 @@ log="$evidence/go-tests.jsonl"
 : > "$log"
 go test -json -tags integration -count=1 -run '^(TestTenantMutationGuard|TestTenantMutationGuardAccessKey|TestPositionDataScopeGuard|TestOrgUnitPathExpansionTenantBounded|TestTenantGuardDeleteOneCreate)$' ./app/admin/service/internal/data/ent >> "$log"
 go test -json -tags quota_pg -count=1 -timeout=20m ./app/admin/service/internal/data >> "$log"
-bash scripts/ci/with-redis.sh run -- go test -json -tags quota_pg -count=1 -timeout=10m ./app/admin/service/internal/server >> "$log"
-bash scripts/ci/with-redis.sh run -- go test -json -tags quota_pg -count=1 -timeout=10m ./app/admin/service/internal/service >> "$log"
+go test -json -tags quota_pg -count=1 -timeout=10m ./app/admin/service/internal/server >> "$log"
+go test -json -tags quota_pg -count=1 -timeout=10m ./app/admin/service/internal/service >> "$log"
 python3 scripts/ci/assert-test-results.py --required tests/manifests/critical-tests.json --log "$log" --summary "$evidence/critical-results.json"
 echo 'race: data (three selected tests)' >&2
 data_race_tests='^(TestQuotaPostgresConcurrentLimit|TestQuotaPostgresCancelClaimRace|TestQuotaPostgresLeaseGenerationGuard)$'

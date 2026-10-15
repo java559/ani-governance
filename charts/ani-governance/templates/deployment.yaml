@@ -1,0 +1,225 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ani-governance.fullname" . }}
+  labels:
+    {{- include "ani-governance.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ani-governance.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ani-governance.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "ani-governance.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: governance
+          image: {{ include "ani-governance.image" .Values.image | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/app/bin/server"]
+          args: ["-c", "/app/configs"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: GOWIND_CRYPTO_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.config.authSecret }}
+                  key: global-encryption-key
+            - name: ANI_ACCESS_KEY_ENCRYPTION_KEY_FILE
+              value: /run/secrets/access-key-encryption-key
+            {{- if .Values.downstream.model.enabled }}
+            - name: ANI_MODEL_ADDR
+              value: {{ required "downstream.model.address is required" .Values.downstream.model.address | quote }}
+            - name: ANI_MODEL_SERVER_NAME
+              value: {{ required "downstream.model.serverName is required" .Values.downstream.model.serverName | quote }}
+            - name: ANI_MODEL_CA
+              value: /service-identity/model/ca.crt
+            - name: ANI_MODEL_CERT
+              value: /service-identity/model/tls.crt
+            - name: ANI_MODEL_KEY
+              value: /service-identity/model/tls.key
+            {{- end }}
+            {{- if .Values.downstream.inference.enabled }}
+            - name: ANI_INFERENCE_ADDR
+              value: {{ required "downstream.inference.address is required" .Values.downstream.inference.address | quote }}
+            - name: ANI_INFERENCE_SERVER_NAME
+              value: {{ required "downstream.inference.serverName is required" .Values.downstream.inference.serverName | quote }}
+            - name: ANI_INFERENCE_CA_FILE
+              value: /service-identity/inference/ca.crt
+            - name: ANI_INFERENCE_CERT_FILE
+              value: /service-identity/inference/tls.crt
+            - name: ANI_INFERENCE_KEY_FILE
+              value: /service-identity/inference/tls.key
+            {{- end }}
+            {{- if .Values.downstream.accelerator.enabled }}
+            - name: ANI_ACCELERATOR_ADDR
+              value: {{ required "downstream.accelerator.address is required" .Values.downstream.accelerator.address | quote }}
+            - name: ANI_ACCELERATOR_SERVER_NAME
+              value: {{ required "downstream.accelerator.serverName is required" .Values.downstream.accelerator.serverName | quote }}
+            - name: ANI_ACCELERATOR_CA
+              value: /service-identity/accelerator/ca.crt
+            - name: ANI_ACCELERATOR_CERT
+              value: /service-identity/accelerator/tls.crt
+            - name: ANI_ACCELERATOR_KEY
+              value: /service-identity/accelerator/tls.key
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.httpPort }}
+              protocol: TCP
+            - name: sse
+              containerPort: {{ .Values.service.ssePort }}
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: configs
+              mountPath: /app/configs
+              readOnly: true
+            - name: access-key
+              mountPath: /run/secrets
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+            {{- if .Values.downstream.inference.enabled }}
+            - name: inference-identity
+              mountPath: /service-identity/inference
+              readOnly: true
+            {{- end }}
+            {{- if .Values.downstream.model.enabled }}
+            - name: model-identity
+              mountPath: /service-identity/model
+              readOnly: true
+            {{- end }}
+            {{- if .Values.downstream.accelerator.enabled }}
+            - name: accelerator-identity
+              mountPath: /service-identity/accelerator
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: configs
+          projected:
+            defaultMode: 0440
+            sources:
+              - configMap:
+                  name: {{ include "ani-governance.fullname" . }}-config
+              - secret:
+                  name: {{ required "config.existingSecret is required" .Values.config.existingSecret }}
+                  items:
+                    - key: {{ .Values.config.secretKey }}
+                      path: {{ .Values.config.secretKey }}
+        - name: access-key
+          secret:
+            secretName: {{ required "config.authSecret is required" .Values.config.authSecret }}
+            items:
+              - key: {{ .Values.config.accessKeyKey }}
+                path: access-key-encryption-key
+            defaultMode: 0440
+        - name: tmp
+          emptyDir: {}
+        {{- if .Values.downstream.model.enabled }}
+        - name: model-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret:
+                  name: {{ required "downstream.model.clientCertificateSecret is required" .Values.downstream.model.clientCertificateSecret }}
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - secret:
+                  name: {{ required "downstream.model.caSecret is required" .Values.downstream.model.caSecret }}
+                  items:
+                    - key: {{ .Values.downstream.model.caKey }}
+                      path: ca.crt
+        {{- end }}
+        {{- if .Values.downstream.inference.enabled }}
+        - name: inference-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret:
+                  name: {{ required "downstream.inference.clientCertificateSecret is required" .Values.downstream.inference.clientCertificateSecret }}
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - secret:
+                  name: {{ required "downstream.inference.caSecret is required" .Values.downstream.inference.caSecret }}
+                  items:
+                    - key: {{ .Values.downstream.inference.caKey }}
+                      path: ca.crt
+        {{- end }}
+        {{- if .Values.downstream.accelerator.enabled }}
+        - name: accelerator-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret:
+                  name: {{ required "downstream.accelerator.clientCertificateSecret is required" .Values.downstream.accelerator.clientCertificateSecret }}
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - secret:
+                  name: {{ required "downstream.accelerator.caSecret is required" .Values.downstream.accelerator.caSecret }}
+                  items:
+                    - key: {{ .Values.downstream.accelerator.caKey }}
+                      path: ca.crt
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

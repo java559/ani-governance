@@ -44,7 +44,6 @@ class CIScriptTests(unittest.TestCase):
             ci = root / 'scripts/ci'
             ci.mkdir(parents=True)
             shutil.copyfile(REPO / 'scripts/ci/integration.sh', ci / 'integration.sh')
-            (ci / 'with-redis.sh').write_text('#!/bin/sh\nshift\ntest "$1" != -- || shift\nexec "$@"\n')
             (ci / 'assert-test-results.py').write_text('print("critical fixture pass")\n')
             binary = root / 'bin/go'
             binary.parent.mkdir()
@@ -377,23 +376,6 @@ if os.environ.get('FAIL_KIND') == kind: sys.exit(43 if kind == 'quota-server' el
             self.assertNotEqual(check([], '^TestDoesNotExist$'), 0)
             self.assertEqual(check([{'Package': 'data', 'Test': 'TestRaceA', 'Action': 'pass'},
                                     {'Package': 'data', 'Test': 'TestRaceB', 'Action': 'pass'}], both), 0)
-
-    def test_redis_stop_rejects_foreign_container(self):
-        with tempfile.TemporaryDirectory() as td:
-            root = Path(td)
-            state = root / 'state'
-            state.mkdir()
-            (state / 'id').write_text('foreign-id')
-            (state / 'owner').write_text('our-run')
-            fake = root / 'fake-engine'
-            marker = root / 'removed'
-            fake.write_text('#!/bin/sh\ncase "$1" in inspect) echo foreign-run;; rm) touch "$FAKE_REMOVED";; esac\n')
-            fake.chmod(0o755)
-            env = dict(os.environ, ANI_CONTAINER_CLI=str(fake), ANI_TEST_REDIS_STATE_DIR=str(state), FAKE_REMOVED=str(marker))
-            result = subprocess.run(['bash', str(REPO / 'scripts/ci/with-redis.sh'), 'stop'], env=env, capture_output=True)
-            self.assertNotEqual(result.returncode, 0)
-            self.assertFalse(marker.exists())
-            self.assertTrue((state / 'id').exists())
 
     def test_generation_evidence_keeps_stage_logs_on_failure(self):
         with tempfile.TemporaryDirectory() as td:

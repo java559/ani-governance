@@ -225,7 +225,7 @@ API 目录同步也是显式动作：先执行 `admin sync-apis --dry-run`，核
 
 当前 CI 位于 `.github/workflows/governance.yml`：`checks`、`integration`、`generation` 独立执行。PostgreSQL 16.10 经显式迁移和受限角色运行；Redis 每次有独占容器和标签。GitHub CI 与任务 Fedora 验证分别记录，均不代表部署或跨仓联调。
 
-`ANI_TEST_DATABASE_DSN` 与 `ANI_TEST_GUARD_DATABASE_DSN` 必须指向本次授权的独占测试库；设置 `ANI_TEST_DATABASE_EXCLUSIVE=1` 和 `ANI_TEST_GUARD_DATABASE_EXCLUSIVE=1`。race 套件另用 `ANI_TEST_RACE_DATA_DSN` 和 `ANI_TEST_RACE_SERVICE_DSN`。不再接受旧通用测试变量名；`scripts/ci/with-redis.sh` 每 run 创建独占容器并按 ID/label 清理。
+`ANI_TEST_DATABASE_DSN` 与 `ANI_TEST_GUARD_DATABASE_DSN` 必须指向本次授权的独占测试库；设置 `ANI_TEST_DATABASE_EXCLUSIVE=1` 和 `ANI_TEST_GUARD_DATABASE_EXCLUSIVE=1`。race 套件另用 `ANI_TEST_RACE_DATA_DSN` 和 `ANI_TEST_RACE_SERVICE_DSN`。不再接受旧通用测试变量名；Asynq 测试使用进程内隔离 Redis，不连接外部 Redis。
 
 成功需要命令真实退出码和所要求的具名测试结果；包级 `ok`、缓存命中、skip 和环境未启动的 not_verified 分开记录。保存管道命令结果时不使用最后一个 `tee`／`echo` 的退出码冒充测试结果。
 

@@ -12,5 +12,7 @@
 | `retire-legacy-file-access.sql` | 数据修复，旧安装文件/API/menu 清理；先按文件退役计划完成结构迁移并审查备份。 |
 | `repair-tenant-logout.sql` | 数据修复，旧安装登出权限缺失时使用；原子且可重跑，需确认现有权限/API 唯一。 |
 | `register-accelerator-permissions.sql` | 数据修复，API 目录 dry-run 与显式同步后登记权限；不授角色、不开套餐或租户额度。 |
+| `register-model-inference-permissions.sql` | 数据修复，Model/Inference BFF API 目录同步后登记精确权限；不授角色、不开套餐或租户额度。 |
+| `enable-model-inference-access.sql` | 只给显式指定的租户 `tenant:manager` 角色和套餐开放 MODEL、INFERENCE；不会修改其他租户、模板角色或配额。 |
 
 SQL 中保留旧路径注释以保持迁址前后字节一致；当前调用路径以本表和 [部署指南](../../../docs/deployment.md) 为准。

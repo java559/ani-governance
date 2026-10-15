@@ -1,0 +1,69 @@
+{{- if .Values.bootstrap.adminInit.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ani-governance.fullname" . }}-admin-init
+  labels:
+    {{- include "ani-governance.labels" . | nindent 4 }}
+    app.kubernetes.io/component: admin-init
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": {{ .Values.bootstrap.adminInit.hookWeight | quote }}
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        {{- include "ani-governance.labels" . | nindent 8 }}
+        app.kubernetes.io/component: admin-init
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: admin
+          image: {{ include "ani-governance.image" .Values.adminImage | quote }}
+          imagePullPolicy: {{ .Values.adminImage.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          command: ["/app/bin/admin"]
+          args:
+            - init
+            - --username
+            - {{ .Values.bootstrap.adminInit.username | quote }}
+            - --password-file
+            - /run/secrets/admin-password
+          env:
+            - name: ANI_DATABASE_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "database.migrationSecret is required" .Values.database.migrationSecret }}
+                  key: {{ .Values.database.dsnKey }}
+          volumeMounts:
+            - name: admin-credentials
+              mountPath: /run/secrets
+              readOnly: true
+      volumes:
+        - name: admin-credentials
+          secret:
+            secretName: {{ required "bootstrap.adminInit.passwordSecret is required" .Values.bootstrap.adminInit.passwordSecret }}
+            items:
+              - key: {{ .Values.bootstrap.adminInit.passwordKey }}
+                path: admin-password
+            defaultMode: 0440
+{{- end }}

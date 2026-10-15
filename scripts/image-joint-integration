@@ -65,12 +65,9 @@ p=Path(sys.argv[1]);pg=(p/'postgres.env').read_text().strip().split('=',1)[1];ru
 for name,user,password in [('admin','postgres',pg),('runtime','image_gov_runtime',runtime)]:
  (p/(name+'.dsn')).write_text('postgres://'+user+':'+password+'@127.0.0.1:'+sys.argv[2]+'/postgres?sslmode=disable')
 (p/'redis.json').write_text(json.dumps({'Address':'127.0.0.1:'+sys.argv[3],'Password':(p/'redis.password').read_text()}))
-(p/'redis.uri').write_text('redis://:'+(p/'redis.password').read_text()+'@127.0.0.1:'+sys.argv[3]+'/0')
 PY
 export IMAGE_GOV_ADMIN_DSN_FILE="$private/admin.dsn" IMAGE_GOV_RUNTIME_DSN_FILE="$private/runtime.dsn" IMAGE_GOV_REDIS_FILE="$private/redis.json"
 printf 'Image Governance joint fixture pg=%s redis=%s\n' "$pg" "$redis"
-export ANI_TEST_REDIS_URI
-ANI_TEST_REDIS_URI=$(cat "$private/redis.uri")
 if [[ $suite == regressions ]];then
  go test -mod=readonly -count=1 -timeout=15m "$@" ./app/admin/service/internal/data ./app/admin/service/internal/service ./app/admin/service/internal/server ./app/admin/service/cmd/server
 else

@@ -78,7 +78,7 @@
 
 | 接口 | 公共报文与结果 |
 |---|---|
-| `POST /api/v1/inference/services` | `{"data":{"idempotency_key":"UUID","name":"...","model_version_id":"UUID","resource":{"requests":{},"limits":{},"gpu":{"cluster_id":"UUID","pool_id":"UUID","profile_id":"UUID","profile_version":"1","replicas":1,"devices_per_replica":1,"container_name":"kserve-container"}},"replicas":1,"runtime":{"mode":1,"provider":"kserve"},"model_artifact":{},"engine":{"type":"...","image":"...","command":["..."],"args":[]},"served_model_name":"..."}}`；业务调用既有 `AcceptGpuCreate`，返回 operation/resource、replayed、`ACCEPTED` 和 dispatch ID |
+| `POST /api/v1/inference/services` | `{"data":{"idempotency_key":"UUID","name":"...","model_version_id":"UUID","served_model_name":"qwen2.5-1.5b-instruct","engine_image":"registry.example/vllm:latest","engine_type":"vllm","command":"exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096","cpu":"8","memory":"32Gi","replicas":1,"gpu":{"cluster_id":"UUID","pool_id":"UUID","profile_id":"UUID","profile_version":"1"}}}`；业务调用既有 `AcceptGpuCreate`，返回 operation/resource、replayed、`ACCEPTED` 和 dispatch ID |
 | `POST /api/v1/inference/services/{data.resource_id}:delete` | `{"data":{"idempotency_key":"UUID"}}`，资源从路径绑定；若正文同时带 resource_id 必须相同。调用既有 `AcceptGpuDelete`，返回 `QUEUED_FOR_OWNER` 或 `CANCELED_BEFORE_DISPATCH`；不接受本地 generation，也不返回释放完成 |
 
 公共 DTO 没有附件、charges、可信 tenant/actor/owner、plan 或目的 URL；严格 HTTP 解码拒绝未知字段、重复字段、额外 query 和身份注入头。正式 adapter 调用 `InferenceServiceManager/CreateInferenceService` 与专用 `DeleteInferenceServiceRequest`；create 附件为 tag 10、原全量 charges 为 tag 11，delete 保留 tags 1..3、附件为 tag 4、原全量 charges 为 tag 5，响应 `durable_owner_ack` 为 tag 3。

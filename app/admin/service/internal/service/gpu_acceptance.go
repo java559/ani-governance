@@ -264,6 +264,23 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	return result, err
 }
 
+// HasGpuCreate classifies this tenant's resource after current delete
+// authorization. A queued CREATE may not yet exist in the downstream owner.
+func (s *GpuAcceptance) HasGpuCreate(ctx context.Context, resource string) (bool, error) {
+	p, err := gpuPrincipal(ctx)
+	if err != nil {
+		return false, err
+	}
+	if err = s.binding.AuthorizeGpu(ctx, p, s.binding.DeleteAction(), resource); err != nil {
+		return false, err
+	}
+	_, err = s.ledger.GetCreateOperationByResource(ctx, p.TenantID, s.binding.OwnerService(), resource)
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
 func (s *GpuAcceptance) AcceptGpuDelete(ctx context.Context, key, resource string) (*attachment.GpuDeleteAcceptance, error) {
 	return s.acceptGpuDelete(ctx, key, resource, 0)
 }

@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package admin.service.v1;
+
+import "catalog/service/v1/model.proto";
+import "google/api/annotations.proto";
+
+// Model is the tenant-facing BFF for the Model Service. Tenant and actor
+// identity come from the authenticated Governance principal; they are never
+// accepted in the public DTOs.
+service ModelService {
+  rpc CreateModel(catalog.service.v1.CreateModelRequest) returns (catalog.service.v1.CreateModelResponse) {
+    option (google.api.http) = { post: "/api/v1/models" body: "*" };
+  }
+  rpc GetModel(catalog.service.v1.GetModelRequest) returns (catalog.service.v1.GetModelResponse) {
+    option (google.api.http) = { get: "/api/v1/models/{model_id}" };
+  }
+  rpc ListModels(catalog.service.v1.ListModelsRequest) returns (catalog.service.v1.ListModelsResponse) {
+    option (google.api.http) = { get: "/api/v1/models" };
+  }
+  rpc CreateModelVersion(catalog.service.v1.CreateModelVersionRequest) returns (catalog.service.v1.CreateModelVersionResponse) {
+    option (google.api.http) = { post: "/api/v1/model-versions" body: "*" };
+  }
+  rpc GetModelVersion(catalog.service.v1.GetModelVersionRequest) returns (catalog.service.v1.GetModelVersionResponse) {
+    option (google.api.http) = { get: "/api/v1/model-versions/{model_version_id}" };
+  }
+  rpc ListModelVersions(catalog.service.v1.ListModelVersionsRequest) returns (catalog.service.v1.ListModelVersionsResponse) {
+    option (google.api.http) = { get: "/api/v1/models/{model_id}/versions" };
+  }
+  rpc ImportModel(catalog.service.v1.ImportModelRequest) returns (catalog.service.v1.ImportModelResponse) {
+    option (google.api.http) = { post: "/api/v1/models:import" body: "*" };
+  }
+  rpc GetImportTask(catalog.service.v1.GetImportTaskRequest) returns (catalog.service.v1.GetImportTaskResponse) {
+    option (google.api.http) = { get: "/api/v1/models/import-tasks/{task_id}" };
+  }
+  rpc RetryImportTask(catalog.service.v1.RetryImportTaskRequest) returns (catalog.service.v1.RetryImportTaskResponse) {
+    option (google.api.http) = { post: "/api/v1/models/import-tasks/{task_id}:retry" body: "*" };
+  }
+}

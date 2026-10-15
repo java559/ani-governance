@@ -1,0 +1,21 @@
+fullnameOverride: redis
+image:
+  repository: docker.changqingyun.cn/mirror/redis
+  tag: 7-alpine
+  digest: sha256:ca0acbb137c1dc3339c8b147a58fd6f42775d4599327b50e7b116c23de501af2
+  pullPolicy: IfNotPresent
+existingSecret: ani-governance-redis
+passwordKey: password
+service:
+  port: 6379
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 2Gi
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
