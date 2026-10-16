@@ -20,6 +20,7 @@ import (
 	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/permcode"
 )
 
 // TenantAccessCheckerImpl 是 TenantAccessChecker 接口的 data 层实现。
@@ -98,6 +99,15 @@ func (c *TenantAccessCheckerImpl) CheckTenantAccess(ctx context.Context, tenantI
 		return adminV1.ErrorForbidden("module not allowed")
 	}
 
+	// 自助类路由（scope_kind = self / tenant-self）豁免套餐模块白名单。
+	// 这类路由是"读/写操作者自己（或个人所属租户）的资源"，不属于可售业务能力，
+	// 不应因套餐未勾选对应模块而拒绝。
+	// 位置：状态（OFF/EXPIRED/FREEZE）与到期只读判定已在第 1、2 步完成，此处只豁免
+	// "买没买这个模块"；授权仍由下游 casbin 强制（调用方须持有对应 self 权限码）。
+	if isSelfScopedRoute(method, path) {
+		return nil
+	}
+
 	if planId == 0 {
 		// 租户未关联套餐，无白名单，拒绝所有业务模块。
 		return adminV1.ErrorForbidden("no subscription plan")
@@ -113,6 +123,19 @@ func (c *TenantAccessCheckerImpl) CheckTenantAccess(ctx context.Context, tenantI
 	}
 
 	return nil
+}
+
+// isSelfScopedRoute 报告 (method, path) 是否为自助类路由（scope_kind = self / tenant-self）。
+//
+// 判据取自权限码权威表（pkg/permcode），该表由生成期固化、覆盖全部已登记路由；
+// 未命中权威表时返回 false（fail-closed，保持原有模块白名单判定）。
+// 权威表不含 scope_kind 的数据库列，故只能在代码侧查表，不能读 sys_apis。
+func isSelfScopedRoute(method, path string) bool {
+	exp, err := permcode.Resolve(method, path)
+	if err != nil || exp == nil {
+		return false
+	}
+	return exp.ScopeKind == permcode.ScopeKindSelf || exp.ScopeKind == permcode.ScopeKindTenantSelf
 }
 
 // isModuleAllowed 查询套餐白名单是否包含指定模块。

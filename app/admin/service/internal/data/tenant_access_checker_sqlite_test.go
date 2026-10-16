@@ -171,6 +171,74 @@ func TestTenantAccessCheckerDecisionMatrix(t *testing.T) {
 		_ = client.PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.ModuleDict).SaveX(sysCtx)
 		require.NoError(t, checker.CheckTenantAccess(context.Background(), tid, "/t/blocklogin", "POST"))
 	})
+
+	// 以下三例覆盖"自助类路由豁免模块白名单"（scope_kind = self / tenant-self）。
+	// 判据来自权限码权威表，故使用其登记的真实路由，而非虚构路径。
+	t.Run("自助路由_白名单不含OPM_仍放行", func(t *testing.T) {
+		// GET /api/v1/admin/me 归类 OPM、scope_kind=self；套餐只挂 TASK → 应豁免放行
+		checker, client, sysCtx := newCheckerSqlite(t)
+		p := client.Plan.Create().SetExpiryPolicy(plan.ExpiryPolicyReadonly).SaveX(sysCtx)
+		tid := client.Tenant.Create().SetName("t-self-opm").SetStatus(tenant.StatusOn).SetPlanID(p.ID).SaveX(sysCtx).ID
+		_ = client.Api.Create().SetPath("/api/v1/admin/me").SetMethod("GET").SetBusinessModule(api.BusinessModuleOpm).SaveX(sysCtx)
+		_ = client.PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.ModuleTask).SaveX(sysCtx)
+		require.NoError(t, checker.CheckTenantAccess(context.Background(), tid, "/api/v1/admin/me", "GET"))
+	})
+
+	t.Run("自助路由_未挂套餐_仍放行", func(t *testing.T) {
+		// tenant-self 路由豁免在 planId==0 判定之前生效：无套餐也放行（授权交 casbin）
+		checker, client, sysCtx := newCheckerSqlite(t)
+		tid := client.Tenant.Create().SetName("t-self-noplan").SetStatus(tenant.StatusOn).SaveX(sysCtx).ID
+		_ = client.Api.Create().SetPath("/api/v1/me/quota-accounts").SetMethod("GET").SetBusinessModule(api.BusinessModuleTenant).SaveX(sysCtx)
+		require.NoError(t, checker.CheckTenantAccess(context.Background(), tid, "/api/v1/me/quota-accounts", "GET"))
+	})
+
+	t.Run("非自助路由_同条件下仍拒绝", func(t *testing.T) {
+		// 对照：同为 TENANT 模块但 scope_kind=platform 的路由（/api/v1/admin/tenants GET）
+		// 不豁免，白名单未命中仍 module not allowed。
+		checker, client, sysCtx := newCheckerSqlite(t)
+		p := client.Plan.Create().SetExpiryPolicy(plan.ExpiryPolicyReadonly).SaveX(sysCtx)
+		tid := client.Tenant.Create().SetName("t-notself").SetStatus(tenant.StatusOn).SetPlanID(p.ID).SaveX(sysCtx).ID
+		_ = client.Api.Create().SetPath("/api/v1/admin/tenants").SetMethod("GET").SetBusinessModule(api.BusinessModuleTenant).SaveX(sysCtx)
+		_ = client.PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.ModuleTask).SaveX(sysCtx)
+		err := checker.CheckTenantAccess(context.Background(), tid, "/api/v1/admin/tenants", "GET")
+		require.Contains(t, forbiddenMessage(t, err), "module not allowed")
+	})
+
+	t.Run("自助路由_租户停用仍拒绝", func(t *testing.T) {
+		// 边界：豁免只作用于模块白名单，状态检查保持前置，OFF 租户仍被拒。
+		checker, client, sysCtx := newCheckerSqlite(t)
+		tid := client.Tenant.Create().SetName("t-self-off").SetStatus(tenant.StatusOff).SaveX(sysCtx).ID
+		_ = client.Api.Create().SetPath("/api/v1/admin/me").SetMethod("GET").SetBusinessModule(api.BusinessModuleOpm).SaveX(sysCtx)
+		err := checker.CheckTenantAccess(context.Background(), tid, "/api/v1/admin/me", "GET")
+		require.Contains(t, forbiddenMessage(t, err), "tenant is not active")
+	})
+}
+
+// TestIsSelfScopedRoute 断言自助路由判据取自权威表：self / tenant-self 命中，
+// 其余 scope_kind 与未登记路由均不豁免（fail-closed）。
+func TestIsSelfScopedRoute(t *testing.T) {
+	exempt := []struct{ method, path string }{
+		{"GET", "/api/v1/admin/me"},                         // self
+		{"PUT", "/api/v1/admin/me"},                         // self
+		{"POST", "/api/v1/admin/me/password"},               // self
+		{"GET", "/api/v1/admin/online-session/my-sessions"}, // self
+		{"GET", "/api/v1/me/quota-accounts"},                // tenant-self
+		{"get", "/api/v1/admin/me"},                         // 方法大小写不敏感
+	}
+	for _, c := range exempt {
+		require.True(t, isSelfScopedRoute(c.method, c.path), "%s %s 应豁免", c.method, c.path)
+	}
+
+	notExempt := []struct{ method, path string }{
+		{"GET", "/api/v1/admin/tenants"},               // platform
+		{"GET", "/api/v1/admin/plans"},                 // platform
+		{"GET", "/api/v1/admin/quota-definitions"},     // 可售/共享
+		{"GET", "/api/v1/admin/not-registered-at-all"}, // 未登记 → fail-closed
+		{"GET", "/api/v1/me"},                          // 未登记 → fail-closed
+	}
+	for _, c := range notExempt {
+		require.False(t, isSelfScopedRoute(c.method, c.path), "%s %s 不应豁免", c.method, c.path)
+	}
 }
 
 // TestModuleMapping 全量枚举 proto↔ent 模块映射：各业务模块双向一致，

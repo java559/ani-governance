@@ -1696,5 +1696,73 @@ GPU；传入 GPU 才进入配额/Accelerator 受理路径。
 → 轮询导入任务 → 读取已就绪版本 → POST /api/v1/inference/services → 轮询
 operation/service → Higress /v1/completions`。导入任务状态可以在版本就绪前为
 `importing`；`GET /api/v1/model-versions/{id}` 只返回已就绪版本，不能把导入中的
-404 当作导入失败。CPU 验收不需要 GPU 或 Accelerator；GPU 验收必须在有 GPU 节点的
+`404` 当作导入失败。CPU 验收不需要 GPU 或 Accelerator；GPU 验收必须在有 GPU 节点的
 新集群另行执行。本批不修改旧集群。
+
+## SELF-SCOPE-MODULE-EXEMPT-01：自助类路由豁免套餐模块白名单（2026-10-16）
+
+不新增 `(path, method)`、不改报文、不改权限码、不改套餐关系，仅调整租户闸门的判定顺序。
+
+背景：租户闸门 `TenantAccessCheckerImpl.CheckTenantAccess` 原按请求所属 `business_module`
+查套餐白名单，命中不到即 `403 module not allowed`。该判定对自助类路由（读写操作者自己或
+个人所属租户的资源）同样生效，导致三个既有事实偏差：`GET /api/v1/admin/me`（`OPM`）在套餐
+不含 `OPM` 时被拒；`GET /api/v1/me/quota-accounts`（`TENANT`，QUOTA-04）需套餐额外开启
+`TENANT` 才能读；`GET /api/v1/admin/online-session/my-sessions`（`SYSTEM`）对租户用户不可用。
+
+变更：闸门第 3 步（模块白名单）前增加自助判定——按权限码权威表（`pkg/permcode`）的
+`scope_kind` 取值为 `self` / `tenant-self` 时放行，跳过白名单查询。当前覆盖 8 条路由
+（`GET/PUT /api/v1/admin/me`、`POST /api/v1/admin/me/contact`、`/contact/verify`、`/password`、
+`GET /api/v1/admin/online-session/my-sessions`、`POST .../my-sessions/revoke`、
+`GET /api/v1/me/quota-accounts`）。租户状态（OFF/EXPIRED/FREEZE）与到期只读判定保持前置；
+业务授权仍由下游 Casbin 强制，未持对应 `self` 权限码的角色仍被拒。
+
+`scope_kind` 仅存在于代码侧权威表，`sys_apis` 无此列，故判定不读数据库列。未命中权威表的
+路由维持原 fail-closed 行为。新增自助路由须登记进权威表才会被豁免。
+
+边界：本变更只解除"买没买模块"这一层，不自动补齐自助权限码授予——上述 7 条 `self` 码在
+测试环境当前授予数为 0，故 `my-sessions` 等仍会因 Casbin 拒绝而不可用，需另行补授予。
+`GET /api/v1/me/quota-accounts` 归 `TENANT` 模块，此前为过闸门给活跃租户套餐补开的
+`TENANT` 模块行在本变更生效后可回退（回退顺序见实施方案 §5.5，不可先回退）。
+
+验证：本地 `go build ./...`（EXIT=0）、`go vet`（EXIT=0）、`pkg/permcode` 与 `data` 包定向用例通过
+（新增决策矩阵 4 例 + `TestIsSelfScopedRoute`）；部署实测（镜像 `20261016-self-scope-exempt`，ani-01，
+新 Pod `1/1 Running`）：三跑可逆实验（tenant-a，plan 3 摘/恢复 `OPM`+`TENANT`+`NETWORK`）证明摘模块后
+自助路由仍 200、同套餐非自助 `/api/v1/networks/vpcs` 转 `403 module not allowed`、越权平台路由始终 403，
+恢复后回基线；回归 `verify-plan-quota` 35/35、`verify-cursor` 24/24、`verify-list-cursor` 38/38、
+`verify-audit-notification` 31/31、`smoke-regression` fail=0 全 PASS。实测确认 `my-sessions` 仍
+`403 unauthorized access`（自助码 0 授予，属批次 B）；ACC 租户 `/admin/me` 未端到端验证（缺其登录密码）。
+本批次未提交。
+
+### 后续批次 B：补授予自助类权限码（2026-10-16）
+
+闸门豁免只解除"买没买模块"这一层。7 条 `self` 码在测试环境**授予数为 0**，故
+`GET /api/v1/admin/online-session/my-sessions`（`SYSTEM` 模块）在豁免后仍 403
+`unauthorized access`（Casbin 拒绝）。按与 `grant-quota-tenant-self-read.sql` 同一模式
+（模板 `template:tenant:manager` + 存量 `tenant:manager` 角色），补授 7 条码：
+`me:profile:read`、`me:profile:edit`、`me:contact:edit`、`me:contact:verify`、
+`me:password:edit`、`online-session:self-read`、`online-session:self-revoke`。每条码仅绑定
+其自身的自助路由（目标是调用者自己的资料/联系方式/口令/会话），授予不越出调用者自身范围，
+不触碰平台角色、其它角色码、权限-API 关联与套餐模块。授权脚本见
+`local-remote/governance-换镜像手册/grant-self-codes-tenant-roles.sql`（**本地，未入库**）。
+
+实测（ani-01，2026-10-16）：dry-run（事务内 `ROLLBACK`）报 `added: 21`，回滚后授予数仍为 0；
+正式应用 `added: 21`，7 码各授予 4 个角色（1 个模板 + 3 个存量租户管理员）；幂等复跑
+`added: 0`。`rollout restart` 刷新内存 Casbin 后复测：`online-session/my-sessions`
+**403 → 200**；`/api/v1/admin/me`、`/api/v1/me/quota-accounts` 仍 200；越权平台路由仍 403。
+
+### 后续批次 C：回退"快解"临时模块数据（2026-10-16）
+
+`enable-tenant-module-for-self-read.sql` 已写入测试环境的三行 `TENANT` 模块行
+（plan 1/3/4，`created_by IS NULL`），在 B2 生效后回退：按对称条件（`module='TENANT'`、
+`created_by IS NULL`、活跃租户所绑 plan）`DELETE 3`，幂等复跑 `DELETE 0`。回退后 plan 1/3/4
+的模块恢复为 DASHBOARD/MODEL/OPM 等原始集合（不含 `TENANT`）。
+
+回退后复测（关键判据）：`GET /api/v1/me/quota-accounts` **仍 200**（证明自助路由不依赖套餐
+`TENANT` 模块行）；`/api/v1/admin/me` 200；`online-session/my-sessions` 200；非 self
+`/api/v1/networks/vpcs` 200。越权平台路由（`/admin/tenants`、`/admin/plans`、
+`/admin/quota-definitions`、跨租户 `/admin/tenants/2/quota-accounts`）仍 403，但拒绝原因由
+`unauthorized access` 变为 `module not allowed`——这三行是"快解"临时加入的，回退后回到
+"该套餐不含 `TENANT`"的原始状态，租户对这些路由的可见性结果不变（仍 403）。回归
+`verify-plan-quota` 35/35、`verify-cursor` 24/24、`verify-list-cursor` 38/38、
+`smoke-regression` fail=0。确认通过后已删除脚本文件 `enable-tenant-module-for-self-read.sql`
+（**全程未入库**）。

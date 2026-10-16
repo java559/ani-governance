@@ -20,6 +20,16 @@ const (
 	SourceCapability = "业务能力映射表"
 )
 
+// ScopeKind（作用范围）取值，对应权威表的 scope_kind 列。
+//
+// self / tenant-self 表示"操作者读写自己（或个人所属租户）的资源"，不属于可售业务模块，
+// 因此不参与套餐模块白名单判定（见 app/admin/service/internal/data/tenant_access_checker.go）。
+// shared / platform / tenant 属可售或平台侧范围，仍需过模块闸门。
+const (
+	ScopeKindSelf       = "self"        // 个人自助：读写自己的资料、会话、凭证
+	ScopeKindTenantSelf = "tenant-self" // 租户自助：读本租户自己的配额等
+)
+
 // expectation 是权威表中一条 (method, path) 的期望。
 type expectation struct {
 	Operation      string // RPC operation（管理面表有，能力表为空）

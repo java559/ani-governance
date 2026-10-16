@@ -20,7 +20,7 @@ AK 通过后主体类型为 `api_key`，主体 ID 是 Access Key ID，不能当�
 
 业务代码通过 [PrincipalFromContext](principal.go) 读取用户或机器主体；[FromContext](context.go) 保留旧的用户 claims 接口。不能从公网 tenant、actor 或角色字段建立可信身份。AK 的兼容 claims 没有用户 ID，需使用 `Principal` 区分主体。
 
-`WithTenantAccessChecker` 配置租户闸门；当前主服务在认证后、业务处理前检查非零租户的状态、到期策略和套餐模块。`WithInjectEnt`、`WithInjectMetadata`、`WithInjectOperatorId` 和 `WithInjectTenantId` 控制上下文或请求注入；默认注入 Ent viewer 与 metadata，默认不改请求操作人/租户字段。主服务显式关闭 metadata 注入，出站身份另按调用合同重建。
+`WithTenantAccessChecker` 配置租户闸门；当前主服务在认证后、业务处理前检查非零租户的状态、到期策略和套餐模块。自助类路由（权限码权威表 `scope_kind` 为 `self` / `tenant-self`，如 `GET /api/v1/admin/me`、`GET /api/v1/me/quota-accounts`）豁免套餐模块白名单——这类路由读写的是操作者自己或个人所属租户的资源，不属于可售模块；状态与到期检查仍前置生效，业务授权仍由下游 Casbin 强制。判定依据见 [tenant_access_checker.go](../../../app/admin/service/internal/data/tenant_access_checker.go)。`WithInjectEnt`、`WithInjectMetadata`、`WithInjectOperatorId` 和 `WithInjectTenantId` 控制上下文或请求注入；默认注入 Ent viewer 与 metadata，默认不改请求操作人/租户字段。主服务显式关闭 metadata 注入，出站身份另按调用合同重建。
 
 `WithEnableAuthority` 控制是否准备授权 claims，不等于执行策略判定。[utils.go](utils.go) 对 HTTP 使用路由模板与方法，对其他传输使用 operation 与 `ANY`，租户 domain 来自可信 claims。主服务随后通过 `authz.Server` 的 Casbin 引擎执行授权；认证成功不等于已获业务权限。
 
