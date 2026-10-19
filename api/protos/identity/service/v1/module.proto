@@ -21,6 +21,8 @@ enum Module {
   MODEL = 11;           // 模型目录
   ACCELERATOR = 13;     // GPU supply and tenant read views
   IMAGE = 14;           // Registered container images and restricted publishing
-  INFERENCE = 15;       // User-approved inference create/delete admission
+  // Inference management is deferred; never reuse its persisted module value.
+  reserved 15;
+  reserved "INFERENCE";
   INSTANCE = 16;        // GPU container instances, separate current action grants
 }

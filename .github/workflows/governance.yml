@@ -96,6 +96,13 @@ jobs:
           echo not_started > "$RUNNER_TEMP/ani-evidence-integration/job-status.txt"
       - name: Migrate isolated PostgreSQL and grant runtime role
         run: bash scripts/ci/setup-postgres.sh
+      - name: Build pinned joint service fixtures and provision their isolated database
+        env:
+          ANI_CI_JOINT_FIXTURE_DIR: ${{ runner.temp }}/ani-joint-fixtures
+          ANI_CI_JOINT_ENV_FILE: ${{ runner.temp }}/ani-joint-fixtures.env
+        run: |
+          bash scripts/ci/setup-joint-fixtures.sh
+          cat "$RUNNER_TEMP/ani-joint-fixtures.env" >> "$GITHUB_ENV"
       - name: integration
         run: bash scripts/ci/run-with-evidence.sh integration -- make test-integration
       - name: Upload redacted integration evidence

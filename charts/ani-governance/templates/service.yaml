@@ -13,7 +13,13 @@ spec:
       port: {{ .Values.service.httpPort }}
       targetPort: http
       protocol: TCP
+      {{- with .Values.service.httpNodePort }}
+      nodePort: {{ . }}
+      {{- end }}
     - name: sse
       port: {{ .Values.service.ssePort }}
       targetPort: sse
       protocol: TCP
+      {{- with .Values.service.sseNodePort }}
+      nodePort: {{ . }}
+      {{- end }}

@@ -4,7 +4,9 @@
 
 - **Network（Resource 的网络领域，可选依赖）**：[i_network.proto](../api/protos/admin/service/v1/i_network.proto) + [network_client.go](../app/admin/service/internal/data/network_client.go) + [network_service.go](../app/admin/service/internal/service/network_service.go)。地址为空则跳过客户端装配。当前租户面 25 方法（包括 NET-25 VPC CIDR 预设）及 JWT/AK 合同见 [接口登记](interface-integration-register.md)，部署与运行是否可用以实际验收为准。
 - **Model / ModelDev（共享 MODEL 模块）**：[model_client.go](../app/admin/service/internal/data/model_client.go) 接入模型目录、版本和导入生命周期；[modeldev_client.go](../app/admin/service/internal/data/modeldev_client.go) 与 [CPU-P01 接口登记](interface-integration-register.md) 记录训练受理、投递、查询和受管目录操作。Model BFF 的恢复范围以 [GOV-MODEL-INF 接口登记](interface-integration-register.md#gov-model-inf-20261012model--inference-bff-接入) 为准。
-- **Accelerator / Inference**：[GPU owner 接入指南](contracts/gpu-owner-integration-guide.md) 记录 typed context、冻结命令及退款 listener 等专项合同。此次 Model / Inference 出站客户端使用唯一 DNS SAN `ani-governance`；Accelerator 与内部退款 listener 的存量 URI 身份差异按服务间调用规范单独迁移。
+- **Accelerator / Resource 实例**：[GPU owner 接入指南](contracts/gpu-owner-integration-guide.md) 记录 typed context、冻结命令及退款 listener 等专项合同。Model 出站客户端使用唯一 DNS SAN `ani-governance`；Accelerator 与内部退款 listener 的身份要求分别按各自合同维护。
+
+Inference 管理接入本期整体下线：普通和 GPU 推理的创建、查询、更新、启停、删除及操作查询均不提供，不保留静态 API 模块或 fork 依赖，也不配置 Inference 出站证书和地址。后续重新对接另行确认正式上游合同与发布版本。
 
 下游在目标环境可能缺席时可参考 Network 的可选装配模式；是否属于启动必需依赖由本次接入合同决定。旧 Model 的强制依赖装配仅是历史先例，重接时须重新确定授权范围和启动条件。
 
@@ -72,9 +74,8 @@ make api
 | Gov → Image | 与 Network 使用相同 Resource 身份校验，服务端固定 `ani-network-service` | `ANI_IMAGE_ADDR/CA/CERT/KEY/TIMEOUT` |
 | Gov → ModelDev | 客户端唯一 DNS SAN 为 `ani-governance`，不允许其他类型 SAN；服务端固定 `ani-modeldev-service` 并额外检查字面 DNS SAN | `ANI_MODELDEV_ADDR/CA/CERT/KEY/TIMEOUT` |
 | Gov → Accelerator | 客户端唯一 URI SAN 为 `spiffe://ani.internal/service/ani-governance`；服务端名称来自受管配置 | `ANI_ACCELERATOR_ADDR/CA/CERT/KEY/TIMEOUT/SERVER_NAME` |
-| Gov → Inference | 客户端唯一 URI SAN 为 `spiffe://ani.internal/service/ani-governance`；服务端名称来自受管配置，并额外检查字面 DNS SAN | `ANI_INFERENCE_ADDR/CA_FILE/CERT_FILE/KEY_FILE/SERVER_NAME`；固定三秒超时 |
 
-以各客户端源码和专项合同为准：[Network](../app/admin/service/internal/data/network_client.go)、[Image](../app/admin/service/internal/data/image_client.go)、[ModelDev](../app/admin/service/internal/data/modeldev_client.go) / [配置](../app/admin/service/internal/data/modeldev_client_config.go)、[Accelerator](../app/admin/service/internal/data/accelerator_client.go)、[Inference](../app/admin/service/internal/data/inference_client.go)。此表描述现有实现；统一身份规则或迁移须另有明确合同，不以修改本文代替运行代码迁移。
+以各客户端源码和专项合同为准：[Network](../app/admin/service/internal/data/network_client.go)、[Image](../app/admin/service/internal/data/image_client.go)、[ModelDev](../app/admin/service/internal/data/modeldev_client.go) / [配置](../app/admin/service/internal/data/modeldev_client_config.go)、[Accelerator](../app/admin/service/internal/data/accelerator_client.go)。此表描述现有实现；统一身份规则或迁移须另有明确合同，不以修改本文代替运行代码迁移。
 
 以下逐条说明 **Network 示例**：
 
@@ -147,7 +148,6 @@ Resource 接收方的完整方法、租户范围、超时和幂等统一见 [调
 
 - **Gov → ModelDev**：Resolve/AcceptExecution/ApplyCloseIntent 重建上述三项；查询另加完整 RPC 的 `x-ani-authorized-method` 和 `x-ani-data-scope=tenant-all`，受管目录操作复用该委派并按其幂等合同绑定 request ID。见 [query client](../app/admin/service/internal/data/modeldev_query_client.go)、[management client](../app/admin/service/internal/data/modeldev_management_client.go) 与接口登记。
 - **Gov → Accelerator**：委托 RPC 从 typed context 派生 `x-ani-action`（RPC 短名）、`x-ani-actor-type`、`x-ani-actor-id`，租户调用再加 `x-ani-tenant-id`；`SyncGpuUsage` 使用原持久投影并重建空 metadata。不能照搬 Network actor header。见 [acceleratorMetadata](../app/admin/service/internal/data/accelerator_client.go) 和 GPU owner 指南。
-- **Gov → Inference**：创建/删除 RPC 重建空 metadata，可信租户和原命令身份来自冻结附件及完整 charges，由唯一 Gov URI 证书身份保护。见 [inference_client.go](../app/admin/service/internal/data/inference_client.go) 和 GPU owner 指南；不得改用普通 metadata 自报授权。
 
 [scripts/deploy/governance-mtls/](../scripts/deploy/governance-mtls/) 提供 Network/Image DNS 身份材料的 cert-manager 模板（`clientAuth` EKU、Issuer `ani-internal-ca`、有效期 72 小时/提前 24 小时续期；以 [certificate.yaml](../scripts/deploy/governance-mtls/certificate.yaml) 为准）。新下游的 Certificate、SAN、信任根、部署补丁和环境变量须按其具体合同准备；现有 URI 身份不能直接套用该 DNS 证书。
 

@@ -31,7 +31,7 @@ make check-repo-entrypoints       # 安全命令桩检查，不代替真实构�
 
 [部署与初始化流程](docs/deployment.md) 规定：**Atlas 结构迁移 → 显式 admin init → check → 启动 → 登录/API 验证**。启动不迁移、不播种、不同步 API、不恢复默认密码；主装配要求 Casbin。配置目录为 `app/admin/service/configs/`，样例不能直接当作生产参数。
 
-业务服务接入见 [service-integration.md](docs/service-integration.md)，接口排查与已接受的调整持续记入 [接口登记](docs/interface-integration-register.md)。历史 Model 接入暂摘及重接材料不作为当前启用功能；下游启用状态以当前装配与配置为准。
+业务服务接入见 [service-integration.md](docs/service-integration.md)，接口排查与已接受的调整持续记入 [接口登记](docs/interface-integration-register.md)。本期不提供 Inference 推理服务管理接口，普通及 GPU 推理的创建、查询、更新、启停、删除和操作查询均已下线；Go API 依赖与出站配置一并移除，后续另行重新对接。Model / ModelDev、ACC 目录与 Resource CPU/GPU 实例链保持各自当前范围。
 
 镜像构建使用根 `Dockerfile` 的服务与 admin CLI target；Atlas 迁移单独执行。备份、部署和实验脚本先查 [脚本指南](scripts/README.md)，不可默认操作共享或业务数据库。
 

@@ -5,7 +5,7 @@
 | Chart | 命名空间 | 作用 |
 | --- | --- | --- |
 | `ani-governance-redis` | `ani-infra` | Gov 专用 Redis、Service 和持久卷 |
-| `ani-governance` | `ani-system` | Gov BFF、数据库迁移 Job、管理员初始化 Job 和 ClusterIP Service |
+| `ani-governance` | `ani-system` | Gov BFF、数据库迁移 Job、管理员初始化 Job 和 NodePort Service |
 
 公共 PostgreSQL、MinIO、KServe、LWS、Higress、Model Service、Inference Service、GPU 服务和 IAM
 由平台或各自项目负责，本组 Chart 不重复创建。Gov Chart 也不把迁移账号放进服务 Deployment。
@@ -31,9 +31,9 @@ kubectl get nodes
 ## 当前新集群验证结果
 
 - `ani-governance-redis`：`ani-infra` 中 StatefulSet `redis` 运行正常，2 GiB `local-path` PVC 已绑定。
-- `ani-governance`：`ani-system` 中 Deployment 1/1，Service 暴露 7788（REST）和 7789（SSE）。
+- `ani-governance`：`ani-system` 中 Deployment 1/1，NodePort Service 暴露 7788（REST）和 7789（SSE）。
 - 数据库迁移 Job 和管理员初始化 Job 均为 `Complete`。
 - 平台登录和 `GET /admin/v1/me` 已通过；未认证访问返回 401，套餐列表返回 200。
 
-Service 默认是 ClusterIP。Higress 的域名、路由和公网认证策略需要根据平台统一入口另行配置，Chart 不猜测
-域名，也不会自动修改现有 Higress 路由。
+Governance 业务 API 通过 NodePort 对外提供，不经过 Higress。Higress 只承载 AI OpenAPI
+（例如 `/v1/completions`）；Chart 不会把 `/api/v1/...` 业务路由加入 Higress。

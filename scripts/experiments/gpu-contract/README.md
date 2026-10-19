@@ -1,9 +1,7 @@
-# GPU 软件合同实验
+# GPU 软件合同实验已退役
 
-`run.sh` 只运行显式提供的跨仓软件合同目录，使用真实 PostgreSQL、mTLS 与测试 owner；不证明 GPU 硬件或生产部署。运行前准备独占数据库、证书、Accelerator 端点和 `ready.json`，并核对所有输入归本 run。脚本不创建或清理别人的容器和数据库。
+旧入口以独立测试 owner 和完整 Plan/charges 模拟 Inference GPU 业务，不支持新的单执行快照和完整资源释放合同，源码可从提交 `370543b0a484b6139fe6bf9394ca4b9a9b0d12f3` 查阅。本期 Inference GPU 业务没有接入。
 
-必填环境：`GOV_ACC_JOINT_DIR`、`GOV_ACC_EVIDENCE_DIR`、私有 `GOMODCACHE`、`GOCACHE`，以及 `GOV_ACC_GOV_ADDR`、`GOV_ACC_GOV2_ADDR`、`GOV_ACC_RELEASE_ADDR`、`GOV_ACC_RELEASE2_ADDR`、`GOV_ACC_OWNER_ADDR`。`run.sh --help` 可只读查看入口。`prepare.py --help` 说明目录参数。测试失败保留日志、退出码与完整源码 SHA；`GOV_ACC_JOINT_DIR` 的凭据文件不入 Git。
+当前纵向回归使用真实 Resource 接收器、PostgreSQL 和 mTLS：`app/admin/service/internal/service/instance_pg_test.go`、`app/admin/service/internal/server/instance_joint_test.go`。仅 Kubernetes 等外部依赖可替换；相关跨仓二进制与独占数据库须显式提供。它们不代替真实 GPU、CUDA、物理释放与占退额的集群验证。
 
-合同种子位于 [`app/admin/service/tests/contracts/gpu/testdata/governance-seed.sql`](../../../app/admin/service/tests/contracts/gpu/testdata/governance-seed.sql)。仅在确认独占测试库已经按迁移链准备、种子 ID 不冲突后，由操作人显式执行 `psql -X -v ON_ERROR_STOP=1 -d <独占测试库> -f app/admin/service/tests/contracts/gpu/testdata/governance-seed.sql`。`run.sh` 和 `prepare.py` 不自动建库或播种。
-
-已退役的模拟器、固定旧容器/PID 故障脚本可从 Git 提交 `63849fc4cde38b879184a8fea4a6f539e60063e1` 找回作历史阅读，不能在当前资源上直接执行。
+账本并发、租户边界、释放事件幂等和 ACK 丢失回归继续由 `internal/data`、`internal/server` 和 `internal/service` 的正式测试维护，入口为仓库 `make verify-ci`。

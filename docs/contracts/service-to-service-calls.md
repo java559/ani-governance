@@ -1,5 +1,7 @@
 # ANI 服务间调用规则
 
+当前 Governance 不提供 Inference 推理服务管理接口，也不装配其 API 模块或出站客户端；后续重新对接仍须遵循本规范。本文的 Inference 调用示例及明确标注的旧源码快照仅说明调用边界，不代表当前已接入。Model、Resource 与 ACC 的现行合同保持各自范围。
+
 适用：Gov → svc、svc → Gov、svc → svc 的内部业务 RPC。本文是新接入及修改服务间调用时必须遵守的统一规范；存量差异须在明确范围的独立迁移中处理，见[当前差异与迁移边界](#current-differences)。规范入仓不表示当前运行实现已全部符合。本文不改变各服务的业务职责、已发布字段或历史验收结论。
 
 ## 1. 三种方向，一套规则
@@ -232,7 +234,7 @@ TLS 校验与拦截器行为参照 [Go TLS 文档](https://pkg.go.dev/crypto/tls
 | 重放 | 同 ID、同内容返回原结果；同 ID、异内容拒绝。业务变更与幂等记录同事务保存，不能先 ACK 再落库 |
 | ACK | durable ACK 只表示命令已持久受理，不表示工作负载 Ready、删除完成或已退额；异步结果由已登记的查询/完成通知观察 |
 | 后台通知 | 先持久保存完成事实和待发送事件，再可靠投递；重试沿用事件 ID。触发判定属于实际业务 owner，传输 adapter 不替它判定完成 |
-| GPU 退额 | 只报告实际完整清理后的事实；使用原 CREATE、原 charge vector 和稳定事件 ID，GPU 退额为完整原 GPU 子集的累计总量，单位不转换。Gov 核验 owner、原账本和持久 DELETE 关联后幂等入账 |
+| GPU 退额 | 只报告实际完整清理后的事实；使用稳定 release event、原 CREATE、resource 和 reason 四字段。Gov 核验认证 owner、原操作和原账后幂等全退；owner 不传 charge/code/units。完整物理清理和创建封闭属于 owner，Gov 不根据 Usage 或当前目录推断 |
 | 不能触发退额的信号 | stop、restart、进程退出、NotFound、超时、ACK、usage ENDED 或单次 binding 缺失，都不能自动证明已释放 |
 | 错误 | 保留 RPC 状态和领域 reason，不吞错或把失败写成成功；对公网映射时隐藏内部证书、地址、密钥和跨租户数据 |
 

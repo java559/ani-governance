@@ -11,6 +11,7 @@ import (
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ModelOwnerClient is the only downstream surface exposed to the BFF. It
@@ -20,12 +21,17 @@ type ModelOwnerClient interface {
 	CreateModel(context.Context, string, string, *modelv1.CreateModelRequest) (*modelv1.Model, error)
 	GetModel(context.Context, string, string, *modelv1.GetModelRequest) (*modelv1.Model, error)
 	ListModels(context.Context, string, string, *modelv1.ListModelsRequest) (*modelv1.ListModelsResponse, error)
+	SearchExternalModels(context.Context, string, string, *modelv1.SearchExternalModelsRequest) (*modelv1.SearchExternalModelsResponse, error)
+	DeleteModel(context.Context, string, string, *modelv1.DeleteModelRequest) (*emptypb.Empty, error)
 	CreateModelVersion(context.Context, string, string, *modelv1.CreateModelVersionRequest) (*modelv1.ModelVersion, error)
 	GetModelVersion(context.Context, string, string, *modelv1.GetModelVersionRequest) (*modelv1.GetModelVersionResponse, error)
 	ListModelVersions(context.Context, string, string, *modelv1.ListModelVersionsRequest) (*modelv1.ListModelVersionsResponse, error)
+	DeleteModelVersion(context.Context, string, string, *modelv1.DeleteModelVersionRequest) (*modelv1.DeleteModelVersionResponse, error)
+	GetUploadURL(context.Context, string, string, *modelv1.GetUploadURLRequest) (*modelv1.GetUploadURLResponse, error)
 	ImportModel(context.Context, string, string, *modelv1.ImportModelRequest) (*modelv1.ImportTask, error)
 	GetImportTask(context.Context, string, string, *modelv1.GetImportTaskRequest) (*modelv1.GetImportTaskResponse, error)
 	RetryImportTask(context.Context, string, string, *modelv1.RetryImportTaskRequest) (*modelv1.RetryImportTaskResponse, error)
+	GetModelDownloadURL(context.Context, string, string, *modelv1.GetModelDownloadURLRequest) (*modelv1.GetModelDownloadURLResponse, error)
 }
 
 type ModelService struct {
@@ -129,6 +135,58 @@ func (s *ModelService) ListModels(ctx context.Context, in *catalogv1.ListModelsR
 	return out, nil
 }
 
+func (s *ModelService) SearchExternalModels(ctx context.Context, in *catalogv1.SearchExternalModelsRequest) (*catalogv1.SearchExternalModelsResponse, error) {
+	if in == nil || strings.TrimSpace(in.Source) == "" || strings.TrimSpace(in.Keyword) == "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_SEARCH", "source and keyword are required")
+	}
+	tenant, actor, err := s.trustedModelOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var page *modelv1.CursorPageRequest
+	if in.Page != nil {
+		page = &modelv1.CursorPageRequest{Limit: in.Page.Limit, Cursor: in.Page.Cursor}
+	}
+	reply, err := s.client.SearchExternalModels(ctx, tenant, actor, &modelv1.SearchExternalModelsRequest{
+		Source: in.Source, Keyword: in.Keyword, Owner: in.Owner, Task: in.Task, Library: in.Library, Page: page,
+	})
+	if err != nil {
+		return nil, mapModelError(err)
+	}
+	if reply == nil || len(reply.Candidates) > 50 {
+		return nil, modelInvalidReply()
+	}
+	out := &catalogv1.SearchExternalModelsResponse{Candidates: make([]*catalogv1.ExternalModelCandidate, 0, len(reply.Candidates))}
+	for _, candidate := range reply.Candidates {
+		if candidate == nil || strings.TrimSpace(candidate.Source) == "" || strings.TrimSpace(candidate.RepoId) == "" || strings.TrimSpace(candidate.Name) == "" || strings.TrimSpace(candidate.Revision) == "" {
+			return nil, modelInvalidReply()
+		}
+		out.Candidates = append(out.Candidates, &catalogv1.ExternalModelCandidate{
+			Source: candidate.Source, RepoId: candidate.RepoId, Name: candidate.Name, DisplayName: candidate.DisplayName,
+			Description: candidate.Description, Revision: candidate.Revision, SizeBytes: candidate.SizeBytes,
+			Tags: append([]string(nil), candidate.Tags...), UpdatedAt: candidate.UpdatedAt,
+		})
+	}
+	if reply.Meta != nil {
+		out.Meta = &catalogv1.CursorPageMeta{NextCursor: reply.Meta.NextCursor, HasMore: reply.Meta.HasMore}
+	}
+	return out, nil
+}
+
+func (s *ModelService) DeleteModel(ctx context.Context, in *catalogv1.DeleteModelRequest) (*emptypb.Empty, error) {
+	if in == nil || strings.TrimSpace(in.ModelId) == "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_REQUEST", "model_id is required")
+	}
+	tenant, actor, err := s.trustedModelOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.client.DeleteModel(ctx, tenant, actor, &modelv1.DeleteModelRequest{ModelId: in.ModelId}); err != nil {
+		return nil, mapModelError(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
 func (s *ModelService) CreateModelVersion(ctx context.Context, in *catalogv1.CreateModelVersionRequest) (*catalogv1.CreateModelVersionResponse, error) {
 	if in == nil || in.Data == nil || strings.TrimSpace(in.Data.ModelId) == "" || strings.TrimSpace(in.Data.Version) == "" || strings.TrimSpace(in.Data.IdempotencyKey) == "" {
 		return nil, kratoserrors.BadRequest("INVALID_MODEL_VERSION", "model_id, version and idempotency_key are required")
@@ -210,6 +268,45 @@ func (s *ModelService) ListModelVersions(ctx context.Context, in *catalogv1.List
 	return out, nil
 }
 
+func (s *ModelService) DeleteModelVersion(ctx context.Context, in *catalogv1.DeleteModelVersionRequest) (*emptypb.Empty, error) {
+	if in == nil || strings.TrimSpace(in.ModelVersionId) == "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_VERSION", "model_version_id is required")
+	}
+	tenant, actor, err := s.trustedModelOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := s.client.DeleteModelVersion(ctx, tenant, actor, &modelv1.DeleteModelVersionRequest{ModelVersionId: in.ModelVersionId}); err != nil {
+		return nil, mapModelError(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func (s *ModelService) GetUploadURL(ctx context.Context, in *catalogv1.GetUploadURLRequest) (*catalogv1.GetUploadURLResponse, error) {
+	if in == nil || strings.TrimSpace(in.ModelId) == "" || in.Data == nil || strings.TrimSpace(in.Data.Version) == "" || strings.TrimSpace(in.Data.FileName) == "" || strings.TrimSpace(in.Data.IdempotencyKey) == "" || in.Data.SizeBytes <= 0 || strings.TrimSpace(in.Data.ChecksumSha256) == "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_UPLOAD", "model_id and upload metadata are required")
+	}
+	tenant, actor, err := s.trustedModelOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	d := in.Data
+	reply, err := s.client.GetUploadURL(ctx, tenant, actor, &modelv1.GetUploadURLRequest{
+		ModelId: in.ModelId, Version: d.Version, FileName: d.FileName, SizeBytes: d.SizeBytes,
+		IdempotencyKey: d.IdempotencyKey, ChecksumSha256: d.ChecksumSha256,
+	})
+	if err != nil {
+		return nil, mapModelError(err)
+	}
+	if reply == nil || strings.TrimSpace(reply.UploadUrl) == "" || strings.TrimSpace(reply.StoragePath) == "" {
+		return nil, modelInvalidReply()
+	}
+	return &catalogv1.GetUploadURLResponse{
+		UploadUrl: reply.UploadUrl, StoragePath: reply.StoragePath, DocId: reply.DocId, ExpiresAt: reply.ExpiresAt,
+		UploadHeaders: reply.UploadHeaders, ModelVersionId: reply.ModelVersionId,
+	}, nil
+}
+
 func (s *ModelService) ImportModel(ctx context.Context, in *catalogv1.ImportModelRequest) (*catalogv1.ImportModelResponse, error) {
 	if in == nil || in.Data == nil || strings.TrimSpace(in.Data.Source) == "" || strings.TrimSpace(in.Data.RepoId) == "" || strings.TrimSpace(in.Data.IdempotencyKey) == "" {
 		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT", "source, repo_id and idempotency_key are required")
@@ -263,6 +360,27 @@ func (s *ModelService) RetryImportTask(ctx context.Context, in *catalogv1.RetryI
 		return nil, modelInvalidReply()
 	}
 	return &catalogv1.RetryImportTaskResponse{Task: wireImportTask(reply.Task)}, nil
+}
+
+func (s *ModelService) GetModelDownloadURL(ctx context.Context, in *catalogv1.GetModelDownloadURLRequest) (*catalogv1.GetModelDownloadURLResponse, error) {
+	if in == nil || strings.TrimSpace(in.ModelVersionId) == "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_VERSION", "model_version_id is required")
+	}
+	if strings.TrimSpace(in.FilePath) != "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_DOWNLOAD", "file_path is not supported by the Model contract")
+	}
+	tenant, actor, err := s.trustedModelOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := s.client.GetModelDownloadURL(ctx, tenant, actor, &modelv1.GetModelDownloadURLRequest{ModelVersionId: in.ModelVersionId})
+	if err != nil {
+		return nil, mapModelError(err)
+	}
+	if reply == nil || strings.TrimSpace(reply.DownloadUrl) == "" || strings.TrimSpace(reply.StoragePath) == "" {
+		return nil, modelInvalidReply()
+	}
+	return &catalogv1.GetModelDownloadURLResponse{DownloadUrl: reply.DownloadUrl, StoragePath: reply.StoragePath, IsEncrypted: reply.IsEncrypted, EncryptAlgo: reply.EncryptAlgo, EncryptHint: reply.EncryptHint, ExpiresAt: reply.ExpiresAt}, nil
 }
 
 func validateModelReply(model *modelv1.Model, tenant, expectedID string) error {

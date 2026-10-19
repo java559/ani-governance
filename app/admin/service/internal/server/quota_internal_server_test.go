@@ -25,7 +25,7 @@ func quotaLifecycleServer(t *testing.T) (*QuotaInternalServer, string, *x509.Cer
 		Enabled: true, Address: "127.0.0.1:0",
 		CAFile: filepath.Join(dir, "ca.pem"), CertFile: filepath.Join(dir, "server.pem"),
 		KeyFile:      filepath.Join(dir, "server.key"),
-		CertOwnerMap: map[string]string{"ani-inference": "ani-inference"},
+		CertOwnerMap: map[string]string{"ani-resource-service": "ani-resource-service"},
 	}, nil)
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = srv.Stop(context.Background()) })

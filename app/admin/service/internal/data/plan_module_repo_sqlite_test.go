@@ -154,10 +154,16 @@ func TestPlanModuleRepoSqlite_ListModulesByPlanId(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, &identityV1.CreatePlanModuleRequest{
 		Data: &identityV1.PlanModule{PlanId: &planB.ID, Module: identityV1.Module_OPM.Enum()},
 	}))
+	for _, module := range []planmodule.Module{planmodule.Module("INFERENCE"), planmodule.ModuleInstance, planmodule.ModuleModel} {
+		require.NoError(t, entClient.Client().PlanModule.Create().SetPlanID(planA.ID).SetModule(module).Exec(ctx))
+	}
 
 	modulesA, err := repo.ListModulesByPlanId(ctx, planA.ID)
 	require.NoError(t, err)
-	require.Equal(t, map[identityV1.Module]bool{identityV1.Module_DASHBOARD: true}, modulesA, "套餐 A 的白名单应只含 DASHBOARD")
+	require.Equal(t, map[identityV1.Module]bool{identityV1.Module_DASHBOARD: true, identityV1.Module_INSTANCE: true, identityV1.Module_MODEL: true}, modulesA, "retired bindings must not disable active modules or enter the whitelist")
+	preserved, err := entClient.Client().PlanModule.Query().Where(planmodule.HasPlanWith(plan.IDEQ(planA.ID)), planmodule.ModuleEQ(planmodule.Module("INFERENCE"))).Exist(ctx)
+	require.NoError(t, err)
+	require.True(t, preserved, "retiring the route must retain historical plan bindings")
 
 	modulesB, err := repo.ListModulesByPlanId(ctx, planB.ID)
 	require.NoError(t, err)

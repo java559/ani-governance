@@ -119,16 +119,24 @@ func gpuLedgerInput(t *testing.T, c *ent.Client, tid, pid uint32) *QuotaOccupyIn
 		require.NoError(t, c.PlanQuota.Create().SetPlanID(pid).SetQuotaCode(code).SetQuotaValue(100).Exec(ctx))
 	}
 	in := occupyInputForResourceTenant(tid, c.Tenant.GetX(ctx, tid).ResourceTenantID, "actor", uuid.NewString(), 2)
-	in.OwnerService = "ani-inference"
+	in.OwnerService = "ani-resource-service"
 	in.Action = "GPU_CREATE"
 	in.Items = []QuotaOccupyItem{{"gpu.physical.count", 2}, {"storage.bytes", 10}}
-	blob, e := json.Marshal(map[string]any{"schema_version": 2, "quota_items": in.Items})
+	blob, e := json.Marshal(map[string]any{"schema_version": 3, "quota_items": in.Items})
 	require.NoError(t, e)
 	in.CanonicalRequest = string(blob)
 	return in
 }
-func gpuDelete(in *QuotaOccupyInput) *QuotaDeleteInput {
-	return &QuotaDeleteInput{TenantID: in.TenantID, ActorType: in.ActorType, ActorID: in.ActorID, OwnerService: in.OwnerService, Action: "GPU_DELETE", IdempotencyKey: uuid.NewString(), RequestHash: "delete-" + in.ResourceID, ResourceID: in.ResourceID, CanonicalRequest: in.CanonicalRequest}
+func gpuDelete(t *testing.T, in *QuotaOccupyInput) *QuotaDeleteInput {
+	t.Helper()
+	var snapshot map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal([]byte(in.CanonicalRequest), &snapshot))
+	// Resource DELETE freezes the observed version alongside the unchanged
+	// original CREATE snapshot, including for a local unsent cancellation.
+	snapshot["delete_expected_version"] = json.RawMessage("1")
+	canonical, err := json.Marshal(snapshot)
+	require.NoError(t, err)
+	return &QuotaDeleteInput{TenantID: in.TenantID, ActorType: in.ActorType, ActorID: in.ActorID, OwnerService: in.OwnerService, Action: "GPU_DELETE", IdempotencyKey: uuid.NewString(), RequestHash: "delete-" + in.ResourceID + "-v1", ResourceID: in.ResourceID, CanonicalRequest: string(canonical)}
 }
 func gpuProjectionPayload(in *QuotaOccupyInput, id string, rev int64, hash string) string {
 	b, _ := json.Marshal(map[string]any{"ref": map[string]string{"tenant_id": in.ResourceTenantID, "owner_service": in.OwnerService, "resource_id": in.ResourceID, "create_operation_id": id}, "revision": rev, "state": rev, "payload_digest": hash})
@@ -193,20 +201,15 @@ func TestQuotaGpuDeleteReleaseAndProjectionRecovery(t *testing.T) {
 	charges, e := r.GetChargesForOperation(ctx, tid, accepted.OperationID)
 	require.NoError(t, e)
 	require.Len(t, charges, 2)
-	rel := &QuotaReleaseInput{OwnerService: in.OwnerService, OperationID: accepted.OperationID, ReleaseEventID: uuid.NewString(), Reason: "RESOURCE_RELEASED", PayloadHash: "gpu-full", PayloadJSON: `{"fixture":"ledger-only"}`}
-	for _, ch := range charges {
-		if isGPUCode(ch.QuotaCode) {
-			rel.Items = []QuotaReleaseItemInput{{ch.ChargeID, ch.QuotaCode, ch.OriginalUnits}}
-		}
-	}
+	rel := &QuotaReleaseInput{OwnerService: in.OwnerService, OperationID: accepted.OperationID, ResourceID: accepted.ResourceID, Complete: true, ReleaseEventID: uuid.NewString(), Reason: "RESOURCE_RELEASED", PayloadHash: "gpu-full", PayloadJSON: `{"fixture":"ledger-only"}`}
 	_, e = r.Release(ctx, rel)
-	require.NoError(t, e, "authenticated owner may return the complete GPU vector without DELETE")
+	require.NoError(t, e, "authenticated owner declares complete resource cleanup without transferring quantities")
 	// The same original event is replayed below after a separately persisted
 	// delete. It must not change the already returned GPU balance a second time.
 	claimed, e := r.ClaimDispatchable(ctx, "owner-worker", time.Minute, 1)
 	require.NoError(t, e)
 	require.Len(t, claimed, 1)
-	deleted, e := r.CreateDeleteOperation(ctx, gpuDelete(in))
+	deleted, e := r.CreateDeleteOperation(ctx, gpuDelete(t, in))
 	require.NoError(t, e)
 	require.False(t, deleted.LocalCanceled)
 	require.Len(t, deleted.ChargeIDs, 2)
@@ -220,7 +223,7 @@ func TestQuotaGpuDeleteReleaseAndProjectionRecovery(t *testing.T) {
 		if isGPUCode(row.QuotaCode) {
 			require.Zero(t, row.OccupiedUnits)
 		} else if row.QuotaCode == "storage.bytes" {
-			require.Equal(t, int64(10), row.OccupiedUnits)
+			require.Zero(t, row.OccupiedUnits)
 		}
 	}
 	op, all, hasDelete, e := r.LoadGpuProjectionSource(ctx, tid, accepted.OperationID)
@@ -248,17 +251,22 @@ func TestQuotaGpuDeleteReleaseAndProjectionRecovery(t *testing.T) {
 	again, e := r.GetOperationForUser(ctx, tid, accepted.OperationID)
 	require.NoError(t, e)
 	require.Equal(t, op.AttemptCount, again.AttemptCount)
-	// Non-GPU cumulative partial refund remains valid independently of GPU closure.
-	for _, ch := range charges {
-		if ch.QuotaCode == "storage.bytes" {
-			rel.ReleaseEventID = uuid.NewString()
-			rel.PayloadHash = "nongpu-partial"
-			rel.Items = []QuotaReleaseItemInput{{ch.ChargeID, ch.QuotaCode, 3}}
-			out, e := r.Release(ctx, rel)
-			require.NoError(t, e)
-			require.Equal(t, int64(3), out[0].AppliedDelta)
-		}
-	}
+	// A separate non-GPU resource retains its independent partial-release API.
+	storage := *in
+	storage.IdempotencyKey = uuid.NewString()
+	storage.ResourceID = uuid.NewString()
+	storage.RequestHash = "separate-storage"
+	storage.CanonicalRequest = `{"resource":"storage"}`
+	storage.Items = []QuotaOccupyItem{{"storage.bytes", 10}}
+	storageOp, e := r.Occupy(ctx, &storage)
+	require.NoError(t, e)
+	storageCharges, e := r.GetChargesForOperation(ctx, tid, storageOp.OperationID)
+	require.NoError(t, e)
+	require.Len(t, storageCharges, 1)
+	out, e := r.Release(ctx, &QuotaReleaseInput{OwnerService: in.OwnerService, OperationID: storageOp.OperationID, ReleaseEventID: uuid.NewString(), Reason: "RESOURCE_RELEASED", PayloadHash: "nongpu-partial", PayloadJSON: `{"fixture":"independent-storage"}`, Items: []QuotaReleaseItemInput{{storageCharges[0].ChargeID, "storage.bytes", 3}}})
+	require.NoError(t, e)
+	require.EqualValues(t, 3, out[0].AppliedDelta)
+
 }
 
 func TestQuotaGpuAtomicCancelAndSameKey(t *testing.T) {
@@ -288,7 +296,7 @@ func TestQuotaGpuAtomicCancelAndSameKey(t *testing.T) {
 		}
 		require.Equal(t, id, v.OperationID)
 	}
-	del := gpuDelete(in)
+	del := gpuDelete(t, in)
 	v, e := r.CreateDeleteOperation(ctx, del)
 	require.NoError(t, e)
 	require.True(t, v.LocalCanceled)
@@ -368,4 +376,75 @@ func TestQuotaGpuProjectionNullAndForeignRefConstraints(t *testing.T) {
 		return e
 	})
 	require.Error(t, e, "original ref FK must retain tenant")
+}
+
+// Complete release derives quantities under the ledger locks and fences event
+// reuse across tenant ledgers using the existing globally unique receipt ID.
+func TestQuotaResourceReleasedOriginalLedgerAndEventFence(t *testing.T) {
+	c := newLedgerPGClient(t)
+	cleanLedger(t, c)
+	r := newTestRepo(c)
+	ctx := context.Background()
+	a, pa := seedTenantPlan(t, c, "full-release-a", 20)
+	b, pb := seedTenantPlan(t, c, "full-release-b", 20)
+	firstInput := gpuLedgerInput(t, c.Client(), a, pa)
+	otherInput := gpuLedgerInput(t, c.Client(), b, pb)
+	first, e := r.Occupy(ctx, firstInput)
+	require.NoError(t, e)
+	other, e := r.Occupy(ctx, otherInput)
+	require.NoError(t, e)
+	release := &QuotaReleaseInput{OwnerService: firstInput.OwnerService, ReleaseEventID: uuid.NewString(), OperationID: first.OperationID, ResourceID: first.ResourceID, Complete: true, Reason: "RESOURCE_RELEASED", PayloadHash: "full-original", PayloadJSON: `{"reason":"RESOURCE_RELEASED"}`}
+	wrong := *release
+	wrong.ResourceID = uuid.NewString()
+	_, e = r.Release(ctx, &wrong)
+	require.Error(t, e)
+	wrong = *release
+	wrong.OwnerService = "another-owner"
+	_, e = r.Release(ctx, &wrong)
+	require.Error(t, e)
+	results, e := r.Release(ctx, release)
+	require.NoError(t, e)
+	require.Len(t, results, 2)
+	for _, result := range results {
+		require.Positive(t, result.AppliedDelta)
+		require.Equal(t, result.AppliedDelta, result.ReleasedTotal)
+	}
+	repeated, e := r.Release(ctx, release)
+	require.NoError(t, e)
+	for _, result := range repeated {
+		require.Zero(t, result.AppliedDelta)
+	}
+	changed := *release
+	changed.PayloadHash = "same-event-different-reason"
+	changed.Reason = "ABORTED_CLEANED"
+	_, e = r.Release(ctx, &changed)
+	require.Error(t, e)
+	anotherEvent := *release
+	anotherEvent.ReleaseEventID = uuid.NewString()
+	anotherEvent.PayloadHash = "same-resource-another-event"
+	repeated, e = r.Release(ctx, &anotherEvent)
+	require.NoError(t, e)
+	for _, result := range repeated {
+		require.Zero(t, result.AppliedDelta)
+	}
+	crossTenant := *release
+	crossTenant.OperationID = other.OperationID
+	crossTenant.ResourceID = other.ResourceID
+	crossTenant.PayloadHash = "same-event-another-tenant"
+	_, e = r.Release(ctx, &crossTenant)
+	require.Error(t, e, "an owner cannot reuse a complete event for another tenant")
+	for _, tid := range []uint32{a, b} {
+		rows, e := r.RecomputeInvariants(ctx, tid)
+		require.NoError(t, e)
+		for _, row := range rows {
+			require.True(t, row.Balanced)
+			if tid == a {
+				require.Zero(t, row.OccupiedUnits)
+			} else if row.QuotaCode == "gpu.physical.count" {
+				require.EqualValues(t, 2, row.OccupiedUnits)
+			} else if row.QuotaCode == "storage.bytes" {
+				require.EqualValues(t, 10, row.OccupiedUnits)
+			}
+		}
+	}
 }

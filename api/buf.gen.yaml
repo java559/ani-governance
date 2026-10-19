@@ -6,8 +6,6 @@ managed:
   enabled: true
 
   disable:
-    - path: inference/v1
-    - path: accelerator
     - module: buf.build/googleapis/googleapis
     - module: 'buf.build/envoyproxy/protoc-gen-validate'
     - module: 'buf.build/kratos/apis'

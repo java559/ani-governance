@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware"
@@ -16,9 +17,12 @@ import (
 
 	swaggerUI "go-wind-admin/pkg/localdeps/kratos-swagger-ui"
 
+	conf "go-wind-admin/pkg/localdeps/kratos-bootstrap/api/gen/go/conf/v1"
 	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 	"go-wind-admin/pkg/localdeps/kratos-bootstrap/rpc"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 
 	"go-wind-admin/app/admin/service/cmd/server/assets"
 	"go-wind-admin/app/admin/service/internal/data"
@@ -190,7 +194,6 @@ func NewRestServer(
 	acceleratorService *service.AcceleratorService,
 	imageService *service.ImageService,
 	modeldevService *service.ModelDevService,
-	inferenceService *service.InferenceService,
 	modelService *service.ModelService,
 	instanceServices ...*service.InstanceService,
 ) (*http.Server, error) {
@@ -200,7 +203,13 @@ func NewRestServer(
 		return nil, nil
 	}
 
-	srv, err := rpc.CreateRestServerWithFilters(cfg, []http.FilterFunc{auth.ImageHTTPFilter, auth.NetworkHTTPFilter},
+	ordinaryTimeout := time.Second // Kratos v2.9.2 default when config omits timeout.
+	if cfg.Server.Rest.Timeout != nil {
+		ordinaryTimeout = cfg.Server.Rest.Timeout.AsDuration()
+	}
+	streamConfig := proto.Clone(cfg).(*conf.Bootstrap)
+	streamConfig.Server.Rest.Timeout = durationpb.New(0)
+	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter},
 		middlewares...,
 	)
 	if err != nil {
@@ -269,9 +278,6 @@ func NewRestServer(
 	adminV1.RegisterAcceleratorServiceHTTPServer(srv, acceleratorService)
 	adminV1.RegisterQuotaSelfServiceHTTPServer(srv, acceleratorService)
 	registerModelDevHTTP(srv, modeldevService)
-	if inferenceService != nil {
-		RegisterInferenceHTTPServer(srv, inferenceService)
-	}
 	if modelService != nil {
 		adminV1.RegisterModelServiceHTTPServer(srv, modelService)
 	}

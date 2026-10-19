@@ -141,7 +141,7 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 	if len(md.Get("authorization")) != 0 {
 		t.Fatal("bearer credential forwarded")
 	}
-	ref := &acc.GpuUsageRef{TenantId: tenant, OwnerService: "ani-inference", ResourceId: uuid.NewString(), CreateOperationId: uuid.NewString()}
+	ref := &acc.GpuUsageRef{TenantId: tenant, OwnerService: "ani-resource-service", ResourceId: uuid.NewString(), CreateOperationId: uuid.NewString()}
 	ack, e := client.SyncGpuUsage(ctx, &acc.SyncGpuUsageRequest{RequestId: uuid.NewString(), Projection: &acc.GpuUsageProjection{Ref: ref, Revision: 1}})
 	if e != nil {
 		t.Fatal(e)

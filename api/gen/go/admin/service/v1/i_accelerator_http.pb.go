@@ -26,13 +26,16 @@ const OperationAcceleratorAdminServiceAdminListBindings = "/admin.service.v1.Acc
 const OperationAcceleratorAdminServiceAdminListProfiles = "/admin.service.v1.AcceleratorAdminService/AdminListProfiles"
 const OperationAcceleratorAdminServiceAdoptSupplyGroup = "/admin.service.v1.AcceleratorAdminService/AdoptSupplyGroup"
 const OperationAcceleratorAdminServiceCreatePool = "/admin.service.v1.AcceleratorAdminService/CreatePool"
+const OperationAcceleratorAdminServiceCreateProfile = "/admin.service.v1.AcceleratorAdminService/CreateProfile"
+const OperationAcceleratorAdminServiceDeleteProfile = "/admin.service.v1.AcceleratorAdminService/DeleteProfile"
 const OperationAcceleratorAdminServiceListClusters = "/admin.service.v1.AcceleratorAdminService/ListClusters"
 const OperationAcceleratorAdminServiceListDevices = "/admin.service.v1.AcceleratorAdminService/ListDevices"
 const OperationAcceleratorAdminServiceListPools = "/admin.service.v1.AcceleratorAdminService/ListPools"
 const OperationAcceleratorAdminServiceListSupplyGroups = "/admin.service.v1.AcceleratorAdminService/ListSupplyGroups"
-const OperationAcceleratorAdminServicePublishProfile = "/admin.service.v1.AcceleratorAdminService/PublishProfile"
+const OperationAcceleratorAdminServicePreviewProfile = "/admin.service.v1.AcceleratorAdminService/PreviewProfile"
 const OperationAcceleratorAdminServiceRegisterCluster = "/admin.service.v1.AcceleratorAdminService/RegisterCluster"
 const OperationAcceleratorAdminServiceSetAdmission = "/admin.service.v1.AcceleratorAdminService/SetAdmission"
+const OperationAcceleratorAdminServiceSetProfileState = "/admin.service.v1.AcceleratorAdminService/SetProfileState"
 
 type AcceleratorAdminServiceHTTPServer interface {
 	AdminGetCapacity(context.Context, *v1.AcceleratorVersionRequest) (*v1.AcceleratorCapacity, error)
@@ -40,13 +43,16 @@ type AcceleratorAdminServiceHTTPServer interface {
 	AdminListProfiles(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorProfiles, error)
 	AdoptSupplyGroup(context.Context, *v1.AdoptAcceleratorSupplyRequest) (*v1.AcceleratorSupply, error)
 	CreatePool(context.Context, *v1.CreateAcceleratorPoolRequest) (*v1.AcceleratorPool, error)
+	CreateProfile(context.Context, *v1.CreateAcceleratorProfileRequest) (*v1.AcceleratorProfile, error)
+	DeleteProfile(context.Context, *v1.DeleteAcceleratorProfileRequest) (*v1.AcceleratorProfile, error)
 	ListClusters(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorClusters, error)
 	ListDevices(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorDevices, error)
 	ListPools(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorPools, error)
 	ListSupplyGroups(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorSupplies, error)
-	PublishProfile(context.Context, *v1.PublishAcceleratorProfileRequest) (*v1.AcceleratorProfile, error)
+	PreviewProfile(context.Context, *v1.PreviewAcceleratorProfileRequest) (*v1.AcceleratorProfilePreview, error)
 	RegisterCluster(context.Context, *v1.RegisterAcceleratorClusterRequest) (*v1.AcceleratorCluster, error)
 	SetAdmission(context.Context, *v1.SetAcceleratorAdmissionRequest) (*v1.AcceleratorSupply, error)
+	SetProfileState(context.Context, *v1.SetAcceleratorProfileStateRequest) (*v1.AcceleratorProfile, error)
 }
 
 func RegisterAcceleratorAdminServiceHTTPServer(s *http.Server, srv AcceleratorAdminServiceHTTPServer) {
@@ -59,7 +65,10 @@ func RegisterAcceleratorAdminServiceHTTPServer(s *http.Server, srv AcceleratorAd
 	r.POST("/api/v1/admin/accelerator/supply-groups:adopt", _AcceleratorAdminService_AdoptSupplyGroup0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/accelerator/supply-groups/{group_id}:set-admission", _AcceleratorAdminService_SetAdmission0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/accelerator/profiles", _AcceleratorAdminService_AdminListProfiles0_HTTP_Handler(srv))
-	r.POST("/api/v1/admin/accelerator/profiles", _AcceleratorAdminService_PublishProfile0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/profiles", _AcceleratorAdminService_CreateProfile0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/profiles:preview", _AcceleratorAdminService_PreviewProfile0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/profiles/{profile_id}:set-state", _AcceleratorAdminService_SetProfileState0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/profiles/{profile_id}:delete", _AcceleratorAdminService_DeleteProfile0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/accelerator/devices", _AcceleratorAdminService_ListDevices0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/accelerator/bindings", _AcceleratorAdminService_AdminListBindings0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/accelerator/capacity", _AcceleratorAdminService_AdminGetCapacity0_HTTP_Handler(srv))
@@ -232,18 +241,87 @@ func _AcceleratorAdminService_AdminListProfiles0_HTTP_Handler(srv AcceleratorAdm
 	}
 }
 
-func _AcceleratorAdminService_PublishProfile0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+func _AcceleratorAdminService_CreateProfile0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in v1.PublishAcceleratorProfileRequest
+		var in v1.CreateAcceleratorProfileRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
-		http.SetOperation(ctx, OperationAcceleratorAdminServicePublishProfile)
+		http.SetOperation(ctx, OperationAcceleratorAdminServiceCreateProfile)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.PublishProfile(ctx, req.(*v1.PublishAcceleratorProfileRequest))
+			return srv.CreateProfile(ctx, req.(*v1.CreateAcceleratorProfileRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorProfile)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_PreviewProfile0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.PreviewAcceleratorProfileRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServicePreviewProfile)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.PreviewProfile(ctx, req.(*v1.PreviewAcceleratorProfileRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorProfilePreview)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_SetProfileState0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.SetAcceleratorProfileStateRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServiceSetProfileState)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetProfileState(ctx, req.(*v1.SetAcceleratorProfileStateRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorProfile)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_DeleteProfile0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteAcceleratorProfileRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServiceDeleteProfile)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteProfile(ctx, req.(*v1.DeleteAcceleratorProfileRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -317,13 +395,16 @@ type AcceleratorAdminServiceHTTPClient interface {
 	AdminListProfiles(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfiles, err error)
 	AdoptSupplyGroup(ctx context.Context, req *v1.AdoptAcceleratorSupplyRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupply, err error)
 	CreatePool(ctx context.Context, req *v1.CreateAcceleratorPoolRequest, opts ...http.CallOption) (rsp *v1.AcceleratorPool, err error)
+	CreateProfile(ctx context.Context, req *v1.CreateAcceleratorProfileRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfile, err error)
+	DeleteProfile(ctx context.Context, req *v1.DeleteAcceleratorProfileRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfile, err error)
 	ListClusters(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorClusters, err error)
 	ListDevices(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorDevices, err error)
 	ListPools(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorPools, err error)
 	ListSupplyGroups(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupplies, err error)
-	PublishProfile(ctx context.Context, req *v1.PublishAcceleratorProfileRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfile, err error)
+	PreviewProfile(ctx context.Context, req *v1.PreviewAcceleratorProfileRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfilePreview, err error)
 	RegisterCluster(ctx context.Context, req *v1.RegisterAcceleratorClusterRequest, opts ...http.CallOption) (rsp *v1.AcceleratorCluster, err error)
 	SetAdmission(ctx context.Context, req *v1.SetAcceleratorAdmissionRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupply, err error)
+	SetProfileState(ctx context.Context, req *v1.SetAcceleratorProfileStateRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfile, err error)
 }
 
 type AcceleratorAdminServiceHTTPClientImpl struct {
@@ -399,6 +480,32 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) CreatePool(ctx context.Context, 
 	return &out, nil
 }
 
+func (c *AcceleratorAdminServiceHTTPClientImpl) CreateProfile(ctx context.Context, in *v1.CreateAcceleratorProfileRequest, opts ...http.CallOption) (*v1.AcceleratorProfile, error) {
+	var out v1.AcceleratorProfile
+	pattern := "/api/v1/admin/accelerator/profiles"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceCreateProfile))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AcceleratorAdminServiceHTTPClientImpl) DeleteProfile(ctx context.Context, in *v1.DeleteAcceleratorProfileRequest, opts ...http.CallOption) (*v1.AcceleratorProfile, error) {
+	var out v1.AcceleratorProfile
+	pattern := "/api/v1/admin/accelerator/profiles/{profile_id}:delete"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceDeleteProfile))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AcceleratorAdminServiceHTTPClientImpl) ListClusters(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorClusters, error) {
 	var out v1.AcceleratorClusters
 	pattern := "/api/v1/admin/accelerator/clusters"
@@ -451,13 +558,13 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) ListSupplyGroups(ctx context.Con
 	return &out, nil
 }
 
-func (c *AcceleratorAdminServiceHTTPClientImpl) PublishProfile(ctx context.Context, in *v1.PublishAcceleratorProfileRequest, opts ...http.CallOption) (*v1.AcceleratorProfile, error) {
-	var out v1.AcceleratorProfile
-	pattern := "/api/v1/admin/accelerator/profiles"
-	path := binding.EncodeURL(pattern, in, false)
-	opts = append(opts, http.Operation(OperationAcceleratorAdminServicePublishProfile))
+func (c *AcceleratorAdminServiceHTTPClientImpl) PreviewProfile(ctx context.Context, in *v1.PreviewAcceleratorProfileRequest, opts ...http.CallOption) (*v1.AcceleratorProfilePreview, error) {
+	var out v1.AcceleratorProfilePreview
+	pattern := "/api/v1/admin/accelerator/profiles:preview"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServicePreviewProfile))
 	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -482,6 +589,19 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) SetAdmission(ctx context.Context
 	pattern := "/api/v1/admin/accelerator/supply-groups/{group_id}:set-admission"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceSetAdmission))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AcceleratorAdminServiceHTTPClientImpl) SetProfileState(ctx context.Context, in *v1.SetAcceleratorProfileStateRequest, opts ...http.CallOption) (*v1.AcceleratorProfile, error) {
+	var out v1.AcceleratorProfile
+	pattern := "/api/v1/admin/accelerator/profiles/{profile_id}:set-state"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceSetProfileState))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

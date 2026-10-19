@@ -9,7 +9,10 @@ option go_package = "github.com/zhangzhe-ctrl/ani-governance/api/quota/gen/go/qu
 // 请求不包含可作为身份依据的 tenant_id 或 owner_service：
 // 租户/owner 从 charge 及已验证 mTLS 证书精确 DNS SAN 取出。
 service QuotaReleaseService {
-  // 上报累计释放事实（幂等）。
+  // GPU owner 只报告完整释放；数量由 Governance 原账确定。
+  rpc ReportResourceReleased (ReportResourceReleasedRequest) returns (ReportResourceReleasedResponse);
+
+  // 非 GPU 资源的累计释放事实（幂等）。
   rpc ReportQuotaRelease (ReportQuotaReleaseRequest) returns (ReportQuotaReleaseResponse);
 }
 
@@ -49,4 +52,25 @@ message QuotaReleaseResult {
 
 message ReportQuotaReleaseResponse {
   repeated QuotaReleaseResult items = 1;
+}
+
+// 完整释放只携带稳定事实引用，调用者身份来自受信 mTLS。
+message ReportResourceReleasedRequest {
+  string release_event_id = 1;
+  string create_operation_id = 2;
+  string resource_id = 3;
+  ReleaseReason reason = 4;
+}
+
+enum ResourceReleaseStatus {
+  RESOURCE_RELEASE_STATUS_UNSPECIFIED = 0;
+  APPLIED = 1;
+  ALREADY_APPLIED = 2;
+}
+
+message ReportResourceReleasedResponse {
+  string release_event_id = 1;
+  string create_operation_id = 2;
+  string resource_id = 3;
+  ResourceReleaseStatus status = 4;
 }

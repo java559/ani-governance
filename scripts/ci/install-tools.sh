@@ -8,6 +8,10 @@ case "${1:-}" in
     GOWORK=off go install github.com/zricethezav/gitleaks/v8@v8.30.1
     ;;
   generation)
+    # Build Ent with this repository's locked module graph, matching go run.
+    # Prebuilding avoids including cold CLI compilation in gow's 2m deadline.
+    test "$(GOWORK=off go list -m -f '{{.Version}}' entgo.io/ent)" = v0.14.6
+    GOWORK=off go install -mod=readonly entgo.io/ent/cmd/ent
     GOWORK=off go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
     GOWORK=off go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
     GOWORK=off go install github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2@v2.0.0-20260404020628-f149714c1d54
@@ -19,9 +23,6 @@ case "${1:-}" in
     # Cache them without replacing the active generator binaries.
     GOWORK=off go mod download google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.0
     GOWORK=off go mod download github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2@v2.0.0-20251205160234-b9fab9a5a5ab
-    # 固定的上游 Proto 模块由 `go list -m` 定位，而该命令在模块未缓存时
-    # 返回空目录且退出码为 0、不会触发下载。冷缓存下必须显式预取。
-    GOWORK=off go mod download github.com/liangzai006/ani-inference-service github.com/zhangzhe-ctrl/ani-accelerator-service
     work=$(mktemp -d "${TMPDIR:-/tmp}/ani-protoc.XXXXXXXX")
     trap 'rm -rf "$work"' EXIT
     curl --http1.1 --fail --location --silent --show-error \

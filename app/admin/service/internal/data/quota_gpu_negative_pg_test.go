@@ -38,7 +38,7 @@ func TestQuotaGpuReleaseNegativeVectorsAtomic(t *testing.T) {
 	claimed, e := r.ClaimDispatchable(ctx, "negative-vectors", time.Minute, 1)
 	require.NoError(t, e)
 	require.Len(t, claimed, 1)
-	del, e := r.CreateDeleteOperation(ctx, gpuDelete(in))
+	del, e := r.CreateDeleteOperation(ctx, gpuDelete(t, in))
 	require.NoError(t, e)
 	require.False(t, del.LocalCanceled)
 	otherInput := *in
@@ -237,7 +237,7 @@ func TestQuotaGpuDeleteInvalidBindingAndChargesAtomic(t *testing.T) {
 			require.NoError(t, e)
 			charges, e := r.GetChargesForOperation(ctx, tid, accepted.OperationID)
 			require.NoError(t, e)
-			input := gpuDelete(in)
+			input := gpuDelete(t, in)
 			switch name {
 			case "wrong_owner":
 				input.OwnerService = "other-owner"

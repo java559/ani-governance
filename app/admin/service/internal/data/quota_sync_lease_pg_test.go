@@ -150,7 +150,7 @@ func TestQuotaGpuSyncLeaseRetryAndBlock(t *testing.T) {
 	balance(2, 10)
 	// A real local deletion supplies the new terminal facts; the sync adapter
 	// alone has left both business balances and business attempt_count unchanged.
-	deleted, e := r.CreateDeleteOperation(ctx, gpuDelete(in))
+	deleted, e := r.CreateDeleteOperation(ctx, gpuDelete(t, in))
 	require.NoError(t, e)
 	require.True(t, deleted.LocalCanceled)
 	balance(0, 0)

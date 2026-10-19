@@ -39,9 +39,13 @@ securityContext:
   capabilities:
     drop: [ALL]
 service:
-  type: ClusterIP
+  type: NodePort
   httpPort: 7788
+  # Leave empty to let Kubernetes allocate a NodePort.
+  httpNodePort: null
   ssePort: 7789
+  # Leave empty to let Kubernetes allocate a NodePort.
+  sseNodePort: null
 resources:
   requests:
     cpu: 100m
@@ -100,13 +104,6 @@ bootstrap:
 
 downstream:
   model:
-    enabled: false
-    address: ""
-    serverName: ""
-    caSecret: ""
-    caKey: ca.crt
-    clientCertificateSecret: governance-client-tls
-  inference:
     enabled: false
     address: ""
     serverName: ""

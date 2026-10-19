@@ -12,7 +12,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/gpuusagesync"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaaccount"
-	"go-wind-admin/app/admin/service/internal/data/ent/quotacharge"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 )
@@ -184,13 +183,10 @@ func upsertGpuUsageSync(ctx context.Context, tx *ent.Tx, v *ent.GpuUsageSync) er
 // projection source reads and mutations always use tenant-scoped Ent predicates.
 func scanGpuCreatePage(ctx context.Context, tx *ent.Tx, afterID int64, limit int) ([]*ent.QuotaOperation, error) {
 	return tx.QuotaOperation.Query().Where(quotaoperation.CreateOperationIDIsNil(), func(s *entsql.Selector) {
-		c := entsql.Table(quotacharge.Table)
-		charges := entsql.Select(c.C(quotacharge.FieldID)).From(c).Where(entsql.And(
-			entsql.ColumnsEQ(c.C(quotacharge.FieldTenantID), s.C(quotaoperation.FieldTenantID)),
-			entsql.ColumnsEQ(c.C(quotacharge.FieldOperationID), s.C(quotaoperation.FieldOperationID)),
-			entsql.In(c.C(quotacharge.FieldQuotaCode), "gpu.physical.count", "gpu.shared_memory_mib")))
 		s.Where(entsql.GT(s.C(quotaoperation.FieldID), afterID))
-		s.Where(entsql.Or(entsql.ExprP(s.C(quotaoperation.FieldCanonicalRequest)+"::jsonb->>'schema_version' = '2'"),
-			entsql.ExprP(s.C(quotaoperation.FieldCanonicalRequest)+"::jsonb ? 'gpu_plan'"), entsql.Exists(charges)))
+		// The schema marker selects only accepted new-contract commands. Terminal
+		// audit records from the cutover are never parsed as running payloads.
+		s.Where(entsql.ExprP(s.C(quotaoperation.FieldCanonicalRequest) + "::jsonb->>'schema_version' = '3'"))
+
 	}).Order(ent.Asc(quotaoperation.FieldID)).Limit(limit).All(ctx)
 }

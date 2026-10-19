@@ -154,7 +154,7 @@ def render_management(entries):
 
 def render_capability(entries):
     lines = [HEADER,
-             "// 源自 %s（六域+Quota 94 行）。\n" % rel(CAPABILITY_TSV),
+             "// 源自 %s（六域+Quota %d 行）。\n" % (rel(CAPABILITY_TSV), len(entries)),
              "package permcode\n\n",
              "var capabilityOperations = map[string]expectation{\n"]
     for key, code, source, module, scope in sorted(entries, key=lambda e: e[0]):

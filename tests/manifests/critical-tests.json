@@ -20,5 +20,9 @@
   {"Package":"go-wind-admin/app/admin/service/internal/server","Test":"TestQuotaInternalStartBlocksAndConcurrentStop"},
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestQuotaDispatchRetryAfterLostAck"},
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestQuotaAdminAndSelfDomainViews"},
-  {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestQuotaAdminEnvelopeWireContract"}
+  {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestQuotaAdminEnvelopeWireContract"},
+  {"Package":"go-wind-admin/app/admin/service/internal/data","Test":"TestQuotaResourceReleasedOriginalLedgerAndEventFence"},
+  {"Package":"go-wind-admin/app/admin/service/internal/server","Test":"TestInstancePublicHTTPPersistentIntakeAndCommands"},
+  {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestInstanceCurrentAuthorizationOriginalReplayAndOwnerRelease"},
+  {"Package":"go-wind-admin/app/admin/service/internal/server","Test":"TestNewRestServerOmitsDeferredInferenceManagement"}
 ]

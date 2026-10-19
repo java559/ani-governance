@@ -27,7 +27,7 @@ type retryPeer struct {
 	first    chan struct{}
 }
 
-func (*retryPeer) OwnerService() string { return "ani-inference" }
+func (*retryPeer) OwnerService() string { return "quota-retry-test-owner" }
 func (*retryPeer) Actions() []string    { return []string{"RETRY_CREATE"} }
 func (p *retryPeer) Dispatch(_ context.Context, cmd *QuotaDispatchCommand) ([]byte, error) {
 	p.mu.Lock()
@@ -60,7 +60,7 @@ func TestQuotaDispatchRetryAfterLostAck(t *testing.T) {
 	require.NoError(t, registry.Register(peer))
 	worker := NewQuotaDispatchWorker(testutil.NewBootstrapContext(nil), ledger, registry)
 	// Commit before Start: the operation is genuinely QUEUED, with no lease.
-	occupied, err := ledger.Occupy(context.Background(), &data.QuotaOccupyInput{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, ResourceID: uuid.NewString(), ActorType: "user", ActorID: "1", OwnerService: "ani-inference", Action: "RETRY_CREATE", IdempotencyKey: uuid.NewString(), RequestHash: "retry-hash", CanonicalRequest: `{"schema_version":1}`, Items: []data.QuotaOccupyItem{{QuotaCode: data.QuotaCodeGpuCount, Units: 2}}})
+	occupied, err := ledger.Occupy(context.Background(), &data.QuotaOccupyInput{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, ResourceID: uuid.NewString(), ActorType: "user", ActorID: "1", OwnerService: "quota-retry-test-owner", Action: "RETRY_CREATE", IdempotencyKey: uuid.NewString(), RequestHash: "retry-hash", CanonicalRequest: `{"schema_version":1}`, Items: []data.QuotaOccupyItem{{QuotaCode: data.QuotaCodeGpuCount, Units: 2}}})
 	require.NoError(t, err)
 	before, err := ledger.GetOperationForUser(context.Background(), tenant.ID, occupied.OperationID)
 	require.NoError(t, err)

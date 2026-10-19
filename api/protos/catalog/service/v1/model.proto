@@ -90,6 +90,66 @@ message ListModelsResponse {
   CursorPageMeta meta = 2;
 }
 
+message SearchExternalModelsRequest {
+  string source = 1;
+  string keyword = 2;
+  string owner = 3;
+  string task = 4;
+  string library = 5;
+  CursorPage page = 6;
+}
+message ExternalModelCandidate {
+  string source = 1;
+  string repo_id = 2 [json_name = "repo_id"];
+  string name = 3;
+  string display_name = 4 [json_name = "display_name"];
+  string description = 5;
+  string revision = 6;
+  int64 size_bytes = 7 [json_name = "size_bytes"];
+  repeated string tags = 8;
+  google.protobuf.Timestamp updated_at = 9 [json_name = "updated_at"];
+}
+message SearchExternalModelsResponse {
+  repeated ExternalModelCandidate candidates = 1;
+  CursorPageMeta meta = 2;
+}
+
+message DeleteModelRequest { string model_id = 1 [json_name = "model_id"]; }
+message DeleteModelVersionRequest { string model_version_id = 1 [json_name = "model_version_id"]; }
+
+message GetUploadURLData {
+  string version = 1;
+  string file_name = 2 [json_name = "file_name"];
+  int64 size_bytes = 3 [json_name = "size_bytes"];
+  string idempotency_key = 4 [json_name = "idempotency_key"];
+  string checksum_sha256 = 5 [json_name = "checksum_sha256"];
+}
+message GetUploadURLRequest {
+  string model_id = 1 [json_name = "model_id"];
+  GetUploadURLData data = 2;
+}
+message GetUploadURLResponse {
+  string upload_url = 1 [json_name = "upload_url"];
+  string storage_path = 2 [json_name = "storage_path"];
+  string doc_id = 3 [json_name = "doc_id"];
+  google.protobuf.Timestamp expires_at = 4 [json_name = "expires_at"];
+  map<string, string> upload_headers = 5 [json_name = "upload_headers"];
+  string model_version_id = 6 [json_name = "model_version_id"];
+}
+
+message GetModelDownloadURLRequest {
+  string model_version_id = 1 [json_name = "model_version_id"];
+  string file_path = 2 [json_name = "file_path"];
+}
+message GetModelDownloadURLResponse {
+  string download_url = 1 [json_name = "download_url"];
+  string storage_path = 2 [json_name = "storage_path"];
+  bool is_encrypted = 3 [json_name = "is_encrypted"];
+  string encrypt_algo = 4 [json_name = "encrypt_algo"];
+  string encrypt_hint = 5 [json_name = "encrypt_hint"];
+  google.protobuf.Timestamp expires_at = 6 [json_name = "expires_at"];
+}
+
 message CreateModelVersionData {
   string model_id = 1 [json_name = "model_id"];
   string version = 2;

@@ -67,7 +67,7 @@ data:
       sse:
         addr: ":{{ .Values.service.ssePort }}"
         codec: json
-        path: /events
+        path: /api/v1/events
         auto_stream: true
         auto_reply: false
   auth.yaml: |-

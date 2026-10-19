@@ -179,7 +179,7 @@ func TestQuotaProcessCommitRecovery(t *testing.T) {
 					original, e := repo.Occupy(ctx, in)
 					require.NoError(t, e)
 					s.OperationID = original.OperationID
-					s.Delete = gpuDelete(in)
+					s.Delete = gpuDelete(t, in)
 					if action == "delete" || action == "release" {
 						rows, e := repo.ClaimDispatchable(ctx, "setup", time.Minute, 1)
 						require.NoError(t, e)
@@ -188,14 +188,8 @@ func TestQuotaProcessCommitRecovery(t *testing.T) {
 					if action == "release" {
 						_, e = repo.CreateDeleteOperation(ctx, s.Delete)
 						require.NoError(t, e)
-						charges, e := repo.GetChargesForOperation(ctx, tid, s.OperationID)
-						require.NoError(t, e)
-						s.Release = &QuotaReleaseInput{OwnerService: in.OwnerService, OperationID: s.OperationID, ReleaseEventID: uuid.NewString(), Reason: "RESOURCE_RELEASED", PayloadHash: "stable-release", PayloadJSON: `{"source":"controlled process test"}`}
-						for _, ch := range charges {
-							if isGPUCode(ch.QuotaCode) {
-								s.Release.Items = append(s.Release.Items, QuotaReleaseItemInput{ch.ChargeID, ch.QuotaCode, ch.OriginalUnits})
-							}
-						}
+						s.Release = &QuotaReleaseInput{OwnerService: in.OwnerService, OperationID: s.OperationID, ResourceID: in.ResourceID, Complete: true, ReleaseEventID: uuid.NewString(), Reason: "RESOURCE_RELEASED", PayloadHash: "stable-release", PayloadJSON: `{"source":"controlled process test"}`}
+
 					}
 					if action == "sync" {
 						require.NoError(t, repo.UpsertGpuUsageProjection(ctx, tid, s.OperationID, 1, "DECLARED", gpuProjectionPayload(in, s.OperationID, 1, "stable"), "stable"))
@@ -273,7 +267,7 @@ func TestQuotaProcessCommitRecovery(t *testing.T) {
 					if isGPUCode(row.QuotaCode) {
 						want = 2
 					}
-					if action == "occupy" && point == "before" || point == "after" && (action == "cancel" || action == "release" && isGPUCode(row.QuotaCode)) {
+					if action == "occupy" && point == "before" || point == "after" && (action == "cancel" || action == "release") {
 						want = 0
 					}
 					require.Equal(t, want, row.OccupiedUnits)
@@ -287,7 +281,7 @@ func TestQuotaProcessCommitRecovery(t *testing.T) {
 					require.Equal(t, point == "after", replay.Delete.Replayed)
 					require.Equal(t, action == "cancel", replay.Delete.LocalCanceled)
 				case "release":
-					require.Len(t, replay.Release, 1)
+					require.Len(t, replay.Release, 2)
 				case "sync": // A previously committed ACK is durable even if same-generation replay is rejected.
 					row, e := c.Client().GpuUsageSync.Query().Only(sys)
 					require.NoError(t, e)
@@ -311,7 +305,7 @@ func TestQuotaProcessCommitRecovery(t *testing.T) {
 					if isGPUCode(row.QuotaCode) {
 						want = 2
 					}
-					if action == "cancel" || action == "release" && isGPUCode(row.QuotaCode) {
+					if action == "cancel" || action == "release" {
 						want = 0
 					}
 					require.Equal(t, want, row.OccupiedUnits)
@@ -342,7 +336,7 @@ func TestQuotaProcessDeleteClaimRace(t *testing.T) {
 		require.NoError(t, e)
 		dir := t.TempDir()
 		gate := filepath.Join(dir, "go")
-		del := gpuDelete(in)
+		del := gpuDelete(t, in)
 		a := quotaFaultSpec{Action: "cancel", Input: in, Delete: del, Ready: filepath.Join(dir, "delete-ready"), Go: gate}
 		b := quotaFaultSpec{Action: "claim", Input: in, Ready: filepath.Join(dir, "claim-ready"), Go: gate}
 		ca, ra := quotaFaultStart(t, a)

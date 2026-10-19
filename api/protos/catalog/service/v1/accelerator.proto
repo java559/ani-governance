@@ -47,7 +47,7 @@ message AcceleratorBaseline {
   string device_plugin_image_digest = 6 [json_name="device_plugin_image_digest"];
   string hami_core_revision = 7 [json_name="hami_core_revision"];
   uint32 memory_block_mib = 8 [json_name="memory_block_mib"];
-  string factor_evidence_ref = 9 [json_name="factor_evidence_ref"];
+  reserved 9; reserved "factor_evidence_ref";
   string memory_encoding = 10 [json_name="memory_encoding"];
   uint32 split_count = 11 [json_name="split_count"];
   uint32 memory_scale_percent = 12 [json_name="memory_scale_percent"];
@@ -57,12 +57,14 @@ message AcceleratorBaseline {
   string scheduler_config_digest = 16 [json_name="scheduler_config_digest"];
   string recipe_version = 17 [json_name="recipe_version"];
   string baseline_digest = 18 [json_name="baseline_digest"];
+  string runtime_class_name = 19 [json_name="runtime_class_name"];
 }
 message AcceleratorProfileSpec {
   string group_id = 1 [json_name="group_id"];
   string mode = 2;
   string model_key = 3 [json_name="model_key"];
-  int64 shared_memory_mib = 4 [json_name="shared_memory_mib"];
+  reserved 4; reserved "shared_memory_mib";
+  int64 memory_mib_per_device = 8 [json_name="memory_mib_per_device"];
   uint32 core_limit_percent = 5 [json_name="core_limit_percent"];
   uint32 max_devices_per_replica = 6 [json_name="max_devices_per_replica"];
   string isolation_class = 7 [json_name="isolation_class"];
@@ -100,13 +102,13 @@ message SetAcceleratorAdmissionData {
   string desired = 3;
   string reason = 4;
 }
-message PublishAcceleratorProfileRequest { PublishAcceleratorProfileData data = 1; }
-message PublishAcceleratorProfileData {
+message CreateAcceleratorProfileRequest { CreateAcceleratorProfileData data = 1; }
+message CreateAcceleratorProfileData {
   string idempotency_key = 1 [json_name="idempotency_key"];
   string display_name = 2 [json_name="display_name"];
   AcceleratorProfileSpec spec = 3;
   uint64 expected_group_version = 4 [json_name="expected_group_version"];
-  string verification_ref = 5 [json_name="verification_ref"];
+  reserved 5; reserved "verification_ref";
 }
 message AcceleratorCluster {
   string cluster_id = 1 [json_name="cluster_id"];
@@ -134,7 +136,7 @@ message AcceleratorSupply {
   string queue_name = 10 [json_name="queue_name"];
   uint64 version = 11;
   string adopted_at = 12 [json_name="adopted_at"];
-  string verification_state = 13 [json_name="verification_state"];
+  reserved 13; reserved "verification_state";
 }
 message AcceleratorSupplies { repeated AcceleratorSupply items = 1; string next_page_token = 2 [json_name="next_page_token"]; }
 message AcceleratorProfile {
@@ -142,7 +144,9 @@ message AcceleratorProfile {
   uint64 profile_version = 2 [json_name="profile_version"];
   string display_name = 3 [json_name="display_name"];
   AcceleratorProfileSpec spec = 4;
-  bool published = 5;
+  reserved 5; reserved "published";
+  string state = 6;
+  uint64 revision = 7;
 }
 message AcceleratorProfiles { repeated AcceleratorProfile items = 1; string next_page_token = 2 [json_name="next_page_token"]; }
 message AcceleratorObservation {
@@ -250,3 +254,10 @@ message AcceleratorPreview {
   string storage = 10;
   repeated string reasons = 11;
 }
+
+message PreviewAcceleratorProfileRequest { string group_id = 1 [json_name="group_id"]; uint32 parts = 2; }
+message AcceleratorProfilePreview { AcceleratorProfileSpec spec = 1; int64 unused_memory_mib = 2 [json_name="unused_memory_mib"]; uint32 unused_core_units = 3 [json_name="unused_core_units"]; }
+message SetAcceleratorProfileStateRequest { string profile_id = 1 [json_name="profile_id"]; SetAcceleratorProfileStateData data = 2; }
+message SetAcceleratorProfileStateData { string idempotency_key = 1 [json_name="idempotency_key"]; uint64 expected_revision = 2 [json_name="expected_revision"]; string desired = 3; }
+message DeleteAcceleratorProfileRequest { string profile_id = 1 [json_name="profile_id"]; DeleteAcceleratorProfileData data = 2; }
+message DeleteAcceleratorProfileData { string idempotency_key = 1 [json_name="idempotency_key"]; uint64 expected_revision = 2 [json_name="expected_revision"]; }

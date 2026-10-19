@@ -175,7 +175,7 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 		createID = op.CreateOperationID
 	}
 	original, readErr := w.ledger.GetChargesForOperation(ctx, op.TenantID, createID)
-	if readErr != nil || len(original) == 0 {
+	if readErr != nil || (len(original) == 0 && !data.AllowsInstanceCPUCommand(op.OwnerService, op.Action, op.CanonicalRequest)) {
 		w.deferInvalidCommand(ctx, op, "ORIGINAL_CHARGES_UNAVAILABLE")
 		return
 	}
@@ -202,7 +202,8 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 		Charges:           charges,
 	}
 	if isGpuCanonical(cmd.CanonicalRequest) {
-		if _, _, err := BuildGpuOwnerAttachments(op.OwnerService, cmd); err != nil {
+		frozen, err := DecodeGpuCanonical(cmd.CanonicalRequest)
+		if err != nil || ValidateGpuCharges(frozen, cmd.Charges) != nil || op.OwnerService != InstanceOwner {
 			w.deferInvalidCommand(ctx, op, "ORIGINAL_GPU_COMMAND_INVALID")
 			return
 		}

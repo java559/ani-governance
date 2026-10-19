@@ -29,7 +29,10 @@ const (
 	AcceleratorAdminService_AdoptSupplyGroup_FullMethodName  = "/admin.service.v1.AcceleratorAdminService/AdoptSupplyGroup"
 	AcceleratorAdminService_SetAdmission_FullMethodName      = "/admin.service.v1.AcceleratorAdminService/SetAdmission"
 	AcceleratorAdminService_AdminListProfiles_FullMethodName = "/admin.service.v1.AcceleratorAdminService/AdminListProfiles"
-	AcceleratorAdminService_PublishProfile_FullMethodName    = "/admin.service.v1.AcceleratorAdminService/PublishProfile"
+	AcceleratorAdminService_CreateProfile_FullMethodName     = "/admin.service.v1.AcceleratorAdminService/CreateProfile"
+	AcceleratorAdminService_PreviewProfile_FullMethodName    = "/admin.service.v1.AcceleratorAdminService/PreviewProfile"
+	AcceleratorAdminService_SetProfileState_FullMethodName   = "/admin.service.v1.AcceleratorAdminService/SetProfileState"
+	AcceleratorAdminService_DeleteProfile_FullMethodName     = "/admin.service.v1.AcceleratorAdminService/DeleteProfile"
 	AcceleratorAdminService_ListDevices_FullMethodName       = "/admin.service.v1.AcceleratorAdminService/ListDevices"
 	AcceleratorAdminService_AdminListBindings_FullMethodName = "/admin.service.v1.AcceleratorAdminService/AdminListBindings"
 	AcceleratorAdminService_AdminGetCapacity_FullMethodName  = "/admin.service.v1.AcceleratorAdminService/AdminGetCapacity"
@@ -50,7 +53,10 @@ type AcceleratorAdminServiceClient interface {
 	AdoptSupplyGroup(ctx context.Context, in *v1.AdoptAcceleratorSupplyRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupply, error)
 	SetAdmission(ctx context.Context, in *v1.SetAcceleratorAdmissionRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupply, error)
 	AdminListProfiles(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfiles, error)
-	PublishProfile(ctx context.Context, in *v1.PublishAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error)
+	CreateProfile(ctx context.Context, in *v1.CreateAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error)
+	PreviewProfile(ctx context.Context, in *v1.PreviewAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfilePreview, error)
+	SetProfileState(ctx context.Context, in *v1.SetAcceleratorProfileStateRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error)
+	DeleteProfile(ctx context.Context, in *v1.DeleteAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error)
 	ListDevices(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorDevices, error)
 	AdminListBindings(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorAdminBindings, error)
 	AdminGetCapacity(ctx context.Context, in *v1.AcceleratorVersionRequest, opts ...grpc.CallOption) (*v1.AcceleratorCapacity, error)
@@ -144,10 +150,40 @@ func (c *acceleratorAdminServiceClient) AdminListProfiles(ctx context.Context, i
 	return out, nil
 }
 
-func (c *acceleratorAdminServiceClient) PublishProfile(ctx context.Context, in *v1.PublishAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error) {
+func (c *acceleratorAdminServiceClient) CreateProfile(ctx context.Context, in *v1.CreateAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.AcceleratorProfile)
-	err := c.cc.Invoke(ctx, AcceleratorAdminService_PublishProfile_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_CreateProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) PreviewProfile(ctx context.Context, in *v1.PreviewAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfilePreview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorProfilePreview)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_PreviewProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) SetProfileState(ctx context.Context, in *v1.SetAcceleratorProfileStateRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorProfile)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_SetProfileState_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) DeleteProfile(ctx context.Context, in *v1.DeleteAcceleratorProfileRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorProfile)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_DeleteProfile_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +235,10 @@ type AcceleratorAdminServiceServer interface {
 	AdoptSupplyGroup(context.Context, *v1.AdoptAcceleratorSupplyRequest) (*v1.AcceleratorSupply, error)
 	SetAdmission(context.Context, *v1.SetAcceleratorAdmissionRequest) (*v1.AcceleratorSupply, error)
 	AdminListProfiles(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorProfiles, error)
-	PublishProfile(context.Context, *v1.PublishAcceleratorProfileRequest) (*v1.AcceleratorProfile, error)
+	CreateProfile(context.Context, *v1.CreateAcceleratorProfileRequest) (*v1.AcceleratorProfile, error)
+	PreviewProfile(context.Context, *v1.PreviewAcceleratorProfileRequest) (*v1.AcceleratorProfilePreview, error)
+	SetProfileState(context.Context, *v1.SetAcceleratorProfileStateRequest) (*v1.AcceleratorProfile, error)
+	DeleteProfile(context.Context, *v1.DeleteAcceleratorProfileRequest) (*v1.AcceleratorProfile, error)
 	ListDevices(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorDevices, error)
 	AdminListBindings(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorAdminBindings, error)
 	AdminGetCapacity(context.Context, *v1.AcceleratorVersionRequest) (*v1.AcceleratorCapacity, error)
@@ -237,8 +276,17 @@ func (UnimplementedAcceleratorAdminServiceServer) SetAdmission(context.Context, 
 func (UnimplementedAcceleratorAdminServiceServer) AdminListProfiles(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorProfiles, error) {
 	return nil, status.Error(codes.Unimplemented, "method AdminListProfiles not implemented")
 }
-func (UnimplementedAcceleratorAdminServiceServer) PublishProfile(context.Context, *v1.PublishAcceleratorProfileRequest) (*v1.AcceleratorProfile, error) {
-	return nil, status.Error(codes.Unimplemented, "method PublishProfile not implemented")
+func (UnimplementedAcceleratorAdminServiceServer) CreateProfile(context.Context, *v1.CreateAcceleratorProfileRequest) (*v1.AcceleratorProfile, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateProfile not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) PreviewProfile(context.Context, *v1.PreviewAcceleratorProfileRequest) (*v1.AcceleratorProfilePreview, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewProfile not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) SetProfileState(context.Context, *v1.SetAcceleratorProfileStateRequest) (*v1.AcceleratorProfile, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetProfileState not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) DeleteProfile(context.Context, *v1.DeleteAcceleratorProfileRequest) (*v1.AcceleratorProfile, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteProfile not implemented")
 }
 func (UnimplementedAcceleratorAdminServiceServer) ListDevices(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorDevices, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListDevices not implemented")
@@ -415,20 +463,74 @@ func _AcceleratorAdminService_AdminListProfiles_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AcceleratorAdminService_PublishProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.PublishAcceleratorProfileRequest)
+func _AcceleratorAdminService_CreateProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateAcceleratorProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AcceleratorAdminServiceServer).PublishProfile(ctx, in)
+		return srv.(AcceleratorAdminServiceServer).CreateProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AcceleratorAdminService_PublishProfile_FullMethodName,
+		FullMethod: AcceleratorAdminService_CreateProfile_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AcceleratorAdminServiceServer).PublishProfile(ctx, req.(*v1.PublishAcceleratorProfileRequest))
+		return srv.(AcceleratorAdminServiceServer).CreateProfile(ctx, req.(*v1.CreateAcceleratorProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_PreviewProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.PreviewAcceleratorProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).PreviewProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_PreviewProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).PreviewProfile(ctx, req.(*v1.PreviewAcceleratorProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_SetProfileState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.SetAcceleratorProfileStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).SetProfileState(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_SetProfileState_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).SetProfileState(ctx, req.(*v1.SetAcceleratorProfileStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_DeleteProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteAcceleratorProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).DeleteProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_DeleteProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).DeleteProfile(ctx, req.(*v1.DeleteAcceleratorProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -527,8 +629,20 @@ var AcceleratorAdminService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AcceleratorAdminService_AdminListProfiles_Handler,
 		},
 		{
-			MethodName: "PublishProfile",
-			Handler:    _AcceleratorAdminService_PublishProfile_Handler,
+			MethodName: "CreateProfile",
+			Handler:    _AcceleratorAdminService_CreateProfile_Handler,
+		},
+		{
+			MethodName: "PreviewProfile",
+			Handler:    _AcceleratorAdminService_PreviewProfile_Handler,
+		},
+		{
+			MethodName: "SetProfileState",
+			Handler:    _AcceleratorAdminService_SetProfileState_Handler,
+		},
+		{
+			MethodName: "DeleteProfile",
+			Handler:    _AcceleratorAdminService_DeleteProfile_Handler,
 		},
 		{
 			MethodName: "ListDevices",

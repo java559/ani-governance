@@ -11,6 +11,12 @@
 
 ## 仓库身份与执行边界
 
+Higress 只承载 OpenAI 兼容的推理调用（例如 `/v1/completions`）；模型、
+导入任务和容器实例等 `/api/v1/...` 业务接口由本 Governance BFF 提供，
+不得接入 Higress 路由或 AI 网关插件。Inference 管理对接本期延期，Gov 不提供
+其管理接口，也不依赖 Inference API 模块。修改路由、代理、HTTPRoute 或部署
+配置时保持这条边界；不得把 Higress 调用入口的结果当成管理接口验证。
+
 根目录是 Go 模块根，技术模块名为 `go-wind-admin`，服务身份为 `ani-governance`。单独授权改名任务前，保留 import、go_package、Proto 包名、运行标识与本地包目录。
 
 Go 基准来自 `go.mod`。`gow` 是本仓维护副本，用 `make gow` 构建并使用本仓的 api/ent/run/version；不运行未接管的 Wire、project/new、migrate 等脚手架命令。工具身份与版本以 Makefile、活跃模板和 `tools/config/` 为准，不用 latest 补空缺。

@@ -18,6 +18,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ModelClientConfig is deployment-only connection material. Public requests
@@ -201,6 +202,34 @@ func (c *ModelClient) ListModels(ctx context.Context, tenant, actor string, requ
 	return c.client.ListModels(call, req, grpc.WaitForReady(true))
 }
 
+func (c *ModelClient) SearchExternalModels(ctx context.Context, tenant, actor string, request *modelv1.SearchExternalModelsRequest) (*modelv1.SearchExternalModelsResponse, error) {
+	req, err := cloneModelRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	req.TenantId = tenant
+	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	return c.client.SearchExternalModels(call, req, grpc.WaitForReady(true))
+}
+
+func (c *ModelClient) DeleteModel(ctx context.Context, tenant, actor string, request *modelv1.DeleteModelRequest) (*emptypb.Empty, error) {
+	req, err := cloneModelRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	req.TenantId = tenant
+	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	return c.client.DeleteModel(call, req, grpc.WaitForReady(true))
+}
+
 func (c *ModelClient) CreateModelVersion(ctx context.Context, tenant, actor string, request *modelv1.CreateModelVersionRequest) (*modelv1.ModelVersion, error) {
 	req, err := cloneModelRequest(request)
 	if err != nil {
@@ -243,6 +272,34 @@ func (c *ModelClient) ListModelVersions(ctx context.Context, tenant, actor strin
 	return c.client.ListModelVersions(call, req, grpc.WaitForReady(true))
 }
 
+func (c *ModelClient) DeleteModelVersion(ctx context.Context, tenant, actor string, request *modelv1.DeleteModelVersionRequest) (*modelv1.DeleteModelVersionResponse, error) {
+	req, err := cloneModelRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	req.TenantId = tenant
+	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	return c.client.DeleteModelVersion(call, req, grpc.WaitForReady(true))
+}
+
+func (c *ModelClient) GetUploadURL(ctx context.Context, tenant, actor string, request *modelv1.GetUploadURLRequest) (*modelv1.GetUploadURLResponse, error) {
+	req, err := cloneModelRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	req.TenantId = tenant
+	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	return c.client.GetUploadURL(call, req, grpc.WaitForReady(true))
+}
+
 func (c *ModelClient) ImportModel(ctx context.Context, tenant, actor string, request *modelv1.ImportModelRequest) (*modelv1.ImportTask, error) {
 	req, err := cloneModelRequest(request)
 	if err != nil {
@@ -283,4 +340,18 @@ func (c *ModelClient) RetryImportTask(ctx context.Context, tenant, actor string,
 	}
 	defer cancel()
 	return c.client.RetryImportTask(call, req, grpc.WaitForReady(true))
+}
+
+func (c *ModelClient) GetModelDownloadURL(ctx context.Context, tenant, actor string, request *modelv1.GetModelDownloadURLRequest) (*modelv1.GetModelDownloadURLResponse, error) {
+	req, err := cloneModelRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	req.TenantId = tenant
+	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	return c.client.GetModelDownloadURL(call, req, grpc.WaitForReady(true))
 }

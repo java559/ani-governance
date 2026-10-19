@@ -46,24 +46,32 @@ func instanceCall[T any](c *InstanceClient, ctx context.Context, tenant, actor s
 	call = metadata.NewOutgoingContext(call, metadata.Pairs("x-ani-tenant-id", tenant, "x-ani-actor", actor, "x-ani-request-id", uuid.NewString()))
 	return fn(call)
 }
-func (c *InstanceClient) Resolve(ctx context.Context, t, a string, r *pb.CreateInstanceData) (*pb.CreateBusiness, error) {
-	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.CreateBusiness, error) {
-		return c.client.ResolveCreateSpec(ctx, &pb.ResolveCreateSpecRequest{TenantId: t, Data: r})
+func (c *InstanceClient) Resolve(ctx context.Context, t, a string, r *pb.CreateInstanceData, defaults *pb.SchedulingOptions) (*pb.CreateSpec, error) {
+	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.CreateSpec, error) {
+		return c.client.ResolveCreateSpec(ctx, &pb.ResolveCreateSpecRequest{TenantId: t, Data: r, SchedulingDefaults: defaults})
 	})
 }
+
+type instanceCommandActorKey struct{}
+
+// WithInstanceCommandActor carries the actor from the trusted persisted command.
+// The client reconstructs metadata instead of forwarding public headers.
+func WithInstanceCommandActor(ctx context.Context, actor string) context.Context {
+	return context.WithValue(ctx, instanceCommandActorKey{}, actor)
+}
 func (c *InstanceClient) Create(ctx context.Context, r *pb.AcceptCreateRequest) (*pb.OperationResponse, error) {
-	if r == nil || r.GpuOwnerAttachment == nil || r.GpuOwnerAttachment.Actor == nil {
+	if r == nil || r.Context == nil {
 		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_COMMAND")
 	}
-	actor := "governance:" + r.GpuOwnerAttachment.Actor.Type + ":" + r.GpuOwnerAttachment.Actor.Id
-	return instanceCall(c, ctx, r.TenantId, actor, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.AcceptCreate(ctx, r) })
+	actor, _ := ctx.Value(instanceCommandActorKey{}).(string)
+	return instanceCall(c, ctx, r.Context.TenantId, actor, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.AcceptCreate(ctx, r) })
 }
 func (c *InstanceClient) Delete(ctx context.Context, r *pb.AcceptDeleteRequest) (*pb.OperationResponse, error) {
-	if r == nil || r.GpuOwnerAttachment == nil || r.GpuOwnerAttachment.Actor == nil {
+	if r == nil || r.Context == nil {
 		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_COMMAND")
 	}
-	actor := "governance:" + r.GpuOwnerAttachment.Actor.Type + ":" + r.GpuOwnerAttachment.Actor.Id
-	return instanceCall(c, ctx, r.TenantId, actor, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.AcceptDelete(ctx, r) })
+	actor, _ := ctx.Value(instanceCommandActorKey{}).(string)
+	return instanceCall(c, ctx, r.Context.TenantId, actor, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.AcceptDelete(ctx, r) })
 }
 func (c *InstanceClient) Change(ctx context.Context, t, a string, r *pb.ChangeInstanceRequest, start bool) (*pb.OperationResponse, error) {
 	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.OperationResponse, error) {
@@ -78,9 +86,12 @@ func (c *InstanceClient) Get(ctx context.Context, t, a, id string) (*pb.Instance
 		return c.client.GetInstance(ctx, &pb.GetInstanceRequest{TenantId: t, InstanceId: id})
 	})
 }
-func (c *InstanceClient) List(ctx context.Context, t, a string, n int32, after string) (*pb.ListInstancesResponse, error) {
+func (c *InstanceClient) List(ctx context.Context, t, a string, r *pb.ListInstancesRequest) (*pb.ListInstancesResponse, error) {
+	if r == nil || r.TenantId != t {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
 	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.ListInstancesResponse, error) {
-		return c.client.ListInstances(ctx, &pb.ListInstancesRequest{TenantId: t, PageSize: n, AfterId: after})
+		return c.client.ListInstances(ctx, r)
 	})
 }
 func (c *InstanceClient) Operation(ctx context.Context, t, a, id string) (*pb.Operation, error) {
@@ -88,9 +99,12 @@ func (c *InstanceClient) Operation(ctx context.Context, t, a, id string) (*pb.Op
 		return c.client.GetOperation(ctx, &pb.GetOperationRequest{TenantId: t, OperationId: id})
 	})
 }
-func (c *InstanceClient) Presets(ctx context.Context, t, a string) (*pb.ListPresetsResponse, error) {
+func (c *InstanceClient) Presets(ctx context.Context, t, a string, r *pb.ListPresetsRequest) (*pb.ListPresetsResponse, error) {
+	if r == nil || r.TenantId != t {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
 	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.ListPresetsResponse, error) {
-		return c.client.ListPresets(ctx, &pb.ListPresetsRequest{TenantId: t})
+		return c.client.ListPresets(ctx, r)
 	})
 }
 func (c *InstanceClient) Target(ctx context.Context, t, a, id string, version int64) (*terminal.TerminalTarget, error) {

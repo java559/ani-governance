@@ -16,3 +16,14 @@ reviewed write permissions; API keys use their existing tenant role binding.
 Enable IMAGE on an approved plan separately, then refresh current Casbin policy.
 The isolated `scripts/image-joint-integration` gate proves import idempotency,
 no implicit grants, reader/publisher separation, revocation and module denial.
+
+`20261015_retire_stale_model_search_api.sql` retires the historical
+`POST /api/v1/models:search-external` catalog row after the Model BFF has been
+synced. It keeps the row for audit history and marks it `OFF`; the active
+search endpoint is `GET /api/v1/models:search`.
+
+Run `20261015_retire_legacy_model_inference_manage_links.sql` before the
+explicit Model/Inference permission registration scripts when upgrading an
+installation that still has the old umbrella `*:service:manage` API links.
+It removes only those stale API relations and leaves permission points,
+roles, plans and quotas unchanged.

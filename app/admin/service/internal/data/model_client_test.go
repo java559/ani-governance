@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	inferencev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	modelv1 "github.com/liangzai006/ani-model-service/api/model/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -70,15 +69,15 @@ func TestModelClientRejectsInvalidTrustedIdentity(t *testing.T) {
 
 // Reuse the package's temporary certificates to exercise the real constructors;
 // these cases never connect to a database or a deployed downstream service.
-func TestModelInferenceClientCertificateIdentity(t *testing.T) {
+func TestModelClientCertificateIdentity(t *testing.T) {
 	cases := []struct {
 		name   string
 		change func(*x509.Certificate)
 	}{
 		{"registered DNS", nil},
 		{"old DNS", func(c *x509.Certificate) { c.DNSNames = []string{"ani-governance.ani.internal"} }},
-		{"wrong DNS", func(c *x509.Certificate) { c.DNSNames = []string{"ani-inference"} }},
-		{"multiple DNS", func(c *x509.Certificate) { c.DNSNames = append(c.DNSNames, "ani-inference") }},
+		{"wrong DNS", func(c *x509.Certificate) { c.DNSNames = []string{"other-service"} }},
+		{"multiple DNS", func(c *x509.Certificate) { c.DNSNames = append(c.DNSNames, "other-service") }},
 		{"duplicate DNS", func(c *x509.Certificate) { c.DNSNames = append(c.DNSNames, "ani-governance") }},
 		{"wildcard DNS", func(c *x509.Certificate) { c.DNSNames = []string{"*.ani.internal"} }},
 		{"CN only", func(c *x509.Certificate) { c.DNSNames = nil; c.Subject.CommonName = "ani-governance" }},
@@ -92,41 +91,31 @@ func TestModelInferenceClientCertificateIdentity(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := resourceClientTestCertificates(t, tc.change, []string{"downstream.ani.internal"})
 			model, closeModel, modelErr := NewModelClient(ModelClientConfig{Address: "127.0.0.1:1", ServerName: "downstream.ani.internal", CAFile: f.caFile, CertFile: f.certFile, KeyFile: f.keyFile, Timeout: time.Second})
-			inference, closeInference, inferenceErr := NewInferenceClient(InferenceClientConfig{Address: "127.0.0.1:1", ServerName: "downstream.ani.internal", CAFile: f.caFile, CertFile: f.certFile, KeyFile: f.keyFile, Timeout: time.Second})
 			if closeModel != nil {
 				t.Cleanup(closeModel)
 			}
-			if closeInference != nil {
-				t.Cleanup(closeInference)
-			}
 			if tc.change == nil {
-				if modelErr != nil || inferenceErr != nil || model == nil || inference == nil {
-					t.Fatalf("registered Governance certificate rejected: Model=%v Inference=%v", modelErr, inferenceErr)
+				if modelErr != nil || model == nil {
+					t.Fatalf("registered Governance certificate rejected: %v", modelErr)
 				}
-			} else if modelErr == nil || inferenceErr == nil || model != nil || inference != nil || closeModel != nil || closeInference != nil {
-				t.Fatalf("invalid Governance certificate retained a client or cleanup: Model=%v Inference=%v", modelErr, inferenceErr)
+			} else if modelErr == nil || model != nil || closeModel != nil {
+				t.Fatalf("invalid Governance certificate retained a client or cleanup: %v", modelErr)
 			}
 		})
 	}
 }
 
-type modelInferenceTLSProbe struct {
+type modelTLSProbe struct {
 	modelv1.UnimplementedModelServiceServer
-	inferencev1.UnimplementedInferenceServiceManagerServer
 	calls atomic.Int32
 }
 
-func (p *modelInferenceTLSProbe) GetModel(context.Context, *modelv1.GetModelRequest) (*modelv1.Model, error) {
+func (p *modelTLSProbe) GetModel(context.Context, *modelv1.GetModelRequest) (*modelv1.Model, error) {
 	p.calls.Add(1)
 	return &modelv1.Model{}, nil
 }
 
-func (p *modelInferenceTLSProbe) GetInferenceService(context.Context, *inferencev1.GetInferenceServiceRequest) (*inferencev1.InferenceService, error) {
-	p.calls.Add(1)
-	return &inferencev1.InferenceService{}, nil
-}
-
-func TestModelInferenceClientLiteralServerIdentity(t *testing.T) {
+func TestModelClientLiteralServerIdentity(t *testing.T) {
 	cases := []struct {
 		name  string
 		dns   []string
@@ -145,10 +134,9 @@ func TestModelInferenceClientLiteralServerIdentity(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			endpoint := &modelInferenceTLSProbe{}
+			endpoint := &modelTLSProbe{}
 			server := grpc.NewServer(grpc.Creds(credentials.NewTLS(f.server)))
 			modelv1.RegisterModelServiceServer(server, endpoint)
-			inferencev1.RegisterInferenceServiceManagerServer(server, endpoint)
 			done := make(chan error, 1)
 			go func() { done <- server.Serve(listener) }()
 			t.Cleanup(func() {
@@ -167,19 +155,13 @@ func TestModelInferenceClientLiteralServerIdentity(t *testing.T) {
 				t.Fatal(err)
 			}
 			t.Cleanup(closeModel)
-			inference, closeInference, err := NewInferenceClient(InferenceClientConfig{Address: listener.Addr().String(), ServerName: "downstream.ani.internal", CAFile: f.caFile, CertFile: f.certFile, KeyFile: f.keyFile, Timeout: 250 * time.Millisecond})
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Cleanup(closeInference)
 			_, modelErr := model.GetModel(context.Background(), "11111111-1111-4111-8111-111111111111", "governance:user:7", &modelv1.GetModelRequest{})
-			_, inferenceErr := inference.GetTrusted(context.Background(), "11111111-1111-4111-8111-111111111111", "governance:user:7", &inferencev1.GetInferenceServiceRequest{})
 			if tc.valid {
-				if modelErr != nil || inferenceErr != nil || endpoint.calls.Load() != 2 {
-					t.Fatalf("registered TLS endpoint was not reached: Model=%v Inference=%v calls=%d", modelErr, inferenceErr, endpoint.calls.Load())
+				if modelErr != nil || endpoint.calls.Load() != 1 {
+					t.Fatalf("registered TLS endpoint was not reached: Model=%v calls=%d", modelErr, endpoint.calls.Load())
 				}
-			} else if modelErr == nil || inferenceErr == nil || endpoint.calls.Load() != 0 {
-				t.Fatalf("unregistered TLS endpoint reached handler: Model=%v Inference=%v calls=%d", modelErr, inferenceErr, endpoint.calls.Load())
+			} else if modelErr == nil || endpoint.calls.Load() != 0 {
+				t.Fatalf("unregistered TLS endpoint reached handler: Model=%v calls=%d", modelErr, endpoint.calls.Load())
 			}
 		})
 	}

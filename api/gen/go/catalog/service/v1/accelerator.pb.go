@@ -457,7 +457,6 @@ type AcceleratorBaseline struct {
 	DevicePluginImageDigest string                 `protobuf:"bytes,6,opt,name=device_plugin_image_digest,proto3" json:"device_plugin_image_digest,omitempty"`
 	HamiCoreRevision        string                 `protobuf:"bytes,7,opt,name=hami_core_revision,proto3" json:"hami_core_revision,omitempty"`
 	MemoryBlockMib          uint32                 `protobuf:"varint,8,opt,name=memory_block_mib,proto3" json:"memory_block_mib,omitempty"`
-	FactorEvidenceRef       string                 `protobuf:"bytes,9,opt,name=factor_evidence_ref,proto3" json:"factor_evidence_ref,omitempty"`
 	MemoryEncoding          string                 `protobuf:"bytes,10,opt,name=memory_encoding,proto3" json:"memory_encoding,omitempty"`
 	SplitCount              uint32                 `protobuf:"varint,11,opt,name=split_count,proto3" json:"split_count,omitempty"`
 	MemoryScalePercent      uint32                 `protobuf:"varint,12,opt,name=memory_scale_percent,proto3" json:"memory_scale_percent,omitempty"`
@@ -467,6 +466,7 @@ type AcceleratorBaseline struct {
 	SchedulerConfigDigest   string                 `protobuf:"bytes,16,opt,name=scheduler_config_digest,proto3" json:"scheduler_config_digest,omitempty"`
 	RecipeVersion           string                 `protobuf:"bytes,17,opt,name=recipe_version,proto3" json:"recipe_version,omitempty"`
 	BaselineDigest          string                 `protobuf:"bytes,18,opt,name=baseline_digest,proto3" json:"baseline_digest,omitempty"`
+	RuntimeClassName        string                 `protobuf:"bytes,19,opt,name=runtime_class_name,proto3" json:"runtime_class_name,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -557,13 +557,6 @@ func (x *AcceleratorBaseline) GetMemoryBlockMib() uint32 {
 	return 0
 }
 
-func (x *AcceleratorBaseline) GetFactorEvidenceRef() string {
-	if x != nil {
-		return x.FactorEvidenceRef
-	}
-	return ""
-}
-
 func (x *AcceleratorBaseline) GetMemoryEncoding() string {
 	if x != nil {
 		return x.MemoryEncoding
@@ -627,12 +620,19 @@ func (x *AcceleratorBaseline) GetBaselineDigest() string {
 	return ""
 }
 
+func (x *AcceleratorBaseline) GetRuntimeClassName() string {
+	if x != nil {
+		return x.RuntimeClassName
+	}
+	return ""
+}
+
 type AcceleratorProfileSpec struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	GroupId              string                 `protobuf:"bytes,1,opt,name=group_id,proto3" json:"group_id,omitempty"`
 	Mode                 string                 `protobuf:"bytes,2,opt,name=mode,proto3" json:"mode,omitempty"`
 	ModelKey             string                 `protobuf:"bytes,3,opt,name=model_key,proto3" json:"model_key,omitempty"`
-	SharedMemoryMib      int64                  `protobuf:"varint,4,opt,name=shared_memory_mib,proto3" json:"shared_memory_mib,omitempty"`
+	MemoryMibPerDevice   int64                  `protobuf:"varint,8,opt,name=memory_mib_per_device,proto3" json:"memory_mib_per_device,omitempty"`
 	CoreLimitPercent     uint32                 `protobuf:"varint,5,opt,name=core_limit_percent,proto3" json:"core_limit_percent,omitempty"`
 	MaxDevicesPerReplica uint32                 `protobuf:"varint,6,opt,name=max_devices_per_replica,proto3" json:"max_devices_per_replica,omitempty"`
 	IsolationClass       string                 `protobuf:"bytes,7,opt,name=isolation_class,proto3" json:"isolation_class,omitempty"`
@@ -691,9 +691,9 @@ func (x *AcceleratorProfileSpec) GetModelKey() string {
 	return ""
 }
 
-func (x *AcceleratorProfileSpec) GetSharedMemoryMib() int64 {
+func (x *AcceleratorProfileSpec) GetMemoryMibPerDevice() int64 {
 	if x != nil {
-		return x.SharedMemoryMib
+		return x.MemoryMibPerDevice
 	}
 	return 0
 }
@@ -1191,27 +1191,27 @@ func (x *SetAcceleratorAdmissionData) GetReason() string {
 	return ""
 }
 
-type PublishAcceleratorProfileRequest struct {
-	state         protoimpl.MessageState         `protogen:"open.v1"`
-	Data          *PublishAcceleratorProfileData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+type CreateAcceleratorProfileRequest struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Data          *CreateAcceleratorProfileData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *PublishAcceleratorProfileRequest) Reset() {
-	*x = PublishAcceleratorProfileRequest{}
+func (x *CreateAcceleratorProfileRequest) Reset() {
+	*x = CreateAcceleratorProfileRequest{}
 	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PublishAcceleratorProfileRequest) String() string {
+func (x *CreateAcceleratorProfileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PublishAcceleratorProfileRequest) ProtoMessage() {}
+func (*CreateAcceleratorProfileRequest) ProtoMessage() {}
 
-func (x *PublishAcceleratorProfileRequest) ProtoReflect() protoreflect.Message {
+func (x *CreateAcceleratorProfileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1223,43 +1223,42 @@ func (x *PublishAcceleratorProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PublishAcceleratorProfileRequest.ProtoReflect.Descriptor instead.
-func (*PublishAcceleratorProfileRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateAcceleratorProfileRequest.ProtoReflect.Descriptor instead.
+func (*CreateAcceleratorProfileRequest) Descriptor() ([]byte, []int) {
 	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *PublishAcceleratorProfileRequest) GetData() *PublishAcceleratorProfileData {
+func (x *CreateAcceleratorProfileRequest) GetData() *CreateAcceleratorProfileData {
 	if x != nil {
 		return x.Data
 	}
 	return nil
 }
 
-type PublishAcceleratorProfileData struct {
+type CreateAcceleratorProfileData struct {
 	state                protoimpl.MessageState  `protogen:"open.v1"`
 	IdempotencyKey       string                  `protobuf:"bytes,1,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
 	DisplayName          string                  `protobuf:"bytes,2,opt,name=display_name,proto3" json:"display_name,omitempty"`
 	Spec                 *AcceleratorProfileSpec `protobuf:"bytes,3,opt,name=spec,proto3" json:"spec,omitempty"`
 	ExpectedGroupVersion uint64                  `protobuf:"varint,4,opt,name=expected_group_version,proto3" json:"expected_group_version,omitempty"`
-	VerificationRef      string                  `protobuf:"bytes,5,opt,name=verification_ref,proto3" json:"verification_ref,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *PublishAcceleratorProfileData) Reset() {
-	*x = PublishAcceleratorProfileData{}
+func (x *CreateAcceleratorProfileData) Reset() {
+	*x = CreateAcceleratorProfileData{}
 	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *PublishAcceleratorProfileData) String() string {
+func (x *CreateAcceleratorProfileData) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PublishAcceleratorProfileData) ProtoMessage() {}
+func (*CreateAcceleratorProfileData) ProtoMessage() {}
 
-func (x *PublishAcceleratorProfileData) ProtoReflect() protoreflect.Message {
+func (x *CreateAcceleratorProfileData) ProtoReflect() protoreflect.Message {
 	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1271,44 +1270,37 @@ func (x *PublishAcceleratorProfileData) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PublishAcceleratorProfileData.ProtoReflect.Descriptor instead.
-func (*PublishAcceleratorProfileData) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateAcceleratorProfileData.ProtoReflect.Descriptor instead.
+func (*CreateAcceleratorProfileData) Descriptor() ([]byte, []int) {
 	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *PublishAcceleratorProfileData) GetIdempotencyKey() string {
+func (x *CreateAcceleratorProfileData) GetIdempotencyKey() string {
 	if x != nil {
 		return x.IdempotencyKey
 	}
 	return ""
 }
 
-func (x *PublishAcceleratorProfileData) GetDisplayName() string {
+func (x *CreateAcceleratorProfileData) GetDisplayName() string {
 	if x != nil {
 		return x.DisplayName
 	}
 	return ""
 }
 
-func (x *PublishAcceleratorProfileData) GetSpec() *AcceleratorProfileSpec {
+func (x *CreateAcceleratorProfileData) GetSpec() *AcceleratorProfileSpec {
 	if x != nil {
 		return x.Spec
 	}
 	return nil
 }
 
-func (x *PublishAcceleratorProfileData) GetExpectedGroupVersion() uint64 {
+func (x *CreateAcceleratorProfileData) GetExpectedGroupVersion() uint64 {
 	if x != nil {
 		return x.ExpectedGroupVersion
 	}
 	return 0
-}
-
-func (x *PublishAcceleratorProfileData) GetVerificationRef() string {
-	if x != nil {
-		return x.VerificationRef
-	}
-	return ""
 }
 
 type AcceleratorCluster struct {
@@ -1544,22 +1536,21 @@ func (x *AcceleratorPools) GetNextPageToken() string {
 }
 
 type AcceleratorSupply struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	GroupId           string                 `protobuf:"bytes,1,opt,name=group_id,proto3" json:"group_id,omitempty"`
-	PoolId            string                 `protobuf:"bytes,2,opt,name=pool_id,proto3" json:"pool_id,omitempty"`
-	ClusterId         string                 `protobuf:"bytes,3,opt,name=cluster_id,proto3" json:"cluster_id,omitempty"`
-	DisplayName       string                 `protobuf:"bytes,4,opt,name=display_name,proto3" json:"display_name,omitempty"`
-	Mode              string                 `protobuf:"bytes,5,opt,name=mode,proto3" json:"mode,omitempty"`
-	Nodes             []*AcceleratorNode     `protobuf:"bytes,6,rep,name=nodes,proto3" json:"nodes,omitempty"`
-	ModelKey          string                 `protobuf:"bytes,7,opt,name=model_key,proto3" json:"model_key,omitempty"`
-	Baseline          *AcceleratorBaseline   `protobuf:"bytes,8,opt,name=baseline,proto3" json:"baseline,omitempty"`
-	Admission         string                 `protobuf:"bytes,9,opt,name=admission,proto3" json:"admission,omitempty"`
-	QueueName         string                 `protobuf:"bytes,10,opt,name=queue_name,proto3" json:"queue_name,omitempty"`
-	Version           uint64                 `protobuf:"varint,11,opt,name=version,proto3" json:"version,omitempty"`
-	AdoptedAt         string                 `protobuf:"bytes,12,opt,name=adopted_at,proto3" json:"adopted_at,omitempty"`
-	VerificationState string                 `protobuf:"bytes,13,opt,name=verification_state,proto3" json:"verification_state,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,proto3" json:"group_id,omitempty"`
+	PoolId        string                 `protobuf:"bytes,2,opt,name=pool_id,proto3" json:"pool_id,omitempty"`
+	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,proto3" json:"cluster_id,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,4,opt,name=display_name,proto3" json:"display_name,omitempty"`
+	Mode          string                 `protobuf:"bytes,5,opt,name=mode,proto3" json:"mode,omitempty"`
+	Nodes         []*AcceleratorNode     `protobuf:"bytes,6,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	ModelKey      string                 `protobuf:"bytes,7,opt,name=model_key,proto3" json:"model_key,omitempty"`
+	Baseline      *AcceleratorBaseline   `protobuf:"bytes,8,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	Admission     string                 `protobuf:"bytes,9,opt,name=admission,proto3" json:"admission,omitempty"`
+	QueueName     string                 `protobuf:"bytes,10,opt,name=queue_name,proto3" json:"queue_name,omitempty"`
+	Version       uint64                 `protobuf:"varint,11,opt,name=version,proto3" json:"version,omitempty"`
+	AdoptedAt     string                 `protobuf:"bytes,12,opt,name=adopted_at,proto3" json:"adopted_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AcceleratorSupply) Reset() {
@@ -1676,13 +1667,6 @@ func (x *AcceleratorSupply) GetAdoptedAt() string {
 	return ""
 }
 
-func (x *AcceleratorSupply) GetVerificationState() string {
-	if x != nil {
-		return x.VerificationState
-	}
-	return ""
-}
-
 type AcceleratorSupplies struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*AcceleratorSupply   `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -1741,7 +1725,8 @@ type AcceleratorProfile struct {
 	ProfileVersion uint64                  `protobuf:"varint,2,opt,name=profile_version,proto3" json:"profile_version,omitempty"`
 	DisplayName    string                  `protobuf:"bytes,3,opt,name=display_name,proto3" json:"display_name,omitempty"`
 	Spec           *AcceleratorProfileSpec `protobuf:"bytes,4,opt,name=spec,proto3" json:"spec,omitempty"`
-	Published      bool                    `protobuf:"varint,5,opt,name=published,proto3" json:"published,omitempty"`
+	State          string                  `protobuf:"bytes,6,opt,name=state,proto3" json:"state,omitempty"`
+	Revision       uint64                  `protobuf:"varint,7,opt,name=revision,proto3" json:"revision,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1804,11 +1789,18 @@ func (x *AcceleratorProfile) GetSpec() *AcceleratorProfileSpec {
 	return nil
 }
 
-func (x *AcceleratorProfile) GetPublished() bool {
+func (x *AcceleratorProfile) GetState() string {
 	if x != nil {
-		return x.Published
+		return x.State
 	}
-	return false
+	return ""
+}
+
+func (x *AcceleratorProfile) GetRevision() uint64 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
 }
 
 type AcceleratorProfiles struct {
@@ -3168,6 +3160,334 @@ func (x *AcceleratorPreview) GetReasons() []string {
 	return nil
 }
 
+type PreviewAcceleratorProfileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GroupId       string                 `protobuf:"bytes,1,opt,name=group_id,proto3" json:"group_id,omitempty"`
+	Parts         uint32                 `protobuf:"varint,2,opt,name=parts,proto3" json:"parts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreviewAcceleratorProfileRequest) Reset() {
+	*x = PreviewAcceleratorProfileRequest{}
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreviewAcceleratorProfileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreviewAcceleratorProfileRequest) ProtoMessage() {}
+
+func (x *PreviewAcceleratorProfileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreviewAcceleratorProfileRequest.ProtoReflect.Descriptor instead.
+func (*PreviewAcceleratorProfileRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *PreviewAcceleratorProfileRequest) GetGroupId() string {
+	if x != nil {
+		return x.GroupId
+	}
+	return ""
+}
+
+func (x *PreviewAcceleratorProfileRequest) GetParts() uint32 {
+	if x != nil {
+		return x.Parts
+	}
+	return 0
+}
+
+type AcceleratorProfilePreview struct {
+	state           protoimpl.MessageState  `protogen:"open.v1"`
+	Spec            *AcceleratorProfileSpec `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	UnusedMemoryMib int64                   `protobuf:"varint,2,opt,name=unused_memory_mib,proto3" json:"unused_memory_mib,omitempty"`
+	UnusedCoreUnits uint32                  `protobuf:"varint,3,opt,name=unused_core_units,proto3" json:"unused_core_units,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AcceleratorProfilePreview) Reset() {
+	*x = AcceleratorProfilePreview{}
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AcceleratorProfilePreview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AcceleratorProfilePreview) ProtoMessage() {}
+
+func (x *AcceleratorProfilePreview) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AcceleratorProfilePreview.ProtoReflect.Descriptor instead.
+func (*AcceleratorProfilePreview) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *AcceleratorProfilePreview) GetSpec() *AcceleratorProfileSpec {
+	if x != nil {
+		return x.Spec
+	}
+	return nil
+}
+
+func (x *AcceleratorProfilePreview) GetUnusedMemoryMib() int64 {
+	if x != nil {
+		return x.UnusedMemoryMib
+	}
+	return 0
+}
+
+func (x *AcceleratorProfilePreview) GetUnusedCoreUnits() uint32 {
+	if x != nil {
+		return x.UnusedCoreUnits
+	}
+	return 0
+}
+
+type SetAcceleratorProfileStateRequest struct {
+	state         protoimpl.MessageState          `protogen:"open.v1"`
+	ProfileId     string                          `protobuf:"bytes,1,opt,name=profile_id,proto3" json:"profile_id,omitempty"`
+	Data          *SetAcceleratorProfileStateData `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetAcceleratorProfileStateRequest) Reset() {
+	*x = SetAcceleratorProfileStateRequest{}
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAcceleratorProfileStateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAcceleratorProfileStateRequest) ProtoMessage() {}
+
+func (x *SetAcceleratorProfileStateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAcceleratorProfileStateRequest.ProtoReflect.Descriptor instead.
+func (*SetAcceleratorProfileStateRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *SetAcceleratorProfileStateRequest) GetProfileId() string {
+	if x != nil {
+		return x.ProfileId
+	}
+	return ""
+}
+
+func (x *SetAcceleratorProfileStateRequest) GetData() *SetAcceleratorProfileStateData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type SetAcceleratorProfileStateData struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey   string                 `protobuf:"bytes,1,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
+	ExpectedRevision uint64                 `protobuf:"varint,2,opt,name=expected_revision,proto3" json:"expected_revision,omitempty"`
+	Desired          string                 `protobuf:"bytes,3,opt,name=desired,proto3" json:"desired,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SetAcceleratorProfileStateData) Reset() {
+	*x = SetAcceleratorProfileStateData{}
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetAcceleratorProfileStateData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetAcceleratorProfileStateData) ProtoMessage() {}
+
+func (x *SetAcceleratorProfileStateData) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetAcceleratorProfileStateData.ProtoReflect.Descriptor instead.
+func (*SetAcceleratorProfileStateData) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *SetAcceleratorProfileStateData) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *SetAcceleratorProfileStateData) GetExpectedRevision() uint64 {
+	if x != nil {
+		return x.ExpectedRevision
+	}
+	return 0
+}
+
+func (x *SetAcceleratorProfileStateData) GetDesired() string {
+	if x != nil {
+		return x.Desired
+	}
+	return ""
+}
+
+type DeleteAcceleratorProfileRequest struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	ProfileId     string                        `protobuf:"bytes,1,opt,name=profile_id,proto3" json:"profile_id,omitempty"`
+	Data          *DeleteAcceleratorProfileData `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAcceleratorProfileRequest) Reset() {
+	*x = DeleteAcceleratorProfileRequest{}
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAcceleratorProfileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAcceleratorProfileRequest) ProtoMessage() {}
+
+func (x *DeleteAcceleratorProfileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAcceleratorProfileRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAcceleratorProfileRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *DeleteAcceleratorProfileRequest) GetProfileId() string {
+	if x != nil {
+		return x.ProfileId
+	}
+	return ""
+}
+
+func (x *DeleteAcceleratorProfileRequest) GetData() *DeleteAcceleratorProfileData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type DeleteAcceleratorProfileData struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey   string                 `protobuf:"bytes,1,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
+	ExpectedRevision uint64                 `protobuf:"varint,2,opt,name=expected_revision,proto3" json:"expected_revision,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *DeleteAcceleratorProfileData) Reset() {
+	*x = DeleteAcceleratorProfileData{}
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAcceleratorProfileData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAcceleratorProfileData) ProtoMessage() {}
+
+func (x *DeleteAcceleratorProfileData) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_accelerator_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAcceleratorProfileData.ProtoReflect.Descriptor instead.
+func (*DeleteAcceleratorProfileData) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_accelerator_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *DeleteAcceleratorProfileData) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *DeleteAcceleratorProfileData) GetExpectedRevision() uint64 {
+	if x != nil {
+		return x.ExpectedRevision
+	}
+	return 0
+}
+
 var File_catalog_service_v1_accelerator_proto protoreflect.FileDescriptor
 
 const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
@@ -3218,7 +3538,7 @@ const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
 	"page_token\"7\n" +
 	"\x0fAcceleratorNode\x12\x10\n" +
 	"\x03uid\x18\x01 \x01(\tR\x03uid\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xd9\x06\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xf2\x06\n" +
 	"\x13AcceleratorBaseline\x12 \n" +
 	"\vbaseline_id\x18\x01 \x01(\tR\vbaseline_id\x12\x1e\n" +
 	"\n" +
@@ -3229,8 +3549,7 @@ const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
 	"\x15device_plugin_version\x18\x05 \x01(\tR\x15device_plugin_version\x12>\n" +
 	"\x1adevice_plugin_image_digest\x18\x06 \x01(\tR\x1adevice_plugin_image_digest\x12.\n" +
 	"\x12hami_core_revision\x18\a \x01(\tR\x12hami_core_revision\x12*\n" +
-	"\x10memory_block_mib\x18\b \x01(\rR\x10memory_block_mib\x120\n" +
-	"\x13factor_evidence_ref\x18\t \x01(\tR\x13factor_evidence_ref\x12(\n" +
+	"\x10memory_block_mib\x18\b \x01(\rR\x10memory_block_mib\x12(\n" +
 	"\x0fmemory_encoding\x18\n" +
 	" \x01(\tR\x0fmemory_encoding\x12 \n" +
 	"\vsplit_count\x18\v \x01(\rR\vsplit_count\x122\n" +
@@ -3240,15 +3559,17 @@ const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
 	"\x12node_config_digest\x18\x0f \x01(\tR\x12node_config_digest\x128\n" +
 	"\x17scheduler_config_digest\x18\x10 \x01(\tR\x17scheduler_config_digest\x12&\n" +
 	"\x0erecipe_version\x18\x11 \x01(\tR\x0erecipe_version\x12(\n" +
-	"\x0fbaseline_digest\x18\x12 \x01(\tR\x0fbaseline_digest\"\xa8\x02\n" +
+	"\x0fbaseline_digest\x18\x12 \x01(\tR\x0fbaseline_digest\x12.\n" +
+	"\x12runtime_class_name\x18\x13 \x01(\tR\x12runtime_class_nameJ\x04\b\t\x10\n" +
+	"R\x13factor_evidence_ref\"\xc9\x02\n" +
 	"\x16AcceleratorProfileSpec\x12\x1a\n" +
 	"\bgroup_id\x18\x01 \x01(\tR\bgroup_id\x12\x12\n" +
 	"\x04mode\x18\x02 \x01(\tR\x04mode\x12\x1c\n" +
-	"\tmodel_key\x18\x03 \x01(\tR\tmodel_key\x12,\n" +
-	"\x11shared_memory_mib\x18\x04 \x01(\x03R\x11shared_memory_mib\x12.\n" +
+	"\tmodel_key\x18\x03 \x01(\tR\tmodel_key\x124\n" +
+	"\x15memory_mib_per_device\x18\b \x01(\x03R\x15memory_mib_per_device\x12.\n" +
 	"\x12core_limit_percent\x18\x05 \x01(\rR\x12core_limit_percent\x128\n" +
 	"\x17max_devices_per_replica\x18\x06 \x01(\rR\x17max_devices_per_replica\x12(\n" +
-	"\x0fisolation_class\x18\a \x01(\tR\x0fisolation_class\"k\n" +
+	"\x0fisolation_class\x18\a \x01(\tR\x0fisolation_classJ\x04\b\x04\x10\x05R\x11shared_memory_mib\"k\n" +
 	"!RegisterAcceleratorClusterRequest\x12F\n" +
 	"\x04data\x18\x01 \x01(\v22.catalog.service.v1.RegisterAcceleratorClusterDataR\x04data\"\x96\x01\n" +
 	"\x1eRegisterAcceleratorClusterData\x12(\n" +
@@ -3283,15 +3604,14 @@ const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0fidempotency_key\x12*\n" +
 	"\x10expected_version\x18\x02 \x01(\x04R\x10expected_version\x12\x18\n" +
 	"\adesired\x18\x03 \x01(\tR\adesired\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\"i\n" +
-	" PublishAcceleratorProfileRequest\x12E\n" +
-	"\x04data\x18\x01 \x01(\v21.catalog.service.v1.PublishAcceleratorProfileDataR\x04data\"\x91\x02\n" +
-	"\x1dPublishAcceleratorProfileData\x12(\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"g\n" +
+	"\x1fCreateAcceleratorProfileRequest\x12D\n" +
+	"\x04data\x18\x01 \x01(\v20.catalog.service.v1.CreateAcceleratorProfileDataR\x04data\"\xfc\x01\n" +
+	"\x1cCreateAcceleratorProfileData\x12(\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0fidempotency_key\x12\"\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\fdisplay_name\x12>\n" +
 	"\x04spec\x18\x03 \x01(\v2*.catalog.service.v1.AcceleratorProfileSpecR\x04spec\x126\n" +
-	"\x16expected_group_version\x18\x04 \x01(\x04R\x16expected_group_version\x12*\n" +
-	"\x10verification_ref\x18\x05 \x01(\tR\x10verification_ref\"\x9a\x01\n" +
+	"\x16expected_group_version\x18\x04 \x01(\x04R\x16expected_group_versionJ\x04\b\x05\x10\x06R\x10verification_ref\"\x9a\x01\n" +
 	"\x12AcceleratorCluster\x12\x1e\n" +
 	"\n" +
 	"cluster_id\x18\x01 \x01(\tR\n" +
@@ -3310,7 +3630,7 @@ const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
 	"\fdisplay_name\x18\x03 \x01(\tR\fdisplay_name\"w\n" +
 	"\x10AcceleratorPools\x129\n" +
 	"\x05items\x18\x01 \x03(\v2#.catalog.service.v1.AcceleratorPoolR\x05items\x12(\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"\xe7\x03\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"\xd1\x03\n" +
 	"\x11AcceleratorSupply\x12\x1a\n" +
 	"\bgroup_id\x18\x01 \x01(\tR\bgroup_id\x12\x18\n" +
 	"\apool_id\x18\x02 \x01(\tR\apool_id\x12\x1e\n" +
@@ -3330,19 +3650,19 @@ const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
 	"\aversion\x18\v \x01(\x04R\aversion\x12\x1e\n" +
 	"\n" +
 	"adopted_at\x18\f \x01(\tR\n" +
-	"adopted_at\x12.\n" +
-	"\x12verification_state\x18\r \x01(\tR\x12verification_state\"|\n" +
+	"adopted_atJ\x04\b\r\x10\x0eR\x12verification_state\"|\n" +
 	"\x13AcceleratorSupplies\x12;\n" +
 	"\x05items\x18\x01 \x03(\v2%.catalog.service.v1.AcceleratorSupplyR\x05items\x12(\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"\xe0\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"\x85\x02\n" +
 	"\x12AcceleratorProfile\x12\x1e\n" +
 	"\n" +
 	"profile_id\x18\x01 \x01(\tR\n" +
 	"profile_id\x12(\n" +
 	"\x0fprofile_version\x18\x02 \x01(\x04R\x0fprofile_version\x12\"\n" +
 	"\fdisplay_name\x18\x03 \x01(\tR\fdisplay_name\x12>\n" +
-	"\x04spec\x18\x04 \x01(\v2*.catalog.service.v1.AcceleratorProfileSpecR\x04spec\x12\x1c\n" +
-	"\tpublished\x18\x05 \x01(\bR\tpublished\"}\n" +
+	"\x04spec\x18\x04 \x01(\v2*.catalog.service.v1.AcceleratorProfileSpecR\x04spec\x12\x14\n" +
+	"\x05state\x18\x06 \x01(\tR\x05state\x12\x1a\n" +
+	"\brevision\x18\a \x01(\x04R\brevisionJ\x04\b\x05\x10\x06R\tpublished\"}\n" +
 	"\x13AcceleratorProfiles\x12<\n" +
 	"\x05items\x18\x01 \x03(\v2&.catalog.service.v1.AcceleratorProfileR\x05items\x12(\n" +
 	"\x0fnext_page_token\x18\x02 \x01(\tR\x0fnext_page_token\"n\n" +
@@ -3479,7 +3799,31 @@ const file_catalog_service_v1_accelerator_proto_rawDesc = "" +
 	"\anetwork\x18\t \x01(\tR\anetwork\x12\x18\n" +
 	"\astorage\x18\n" +
 	" \x01(\tR\astorage\x12\x18\n" +
-	"\areasons\x18\v \x03(\tR\areasonsB\xcb\x01\n" +
+	"\areasons\x18\v \x03(\tR\areasons\"T\n" +
+	" PreviewAcceleratorProfileRequest\x12\x1a\n" +
+	"\bgroup_id\x18\x01 \x01(\tR\bgroup_id\x12\x14\n" +
+	"\x05parts\x18\x02 \x01(\rR\x05parts\"\xb7\x01\n" +
+	"\x19AcceleratorProfilePreview\x12>\n" +
+	"\x04spec\x18\x01 \x01(\v2*.catalog.service.v1.AcceleratorProfileSpecR\x04spec\x12,\n" +
+	"\x11unused_memory_mib\x18\x02 \x01(\x03R\x11unused_memory_mib\x12,\n" +
+	"\x11unused_core_units\x18\x03 \x01(\rR\x11unused_core_units\"\x8b\x01\n" +
+	"!SetAcceleratorProfileStateRequest\x12\x1e\n" +
+	"\n" +
+	"profile_id\x18\x01 \x01(\tR\n" +
+	"profile_id\x12F\n" +
+	"\x04data\x18\x02 \x01(\v22.catalog.service.v1.SetAcceleratorProfileStateDataR\x04data\"\x92\x01\n" +
+	"\x1eSetAcceleratorProfileStateData\x12(\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0fidempotency_key\x12,\n" +
+	"\x11expected_revision\x18\x02 \x01(\x04R\x11expected_revision\x12\x18\n" +
+	"\adesired\x18\x03 \x01(\tR\adesired\"\x87\x01\n" +
+	"\x1fDeleteAcceleratorProfileRequest\x12\x1e\n" +
+	"\n" +
+	"profile_id\x18\x01 \x01(\tR\n" +
+	"profile_id\x12D\n" +
+	"\x04data\x18\x02 \x01(\v20.catalog.service.v1.DeleteAcceleratorProfileDataR\x04data\"v\n" +
+	"\x1cDeleteAcceleratorProfileData\x12(\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0fidempotency_key\x12,\n" +
+	"\x11expected_revision\x18\x02 \x01(\x04R\x11expected_revisionB\xcb\x01\n" +
 	"\x16com.catalog.service.v1B\x10AcceleratorProtoP\x01Z5go-wind-admin/api/gen/go/catalog/service/v1;servicev1\xa2\x02\x03CSX\xaa\x02\x12Catalog.Service.V1\xca\x02\x12Catalog\\Service\\V1\xe2\x02\x1eCatalog\\Service\\V1\\GPBMetadata\xea\x02\x14Catalog::Service::V1b\x06proto3"
 
 var (
@@ -3494,7 +3838,7 @@ func file_catalog_service_v1_accelerator_proto_rawDescGZIP() []byte {
 	return file_catalog_service_v1_accelerator_proto_rawDescData
 }
 
-var file_catalog_service_v1_accelerator_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_catalog_service_v1_accelerator_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_catalog_service_v1_accelerator_proto_goTypes = []any{
 	(*AcceleratorPageRequest)(nil),            // 0: catalog.service.v1.AcceleratorPageRequest
 	(*AcceleratorVersionRequest)(nil),         // 1: catalog.service.v1.AcceleratorVersionRequest
@@ -3512,8 +3856,8 @@ var file_catalog_service_v1_accelerator_proto_goTypes = []any{
 	(*AdoptAcceleratorSupplyData)(nil),        // 13: catalog.service.v1.AdoptAcceleratorSupplyData
 	(*SetAcceleratorAdmissionRequest)(nil),    // 14: catalog.service.v1.SetAcceleratorAdmissionRequest
 	(*SetAcceleratorAdmissionData)(nil),       // 15: catalog.service.v1.SetAcceleratorAdmissionData
-	(*PublishAcceleratorProfileRequest)(nil),  // 16: catalog.service.v1.PublishAcceleratorProfileRequest
-	(*PublishAcceleratorProfileData)(nil),     // 17: catalog.service.v1.PublishAcceleratorProfileData
+	(*CreateAcceleratorProfileRequest)(nil),   // 16: catalog.service.v1.CreateAcceleratorProfileRequest
+	(*CreateAcceleratorProfileData)(nil),      // 17: catalog.service.v1.CreateAcceleratorProfileData
 	(*AcceleratorCluster)(nil),                // 18: catalog.service.v1.AcceleratorCluster
 	(*AcceleratorClusters)(nil),               // 19: catalog.service.v1.AcceleratorClusters
 	(*AcceleratorPool)(nil),                   // 20: catalog.service.v1.AcceleratorPool
@@ -3538,6 +3882,12 @@ var file_catalog_service_v1_accelerator_proto_goTypes = []any{
 	(*GpuPreviewQuotaItem)(nil),               // 39: catalog.service.v1.GpuPreviewQuotaItem
 	(*GpuPreviewQuotaCheck)(nil),              // 40: catalog.service.v1.GpuPreviewQuotaCheck
 	(*AcceleratorPreview)(nil),                // 41: catalog.service.v1.AcceleratorPreview
+	(*PreviewAcceleratorProfileRequest)(nil),  // 42: catalog.service.v1.PreviewAcceleratorProfileRequest
+	(*AcceleratorProfilePreview)(nil),         // 43: catalog.service.v1.AcceleratorProfilePreview
+	(*SetAcceleratorProfileStateRequest)(nil), // 44: catalog.service.v1.SetAcceleratorProfileStateRequest
+	(*SetAcceleratorProfileStateData)(nil),    // 45: catalog.service.v1.SetAcceleratorProfileStateData
+	(*DeleteAcceleratorProfileRequest)(nil),   // 46: catalog.service.v1.DeleteAcceleratorProfileRequest
+	(*DeleteAcceleratorProfileData)(nil),      // 47: catalog.service.v1.DeleteAcceleratorProfileData
 }
 var file_catalog_service_v1_accelerator_proto_depIdxs = []int32{
 	9,  // 0: catalog.service.v1.RegisterAcceleratorClusterRequest.data:type_name -> catalog.service.v1.RegisterAcceleratorClusterData
@@ -3546,8 +3896,8 @@ var file_catalog_service_v1_accelerator_proto_depIdxs = []int32{
 	5,  // 3: catalog.service.v1.AdoptAcceleratorSupplyData.nodes:type_name -> catalog.service.v1.AcceleratorNode
 	6,  // 4: catalog.service.v1.AdoptAcceleratorSupplyData.baseline:type_name -> catalog.service.v1.AcceleratorBaseline
 	15, // 5: catalog.service.v1.SetAcceleratorAdmissionRequest.data:type_name -> catalog.service.v1.SetAcceleratorAdmissionData
-	17, // 6: catalog.service.v1.PublishAcceleratorProfileRequest.data:type_name -> catalog.service.v1.PublishAcceleratorProfileData
-	7,  // 7: catalog.service.v1.PublishAcceleratorProfileData.spec:type_name -> catalog.service.v1.AcceleratorProfileSpec
+	17, // 6: catalog.service.v1.CreateAcceleratorProfileRequest.data:type_name -> catalog.service.v1.CreateAcceleratorProfileData
+	7,  // 7: catalog.service.v1.CreateAcceleratorProfileData.spec:type_name -> catalog.service.v1.AcceleratorProfileSpec
 	18, // 8: catalog.service.v1.AcceleratorClusters.items:type_name -> catalog.service.v1.AcceleratorCluster
 	20, // 9: catalog.service.v1.AcceleratorPools.items:type_name -> catalog.service.v1.AcceleratorPool
 	5,  // 10: catalog.service.v1.AcceleratorSupply.nodes:type_name -> catalog.service.v1.AcceleratorNode
@@ -3571,11 +3921,14 @@ var file_catalog_service_v1_accelerator_proto_depIdxs = []int32{
 	39, // 28: catalog.service.v1.AcceleratorPreview.requested_quota_items:type_name -> catalog.service.v1.GpuPreviewQuotaItem
 	40, // 29: catalog.service.v1.AcceleratorPreview.quota_checks:type_name -> catalog.service.v1.GpuPreviewQuotaCheck
 	26, // 30: catalog.service.v1.AcceleratorPreview.observation:type_name -> catalog.service.v1.AcceleratorObservation
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	7,  // 31: catalog.service.v1.AcceleratorProfilePreview.spec:type_name -> catalog.service.v1.AcceleratorProfileSpec
+	45, // 32: catalog.service.v1.SetAcceleratorProfileStateRequest.data:type_name -> catalog.service.v1.SetAcceleratorProfileStateData
+	47, // 33: catalog.service.v1.DeleteAcceleratorProfileRequest.data:type_name -> catalog.service.v1.DeleteAcceleratorProfileData
+	34, // [34:34] is the sub-list for method output_type
+	34, // [34:34] is the sub-list for method input_type
+	34, // [34:34] is the sub-list for extension type_name
+	34, // [34:34] is the sub-list for extension extendee
+	0,  // [0:34] is the sub-list for field type_name
 }
 
 func init() { file_catalog_service_v1_accelerator_proto_init() }
@@ -3589,7 +3942,7 @@ func file_catalog_service_v1_accelerator_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_service_v1_accelerator_proto_rawDesc), len(file_catalog_service_v1_accelerator_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   42,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

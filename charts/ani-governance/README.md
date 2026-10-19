@@ -1,12 +1,12 @@
 # ANI Governance Helm Chart
 
 这个 Chart 部署 `/root/kubercon/ani-governance` 的 Gov BFF 入口服务，目标命名空间是
-`ani-system`。Gov 是业务入口，负责登录、租户/套餐/权限、模型 BFF 和推理 BFF；数据库迁移
+`ani-system`。Gov 是业务入口，负责登录、租户/套餐/权限、模型 BFF、ACC 目录与 Resource 实例 BFF；数据库迁移
 与首个管理员初始化也由本 Chart 管理。
 
 公共 PostgreSQL 和独立 Redis 不在这个 Chart 内创建，分别使用新集群的
 `ani-infra/postgres` 与 `ani-infra/redis`。KServe、LWS、Higress、Model Service、Inference Service
-和 GPU 服务由各自的平台/服务 Chart 管理。本 Chart 通过 TLS 客户端证书调用 Model 与 Inference，
+和 GPU 服务由各自的平台/服务 Chart 管理。本 Chart 通过 TLS 客户端证书调用已启用的 Model 和 Accelerator，
 不会把它们的 Deployment 复制进 Gov Chart。
 
 ## 部署前准备
@@ -157,7 +157,15 @@ Helm 会按以下顺序执行：
 
 1. pre-install/pre-upgrade 的 Atlas Job 应用 `migrations/`，服务配置始终保持
    `data.database.migrate=false`。
-2. Gov BFF Deployment 启动 REST `7788` 和 SSE `7789`，连接独立 Redis。
+2. Gov BFF Deployment 启动 REST `7788` 和 SSE `7789`，Service 默认类型为 NodePort，连接独立 Redis。
+
+安装后查看 Kubernetes 自动分配的外部端口：
+
+```bash
+kubectl -n ani-system get svc ani-governance
+```
+
+业务 API 使用 REST NodePort；事件流使用 SSE NodePort，路径为 `/api/v1/events`。
 3. pre-install/pre-upgrade 的 admin Job 执行 `admin init`，再创建/更新服务 Deployment；已初始化的数据库保持
    原管理员和原数据不变。
 
@@ -170,7 +178,7 @@ kubectl -n ani-system logs job/ani-governance-admin-init
 kubectl -n ani-system port-forward svc/ani-governance 7788:7788
 ```
 
-启用两个下游客户端时，三份证书必须使用同一个 `ani-internal` CA：
+启用 Model 客户端时，客户端和 Model 服务端证书必须使用受管的 `ani-internal` CA：
 
 ```bash
 helm upgrade --install ani-governance charts/ani-governance \
@@ -179,16 +187,12 @@ helm upgrade --install ani-governance charts/ani-governance \
   --set downstream.model.address=ani-model-grpc.ani-system.svc.cluster.local:19090 \
   --set downstream.model.serverName=ani-model.ani.internal \
   --set downstream.model.caSecret=ani-model-server-tls \
-  --set downstream.inference.enabled=true \
-  --set downstream.inference.address=ani-inference-grpc.ani-system.svc.cluster.local:19090 \
-  --set downstream.inference.serverName=ani-inference.ani.internal \
-  --set downstream.inference.caSecret=ani-inference-server-tls \
   --set certificate.enabled=true \
   --wait --timeout 15m
 ```
 
 `certificate.enabled=true` 会在 `ani-system` 请求 DNS SAN 为
-`ani-governance` 的 Gov 客户端证书，不混入其他 DNS、URI、IP 或 email SAN；Model 和 Inference
+`ani-governance` 的 Gov 客户端证书，不混入其他 DNS、URI、IP 或 email SAN；Model
 接收端必须登记该客户端身份和允许的 RPC，双方身份兼容需要独立联调验收。服务端证书的字面 DNS SAN
 必须匹配各自受管的 `serverName`。
 服务端与客户端都要求 TLS 1.3 和 mTLS。没有完整证书配置时，客户端保持关闭或服务启动失败，不能
@@ -197,9 +201,9 @@ helm upgrade --install ani-governance charts/ani-governance \
 Accelerator 的存量客户端仍使用独立 URI 身份，启用时应通过
 `downstream.accelerator.clientCertificateSecret` 指定其证书 Secret，不能复用上面的 DNS 证书。
 
-Gov 的 Model BFF 负责模型、模型版本、ModelScope 导入任务和任务查询；Inference BFF 负责
-CPU/KServe 服务的创建、查询、列表、操作查询和删除。请求中的 tenant/actor 不会透传为权限
-依据，而是从 Gov 登录主体解析后由 mTLS 服务间调用重新注入。
+Gov 的 Model BFF 负责模型、模型版本、ModelScope 导入任务和任务查询。请求中的 tenant/actor 不会透传为权限依据，而是从 Gov 登录主体解析后由 mTLS 服务间调用重新注入。
+
+本期不提供普通或 GPU Inference 管理接口，也不保留 `downstream.inference` 开关、环境变量或证书挂载；后续重新对接另行发布配置。Model 和 Accelerator 配置保持各自合同。
 
 ## 认证来源与 Cookie 环境要求
 

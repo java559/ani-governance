@@ -8,12 +8,11 @@ import (
 	"fmt"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"math"
-	"sort"
 	"strconv"
 
-	attachment "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/integration/v1"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
-	"google.golang.org/protobuf/proto"
+	protocol "github.com/zhangzhe-ctrl/ani-accelerator-service/pkg/gpuprotocol"
+	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	"google.golang.org/protobuf/reflect/protoreflect"
 
 	"go-wind-admin/app/admin/service/internal/data"
@@ -37,7 +36,17 @@ func gpuCanonicalMessage(m protoreflect.Message) (map[string]any, error) {
 	for i := 0; i < fields.Len(); i++ {
 		f := fields.Get(i)
 		if f.IsMap() {
-			return nil, fmt.Errorf("canonical map unsupported")
+			values := map[string]any{}
+			var mapErr error
+			m.Get(f).Map().Range(func(k protoreflect.MapKey, v protoreflect.Value) bool {
+				values[k.String()], mapErr = gpuCanonicalScalar(f.MapValue(), v)
+				return mapErr == nil
+			})
+			if mapErr != nil {
+				return nil, mapErr
+			}
+			out[string(f.Name())] = values
+			continue
 		}
 		var value any
 		var err error
@@ -114,46 +123,6 @@ func gpuHash(v any) (string, error) {
 	return hex.EncodeToString(s[:]), nil
 }
 
-func gpuSortFields(items []*acc.KeyValue) ([]*acc.KeyValue, error) {
-	c := append([]*acc.KeyValue{}, items...)
-	for _, x := range c {
-		if x == nil || x.Key == "" || x.Value == "" {
-			return nil, fmt.Errorf("empty managed key")
-		}
-	}
-	sort.Slice(c, func(i, j int) bool { return c[i].Key < c[j].Key })
-	for i := 1; i < len(c); i++ {
-		if c[i-1].Key == c[i].Key {
-			return nil, fmt.Errorf("duplicate managed key")
-		}
-	}
-	return c, nil
-}
-
-func GpuPlanDigest(p *acc.ResolvedGpuPlan) (string, error) {
-	if p == nil || p.Profile == nil || p.Runtime == nil {
-		return "", fmt.Errorf("invalid plan")
-	}
-	c := proto.Clone(p).(*acc.ResolvedGpuPlan)
-	c.ResolutionDigest = ""
-	c.Profile.Published = false
-	var err error
-	if c.Runtime.NodeLabels, err = gpuSortFields(c.Runtime.NodeLabels); err != nil {
-		return "", err
-	}
-	if c.Runtime.PodAnnotations, err = gpuSortFields(c.Runtime.PodAnnotations); err != nil {
-		return "", err
-	}
-	if c.Runtime.LimitsPerContainer, err = gpuSortFields(c.Runtime.LimitsPerContainer); err != nil {
-		return "", err
-	}
-	v, err := gpuCanonicalMessage(c.ProtoReflect())
-	if err != nil {
-		return "", err
-	}
-	return gpuHash(v)
-}
-
 func gpuSpecDigest(p *acc.GpuProfile) (string, error) {
 	if p == nil || p.Spec == nil {
 		return "", fmt.Errorf("invalid spec")
@@ -166,76 +135,57 @@ func gpuSpecDigest(p *acc.GpuProfile) (string, error) {
 }
 
 func GpuProjectionDigest(p *acc.GpuUsageProjection) (string, error) {
-	if p == nil || p.Ref == nil || p.Plan == nil {
+	if p == nil || p.Ref == nil {
 		return "", fmt.Errorf("invalid projection")
 	}
 	ref, err := gpuCanonicalMessage(p.Ref.ProtoReflect())
 	if err != nil {
 		return "", err
 	}
-	return gpuHash(map[string]any{"ref": ref, "revision": strconv.FormatUint(p.Revision, 10), "state": strconv.FormatInt(int64(p.State), 10), "plan_digest": p.Plan.ResolutionDigest, "end_reason": strconv.FormatInt(int64(p.EndReason), 10), "source_fact_ref": p.SourceFactRef, "source_operation_created_at": p.SourceOperationCreatedAt})
+	return gpuHash(map[string]any{"ref": ref, "revision": strconv.FormatUint(p.Revision, 10), "state": strconv.FormatInt(int64(p.State), 10), "profile_id": p.ProfileId, "profile_version": strconv.FormatUint(p.ProfileVersion, 10), "group_id": p.GroupId, "baseline_id": p.BaselineId, "cluster_id": p.ClusterId, "container_name": p.ContainerName, "execution_digest": p.ExecutionDigest, "end_reason": strconv.FormatInt(int64(p.EndReason), 10), "source_fact_ref": p.SourceFactRef, "source_operation_created_at": p.SourceOperationCreatedAt})
 }
 
-// GpuPlanQuota validates the frozen metering and static rendering independently.
-// Capacity is deliberately absent: zero/unknown capacity is not a reservation.
-func GpuPlanQuota(p *acc.ResolvedGpuPlan) (data.QuotaOccupyItem, error) {
+// GpuResolvedQuota validates the final execution and the one original GPU meter.
+// Runtime values are MiB with F=1; this check never reloads mutable catalog state.
+func GpuResolvedQuota(p *acc.ResolvedGpuRequest, request *acc.GpuRequest) (data.QuotaOccupyItem, error) {
 	bad := func() (data.QuotaOccupyItem, error) {
-		return data.QuotaOccupyItem{}, quotapb.ErrorInvalidQuotaRequest("%s", "invalid frozen GPU plan")
+		return data.QuotaOccupyItem{}, quotapb.ErrorInvalidQuotaRequest("%s", "invalid resolved GPU execution")
 	}
-	if p == nil || p.SchemaVersion != 1 || p.Request == nil || p.Profile == nil || p.Profile.Spec == nil || p.Encoding == nil || p.Totals == nil || p.Runtime == nil {
+	if p == nil || p.Selection == nil || len(p.QuotaItems) != 1 || p.QuotaItems[0] == nil || len(p.ProtoReflect().GetUnknown()) != 0 || len(p.Selection.ProtoReflect().GetUnknown()) != 0 || len(p.QuotaItems[0].ProtoReflect().GetUnknown()) != 0 || protocol.ValidateGpuExecution(p.Execution) != nil {
 		return bad()
 	}
-	r, s, e, t, rt := p.Request, p.Profile.Spec, p.Encoding, p.Totals, p.Runtime
-	if r.Replicas < 1 || r.Replicas > 16 || r.DevicesPerReplica != 1 || r.ContainerName == "" || r.ProfileVersion == 0 || r.ProfileId != p.Profile.ProfileId || r.ProfileVersion != p.Profile.ProfileVersion || s.MaxDevicesPerReplica != 1 || e.MemoryBlockMib == 0 || e.MemoryBlockMib > math.MaxInt32 || e.Policy != "EXACT" {
+	q, g := p.QuotaItems[0], p.Execution
+	number, err := strconv.ParseInt(g.Resources["volcano.sh/vgpu-number"], 10, 32)
+	if err != nil {
 		return bad()
 	}
-	d, err := GpuPlanDigest(p)
-	if err != nil || d != p.ResolutionDigest {
+	memory, err := strconv.ParseInt(g.Resources["volcano.sh/vgpu-memory"], 10, 32)
+	if err != nil {
 		return bad()
 	}
-	d, err = gpuSpecDigest(p.Profile)
-	if err != nil || d != p.Profile.SpecDigest {
+	replicas := int64(1)
+	if request != nil {
+		if request.Replicas < 1 || request.Replicas > 16 || request.DevicesPerReplica < 1 || number != int64(request.DevicesPerReplica) || request.ProfileId != p.Selection.ProfileId || request.ProfileVersion != p.Selection.ProfileVersion || request.ContainerName == "" {
+			return bad()
+		}
+		replicas = int64(request.Replicas)
+	}
+	if p.Selection.ProfileId == "" || p.Selection.ProfileVersion == 0 || p.Selection.ModelKey != g.NodeSelector["accelerator.ani.io/model-key"] || q.Units <= 0 {
 		return bad()
 	}
-	if len(p.BaselineDigest) != 64 || rt.SchedulerName != "volcano" || rt.RecipeVersion != "volcano-hami-v1" || rt.QueueName == "" {
-		return bad()
-	}
-	labels := map[string]string{"accelerator.ani.io/supply-group": s.GroupId, "accelerator.ani.io/model-key": s.ModelKey, "accelerator.ani.io/baseline-id": p.Profile.BaselineId}
-	annotations := map[string]string{"volcano.sh/vgpu-mode": "hami-core"}
-	limits := map[string]string{"volcano.sh/vgpu-number": "1", "volcano.sh/vgpu-cores": strconv.FormatUint(uint64(s.CoreLimitPercent), 10)}
-	item := data.QuotaOccupyItem{}
-	switch s.Mode {
+	switch p.Selection.Mode {
 	case acc.SupplyMode_SHARED_FIXED:
-		m, f := s.SharedMemoryMib, int64(e.MemoryBlockMib)
-		if m <= 0 || m > math.MaxInt32 || m%f != 0 || m/f > math.MaxInt32 || m > math.MaxInt64/int64(r.Replicas) || s.CoreLimitPercent < 1 || s.CoreLimitPercent > 99 || s.IsolationClass != "SOFTWARE_COOPERATIVE" || e.MemoryBlocksPerDevice != m/f || e.SharedMemoryMib != m || e.MemoryPercentage != 0 || t.ExclusiveDeviceCount != 0 || t.LogicalDeviceCount != int64(r.Replicas) || t.SharedMemoryMib != m*int64(r.Replicas) {
+		if number != 1 || g.Resources["volcano.sh/vgpu-cores"] == "100" || memory > math.MaxInt64/replicas || q.QuotaCode != GpuSharedQuotaCode || q.Units != memory*replicas {
 			return bad()
 		}
-		item = data.QuotaOccupyItem{QuotaCode: GpuSharedQuotaCode, Units: t.SharedMemoryMib}
-		limits["volcano.sh/vgpu-memory"] = strconv.FormatInt(m/f, 10)
 	case acc.SupplyMode_WHOLE_EXCLUSIVE:
-		if s.SharedMemoryMib != 0 || s.CoreLimitPercent != 100 || s.IsolationClass != "WHOLE_DEVICE_EXCLUSIVE" || e.MemoryBlocksPerDevice != 0 || e.SharedMemoryMib != 0 || e.MemoryPercentage != 100 || t.SharedMemoryMib != 0 || t.LogicalDeviceCount != 0 || t.ExclusiveDeviceCount != int64(r.Replicas) {
+		if g.Resources["volcano.sh/vgpu-cores"] != "100" || number > math.MaxInt64/replicas || q.QuotaCode != GpuPhysicalQuotaCode || q.Units != number*replicas {
 			return bad()
 		}
-		item = data.QuotaOccupyItem{QuotaCode: GpuPhysicalQuotaCode, Units: t.ExclusiveDeviceCount}
-		limits["volcano.sh/vgpu-memory-percentage"] = "100"
 	default:
 		return bad()
 	}
-	match := func(a []*acc.KeyValue, want map[string]string) bool {
-		if len(a) != len(want) {
-			return false
-		}
-		for _, v := range a {
-			if v == nil || want[v.Key] != v.Value || v.Value == "" {
-				return false
-			}
-		}
-		return true
-	}
-	if !match(rt.NodeLabels, labels) || !match(rt.PodAnnotations, annotations) || !match(rt.LimitsPerContainer, limits) {
-		return bad()
-	}
-	return item, nil
+	return data.QuotaOccupyItem{QuotaCode: q.QuotaCode, Units: q.Units}, nil
 }
 
 type GpuQuotaItem struct {
@@ -243,52 +193,57 @@ type GpuQuotaItem struct {
 	Units     int64  `json:"units"`
 }
 
-// GpuCanonical is the immutable original request/plan, shared by recovery and
-// dispatch. IDs and created_at are obtained from the same original ledger row.
+// Only Governance stores the original quota vector. The owner receives the
+// business payload containing its single accepted execution and display snapshot.
 type GpuCanonical struct {
-	SchemaVersion         uint32               `json:"schema_version"`
-	GpuRequest            *acc.GpuRequest      `json:"gpu_request"`
-	GpuPlan               *acc.ResolvedGpuPlan `json:"gpu_plan"`
-	BusinessPayload       json.RawMessage      `json:"business_payload"`
-	BusinessPayloadDigest string               `json:"business_payload_digest"`
-	MeteringVersion       string               `json:"metering_version"`
-	QuotaItems            []GpuQuotaItem       `json:"quota_items"`
-	DeleteExpectedVersion int64                `json:"delete_expected_version,omitempty"`
+	SchemaVersion         uint32          `json:"schema_version"`
+	GpuRequest            *acc.GpuRequest `json:"gpu_request"`
+	BusinessPayload       json.RawMessage `json:"business_payload"`
+	BusinessPayloadDigest string          `json:"business_payload_digest"`
+	MeteringVersion       string          `json:"metering_version"`
+	QuotaItems            []GpuQuotaItem  `json:"quota_items"`
+	DeleteExpectedVersion int64           `json:"delete_expected_version,omitempty"`
 }
 
 func isGpuCanonical(raw []byte) bool {
 	var marker struct {
-		SchemaVersion uint32          `json:"schema_version"`
-		GpuPlan       json.RawMessage `json:"gpu_plan"`
+		SchemaVersion uint32 `json:"schema_version"`
 	}
-	return json.Unmarshal(raw, &marker) == nil && (marker.SchemaVersion == 2 || len(marker.GpuPlan) > 0)
+	return json.Unmarshal(raw, &marker) == nil && marker.SchemaVersion == 3
 }
-
 func DecodeGpuCanonical(raw []byte) (*GpuCanonical, error) {
 	var c GpuCanonical
-	if json.Unmarshal(raw, &c) != nil || c.SchemaVersion != 2 || c.DeleteExpectedVersion < 0 || c.MeteringVersion != GpuMeteringVersion || c.GpuRequest == nil || c.GpuPlan == nil || !proto.Equal(c.GpuRequest, c.GpuPlan.Request) || len(c.QuotaItems) == 0 {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	if dec.Decode(&c) != nil || c.SchemaVersion != 3 || c.DeleteExpectedVersion < 0 || c.MeteringVersion != GpuMeteringVersion || c.GpuRequest == nil || len(c.QuotaItems) == 0 {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU canonical")
 	}
-	item, err := GpuPlanQuota(c.GpuPlan)
+	encoded, err := gpuCanonicalJSON(c)
+	if err != nil || !bytes.Equal(encoded, raw) {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "noncanonical GPU command")
+	}
+	var gpuItems []GpuQuotaItem
+	seen := map[string]bool{}
+	for _, q := range c.QuotaItems {
+		if q.QuotaCode == "" || q.Units <= 0 || seen[q.QuotaCode] {
+			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid frozen quota vector")
+		}
+		seen[q.QuotaCode] = true
+		if q.QuotaCode == GpuSharedQuotaCode || q.QuotaCode == GpuPhysicalQuotaCode {
+			gpuItems = append(gpuItems, q)
+		}
+	}
+	if len(gpuItems) != 1 {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU metering")
+	}
+	q := gpuItems[0]
+	business, err := res.DecodeBusinessPayload(c.BusinessPayload)
 	if err != nil {
 		return nil, err
 	}
-	seen := map[string]bool{}
-	found := false
-	for _, q := range c.QuotaItems {
-		if q.QuotaCode == "" || q.Units <= 0 || seen[q.QuotaCode] {
-			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid frozen charge vector")
-		}
-		seen[q.QuotaCode] = true
-		if q.QuotaCode == GpuPhysicalQuotaCode || q.QuotaCode == GpuSharedQuotaCode {
-			if q.QuotaCode != item.QuotaCode || q.Units != item.Units {
-				return nil, quotapb.ErrorInvalidQuotaRequest("%s", "GPU metering mismatch")
-			}
-			found = true
-		}
-	}
-	if !found {
-		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "missing GPU metering")
+	_, err = GpuResolvedQuota(&acc.ResolvedGpuRequest{Execution: business.GpuExecution, Selection: business.GpuDisplay, QuotaItems: []*acc.GpuQuotaItem{{QuotaCode: q.QuotaCode, Units: q.Units}}}, c.GpuRequest)
+	if err != nil {
+		return nil, err
 	}
 	sum := sha256.Sum256(c.BusinessPayload)
 	if hex.EncodeToString(sum[:]) != c.BusinessPayloadDigest {
@@ -296,54 +251,21 @@ func DecodeGpuCanonical(raw []byte) (*GpuCanonical, error) {
 	}
 	return &c, nil
 }
-
-func GpuChargeSubset(c *GpuCanonical, charges []QuotaChargeRef) ([]*attachment.GpuChargeRef, error) {
+func ValidateGpuCharges(c *GpuCanonical, charges []QuotaChargeRef) error {
 	if c == nil || len(charges) != len(c.QuotaItems) {
-		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "incomplete original charges")
+		return quotapb.ErrorInvalidQuotaRequest("%s", "incomplete original charges")
 	}
 	want := map[string]int64{}
 	for _, q := range c.QuotaItems {
 		want[q.QuotaCode] = q.Units
 	}
 	seenCode, seenID := map[string]bool{}, map[string]bool{}
-	var gpu []*attachment.GpuChargeRef
 	for _, q := range charges {
 		if q.ChargeID == "" || seenID[q.ChargeID] || seenCode[q.QuotaCode] || q.ChargedUnits <= 0 || want[q.QuotaCode] != q.ChargedUnits {
-			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "original charges mismatch")
+			return quotapb.ErrorInvalidQuotaRequest("%s", "original charges mismatch")
 		}
-		seenID[q.ChargeID], seenCode[q.QuotaCode] = true, true
-		if q.QuotaCode == GpuPhysicalQuotaCode || q.QuotaCode == GpuSharedQuotaCode {
-			gpu = append(gpu, &attachment.GpuChargeRef{ChargeId: q.ChargeID, QuotaCode: q.QuotaCode, OriginalUnits: q.ChargedUnits})
-		}
+		seenID[q.ChargeID] = true
+		seenCode[q.QuotaCode] = true
 	}
-	if len(gpu) != 1 {
-		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU charge subset")
-	}
-	return gpu, nil
-}
-
-// BuildGpuOwnerAttachments is used only by a compiled, business-specific adapter.
-// It cannot select an RPC or owner supplied by a public caller.
-func BuildGpuOwnerAttachments(owner string, cmd *QuotaDispatchCommand) (*attachment.GpuOwnerCreateAttachment, *attachment.GpuOwnerDeleteAttachment, error) {
-	if cmd == nil || !supportedGpuOwner(owner) || cmd.Actor.Type == "" || cmd.Actor.ID == "" {
-		return nil, nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid owner command")
-	}
-	c, err := DecodeGpuCanonical(cmd.CanonicalRequest)
-	if err != nil {
-		return nil, nil, err
-	}
-	charges, err := GpuChargeSubset(c, cmd.Charges)
-	if err != nil {
-		return nil, nil, err
-	}
-	createID := cmd.OperationID
-	if cmd.CreateOperationID != "" {
-		createID = cmd.CreateOperationID
-	}
-	ref := &acc.GpuUsageRef{TenantId: cmd.ResourceTenantID, OwnerService: owner, ResourceId: cmd.ResourceID, CreateOperationId: createID}
-	actor := &acc.Actor{Type: cmd.Actor.Type, Id: cmd.Actor.ID}
-	if cmd.CreateOperationID != "" {
-		return nil, &attachment.GpuOwnerDeleteAttachment{DeleteOperationId: cmd.OperationID, Ref: ref, Actor: actor, RequestHash: cmd.RequestHash, OriginalGpuCharges: charges, OriginalGpuPlan: c.GpuPlan, MeteringVersion: c.MeteringVersion}, nil
-	}
-	return &attachment.GpuOwnerCreateAttachment{Ref: ref, Actor: actor, RequestHash: cmd.RequestHash, GpuPlan: c.GpuPlan, GpuCharges: charges, BusinessPayloadDigest: c.BusinessPayloadDigest, MeteringVersion: c.MeteringVersion}, nil, nil
+	return nil
 }

@@ -16,14 +16,15 @@ import (
 )
 
 func TestAcceleratorPublicViewsAreStructurallyRedacted(t *testing.T) {
-	ref := &acc.GpuUsageRef{TenantId: "secret-tenant", OwnerService: "ani-inference", ResourceId: "resource", CreateOperationId: "create"}
-	binding := &acc.GpuBinding{BindingId: "binding", VerifiedUsageRef: ref, Pod: &acc.PodRef{ClusterId: "secret-cluster", Namespace: "secret-namespace", Name: "secret-pod", Uid: "secret-uid", ContainerName: "inference"}, PhysicalDeviceId: "secret-device", State: acc.AllocationState_ACTIVE, MemoryMib: 6144, CoreLimitPercent: 25, SourceBaselineDigest: "secret-baseline", SourceMemoryBlockMib: 1024, EvidenceRef: "secret-evidence", Observation: &acc.Observation{Complete: true, SnapshotRef: "secret-watermark", ObservedAt: "2026-09-23T10:00:00Z"}}
+	ref := &acc.GpuUsageRef{TenantId: "secret-tenant", OwnerService: InstanceOwner, ResourceId: "resource", CreateOperationId: "create"}
+	binding := &acc.GpuBinding{BindingId: "binding", VerifiedUsageRef: ref, Pod: &acc.PodRef{ClusterId: "secret-cluster", Namespace: "secret-namespace", Name: "secret-pod", Uid: "secret-uid", ContainerName: "workspace"}, PhysicalDeviceId: "secret-device", State: acc.AllocationState_ACTIVE, MemoryMib: 6144, CoreLimitPercent: 25, SourceBaselineDigest: "secret-baseline", SourceMemoryBlockMib: 1024, EvidenceRef: "secret-evidence", Observation: &acc.Observation{Complete: true, SnapshotRef: "secret-watermark", ObservedAt: "2026-09-23T10:00:00Z"}}
 	raw, e := protojson.Marshal(wireAcceleratorBinding(binding))
 	require.NoError(t, e)
 	require.NotContains(t, string(raw), "secret-")
-	require.Contains(t, string(raw), "inference")
+	require.Contains(t, string(raw), "workspace")
+	require.NotContains(t, string(raw), InstanceOwner)
 	require.Contains(t, string(raw), `"6144"`)
-	projection := &acc.GpuUsageProjection{Ref: ref, Revision: 2, State: acc.UsageState_ENDED, SourceFactRef: "secret-fact", PayloadDigest: "secret-payload", Plan: &acc.ResolvedGpuPlan{Runtime: &acc.RuntimeFragment{QueueName: "secret-queue"}, BaselineDigest: "secret-baseline", Profile: &acc.GpuProfile{ProfileId: "profile", ProfileVersion: 1}}}
+	projection := &acc.GpuUsageProjection{Ref: ref, Revision: 2, State: acc.UsageState_ENDED, SourceFactRef: "secret-fact", PayloadDigest: "secret-payload", ProfileId: "profile", ProfileVersion: 1, ExecutionDigest: "secret-execution", BaselineId: "secret-baseline"}
 	raw, e = protojson.Marshal(wireAcceleratorUsage(projection))
 	require.NoError(t, e)
 	require.NotContains(t, string(raw), "secret-")

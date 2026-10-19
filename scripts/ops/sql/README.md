@@ -12,8 +12,9 @@
 | `retire-legacy-file-access.sql` | 数据修复，旧安装文件/API/menu 清理；先按文件退役计划完成结构迁移并审查备份。 |
 | `repair-tenant-logout.sql` | 数据修复，旧安装登出权限缺失时使用；原子且可重跑，需确认现有权限/API 唯一。 |
 | `register-accelerator-permissions.sql` | 数据修复，API 目录 dry-run 与显式同步后登记权限；不授角色、不开套餐或租户额度。 |
-| `register-model-inference-permissions.sql` | 数据修复，Model/Inference BFF API 目录同步后登记精确权限；不授角色、不开套餐或租户额度。 |
-| `enable-model-inference-access.sql` | 只给显式指定的租户 `tenant:manager` 角色和套餐开放 MODEL、INFERENCE；不会修改其他租户、模板角色或配额。 |
+| `retire-inference-management.sql` | 部署不含推理管理路由的版本后，停用旧 API 与未被其它活动 API 使用的推理权限；保留 ID、授权关系和历史账目，执行前审查并备份匹配行。 |
+| `register-model-permissions.sql` | 数据修复，Model BFF API 目录同步后登记精确权限；不授角色、不开套餐或租户额度。 |
+| `enable-model-access.sql` | 只给显式指定的租户 `tenant:manager` 角色和套餐开放 MODEL；不会修改其他租户、模板角色或配额。 |
 | `grant-quota-platform-read.sql` | 数据修复，给受保护平台管理员角色（`platform:admin`）补授 `quota-definition:view`、`tenant:quota-read`，修复配额目录/租户配额账户对平台管理员 403；不新建/放宽其它角色，不改权限-API 关联、不开套餐。 |
 | `grant-quota-tenant-self-read.sql` | 数据修复，给租户管理员模板 `template:tenant:manager` 与既有 `tenant:manager` 角色补授 `quota:account:self-read`（自助读本人配额账户）；不触碰平台角色与其它角色码，不代表已开通 TENANT 模块。 |
 

@@ -165,21 +165,43 @@ func (r *RolePermissionRepo) Upsert(ctx context.Context, tx *ent.Tx, data *permi
 	return nil
 }
 
-// ReplacePermissions 整体替换角色的权限：先清空该角色现有权限，再插入新的权限集合。
-// 与 AssignPermissions（仅 upsert，不删除）不同，此方法用于更新场景，确保取消勾选的权限被正确移除。
+// ReplacePermissions applies the submitted set without rebuilding grants that
+// remain selected. Their IDs, status, effect, priority and audit history survive
+// an additive role update. RoleRepo.Update holds the role row in this transaction.
 func (r *RolePermissionRepo) ReplacePermissions(ctx context.Context, tx *ent.Tx,
 	tenantID, operatorID uint32,
 	roleID uint32, permissionIDs []uint32,
 ) error {
-	if err := r.CleanPermissions(ctx, tx, roleID); err != nil {
-		return err
+	existing, err := tx.RolePermission.Query().Where(
+		rolepermission.TenantIDEQ(tenantID), rolepermission.RoleIDEQ(roleID),
+	).All(ctx)
+	if err != nil {
+		return permissionV1.ErrorInternalServerError("read role permissions failed")
 	}
-
-	if len(permissionIDs) == 0 {
-		return nil
+	selected := make(map[uint32]bool, len(permissionIDs))
+	for _, id := range permissionIDs {
+		selected[id] = true
 	}
-
-	return r.AssignPermissions(ctx, tx, tenantID, operatorID, roleID, permissionIDs)
+	var remove []uint32
+	for _, row := range existing {
+		if row.PermissionID != nil && selected[*row.PermissionID] {
+			delete(selected, *row.PermissionID)
+		} else {
+			remove = append(remove, row.ID)
+		}
+	}
+	if len(remove) > 0 {
+		if _, err = tx.RolePermission.Delete().Where(
+			rolepermission.TenantIDEQ(tenantID), rolepermission.RoleIDEQ(roleID), rolepermission.IDIn(remove...),
+		).Exec(ctx); err != nil {
+			return permissionV1.ErrorInternalServerError("remove role permissions failed")
+		}
+	}
+	add := make([]uint32, 0, len(selected))
+	for id := range selected {
+		add = append(add, id)
+	}
+	return r.AssignPermissions(ctx, tx, tenantID, operatorID, roleID, add)
 }
 
 // AssignPermissions 给角色分配权限

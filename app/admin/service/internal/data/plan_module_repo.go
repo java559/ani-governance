@@ -313,7 +313,9 @@ func (r *PlanModuleRepo) ListModulesByPlanId(ctx context.Context, planId uint32)
 	result := make(map[identityV1.Module]bool, len(entities))
 	for _, e := range entities {
 		if e.Module != nil {
-			result[mapEntModuleToProto(*e.Module)] = true
+			if module := mapEntModuleToProto(*e.Module); module != identityV1.Module_MODULE_UNSPECIFIED {
+				result[module] = true
+			}
 		}
 	}
 	return result, nil
@@ -321,28 +323,9 @@ func (r *PlanModuleRepo) ListModulesByPlanId(ctx context.Context, planId uint32)
 
 // mapEntModuleToProto 将 ent planmodule.Module 字符串枚举映射到 proto identityV1.Module。
 func mapEntModuleToProto(m planmodule.Module) identityV1.Module {
-	switch m {
-	case planmodule.ModuleDashboard:
-		return identityV1.Module_DASHBOARD
-	case planmodule.ModuleOpm:
-		return identityV1.Module_OPM
-	case planmodule.ModuleSystem:
-		return identityV1.Module_SYSTEM
-	case planmodule.ModuleDict:
-		return identityV1.Module_DICT
-	case planmodule.ModuleTenant:
-		return identityV1.Module_TENANT
-	case planmodule.ModulePermission:
-		return identityV1.Module_PERMISSION
-	case planmodule.ModuleLog:
-		return identityV1.Module_LOG
-	case planmodule.ModuleInternalMessage:
-		return identityV1.Module_INTERNAL_MESSAGE
-	case planmodule.ModuleTask:
-		return identityV1.Module_TASK
-	case planmodule.ModuleInference:
-		return identityV1.Module_INFERENCE
-	default:
+	value, ok := identityV1.Module_value[string(m)]
+	if !ok {
 		return identityV1.Module_MODULE_UNSPECIFIED
 	}
+	return identityV1.Module(value)
 }

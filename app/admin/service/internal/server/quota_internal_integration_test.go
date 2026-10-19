@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestQuotaInternalMTLSAndCumulativeRelease(t *testing.T) {
@@ -31,14 +32,14 @@ func TestQuotaInternalMTLSAndCumulativeRelease(t *testing.T) {
 	require.NoError(t, err)
 	tenant, err := c.Client().Tenant.Create().SetName("quota-mtls").SetCode("quota-mtls").SetPlanID(plan.ID).Save(ctx)
 	require.NoError(t, err)
-	require.NoError(t, c.Client().PlanQuota.Create().SetPlanID(plan.ID).SetQuotaCode(data.QuotaCodeGpuCount).SetQuotaValue(8).Exec(ctx))
+	require.NoError(t, c.Client().PlanQuota.Create().SetPlanID(plan.ID).SetQuotaCode("storage.bytes").SetQuotaValue(8).Exec(ctx))
 	ledger := data.NewQuotaLedgerRepo(testutil.NewBootstrapContext(nil), c)
-	occupied, err := ledger.Occupy(context.Background(), &data.QuotaOccupyInput{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, ResourceID: uuid.NewString(), ActorType: "user", ActorID: "1", OwnerService: "ani-inference", Action: "GPU_CREATE", IdempotencyKey: uuid.NewString(), RequestHash: "mtls-hash", CanonicalRequest: `{"schema_version":1}`, Items: []data.QuotaOccupyItem{{QuotaCode: data.QuotaCodeGpuCount, Units: 2}}})
+	occupied, err := ledger.Occupy(context.Background(), &data.QuotaOccupyInput{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, ResourceID: uuid.NewString(), ActorType: "user", ActorID: "1", OwnerService: "ani-resource-service", Action: "GPU_CREATE", IdempotencyKey: uuid.NewString(), RequestHash: "mtls-hash", CanonicalRequest: `{"schema_version":1}`, Items: []data.QuotaOccupyItem{{QuotaCode: "storage.bytes", Units: 2}}})
 	require.NoError(t, err)
 	charge, err := c.Client().QuotaCharge.Query().Where(quotacharge.OperationIDEQ(occupied.OperationID)).Only(ctx)
 	require.NoError(t, err)
 	dir, pool := quotaTLSFixture(t)
-	srv, err := NewQuotaInternalServer(QuotaInternalServerConfig{Enabled: true, Address: "127.0.0.1:0", CAFile: filepath.Join(dir, "ca.pem"), CertFile: filepath.Join(dir, "server.pem"), KeyFile: filepath.Join(dir, "server.key"), CertOwnerMap: map[string]string{"ani-inference": "ani-inference", "ani-inference-alias": "ani-inference", "other-owner": "other-owner"}}, ledger)
+	srv, err := NewQuotaInternalServer(QuotaInternalServerConfig{Enabled: true, Address: "127.0.0.1:0", CAFile: filepath.Join(dir, "ca.pem"), CertFile: filepath.Join(dir, "server.pem"), KeyFile: filepath.Join(dir, "server.key"), CertOwnerMap: map[string]string{"ani-resource-service": "ani-resource-service", "ani-resource-alias": "ani-resource-service", "other-owner": "other-owner"}}, ledger)
 	require.NoError(t, err)
 	startResult := make(chan error, 1)
 	go func() { startResult <- srv.Start(context.Background()) }()
@@ -78,7 +79,7 @@ func TestQuotaInternalMTLSAndCumulativeRelease(t *testing.T) {
 	call := func(client quotapb.QuotaReleaseServiceClient, event string, total int64) error {
 		cctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		_, e := client.ReportQuotaRelease(cctx, &quotapb.ReportQuotaReleaseRequest{ReleaseEventId: event, OperationId: occupied.OperationID, Items: []*quotapb.QuotaReleaseItem{{ChargeId: charge.ChargeID, QuotaCode: data.QuotaCodeGpuCount, ReleasedTotal: total}}, Reason: quotapb.ReleaseReason_RESOURCE_RELEASED})
+		_, e := client.ReportQuotaRelease(cctx, &quotapb.ReportQuotaReleaseRequest{ReleaseEventId: event, OperationId: occupied.OperationID, Items: []*quotapb.QuotaReleaseItem{{ChargeId: charge.ChargeID, QuotaCode: "storage.bytes", ReleasedTotal: total}}, Reason: quotapb.ReleaseReason_RESOURCE_RELEASED})
 		return e
 	}
 	require.Error(t, call(dial("", pool), uuid.NewString(), 1), "client cert required")
@@ -90,7 +91,7 @@ func TestQuotaInternalMTLSAndCumulativeRelease(t *testing.T) {
 		require.NoError(t, e)
 		for _, r := range rows {
 			require.True(t, r.Balanced)
-			if r.QuotaCode == data.QuotaCodeGpuCount {
+			if r.QuotaCode == "storage.bytes" {
 				return r.OccupiedUnits
 			}
 		}
@@ -99,13 +100,57 @@ func TestQuotaInternalMTLSAndCumulativeRelease(t *testing.T) {
 	}
 	require.EqualValues(t, 2, balance())
 	owner := dial("owner", pool)
+	_, legacyGPUError := owner.ReportQuotaRelease(context.Background(), &quotapb.ReportQuotaReleaseRequest{ReleaseEventId: uuid.NewString(), OperationId: occupied.OperationID, Items: []*quotapb.QuotaReleaseItem{{ChargeId: charge.ChargeID, QuotaCode: "gpu.shared_memory_mib", ReleasedTotal: 2}}, Reason: quotapb.ReleaseReason_RESOURCE_RELEASED})
+	require.Equal(t, codes.InvalidArgument, status.Code(legacyGPUError))
 	event := uuid.NewString()
 	require.NoError(t, call(owner, event, 1))
 	require.EqualValues(t, 1, balance())
 	require.NoError(t, call(owner, event, 1))
 	require.EqualValues(t, 1, balance())
-	require.NoError(t, call(dial("alias", pool), uuid.NewString(), 2))
+	require.Equal(t, codes.Unauthenticated, status.Code(call(dial("alias", pool), uuid.NewString(), 2)))
+	require.NoError(t, call(owner, uuid.NewString(), 2))
 	require.EqualValues(t, 0, balance())
 	require.NoError(t, call(owner, uuid.NewString(), 1))
 	require.EqualValues(t, 0, balance())
+	// The new resource-release RPC carries no quota codes or quantities.
+	original, err := ledger.Occupy(context.Background(), &data.QuotaOccupyInput{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, ResourceID: uuid.NewString(), ActorType: "user", ActorID: "1", OwnerService: "ani-resource-service", Action: "GPU_CREATE", IdempotencyKey: uuid.NewString(), RequestHash: "complete-hash", CanonicalRequest: `{"schema_version":1}`, Items: []data.QuotaOccupyItem{{QuotaCode: "storage.bytes", Units: 3}}})
+	require.NoError(t, err)
+	full := &quotapb.ReportResourceReleasedRequest{ReleaseEventId: uuid.NewString(), CreateOperationId: original.OperationID, ResourceId: original.ResourceID, Reason: quotapb.ReleaseReason_RESOURCE_RELEASED}
+	callFull := func(client quotapb.QuotaReleaseServiceClient, r *quotapb.ReportResourceReleasedRequest) (*quotapb.ReportResourceReleasedResponse, error) {
+		cctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		return client.ReportResourceReleased(cctx, r)
+	}
+	require.EqualValues(t, 3, balance())
+	wrong := proto.Clone(full).(*quotapb.ReportResourceReleasedRequest)
+	wrong.ResourceId = uuid.NewString()
+	_, err = callFull(owner, wrong)
+	require.Equal(t, codes.PermissionDenied, status.Code(err))
+	require.EqualValues(t, 3, balance())
+	_, err = callFull(dial("other", pool), full)
+	require.Error(t, err)
+	require.EqualValues(t, 3, balance())
+	ack, err := callFull(owner, full)
+	require.NoError(t, err)
+	require.Equal(t, full.ReleaseEventId, ack.ReleaseEventId)
+	require.Equal(t, full.CreateOperationId, ack.CreateOperationId)
+	require.Equal(t, full.ResourceId, ack.ResourceId)
+	require.Equal(t, quotapb.ResourceReleaseStatus_APPLIED, ack.Status)
+	require.Zero(t, balance())
+	ack, err = callFull(owner, full)
+	require.NoError(t, err)
+	require.Equal(t, quotapb.ResourceReleaseStatus_ALREADY_APPLIED, ack.Status)
+	require.Zero(t, balance())
+	changed := proto.Clone(full).(*quotapb.ReportResourceReleasedRequest)
+	changed.Reason = quotapb.ReleaseReason_ABORTED_CLEANED
+	_, err = callFull(owner, changed)
+	require.Equal(t, codes.FailedPrecondition, status.Code(err))
+	require.Zero(t, balance())
+	repeated := proto.Clone(full).(*quotapb.ReportResourceReleasedRequest)
+	repeated.ReleaseEventId = uuid.NewString()
+	ack, err = callFull(owner, repeated)
+	require.NoError(t, err)
+	require.Equal(t, quotapb.ResourceReleaseStatus_ALREADY_APPLIED, ack.Status)
+	require.Zero(t, balance())
+
 }

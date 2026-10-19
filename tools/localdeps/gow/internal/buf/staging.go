@@ -136,9 +136,6 @@ func stageAndGenerate(ctx context.Context, root string, templates []*genTemplate
 	}
 
 	stageAPI := filepath.Join(stage, "api")
-	if err := stageInferenceImports(ctx, root, stageAPI); err != nil {
-		return err
-	}
 	fmt.Printf("generating into staging copy %s (%d templates, %d managed output roots)\n", stage, len(templates), len(roots))
 	for _, t := range templates {
 		fmt.Printf("Using template file: %s\n", t.Path)

@@ -1,9 +1,9 @@
 syntax = "proto3";
-
 package admin.service.v1;
 
 import "catalog/service/v1/model.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
 
 // Model is the tenant-facing BFF for the Model Service. Tenant and actor
 // identity come from the authenticated Governance principal; they are never
@@ -18,6 +18,12 @@ service ModelService {
   rpc ListModels(catalog.service.v1.ListModelsRequest) returns (catalog.service.v1.ListModelsResponse) {
     option (google.api.http) = { get: "/api/v1/models" };
   }
+  rpc SearchExternalModels(catalog.service.v1.SearchExternalModelsRequest) returns (catalog.service.v1.SearchExternalModelsResponse) {
+    option (google.api.http) = { get: "/api/v1/models:search" };
+  }
+  rpc DeleteModel(catalog.service.v1.DeleteModelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/models/{model_id}" };
+  }
   rpc CreateModelVersion(catalog.service.v1.CreateModelVersionRequest) returns (catalog.service.v1.CreateModelVersionResponse) {
     option (google.api.http) = { post: "/api/v1/model-versions" body: "*" };
   }
@@ -27,6 +33,12 @@ service ModelService {
   rpc ListModelVersions(catalog.service.v1.ListModelVersionsRequest) returns (catalog.service.v1.ListModelVersionsResponse) {
     option (google.api.http) = { get: "/api/v1/models/{model_id}/versions" };
   }
+  rpc DeleteModelVersion(catalog.service.v1.DeleteModelVersionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/model-versions/{model_version_id}" };
+  }
+  rpc GetUploadURL(catalog.service.v1.GetUploadURLRequest) returns (catalog.service.v1.GetUploadURLResponse) {
+    option (google.api.http) = { post: "/api/v1/models/{model_id}/upload-url" body: "*" };
+  }
   rpc ImportModel(catalog.service.v1.ImportModelRequest) returns (catalog.service.v1.ImportModelResponse) {
     option (google.api.http) = { post: "/api/v1/models:import" body: "*" };
   }
@@ -35,5 +47,8 @@ service ModelService {
   }
   rpc RetryImportTask(catalog.service.v1.RetryImportTaskRequest) returns (catalog.service.v1.RetryImportTaskResponse) {
     option (google.api.http) = { post: "/api/v1/models/import-tasks/{task_id}:retry" body: "*" };
+  }
+  rpc GetModelDownloadURL(catalog.service.v1.GetModelDownloadURLRequest) returns (catalog.service.v1.GetModelDownloadURLResponse) {
+    option (google.api.http) = { get: "/api/v1/model-versions/{model_version_id}/download-url" };
   }
 }

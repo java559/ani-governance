@@ -275,7 +275,7 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 		return items
 	}
 	// Replays the exact management mutation committed by the seed's actor=1.
-	adminWrites := []struct{ rpc, path string }{{"RegisterCluster", "/api/v1/admin/accelerator/clusters"}, {"CreatePool", "/api/v1/admin/accelerator/pools"}, {"AdoptSupplyGroup", "/api/v1/admin/accelerator/supply-groups:adopt"}, {"PublishProfile", "/api/v1/admin/accelerator/profiles"}, {"SetAdmission", "/api/v1/admin/accelerator/supply-groups/" + seed.Group.GroupId + ":set-admission"}}
+	adminWrites := []struct{ rpc, path string }{{"RegisterCluster", "/api/v1/admin/accelerator/clusters"}, {"CreatePool", "/api/v1/admin/accelerator/pools"}, {"AdoptSupplyGroup", "/api/v1/admin/accelerator/supply-groups:adopt"}, {"CreateProfile", "/api/v1/admin/accelerator/profiles"}, {"SetAdmission", "/api/v1/admin/accelerator/supply-groups/" + seed.Group.GroupId + ":set-admission"}}
 	for _, call := range adminWrites {
 		var payload map[string]any
 		require.NoError(t, json.Unmarshal(seed.Requests[call.rpc], &payload))
@@ -319,7 +319,7 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 				conflict := request("POST", call.path, platformToken, map[string]any{"data": payload}, 409)
 				require.Equal(t, "VERSION_CONFLICT", conflict["reason"])
 			}
-		case "PublishProfile":
+		case "CreateProfile":
 			require.Equal(t, seed.Profile.ProfileId, response["profile_id"])
 			require.Equal(t, "1", response["profile_version"])
 			require.Equal(t, true, response["published"])

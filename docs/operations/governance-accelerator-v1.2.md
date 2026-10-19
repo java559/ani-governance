@@ -1,5 +1,7 @@
 # GOV-ACC-V12-01 运行、迁移与恢复手册
 
+本文保留 GOV-ACC-V12-01 历史批次的操作与结果。当前 GPU 实例接线以 [GPU owner 合同](../contracts/gpu-owner-integration-guide.md) 和 [部署说明](../deployment.md) 为准：保留 Resource 实例链，Inference 管理接口、API 依赖及环境配置已移除。下文旧 Inference owner 配置与启用步骤不适用于当前版本。
+
 本手册描述本批交付实现的操作边界，配套[逐项验收结果](https://github.com/zhangzhe-ctrl/ani-governance/blob/63849fc4cde38b879184a8fea4a6f539e60063e1/docs/evidence/gov-acc-v12-01/acceptance-results.md)、[数据层证据](https://github.com/zhangzhe-ctrl/ani-governance/blob/63849fc4cde38b879184a8fea4a6f539e60063e1/docs/evidence/gov-acc-v12-01/data-layer.md)、[owner 接入指南](../contracts/gpu-owner-integration-guide.md)及[接口登记](../interface-integration-register.md)。操作步骤不等于已经执行；实际版本、CI例外和已执行的清理见[收尾记录](https://github.com/zhangzhe-ctrl/ani-governance/blob/63849fc4cde38b879184a8fea4a6f539e60063e1/docs/evidence/gov-acc-v12-01/release/closeout.md)。本批没有生产部署或真实 GPU 验收。
 
 ## 1. 版本与当前运行边界

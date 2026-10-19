@@ -11,6 +11,7 @@ import (
 	http "github.com/go-kratos/kratos/v2/transport/http"
 	binding "github.com/go-kratos/kratos/v2/transport/http/binding"
 	v1 "go-wind-admin/api/gen/go/catalog/service/v1"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -22,24 +23,34 @@ const _ = http.SupportPackageIsVersion1
 
 const OperationModelServiceCreateModel = "/admin.service.v1.ModelService/CreateModel"
 const OperationModelServiceCreateModelVersion = "/admin.service.v1.ModelService/CreateModelVersion"
+const OperationModelServiceDeleteModel = "/admin.service.v1.ModelService/DeleteModel"
+const OperationModelServiceDeleteModelVersion = "/admin.service.v1.ModelService/DeleteModelVersion"
 const OperationModelServiceGetImportTask = "/admin.service.v1.ModelService/GetImportTask"
 const OperationModelServiceGetModel = "/admin.service.v1.ModelService/GetModel"
+const OperationModelServiceGetModelDownloadURL = "/admin.service.v1.ModelService/GetModelDownloadURL"
 const OperationModelServiceGetModelVersion = "/admin.service.v1.ModelService/GetModelVersion"
+const OperationModelServiceGetUploadURL = "/admin.service.v1.ModelService/GetUploadURL"
 const OperationModelServiceImportModel = "/admin.service.v1.ModelService/ImportModel"
 const OperationModelServiceListModelVersions = "/admin.service.v1.ModelService/ListModelVersions"
 const OperationModelServiceListModels = "/admin.service.v1.ModelService/ListModels"
 const OperationModelServiceRetryImportTask = "/admin.service.v1.ModelService/RetryImportTask"
+const OperationModelServiceSearchExternalModels = "/admin.service.v1.ModelService/SearchExternalModels"
 
 type ModelServiceHTTPServer interface {
 	CreateModel(context.Context, *v1.CreateModelRequest) (*v1.CreateModelResponse, error)
 	CreateModelVersion(context.Context, *v1.CreateModelVersionRequest) (*v1.CreateModelVersionResponse, error)
+	DeleteModel(context.Context, *v1.DeleteModelRequest) (*emptypb.Empty, error)
+	DeleteModelVersion(context.Context, *v1.DeleteModelVersionRequest) (*emptypb.Empty, error)
 	GetImportTask(context.Context, *v1.GetImportTaskRequest) (*v1.GetImportTaskResponse, error)
 	GetModel(context.Context, *v1.GetModelRequest) (*v1.GetModelResponse, error)
+	GetModelDownloadURL(context.Context, *v1.GetModelDownloadURLRequest) (*v1.GetModelDownloadURLResponse, error)
 	GetModelVersion(context.Context, *v1.GetModelVersionRequest) (*v1.GetModelVersionResponse, error)
+	GetUploadURL(context.Context, *v1.GetUploadURLRequest) (*v1.GetUploadURLResponse, error)
 	ImportModel(context.Context, *v1.ImportModelRequest) (*v1.ImportModelResponse, error)
 	ListModelVersions(context.Context, *v1.ListModelVersionsRequest) (*v1.ListModelVersionsResponse, error)
 	ListModels(context.Context, *v1.ListModelsRequest) (*v1.ListModelsResponse, error)
 	RetryImportTask(context.Context, *v1.RetryImportTaskRequest) (*v1.RetryImportTaskResponse, error)
+	SearchExternalModels(context.Context, *v1.SearchExternalModelsRequest) (*v1.SearchExternalModelsResponse, error)
 }
 
 func RegisterModelServiceHTTPServer(s *http.Server, srv ModelServiceHTTPServer) {
@@ -47,12 +58,17 @@ func RegisterModelServiceHTTPServer(s *http.Server, srv ModelServiceHTTPServer) 
 	r.POST("/api/v1/models", _ModelService_CreateModel0_HTTP_Handler(srv))
 	r.GET("/api/v1/models/{model_id}", _ModelService_GetModel0_HTTP_Handler(srv))
 	r.GET("/api/v1/models", _ModelService_ListModels0_HTTP_Handler(srv))
+	r.GET("/api/v1/models:search", _ModelService_SearchExternalModels0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/models/{model_id}", _ModelService_DeleteModel0_HTTP_Handler(srv))
 	r.POST("/api/v1/model-versions", _ModelService_CreateModelVersion0_HTTP_Handler(srv))
 	r.GET("/api/v1/model-versions/{model_version_id}", _ModelService_GetModelVersion0_HTTP_Handler(srv))
 	r.GET("/api/v1/models/{model_id}/versions", _ModelService_ListModelVersions0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/model-versions/{model_version_id}", _ModelService_DeleteModelVersion0_HTTP_Handler(srv))
+	r.POST("/api/v1/models/{model_id}/upload-url", _ModelService_GetUploadURL0_HTTP_Handler(srv))
 	r.POST("/api/v1/models:import", _ModelService_ImportModel0_HTTP_Handler(srv))
 	r.GET("/api/v1/models/import-tasks/{task_id}", _ModelService_GetImportTask0_HTTP_Handler(srv))
 	r.POST("/api/v1/models/import-tasks/{task_id}:retry", _ModelService_RetryImportTask0_HTTP_Handler(srv))
+	r.GET("/api/v1/model-versions/{model_version_id}/download-url", _ModelService_GetModelDownloadURL0_HTTP_Handler(srv))
 }
 
 func _ModelService_CreateModel0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx http.Context) error {
@@ -114,6 +130,47 @@ func _ModelService_ListModels0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx
 			return err
 		}
 		reply := out.(*v1.ListModelsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelService_SearchExternalModels0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.SearchExternalModelsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelServiceSearchExternalModels)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SearchExternalModels(ctx, req.(*v1.SearchExternalModelsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SearchExternalModelsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelService_DeleteModel0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteModelRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelServiceDeleteModel)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteModel(ctx, req.(*v1.DeleteModelRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
 		return ctx.Result(200, reply)
 	}
 }
@@ -180,6 +237,53 @@ func _ModelService_ListModelVersions0_HTTP_Handler(srv ModelServiceHTTPServer) f
 			return err
 		}
 		reply := out.(*v1.ListModelVersionsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelService_DeleteModelVersion0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteModelVersionRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelServiceDeleteModelVersion)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteModelVersion(ctx, req.(*v1.DeleteModelVersionRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelService_GetUploadURL0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetUploadURLRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelServiceGetUploadURL)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetUploadURL(ctx, req.(*v1.GetUploadURLRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetUploadURLResponse)
 		return ctx.Result(200, reply)
 	}
 }
@@ -253,16 +357,43 @@ func _ModelService_RetryImportTask0_HTTP_Handler(srv ModelServiceHTTPServer) fun
 	}
 }
 
+func _ModelService_GetModelDownloadURL0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetModelDownloadURLRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelServiceGetModelDownloadURL)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetModelDownloadURL(ctx, req.(*v1.GetModelDownloadURLRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetModelDownloadURLResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 type ModelServiceHTTPClient interface {
 	CreateModel(ctx context.Context, req *v1.CreateModelRequest, opts ...http.CallOption) (rsp *v1.CreateModelResponse, err error)
 	CreateModelVersion(ctx context.Context, req *v1.CreateModelVersionRequest, opts ...http.CallOption) (rsp *v1.CreateModelVersionResponse, err error)
+	DeleteModel(ctx context.Context, req *v1.DeleteModelRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	DeleteModelVersion(ctx context.Context, req *v1.DeleteModelVersionRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	GetImportTask(ctx context.Context, req *v1.GetImportTaskRequest, opts ...http.CallOption) (rsp *v1.GetImportTaskResponse, err error)
 	GetModel(ctx context.Context, req *v1.GetModelRequest, opts ...http.CallOption) (rsp *v1.GetModelResponse, err error)
+	GetModelDownloadURL(ctx context.Context, req *v1.GetModelDownloadURLRequest, opts ...http.CallOption) (rsp *v1.GetModelDownloadURLResponse, err error)
 	GetModelVersion(ctx context.Context, req *v1.GetModelVersionRequest, opts ...http.CallOption) (rsp *v1.GetModelVersionResponse, err error)
+	GetUploadURL(ctx context.Context, req *v1.GetUploadURLRequest, opts ...http.CallOption) (rsp *v1.GetUploadURLResponse, err error)
 	ImportModel(ctx context.Context, req *v1.ImportModelRequest, opts ...http.CallOption) (rsp *v1.ImportModelResponse, err error)
 	ListModelVersions(ctx context.Context, req *v1.ListModelVersionsRequest, opts ...http.CallOption) (rsp *v1.ListModelVersionsResponse, err error)
 	ListModels(ctx context.Context, req *v1.ListModelsRequest, opts ...http.CallOption) (rsp *v1.ListModelsResponse, err error)
 	RetryImportTask(ctx context.Context, req *v1.RetryImportTaskRequest, opts ...http.CallOption) (rsp *v1.RetryImportTaskResponse, err error)
+	SearchExternalModels(ctx context.Context, req *v1.SearchExternalModelsRequest, opts ...http.CallOption) (rsp *v1.SearchExternalModelsResponse, err error)
 }
 
 type ModelServiceHTTPClientImpl struct {
@@ -299,6 +430,32 @@ func (c *ModelServiceHTTPClientImpl) CreateModelVersion(ctx context.Context, in 
 	return &out, nil
 }
 
+func (c *ModelServiceHTTPClientImpl) DeleteModel(ctx context.Context, in *v1.DeleteModelRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/models/{model_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelServiceDeleteModel))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelServiceHTTPClientImpl) DeleteModelVersion(ctx context.Context, in *v1.DeleteModelVersionRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/model-versions/{model_version_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelServiceDeleteModelVersion))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *ModelServiceHTTPClientImpl) GetImportTask(ctx context.Context, in *v1.GetImportTaskRequest, opts ...http.CallOption) (*v1.GetImportTaskResponse, error) {
 	var out v1.GetImportTaskResponse
 	pattern := "/api/v1/models/import-tasks/{task_id}"
@@ -325,6 +482,19 @@ func (c *ModelServiceHTTPClientImpl) GetModel(ctx context.Context, in *v1.GetMod
 	return &out, nil
 }
 
+func (c *ModelServiceHTTPClientImpl) GetModelDownloadURL(ctx context.Context, in *v1.GetModelDownloadURLRequest, opts ...http.CallOption) (*v1.GetModelDownloadURLResponse, error) {
+	var out v1.GetModelDownloadURLResponse
+	pattern := "/api/v1/model-versions/{model_version_id}/download-url"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelServiceGetModelDownloadURL))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *ModelServiceHTTPClientImpl) GetModelVersion(ctx context.Context, in *v1.GetModelVersionRequest, opts ...http.CallOption) (*v1.GetModelVersionResponse, error) {
 	var out v1.GetModelVersionResponse
 	pattern := "/api/v1/model-versions/{model_version_id}"
@@ -332,6 +502,19 @@ func (c *ModelServiceHTTPClientImpl) GetModelVersion(ctx context.Context, in *v1
 	opts = append(opts, http.Operation(OperationModelServiceGetModelVersion))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelServiceHTTPClientImpl) GetUploadURL(ctx context.Context, in *v1.GetUploadURLRequest, opts ...http.CallOption) (*v1.GetUploadURLResponse, error) {
+	var out v1.GetUploadURLResponse
+	pattern := "/api/v1/models/{model_id}/upload-url"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationModelServiceGetUploadURL))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -384,6 +567,19 @@ func (c *ModelServiceHTTPClientImpl) RetryImportTask(ctx context.Context, in *v1
 	opts = append(opts, http.Operation(OperationModelServiceRetryImportTask))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelServiceHTTPClientImpl) SearchExternalModels(ctx context.Context, in *v1.SearchExternalModelsRequest, opts ...http.CallOption) (*v1.SearchExternalModelsResponse, error) {
+	var out v1.SearchExternalModelsResponse
+	pattern := "/api/v1/models:search"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelServiceSearchExternalModels))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

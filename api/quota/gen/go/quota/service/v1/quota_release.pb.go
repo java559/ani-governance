@@ -71,6 +71,55 @@ func (ReleaseReason) EnumDescriptor() ([]byte, []int) {
 	return file_quota_service_v1_quota_release_proto_rawDescGZIP(), []int{0}
 }
 
+type ResourceReleaseStatus int32
+
+const (
+	ResourceReleaseStatus_RESOURCE_RELEASE_STATUS_UNSPECIFIED ResourceReleaseStatus = 0
+	ResourceReleaseStatus_APPLIED                             ResourceReleaseStatus = 1
+	ResourceReleaseStatus_ALREADY_APPLIED                     ResourceReleaseStatus = 2
+)
+
+// Enum value maps for ResourceReleaseStatus.
+var (
+	ResourceReleaseStatus_name = map[int32]string{
+		0: "RESOURCE_RELEASE_STATUS_UNSPECIFIED",
+		1: "APPLIED",
+		2: "ALREADY_APPLIED",
+	}
+	ResourceReleaseStatus_value = map[string]int32{
+		"RESOURCE_RELEASE_STATUS_UNSPECIFIED": 0,
+		"APPLIED":                             1,
+		"ALREADY_APPLIED":                     2,
+	}
+)
+
+func (x ResourceReleaseStatus) Enum() *ResourceReleaseStatus {
+	p := new(ResourceReleaseStatus)
+	*p = x
+	return p
+}
+
+func (x ResourceReleaseStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ResourceReleaseStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_quota_service_v1_quota_release_proto_enumTypes[1].Descriptor()
+}
+
+func (ResourceReleaseStatus) Type() protoreflect.EnumType {
+	return &file_quota_service_v1_quota_release_proto_enumTypes[1]
+}
+
+func (x ResourceReleaseStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ResourceReleaseStatus.Descriptor instead.
+func (ResourceReleaseStatus) EnumDescriptor() ([]byte, []int) {
+	return file_quota_service_v1_quota_release_proto_rawDescGZIP(), []int{1}
+}
+
 // 单笔释放项：released_total 是该 charge 自创建以来累计可退还数量，
 // 不是本次随意扣减；0 允许作为 no-op。
 type QuotaReleaseItem struct {
@@ -358,6 +407,143 @@ func (x *ReportQuotaReleaseResponse) GetItems() []*QuotaReleaseResult {
 	return nil
 }
 
+// 完整释放只携带稳定事实引用，调用者身份来自受信 mTLS。
+type ReportResourceReleasedRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ReleaseEventId    string                 `protobuf:"bytes,1,opt,name=release_event_id,json=releaseEventId,proto3" json:"release_event_id,omitempty"`
+	CreateOperationId string                 `protobuf:"bytes,2,opt,name=create_operation_id,json=createOperationId,proto3" json:"create_operation_id,omitempty"`
+	ResourceId        string                 `protobuf:"bytes,3,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	Reason            ReleaseReason          `protobuf:"varint,4,opt,name=reason,proto3,enum=quota.service.v1.ReleaseReason" json:"reason,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ReportResourceReleasedRequest) Reset() {
+	*x = ReportResourceReleasedRequest{}
+	mi := &file_quota_service_v1_quota_release_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportResourceReleasedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportResourceReleasedRequest) ProtoMessage() {}
+
+func (x *ReportResourceReleasedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quota_service_v1_quota_release_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportResourceReleasedRequest.ProtoReflect.Descriptor instead.
+func (*ReportResourceReleasedRequest) Descriptor() ([]byte, []int) {
+	return file_quota_service_v1_quota_release_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ReportResourceReleasedRequest) GetReleaseEventId() string {
+	if x != nil {
+		return x.ReleaseEventId
+	}
+	return ""
+}
+
+func (x *ReportResourceReleasedRequest) GetCreateOperationId() string {
+	if x != nil {
+		return x.CreateOperationId
+	}
+	return ""
+}
+
+func (x *ReportResourceReleasedRequest) GetResourceId() string {
+	if x != nil {
+		return x.ResourceId
+	}
+	return ""
+}
+
+func (x *ReportResourceReleasedRequest) GetReason() ReleaseReason {
+	if x != nil {
+		return x.Reason
+	}
+	return ReleaseReason_RELEASE_REASON_UNSPECIFIED
+}
+
+type ReportResourceReleasedResponse struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ReleaseEventId    string                 `protobuf:"bytes,1,opt,name=release_event_id,json=releaseEventId,proto3" json:"release_event_id,omitempty"`
+	CreateOperationId string                 `protobuf:"bytes,2,opt,name=create_operation_id,json=createOperationId,proto3" json:"create_operation_id,omitempty"`
+	ResourceId        string                 `protobuf:"bytes,3,opt,name=resource_id,json=resourceId,proto3" json:"resource_id,omitempty"`
+	Status            ResourceReleaseStatus  `protobuf:"varint,4,opt,name=status,proto3,enum=quota.service.v1.ResourceReleaseStatus" json:"status,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ReportResourceReleasedResponse) Reset() {
+	*x = ReportResourceReleasedResponse{}
+	mi := &file_quota_service_v1_quota_release_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportResourceReleasedResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportResourceReleasedResponse) ProtoMessage() {}
+
+func (x *ReportResourceReleasedResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quota_service_v1_quota_release_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportResourceReleasedResponse.ProtoReflect.Descriptor instead.
+func (*ReportResourceReleasedResponse) Descriptor() ([]byte, []int) {
+	return file_quota_service_v1_quota_release_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ReportResourceReleasedResponse) GetReleaseEventId() string {
+	if x != nil {
+		return x.ReleaseEventId
+	}
+	return ""
+}
+
+func (x *ReportResourceReleasedResponse) GetCreateOperationId() string {
+	if x != nil {
+		return x.CreateOperationId
+	}
+	return ""
+}
+
+func (x *ReportResourceReleasedResponse) GetResourceId() string {
+	if x != nil {
+		return x.ResourceId
+	}
+	return ""
+}
+
+func (x *ReportResourceReleasedResponse) GetStatus() ResourceReleaseStatus {
+	if x != nil {
+		return x.Status
+	}
+	return ResourceReleaseStatus_RESOURCE_RELEASE_STATUS_UNSPECIFIED
+}
+
 var File_quota_service_v1_quota_release_proto protoreflect.FileDescriptor
 
 const file_quota_service_v1_quota_release_proto_rawDesc = "" +
@@ -382,12 +568,29 @@ const file_quota_service_v1_quota_release_proto_rawDesc = "" +
 	"\rapplied_delta\x18\x02 \x01(\x03R\fappliedDelta\x12%\n" +
 	"\x0ereleased_total\x18\x03 \x01(\x03R\rreleasedTotal\"X\n" +
 	"\x1aReportQuotaReleaseResponse\x12:\n" +
-	"\x05items\x18\x01 \x03(\v2$.quota.service.v1.QuotaReleaseResultR\x05items*[\n" +
+	"\x05items\x18\x01 \x03(\v2$.quota.service.v1.QuotaReleaseResultR\x05items\"\xd3\x01\n" +
+	"\x1dReportResourceReleasedRequest\x12(\n" +
+	"\x10release_event_id\x18\x01 \x01(\tR\x0ereleaseEventId\x12.\n" +
+	"\x13create_operation_id\x18\x02 \x01(\tR\x11createOperationId\x12\x1f\n" +
+	"\vresource_id\x18\x03 \x01(\tR\n" +
+	"resourceId\x127\n" +
+	"\x06reason\x18\x04 \x01(\x0e2\x1f.quota.service.v1.ReleaseReasonR\x06reason\"\xdc\x01\n" +
+	"\x1eReportResourceReleasedResponse\x12(\n" +
+	"\x10release_event_id\x18\x01 \x01(\tR\x0ereleaseEventId\x12.\n" +
+	"\x13create_operation_id\x18\x02 \x01(\tR\x11createOperationId\x12\x1f\n" +
+	"\vresource_id\x18\x03 \x01(\tR\n" +
+	"resourceId\x12?\n" +
+	"\x06status\x18\x04 \x01(\x0e2'.quota.service.v1.ResourceReleaseStatusR\x06status*[\n" +
 	"\rReleaseReason\x12\x1e\n" +
 	"\x1aRELEASE_REASON_UNSPECIFIED\x10\x00\x12\x13\n" +
 	"\x0fABORTED_CLEANED\x10\x01\x12\x15\n" +
-	"\x11RESOURCE_RELEASED\x10\x022\x86\x01\n" +
-	"\x13QuotaReleaseService\x12o\n" +
+	"\x11RESOURCE_RELEASED\x10\x02*b\n" +
+	"\x15ResourceReleaseStatus\x12'\n" +
+	"#RESOURCE_RELEASE_STATUS_UNSPECIFIED\x10\x00\x12\v\n" +
+	"\aAPPLIED\x10\x01\x12\x13\n" +
+	"\x0fALREADY_APPLIED\x10\x022\x83\x02\n" +
+	"\x13QuotaReleaseService\x12{\n" +
+	"\x16ReportResourceReleased\x12/.quota.service.v1.ReportResourceReleasedRequest\x1a0.quota.service.v1.ReportResourceReleasedResponse\x12o\n" +
 	"\x12ReportQuotaRelease\x12+.quota.service.v1.ReportQuotaReleaseRequest\x1a,.quota.service.v1.ReportQuotaReleaseResponseBSZQgithub.com/zhangzhe-ctrl/ani-governance/api/quota/gen/go/quota/service/v1;quotapbb\x06proto3"
 
 var (
@@ -402,28 +605,35 @@ func file_quota_service_v1_quota_release_proto_rawDescGZIP() []byte {
 	return file_quota_service_v1_quota_release_proto_rawDescData
 }
 
-var file_quota_service_v1_quota_release_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_quota_service_v1_quota_release_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_quota_service_v1_quota_release_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_quota_service_v1_quota_release_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_quota_service_v1_quota_release_proto_goTypes = []any{
-	(ReleaseReason)(0),                 // 0: quota.service.v1.ReleaseReason
-	(*QuotaReleaseItem)(nil),           // 1: quota.service.v1.QuotaReleaseItem
-	(*QuotaResourceRef)(nil),           // 2: quota.service.v1.QuotaResourceRef
-	(*ReportQuotaReleaseRequest)(nil),  // 3: quota.service.v1.ReportQuotaReleaseRequest
-	(*QuotaReleaseResult)(nil),         // 4: quota.service.v1.QuotaReleaseResult
-	(*ReportQuotaReleaseResponse)(nil), // 5: quota.service.v1.ReportQuotaReleaseResponse
+	(ReleaseReason)(0),                     // 0: quota.service.v1.ReleaseReason
+	(ResourceReleaseStatus)(0),             // 1: quota.service.v1.ResourceReleaseStatus
+	(*QuotaReleaseItem)(nil),               // 2: quota.service.v1.QuotaReleaseItem
+	(*QuotaResourceRef)(nil),               // 3: quota.service.v1.QuotaResourceRef
+	(*ReportQuotaReleaseRequest)(nil),      // 4: quota.service.v1.ReportQuotaReleaseRequest
+	(*QuotaReleaseResult)(nil),             // 5: quota.service.v1.QuotaReleaseResult
+	(*ReportQuotaReleaseResponse)(nil),     // 6: quota.service.v1.ReportQuotaReleaseResponse
+	(*ReportResourceReleasedRequest)(nil),  // 7: quota.service.v1.ReportResourceReleasedRequest
+	(*ReportResourceReleasedResponse)(nil), // 8: quota.service.v1.ReportResourceReleasedResponse
 }
 var file_quota_service_v1_quota_release_proto_depIdxs = []int32{
-	1, // 0: quota.service.v1.ReportQuotaReleaseRequest.items:type_name -> quota.service.v1.QuotaReleaseItem
+	2, // 0: quota.service.v1.ReportQuotaReleaseRequest.items:type_name -> quota.service.v1.QuotaReleaseItem
 	0, // 1: quota.service.v1.ReportQuotaReleaseRequest.reason:type_name -> quota.service.v1.ReleaseReason
-	2, // 2: quota.service.v1.ReportQuotaReleaseRequest.resource_refs:type_name -> quota.service.v1.QuotaResourceRef
-	4, // 3: quota.service.v1.ReportQuotaReleaseResponse.items:type_name -> quota.service.v1.QuotaReleaseResult
-	3, // 4: quota.service.v1.QuotaReleaseService.ReportQuotaRelease:input_type -> quota.service.v1.ReportQuotaReleaseRequest
-	5, // 5: quota.service.v1.QuotaReleaseService.ReportQuotaRelease:output_type -> quota.service.v1.ReportQuotaReleaseResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 2: quota.service.v1.ReportQuotaReleaseRequest.resource_refs:type_name -> quota.service.v1.QuotaResourceRef
+	5, // 3: quota.service.v1.ReportQuotaReleaseResponse.items:type_name -> quota.service.v1.QuotaReleaseResult
+	0, // 4: quota.service.v1.ReportResourceReleasedRequest.reason:type_name -> quota.service.v1.ReleaseReason
+	1, // 5: quota.service.v1.ReportResourceReleasedResponse.status:type_name -> quota.service.v1.ResourceReleaseStatus
+	7, // 6: quota.service.v1.QuotaReleaseService.ReportResourceReleased:input_type -> quota.service.v1.ReportResourceReleasedRequest
+	4, // 7: quota.service.v1.QuotaReleaseService.ReportQuotaRelease:input_type -> quota.service.v1.ReportQuotaReleaseRequest
+	8, // 8: quota.service.v1.QuotaReleaseService.ReportResourceReleased:output_type -> quota.service.v1.ReportResourceReleasedResponse
+	6, // 9: quota.service.v1.QuotaReleaseService.ReportQuotaRelease:output_type -> quota.service.v1.ReportQuotaReleaseResponse
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_quota_service_v1_quota_release_proto_init() }
@@ -436,8 +646,8 @@ func file_quota_service_v1_quota_release_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_quota_service_v1_quota_release_proto_rawDesc), len(file_quota_service_v1_quota_release_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   5,
+			NumEnums:      2,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

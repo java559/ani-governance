@@ -11,6 +11,7 @@ import (
 	kerrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
+	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
@@ -196,10 +197,15 @@ func deriveGpuProjection(op *ent.QuotaOperation, charges []*ent.QuotaCharge, has
 			}
 		}
 	}
-	if _, err = GpuChargeSubset(c, refs); err != nil {
+	if err = ValidateGpuCharges(c, refs); err != nil {
 		return nil, err
 	}
-	p := &acc.GpuUsageProjection{Ref: &acc.GpuUsageRef{TenantId: op.ResourceTenantID, OwnerService: op.OwnerService, ResourceId: op.ResourceID, CreateOperationId: op.OperationID}, Revision: 1, State: acc.UsageState_DECLARED, Plan: c.GpuPlan, SourceOperationCreatedAt: op.CreatedAt.UTC().Format(time.RFC3339Nano)}
+	business, err := res.DecodeBusinessPayload(c.BusinessPayload)
+	if err != nil {
+		return nil, err
+	}
+	g, d := business.GpuExecution, business.GpuDisplay
+	p := &acc.GpuUsageProjection{Ref: &acc.GpuUsageRef{TenantId: op.ResourceTenantID, OwnerService: op.OwnerService, ResourceId: op.ResourceID, CreateOperationId: op.OperationID}, Revision: 1, State: acc.UsageState_DECLARED, ProfileId: d.ProfileId, ProfileVersion: d.ProfileVersion, GroupId: g.NodeSelector["accelerator.ani.io/supply-group"], BaselineId: g.NodeSelector["accelerator.ani.io/baseline-id"], ClusterId: business.ClusterId, ContainerName: c.GpuRequest.ContainerName, ExecutionDigest: g.ExecutionDigest, SourceOperationCreatedAt: op.CreatedAt.UTC().Format(time.RFC3339Nano)}
 	suffix := "accepted"
 	if op.DispatchState == quotaoperation.DispatchStateCanceledUnsent {
 		if op.AttemptCount != 0 || !allEnded {

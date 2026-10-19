@@ -125,7 +125,7 @@ func (r *ConfigRepo) init() {
 }
 
 func (r *ConfigRepo) Count(ctx context.Context, req *paginationV1.PagingRequest) (*configV1.CountConfigResponse, error) {
-	builder := r.entClient.Client().SysConfig.Query()
+	builder := r.entClient.Client().SysConfig.Query().Where(genericConfigPredicate())
 
 	whereSelectors, _, _ := r.repository.BuildListSelectorWithPaging(builder, req)
 	if len(whereSelectors) != 0 {
@@ -148,7 +148,7 @@ func (r *ConfigRepo) List(ctx context.Context, req *paginationV1.PagingRequest) 
 		return nil, adminV1.ErrorBadRequest("invalid parameter")
 	}
 
-	builder := r.entClient.Client().SysConfig.Query()
+	builder := r.entClient.Client().SysConfig.Query().Where(genericConfigPredicate())
 
 	ret, err := r.repository.ListWithPaging(ctx, builder, builder.Clone(), req)
 	if err != nil {
@@ -180,7 +180,7 @@ func (r *ConfigRepo) Get(ctx context.Context, req *configV1.GetConfigRequest) (*
 		return nil, adminV1.ErrorBadRequest("invalid parameter")
 	}
 
-	builder := r.entClient.Client().SysConfig.Query()
+	builder := r.entClient.Client().SysConfig.Query().Where(genericConfigPredicate())
 
 	var whereCond []func(s *sql.Selector)
 	switch req.QueryBy.(type) {
@@ -202,6 +202,9 @@ func (r *ConfigRepo) Create(ctx context.Context, req *configV1.CreateConfigReque
 		return adminV1.ErrorBadRequest("invalid parameter")
 	}
 
+	if isInstanceSchedulingKey(req.Data.GetKey()) {
+		return adminV1.ErrorForbidden("managed scheduling settings require their dedicated interface")
+	}
 	builder := r.newConfigCreate(req.Data)
 
 	if err := builder.Exec(ctx); err != nil {
@@ -247,6 +250,9 @@ func (r *ConfigRepo) Update(ctx context.Context, req *configV1.UpdateConfigReque
 		return adminV1.ErrorBadRequest("id is required")
 	}
 
+	if isInstanceSchedulingKey(req.Data.GetKey()) {
+		return adminV1.ErrorForbidden("managed scheduling settings require their dedicated interface")
+	}
 	// 如果不存在则创建
 	if req.GetAllowMissing() {
 		exist, err := r.IsExist(ctx, req.GetId())
@@ -265,10 +271,15 @@ func (r *ConfigRepo) Update(ctx context.Context, req *configV1.UpdateConfigReque
 	// 必须在 UpdateX 前取旧键、在 UpdateX 前快照新键（FilterByFieldMask 会在调用中清掉不在掩码里的字段）。
 	newKey := req.Data.GetKey()
 	var oldKey string
-	if old, err := r.entClient.Client().SysConfig.Query().
-		Where(sysconfig.IDEQ(req.GetId())).
-		Only(ctx); err == nil && old != nil {
+	old, readErr := r.entClient.Client().SysConfig.Query().Where(sysconfig.IDEQ(req.GetId())).Only(ctx)
+	if readErr != nil && !ent.IsNotFound(readErr) {
+		return adminV1.ErrorInternalServerError("query config before update failed").WithCause(readErr)
+	}
+	if old != nil {
 		oldKey = derefStrP(old.Key)
+	}
+	if isInstanceSchedulingKey(oldKey) {
+		return adminV1.ErrorForbidden("managed scheduling settings require their dedicated interface")
 	}
 
 	builder := r.entClient.Client().SysConfig.Update()
@@ -322,6 +333,9 @@ func (r *ConfigRepo) Delete(ctx context.Context, req *configV1.DeleteConfigReque
 		}
 		r.log.Errorf(ctx, "query config before delete failed: %s", err.Error())
 		return adminV1.ErrorInternalServerError("query config failed")
+	}
+	if isInstanceSchedulingKey(derefStrP(entity.Key)) {
+		return adminV1.ErrorForbidden("managed scheduling settings require their dedicated interface")
 	}
 	if entity.IsBuiltIn != nil && *entity.IsBuiltIn {
 		return adminV1.ErrorBadRequest("built-in config cannot be deleted")

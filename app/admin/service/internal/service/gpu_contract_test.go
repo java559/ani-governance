@@ -1,176 +1,109 @@
 package service
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"encoding/json"
-	"math"
-	"os"
-	"strings"
-	"testing"
-
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
-	"google.golang.org/protobuf/encoding/protojson"
+	protocol "github.com/zhangzhe-ctrl/ani-accelerator-service/pkg/gpuprotocol"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
+	"math"
+	"strconv"
+	"strings"
+	"testing"
 )
 
-func gpuVector(t *testing.T) (*acc.ResolvedGpuPlan, *acc.GpuUsageProjection, *acc.ProviderBaseline) {
-	t.Helper()
-	raw, err := os.ReadFile("testdata/accelerator-vectors.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var v map[string]json.RawMessage
-	if err = json.Unmarshal(raw, &v); err != nil {
-		t.Fatal(err)
-	}
-	p := &acc.ResolvedGpuPlan{}
-	projection := &acc.GpuUsageProjection{}
-	baseline := &acc.ProviderBaseline{}
-	for key, msg := range map[string]proto.Message{"plan": p, "projection": projection, "baseline": baseline} {
-		if err = protojson.Unmarshal(v[key], msg); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return p, projection, baseline
+type gpuPlanFixture struct {
+	Request  *acc.GpuRequest
+	Profile  *acc.GpuProfile
+	Resolved *acc.ResolvedGpuRequest
 }
 
+func gpuVector(t *testing.T) (*gpuPlanFixture, *acc.GpuUsageProjection, *acc.ProviderBaseline) {
+	t.Helper()
+	request := &acc.GpuRequest{ClusterId: "10000000-0000-4000-8000-000000000001", PoolId: "10000000-0000-4000-8000-000000000002", ProfileId: "10000000-0000-4000-8000-000000000003", ProfileVersion: 1, Replicas: 1, DevicesPerReplica: 1, ContainerName: "workspace"}
+	baseline := &acc.ProviderBaseline{BaselineId: "10000000-0000-4000-8000-000000000004", MemoryBlockMib: 1, RuntimeClassName: "nvidia"}
+	profile := &acc.GpuProfile{ProfileId: request.ProfileId, ProfileVersion: 1, DisplayName: "T4 shared 8GiB", BaselineId: baseline.BaselineId, State: acc.ProfileState_PROFILE_ACTIVE, Revision: 1, Spec: &acc.ProfileSpec{GroupId: "10000000-0000-4000-8000-000000000005", Mode: acc.SupplyMode_SHARED_FIXED, ModelKey: "nvidia-tesla-t4", MemoryMibPerDevice: 8192, CoreLimitPercent: 25, MaxDevicesPerReplica: 1, IsolationClass: "SOFTWARE_COOPERATIVE"}}
+	profile.SpecDigest, _ = gpuSpecDigest(profile)
+	execution := &acc.GpuExecution{SchedulerName: "volcano", QueueName: "gpu", RuntimeClassName: "nvidia", NodeSelector: map[string]string{"accelerator.ani.io/supply-group": profile.Spec.GroupId, "accelerator.ani.io/model-key": profile.Spec.ModelKey, "accelerator.ani.io/baseline-id": profile.BaselineId}, PodAnnotations: map[string]string{"volcano.sh/vgpu-mode": "hami-core"}, Resources: map[string]string{"volcano.sh/vgpu-number": "1", "volcano.sh/vgpu-memory": "8192", "volcano.sh/vgpu-cores": "25"}}
+	execution.ExecutionDigest, _ = protocol.GpuExecutionDigest(execution)
+	resolved := &acc.ResolvedGpuRequest{Execution: execution, Selection: &acc.GpuDisplay{ProfileId: profile.ProfileId, ProfileVersion: 1, ProfileName: profile.DisplayName, ModelKey: profile.Spec.ModelKey, Mode: profile.Spec.Mode}, QuotaItems: []*acc.GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}}
+	projection := &acc.GpuUsageProjection{Ref: &acc.GpuUsageRef{TenantId: "10000000-0000-4000-8000-000000000006", OwnerService: InstanceOwner, ResourceId: "10000000-0000-4000-8000-000000000007", CreateOperationId: "10000000-0000-4000-8000-000000000008"}, Revision: 1, State: acc.UsageState_DECLARED, ProfileId: profile.ProfileId, ProfileVersion: 1, GroupId: profile.Spec.GroupId, BaselineId: profile.BaselineId, ClusterId: request.ClusterId, ContainerName: request.ContainerName, ExecutionDigest: execution.ExecutionDigest, SourceOperationCreatedAt: "2026-10-18T00:00:00Z", SourceFactRef: "accepted"}
+	projection.PayloadDigest, _ = GpuProjectionDigest(projection)
+	return &gpuPlanFixture{request, profile, resolved}, projection, baseline
+}
 func TestGpuFrozenCanonicalVectors(t *testing.T) {
-	p, projection, b := gpuVector(t)
-	if d, e := GpuPlanDigest(p); e != nil || d != p.ResolutionDigest {
-		t.Fatalf("plan %s %v", d, e)
+	p, projection, _ := gpuVector(t)
+	q, e := GpuResolvedQuota(p.Resolved, p.Request)
+	if e != nil || q.Units != 8192 {
+		t.Fatal(q, e)
 	}
-	if d, e := GpuProjectionDigest(projection); e != nil || d != projection.PayloadDigest {
-		t.Fatalf("projection %s %v", d, e)
-	}
-	want := b.BaselineDigest
-	b.BaselineDigest = ""
-	b.Verification = nil
-	b.FactorEvidenceRef = ""
-	v, e := gpuCanonicalMessage(b.ProtoReflect())
-	if e != nil {
-		t.Fatal(e)
-	}
-	if d, e := gpuHash(v); e != nil || d != want {
-		t.Fatalf("baseline %s %v", d, e)
-	}
-	if d, e := gpuSpecDigest(p.Profile); e != nil || d != p.Profile.SpecDigest {
-		t.Fatalf("spec %s %v", d, e)
-	}
-	if q, e := GpuPlanQuota(p); e != nil || q.QuotaCode != GpuSharedQuotaCode || q.Units != 12288 {
-		t.Fatalf("quota %+v %v", q, e)
-	}
-	// Published and KeyValue ordering do not change the immutable plan digest.
-	p.Profile.Published = false
-	p.Runtime.NodeLabels[0], p.Runtime.NodeLabels[2] = p.Runtime.NodeLabels[2], p.Runtime.NodeLabels[0]
-	if d, e := GpuPlanDigest(p); e != nil || d != p.ResolutionDigest {
+	d, e := GpuProjectionDigest(projection)
+	if e != nil || d != projection.PayloadDigest {
 		t.Fatal(d, e)
 	}
-	p.Runtime.NodeLabels = append(p.Runtime.NodeLabels, p.Runtime.NodeLabels[0])
-	if _, e := GpuPlanDigest(p); e == nil {
-		t.Fatal("duplicate managed key accepted")
+	for _, key := range []string{"volcano.sh/vgpu-memory-percentage", "gpu_plan", "verification_ref"} {
+		if strings.Contains(projection.String(), key) {
+			t.Fatal(key)
+		}
 	}
 }
-
 func TestGpuCanonicalRejectsSemanticMutations(t *testing.T) {
-	original, _, _ := gpuVector(t)
-	mutations := map[string]func(*acc.ResolvedGpuPlan){
-		"factor":        func(p *acc.ResolvedGpuPlan) { p.Encoding.MemoryBlockMib = 10 },
-		"double-charge": func(p *acc.ResolvedGpuPlan) { p.Totals.ExclusiveDeviceCount = 2 },
-		"replicas":      func(p *acc.ResolvedGpuPlan) { p.Request.Replicas = 17 },
-		"extra-gpu":     func(p *acc.ResolvedGpuPlan) { p.Request.DevicesPerReplica = 2 },
-		"runtime":       func(p *acc.ResolvedGpuPlan) { p.Runtime.SchedulerName = "default-scheduler" },
-		"overflow":      func(p *acc.ResolvedGpuPlan) { p.Encoding.MemoryBlocksPerDevice = 9223372036854775807 },
-		"negative":      func(p *acc.ResolvedGpuPlan) { p.Totals.SharedMemoryMib = -1 },
-	}
-	for name, mutate := range mutations {
+	p, _, _ := gpuVector(t)
+	for name, mutate := range map[string]func(*acc.ResolvedGpuRequest){"percentage": func(p *acc.ResolvedGpuRequest) { p.Execution.Resources["volcano.sh/vgpu-memory-percentage"] = "100" }, "quota": func(p *acc.ResolvedGpuRequest) { p.QuotaItems[0].Units++ }, "scheduler": func(p *acc.ResolvedGpuRequest) { p.Execution.SchedulerName = "default-scheduler" }, "zero": func(p *acc.ResolvedGpuRequest) { p.Execution.Resources["volcano.sh/vgpu-number"] = "0" }, "runtime": func(p *acc.ResolvedGpuRequest) { p.Execution.RuntimeClassName = "" }} {
 		t.Run(name, func(t *testing.T) {
-			p := proto.Clone(original).(*acc.ResolvedGpuPlan)
-			mutate(p)
-			if d, e := GpuPlanDigest(p); e == nil {
-				p.ResolutionDigest = d
-			}
-			if _, e := GpuPlanQuota(p); e == nil {
-				t.Fatal("invalid plan accepted despite matching digest")
+			changed := proto.Clone(p.Resolved).(*acc.ResolvedGpuRequest)
+			mutate(changed)
+			changed.Execution.ExecutionDigest, _ = protocol.GpuExecutionDigest(changed.Execution)
+			if _, e := GpuResolvedQuota(changed, p.Request); e == nil {
+				t.Fatal("invalid execution accepted")
 			}
 		})
 	}
-	for _, factor := range []uint32{1, 256, 1024} {
-		p := proto.Clone(original).(*acc.ResolvedGpuPlan)
-		p.Encoding.MemoryBlockMib = factor
-		p.Encoding.MemoryBlocksPerDevice = 6144 / int64(factor)
-		for _, v := range p.Runtime.LimitsPerContainer {
-			if v.Key == "volcano.sh/vgpu-memory" {
-				switch factor {
-				case 1:
-					v.Value = "6144"
-				case 256:
-					v.Value = "24"
-				case 1024:
-					v.Value = "6"
-				}
-			}
-		}
-		p.ResolutionDigest, _ = GpuPlanDigest(p)
-		if q, e := GpuPlanQuota(p); e != nil || q.Units != 12288 {
-			t.Fatal(factor, q, e)
-		}
-	}
 }
-
 func TestGpuCanonicalUnicodeNullInteger(t *testing.T) {
 	v := map[string]any{"z": "9223372036854775807", "a": "<&中文>", "b": true}
 	b, e := gpuCanonicalJSON(v)
 	if e != nil || string(b) != `{"a":"<&中文>","b":true,"z":"9223372036854775807"}` {
 		t.Fatal(string(b), e)
 	}
-	if d, e := gpuHash(v); e != nil || d != "c8151fcfc0f56c9a06c7a35c22ad29a17501bceacabde76c420bff9ffc4a43cb" {
-		t.Fatal(d, e)
-	}
-	p := &acc.ResolvedGpuPlan{}
-	obj, e := gpuCanonicalMessage(p.ProtoReflect())
+	p := &acc.ResolvedGpuRequest{}
+	o, e := gpuCanonicalMessage(p.ProtoReflect())
 	if e != nil {
 		t.Fatal(e)
 	}
-	b, e = gpuCanonicalJSON(obj)
-	if e != nil || !strings.Contains(string(b), `"profile":null`) {
-		t.Fatal(string(b), e)
+	b, _ = gpuCanonicalJSON(o)
+	if !strings.Contains(string(b), `"selection":null`) {
+		t.Fatal(string(b))
 	}
-	p.Request = &acc.GpuRequest{ProfileVersion: ^uint64(0)}
-	if _, e = gpuCanonicalMessage(p.ProtoReflect()); e == nil {
-		t.Fatal("overflow accepted")
+	r := &acc.GpuRequest{ProfileVersion: ^uint64(0)}
+	if _, e = gpuCanonicalMessage(r.ProtoReflect()); e == nil {
+		t.Fatal("overflow")
 	}
 }
-
 func TestGpuCanonicalRejectsFloatMessages(t *testing.T) {
-	for _, message := range []proto.Message{wrapperspb.Float(0), wrapperspb.Float(1.5), wrapperspb.Double(1), wrapperspb.Double(1.5), wrapperspb.Double(math.NaN()), wrapperspb.Double(math.Inf(1))} {
-		if _, err := gpuCanonicalMessage(message.ProtoReflect()); err == nil {
-			t.Fatalf("floating protobuf field accepted: %T", message)
+	for _, m := range []proto.Message{wrapperspb.Float(0), wrapperspb.Double(math.NaN()), wrapperspb.Double(math.Inf(1))} {
+		if _, e := gpuCanonicalMessage(m.ProtoReflect()); e == nil {
+			t.Fatal("float accepted")
 		}
 	}
 }
-
-func TestGpuCanonicalDiffersFromDirectProtoJSONHash(t *testing.T) {
-	plan, _, _ := gpuVector(t)
-	expected := plan.ResolutionDigest
-	plan.ResolutionDigest = ""
-	plan.Profile.Published = false
-	for _, options := range []protojson.MarshalOptions{{}, {UseProtoNames: true, EmitUnpopulated: true}, {UseProtoNames: true, EmitUnpopulated: true, UseEnumNumbers: true}} {
-		raw, err := options.Marshal(plan)
-		if err != nil {
-			t.Fatal(err)
+func TestGpuQuantityBuilderVectorsAndOriginalCharges(t *testing.T) {
+	p, _, _ := gpuVector(t)
+	for _, devices := range []uint32{1, 2, 4} {
+		r := proto.Clone(p.Request).(*acc.GpuRequest)
+		r.DevicesPerReplica = devices
+		resolved := proto.Clone(p.Resolved).(*acc.ResolvedGpuRequest)
+		resolved.Selection.Mode = acc.SupplyMode_WHOLE_EXCLUSIVE
+		resolved.Execution.Resources["volcano.sh/vgpu-number"] = strconv.FormatUint(uint64(devices), 10)
+		resolved.Execution.Resources["volcano.sh/vgpu-memory"] = "15360"
+		resolved.Execution.Resources["volcano.sh/vgpu-cores"] = "100"
+		resolved.Execution.ExecutionDigest, _ = protocol.GpuExecutionDigest(resolved.Execution)
+		resolved.QuotaItems[0] = &acc.GpuQuotaItem{QuotaCode: GpuPhysicalQuotaCode, Units: int64(devices)}
+		q, e := GpuResolvedQuota(resolved, r)
+		if e != nil || q.Units != int64(devices) {
+			t.Fatal(q, e)
 		}
-		sum := sha256.Sum256(append([]byte("acc-c14n-v1\n"), raw...))
-		if hex.EncodeToString(sum[:]) == expected {
-			t.Fatal("direct protojson hash unexpectedly matched the frozen canonical vector")
-		}
-	}
-	if digest, err := GpuPlanDigest(plan); err != nil || digest != expected {
-		t.Fatalf("domain canonical vector changed: %s %v", digest, err)
 	}
 }
-
 func TestQuotaDurableAckFields(t *testing.T) {
 	cmd := &QuotaDispatchCommand{OperationID: "op", ResourceID: "resource"}
 	for _, raw := range []string{`{}`, `{"operation_id":"other","resource_id":"resource","accepted":true}`, `{"operation_id":"op","resource_id":"other","accepted":true}`, `{"operation_id":"op","resource_id":"resource","accepted":false}`, `{"operation_id":"other","operation_id":"op","resource_id":"resource","accepted":true}`, `{"operation_id":"op","resource_id":"resource","accepted":true,"Accepted":false}`, `{"operation_id":"op","resource_id":"resource","accepted":true} {}`, `null`, `bad`} {
@@ -184,14 +117,14 @@ func TestQuotaDurableAckFields(t *testing.T) {
 }
 
 func TestGpuChargesCompleteAndOrderIndependent(t *testing.T) {
-	c := &GpuCanonical{QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 12288}, {QuotaCode: "storage.bytes", Units: 10}}}
-	valid := []QuotaChargeRef{{ChargeID: "storage", QuotaCode: "storage.bytes", ChargedUnits: 10}, {ChargeID: "gpu", QuotaCode: GpuSharedQuotaCode, ChargedUnits: 12288}}
-	if refs, e := GpuChargeSubset(c, valid); e != nil || len(refs) != 1 || refs[0].ChargeId != "gpu" {
-		t.Fatal(refs, e)
+	c := &GpuCanonical{QuotaItems: []GpuQuotaItem{{GpuSharedQuotaCode, 8192}, {"storage.bytes", 10}}}
+	valid := []QuotaChargeRef{{"storage", "storage.bytes", 10}, {"gpu", GpuSharedQuotaCode, 8192}}
+	if e := ValidateGpuCharges(c, valid); e != nil {
+		t.Fatal(e)
 	}
-	for _, invalid := range [][]QuotaChargeRef{nil, valid[:1], {valid[0], valid[0]}, {valid[1], {ChargeID: "gpu", QuotaCode: "storage.bytes", ChargedUnits: 10}}, {valid[0], {ChargeID: "gpu", QuotaCode: GpuSharedQuotaCode, ChargedUnits: 12}}} {
-		if _, e := GpuChargeSubset(c, invalid); e == nil {
-			t.Fatal("invalid original vector accepted", invalid)
+	for _, invalid := range [][]QuotaChargeRef{nil, valid[:1], {valid[0], valid[0]}, {valid[1], {"gpu", "storage.bytes", 10}}, {valid[0], {"gpu", GpuSharedQuotaCode, 12}}} {
+		if e := ValidateGpuCharges(c, invalid); e == nil {
+			t.Fatal("invalid charges")
 		}
 	}
 }

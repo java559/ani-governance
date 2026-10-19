@@ -1,10 +1,6 @@
 version: v2
 
 modules:
-  # Temporary, pinned upstream Proto inputs populated only by the managed
-  # generator. No foreign Proto definitions are checked into this repository.
-  - path: .upstream/inference
-  - path: .upstream/accelerator
   - path: protos
     lint:
       use:

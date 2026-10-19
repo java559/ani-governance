@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	QuotaReleaseService_ReportQuotaRelease_FullMethodName = "/quota.service.v1.QuotaReleaseService/ReportQuotaRelease"
+	QuotaReleaseService_ReportResourceReleased_FullMethodName = "/quota.service.v1.QuotaReleaseService/ReportResourceReleased"
+	QuotaReleaseService_ReportQuotaRelease_FullMethodName     = "/quota.service.v1.QuotaReleaseService/ReportQuotaRelease"
 )
 
 // QuotaReleaseServiceClient is the client API for QuotaReleaseService service.
@@ -31,7 +32,9 @@ const (
 // 请求不包含可作为身份依据的 tenant_id 或 owner_service：
 // 租户/owner 从 charge 及已验证 mTLS 证书精确 DNS SAN 取出。
 type QuotaReleaseServiceClient interface {
-	// 上报累计释放事实（幂等）。
+	// GPU owner 只报告完整释放；数量由 Governance 原账确定。
+	ReportResourceReleased(ctx context.Context, in *ReportResourceReleasedRequest, opts ...grpc.CallOption) (*ReportResourceReleasedResponse, error)
+	// 非 GPU 资源的累计释放事实（幂等）。
 	ReportQuotaRelease(ctx context.Context, in *ReportQuotaReleaseRequest, opts ...grpc.CallOption) (*ReportQuotaReleaseResponse, error)
 }
 
@@ -41,6 +44,16 @@ type quotaReleaseServiceClient struct {
 
 func NewQuotaReleaseServiceClient(cc grpc.ClientConnInterface) QuotaReleaseServiceClient {
 	return &quotaReleaseServiceClient{cc}
+}
+
+func (c *quotaReleaseServiceClient) ReportResourceReleased(ctx context.Context, in *ReportResourceReleasedRequest, opts ...grpc.CallOption) (*ReportResourceReleasedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReportResourceReleasedResponse)
+	err := c.cc.Invoke(ctx, QuotaReleaseService_ReportResourceReleased_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *quotaReleaseServiceClient) ReportQuotaRelease(ctx context.Context, in *ReportQuotaReleaseRequest, opts ...grpc.CallOption) (*ReportQuotaReleaseResponse, error) {
@@ -62,7 +75,9 @@ func (c *quotaReleaseServiceClient) ReportQuotaRelease(ctx context.Context, in *
 // 请求不包含可作为身份依据的 tenant_id 或 owner_service：
 // 租户/owner 从 charge 及已验证 mTLS 证书精确 DNS SAN 取出。
 type QuotaReleaseServiceServer interface {
-	// 上报累计释放事实（幂等）。
+	// GPU owner 只报告完整释放；数量由 Governance 原账确定。
+	ReportResourceReleased(context.Context, *ReportResourceReleasedRequest) (*ReportResourceReleasedResponse, error)
+	// 非 GPU 资源的累计释放事实（幂等）。
 	ReportQuotaRelease(context.Context, *ReportQuotaReleaseRequest) (*ReportQuotaReleaseResponse, error)
 	mustEmbedUnimplementedQuotaReleaseServiceServer()
 }
@@ -74,6 +89,9 @@ type QuotaReleaseServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedQuotaReleaseServiceServer struct{}
 
+func (UnimplementedQuotaReleaseServiceServer) ReportResourceReleased(context.Context, *ReportResourceReleasedRequest) (*ReportResourceReleasedResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReportResourceReleased not implemented")
+}
 func (UnimplementedQuotaReleaseServiceServer) ReportQuotaRelease(context.Context, *ReportQuotaReleaseRequest) (*ReportQuotaReleaseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportQuotaRelease not implemented")
 }
@@ -96,6 +114,24 @@ func RegisterQuotaReleaseServiceServer(s grpc.ServiceRegistrar, srv QuotaRelease
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&QuotaReleaseService_ServiceDesc, srv)
+}
+
+func _QuotaReleaseService_ReportResourceReleased_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportResourceReleasedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QuotaReleaseServiceServer).ReportResourceReleased(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QuotaReleaseService_ReportResourceReleased_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QuotaReleaseServiceServer).ReportResourceReleased(ctx, req.(*ReportResourceReleasedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _QuotaReleaseService_ReportQuotaRelease_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -123,6 +159,10 @@ var QuotaReleaseService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "quota.service.v1.QuotaReleaseService",
 	HandlerType: (*QuotaReleaseServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReportResourceReleased",
+			Handler:    _QuotaReleaseService_ReportResourceReleased_Handler,
+		},
 		{
 			MethodName: "ReportQuotaRelease",
 			Handler:    _QuotaReleaseService_ReportQuotaRelease_Handler,

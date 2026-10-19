@@ -150,7 +150,7 @@ func (r *QuotaLedgerRepo) LoadGpuProjectionSource(ctx context.Context, tid uint3
 		if e != nil {
 			return e
 		}
-		if e = validateFrozenCharges(v.CanonicalRequest, rows); e != nil {
+		if e = validateOperationCharges(v, rows); e != nil {
 			return e
 		}
 		hasDelete, e = tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(tid), quotaoperation.CreateOperationIDEQ(id), quotaoperation.OwnerServiceEQ(v.OwnerService)).Exist(ctx)

@@ -10,7 +10,7 @@
 
 ## 1 范围和两类 code
 
-覆盖 Network 租户、Network 平台、Image、Inference、Accelerator、Instance 六个接口面，以及前缀迁移涉及的管理接口。Quota 使用独立业务域；ModelDev 等其他业务接口遵循本规范的映射要求，不能因为原地址为 `/admin/v1` 就按普通管理 CRUD 处理。
+覆盖 Network 租户、Network 平台、Image、Accelerator、Instance 和 Model 的现行接口，以及前缀迁移涉及的管理接口。Inference 管理接口本期整体下线，相关路由已从现行能力映射撤下，后续重新对接另行登记。Quota 使用独立业务域；ModelDev 等其他业务接口遵循本规范的映射要求，不能因为原地址为 `/admin/v1` 就按普通管理 CRUD 处理。
 
 | 名称 | 载体 | 含义 |
 | --- | --- | --- |
@@ -97,7 +97,6 @@
 | GET `/api/v1/admin/settings` | `setting:view` | 仅当 settings 是实际登记的管理资源 |
 | GET `/api/v1/admin` | 不生成 | 缺少资源，不登记新 admin:view 能力 |
 | POST `/api/v1/instances/{data.instance_id}:start` | `instance:start` | 显式映射，禁止 instance:create 回退 |
-| POST `/api/v1/inference/services/{data.resource_id}:delete` | `inference:service:delete` | 显式映射，与 HTTP 方法无关 |
 
 `ConvertCodeByOperationID` 不作为自动替代算法。它可能把 list/get 合成 view，并加入 RPC 名称中的资源段，不能保证保持已有能力码。若启用，应独立审核完整映射，不能以“按 operation 推导”代替业务定义。
 
@@ -118,20 +117,20 @@
 
 ### 六个接口面和 Quota 的完整显式目录
 
-同目录 [业务能力映射附录](permission-code-capability-map.tsv) 逐条记录基线源码中的现有明确注册码，并列出目标路径、业务域、主体范围、业务模块、来源和 SHA。计数为：
+同目录 [业务能力映射附录](permission-code-capability-map.tsv) 逐条记录现行明确注册码，并列出目标路径、业务域、主体范围、业务模块、来源和 SHA。原始来源 SHA 保留各行编制依据；当前附录已撤下 Inference 管理行，Model 来源改为独立的 Model 登记脚本。计数为：
 
 | 接口面 | 条目 | 规范码来源 | 目标要求 |
 | --- | --- | --- | --- |
 | Network 租户 | 25 | NetworkOperations 与注册 SQL | 显式映射，保持 network:{资源}:{动作} |
 | Network 平台 | 27 | PlatformNetworkOperations 与注册 SQL | 显式映射，保持 network:platform:{资源}:{动作} |
 | Image | 11 | ImageOperations 与注册 SQL | 显式映射，保持已登记领域动作 |
-| Accelerator 平台/租户 | 19 | register-accelerator-permissions.sql | 明确平台与租户读取及各个命令，不能合成 accelerator:view/create |
+| Accelerator 平台/租户 | 22 | register-accelerator-permissions.sql | 明确平台与租户读取及各个命令，不能合成 accelerator:view/create |
 | Quota 自助 | 1 | 同一 Accelerator 注册脚本 | 保持 quota:account:self-read；business_module 为 TENANT |
-| Inference | 2 | register-inference-permissions.sql | create 与 delete 分别登记 |
 | Instance | 9 | register-instance-permissions.sql | list/read、operation/preset读取、create/start/stop/delete/exec分别登记 |
-| 合计 | 94 | 固定源码基线 | 所有条目均须被实际聚合入口接入并通过校验 |
+| Model | 14 | register-model-permissions.sql | 保持 model:service:read/manage，不恢复推理管理入口 |
+| 合计 | 109 | 现行能力映射附录 | 所有条目均须被实际聚合入口接入并通过校验 |
 
-这 94 条对应 93 个不同权限码。`network:snat:get` 有意用于 VPC SNAT 与 SNAT binding 两种读取，附录已记录该聚合；其他方法/目标路径均唯一。这是接口面的现有显式能力清单，不是数据库现状快照，也不包含全部管理或其他业务接口。未实现的覆盖接入属于本规范落地缺项，不能同时声明“全域收敛完成”并把其中三域延期。
+这 109 条对应 96 个不同权限码。`network:snat:get` 有意用于 VPC SNAT 与 SNAT binding 两种读取，Model 读取和管理分别聚合多个接口，附录已记录这些能力。其他方法/目标路径均唯一。这是接口面的现有显式能力清单，不是数据库现状快照，也不包含全部管理或其他业务接口。未实现的覆盖接入属于本规范落地缺项，不能同时声明“全域收敛完成”并把相应接口面延期。
 
 主体范围字段用于描述已有平台/租户/本人约束，不能通过码字符串或 URL 前缀自动赋予平台身份、跨租户范围或套餐许可。BOSS/Console 可以共用 path，仍按可信主体和现有授权边界检查。
 
@@ -241,7 +240,7 @@ permission group 是权限目录组织方式；套餐业务模块来自实际 Se
 | Image 显式码 | 已接入 appendAPis | 保持一致并覆盖全部11条 |
 | Network 租户 | 取码函数存在，当前聚合入口未接入 | 接入明确能力映射 |
 | Network 平台 | 策略码和SQL存在，当前聚合入口未接入 | 接入明确能力映射 |
-| Instance/Accelerator/Inference | 注册码存在，当前聚合入口无对应显式覆盖 | 完整接入；不能标为完成后再将缺口延期 |
+| Instance/Accelerator | 注册码存在，当前聚合入口无对应显式覆盖 | 完整接入；不能标为完成后再将缺口延期 |
 | 普通管理和其他特殊动作 | 当前默认方法推导会聚合部分不同操作 | 批准普通CRUD范围，特殊动作明确映射 |
 | 目录正常对齐 | API增量同步与权限硬删重建是不同入口 | 路径rename/权限对齐分别保持明确定义 |
 

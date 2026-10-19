@@ -301,6 +301,6 @@ export ANI_ACCESS_KEY_ENCRYPTION_KEY_FILE=/run/secrets/governance-access-key-enc
 2. `sql/data/20260922_quota_catalog_backfill.sql`：版本数据脚本，插入固定目录（user.count/storage.bytes/api.calls/gpu.count）并精确回填旧行；任何坏数据（NULL/未知类型/重复/越界/悬空 plan）整笔失败，不合并不删除。幂等可重跑。
 3. `migrations/20260922190100_quota_constraints.sql`：回填完成后加 NOT NULL、UNIQUE(plan_id,quota_code)、目录 FK、数值 CHECK。
 
-运行账号仍无 DDL；服务配置保持 `migrate: false`。配额内部退额 listener 默认关闭；启用时显式设置 `ANI_QUOTA_ENABLED=true`、`ANI_QUOTA_INTERNAL_ADDR`、`ANI_QUOTA_CA_FILE`、`ANI_QUOTA_CERT_FILE`、`ANI_QUOTA_KEY_FILE` 和 `ANI_QUOTA_INFERENCE_DNS_SAN`。SAN 映射仅注册编译装配的 `ani-inference` owner，缺凭据或合法映射即启动失败，不降级明文。完整接线、GPU code 与验收边界见 [GPU owner 接入指南](contracts/gpu-owner-integration-guide.md)；旧 `quota_lab` 模拟路由与构建标签已退役。新账本表的 CHECK 约束已通过 `entsql.Annotation.Checks` 进入 Ent 导出的 schema.sql，与手写迁移同名同义。
+运行账号仍无 DDL；服务配置保持 `migrate: false`。配额内部退额 listener 默认关闭；Resource 实例启用时显式设置 `ANI_QUOTA_ENABLED=true`、`ANI_QUOTA_INTERNAL_ADDR`、`ANI_QUOTA_CA_FILE`、`ANI_QUOTA_CERT_FILE`、`ANI_QUOTA_KEY_FILE` 和 `ANI_QUOTA_RESOURCE_DNS_SAN`。SAN 映射只允许已装配的 Resource owner；缺凭据或合法映射即启动失败，不降级明文。Inference 管理接口、API 依赖及出站环境配置本期移除，不再设置 `ANI_INFERENCE_*` 或 `ANI_QUOTA_INFERENCE_DNS_SAN`；Model 配置保留。完整接线、GPU code 与验收边界见 [GPU owner 接入指南](contracts/gpu-owner-integration-guide.md)；旧 `quota_lab` 模拟路由与构建标签已退役。新账本表的 CHECK 约束已通过 `entsql.Annotation.Checks` 进入 Ent 导出的 schema.sql，与手写迁移同名同义。
 
 本次 Atlas 检查确认 AK/SK、审计与角色复合约束一致。同时发现实施前初始基线仍保留 `files` 表、`sys_users.avatar` 列，而 Ent 已移除它们；这两项既有偏差不属于本批，未执行删除。今后 `migrate diff` 必须审查这些 DROP 候选，不得直接应用。

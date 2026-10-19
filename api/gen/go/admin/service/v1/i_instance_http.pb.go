@@ -20,30 +20,66 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationInstanceServiceAdminCreatePreset = "/admin.service.v1.InstanceService/AdminCreatePreset"
+const OperationInstanceServiceAdminDeletePreset = "/admin.service.v1.InstanceService/AdminDeletePreset"
+const OperationInstanceServiceAdminGetPreset = "/admin.service.v1.InstanceService/AdminGetPreset"
+const OperationInstanceServiceAdminListPresets = "/admin.service.v1.InstanceService/AdminListPresets"
+const OperationInstanceServiceAdminSetPresetEnabled = "/admin.service.v1.InstanceService/AdminSetPresetEnabled"
+const OperationInstanceServiceAdminUpdatePreset = "/admin.service.v1.InstanceService/AdminUpdatePreset"
 const OperationInstanceServiceCreateInstance = "/admin.service.v1.InstanceService/CreateInstance"
 const OperationInstanceServiceDeleteInstance = "/admin.service.v1.InstanceService/DeleteInstance"
 const OperationInstanceServiceExecInstance = "/admin.service.v1.InstanceService/ExecInstance"
 const OperationInstanceServiceGetInstance = "/admin.service.v1.InstanceService/GetInstance"
 const OperationInstanceServiceGetInstanceOperation = "/admin.service.v1.InstanceService/GetInstanceOperation"
+const OperationInstanceServiceGetInstanceRuntime = "/admin.service.v1.InstanceService/GetInstanceRuntime"
+const OperationInstanceServiceGetInstanceSchedulingSettings = "/admin.service.v1.InstanceService/GetInstanceSchedulingSettings"
+const OperationInstanceServiceGetSchedulerConfig = "/admin.service.v1.InstanceService/GetSchedulerConfig"
+const OperationInstanceServiceListInstanceEvents = "/admin.service.v1.InstanceService/ListInstanceEvents"
 const OperationInstanceServiceListInstancePresets = "/admin.service.v1.InstanceService/ListInstancePresets"
 const OperationInstanceServiceListInstances = "/admin.service.v1.InstanceService/ListInstances"
 const OperationInstanceServiceStartInstance = "/admin.service.v1.InstanceService/StartInstance"
 const OperationInstanceServiceStopInstance = "/admin.service.v1.InstanceService/StopInstance"
+const OperationInstanceServiceUpdateInstanceSchedulingSettings = "/admin.service.v1.InstanceService/UpdateInstanceSchedulingSettings"
+const OperationInstanceServiceUpdateSchedulerConfig = "/admin.service.v1.InstanceService/UpdateSchedulerConfig"
 
 type InstanceServiceHTTPServer interface {
+	AdminCreatePreset(context.Context, *v1.CreatePresetRequest) (*v1.Preset, error)
+	AdminDeletePreset(context.Context, *v1.PresetRequest) (*v1.Empty, error)
+	AdminGetPreset(context.Context, *v1.PresetRequest) (*v1.Preset, error)
+	AdminListPresets(context.Context, *v1.AdminListPresetsRequest) (*v1.AdminListPresetsResponse, error)
+	AdminSetPresetEnabled(context.Context, *v1.SetPresetEnabledRequest) (*v1.Preset, error)
+	AdminUpdatePreset(context.Context, *v1.UpdatePresetRequest) (*v1.Preset, error)
 	CreateInstance(context.Context, *v1.CreateInstanceRequest) (*v1.Acceptance, error)
 	DeleteInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	ExecInstance(context.Context, *v1.ExecInstanceRequest) (*v1.ExecInstanceResponse, error)
 	GetInstance(context.Context, *v1.GetInstanceRequest) (*v1.Instance, error)
 	GetInstanceOperation(context.Context, *v1.GetOperationRequest) (*v1.Operation, error)
+	GetInstanceRuntime(context.Context, *v1.GetInstanceRequest) (*v1.InstanceRuntime, error)
+	GetInstanceSchedulingSettings(context.Context, *v1.InstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
+	GetSchedulerConfig(context.Context, *v1.SchedulerConfigRequest) (*v1.SchedulerConfig, error)
+	ListInstanceEvents(context.Context, *v1.GetInstanceRequest) (*v1.InstanceEvents, error)
 	ListInstancePresets(context.Context, *v1.ListPresetsRequest) (*v1.ListPresetsResponse, error)
 	ListInstances(context.Context, *v1.ListInstancesRequest) (*v1.ListInstancesResponse, error)
 	StartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	StopInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
+	UpdateInstanceSchedulingSettings(context.Context, *v1.UpdateInstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
+	UpdateSchedulerConfig(context.Context, *v1.UpdateSchedulerConfigRequest) (*v1.SchedulerConfig, error)
 }
 
 func RegisterInstanceServiceHTTPServer(s *http.Server, srv InstanceServiceHTTPServer) {
 	r := s.Route("/")
+	r.GET("/api/v1/admin/instance-scheduling-settings", _InstanceService_GetInstanceSchedulingSettings0_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/instance-scheduling-settings", _InstanceService_UpdateInstanceSchedulingSettings0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/scheduler-config", _InstanceService_GetSchedulerConfig0_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/scheduler-config", _InstanceService_UpdateSchedulerConfig0_HTTP_Handler(srv))
+	r.GET("/api/v1/instances/{instance_id}/runtime", _InstanceService_GetInstanceRuntime0_HTTP_Handler(srv))
+	r.GET("/api/v1/instances/{instance_id}/events", _InstanceService_ListInstanceEvents0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/compute-presets", _InstanceService_AdminListPresets0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/compute-presets/{id}", _InstanceService_AdminGetPreset0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/compute-presets", _InstanceService_AdminCreatePreset0_HTTP_Handler(srv))
+	r.PATCH("/api/v1/admin/compute-presets/{id}", _InstanceService_AdminUpdatePreset0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/compute-presets/{id}:set-enabled", _InstanceService_AdminSetPresetEnabled0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/compute-presets/{id}", _InstanceService_AdminDeletePreset0_HTTP_Handler(srv))
 	r.POST("/api/v1/instances", _InstanceService_CreateInstance0_HTTP_Handler(srv))
 	r.GET("/api/v1/instances", _InstanceService_ListInstances0_HTTP_Handler(srv))
 	r.GET("/api/v1/instances/{instance_id}", _InstanceService_GetInstance0_HTTP_Handler(srv))
@@ -53,6 +89,267 @@ func RegisterInstanceServiceHTTPServer(s *http.Server, srv InstanceServiceHTTPSe
 	r.GET("/api/v1/instance-operations/{operation_id}", _InstanceService_GetInstanceOperation0_HTTP_Handler(srv))
 	r.GET("/api/v1/instance-presets", _InstanceService_ListInstancePresets0_HTTP_Handler(srv))
 	r.POST("/api/v1/instances/{data.instance_id}/exec", _InstanceService_ExecInstance0_HTTP_Handler(srv))
+}
+
+func _InstanceService_GetInstanceSchedulingSettings0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.InstanceSchedulingSettingsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceGetInstanceSchedulingSettings)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetInstanceSchedulingSettings(ctx, req.(*v1.InstanceSchedulingSettingsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InstanceSchedulingSettings)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_UpdateInstanceSchedulingSettings0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.UpdateInstanceSchedulingSettingsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceUpdateInstanceSchedulingSettings)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateInstanceSchedulingSettings(ctx, req.(*v1.UpdateInstanceSchedulingSettingsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InstanceSchedulingSettings)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_GetSchedulerConfig0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.SchedulerConfigRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceGetSchedulerConfig)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSchedulerConfig(ctx, req.(*v1.SchedulerConfigRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SchedulerConfig)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_UpdateSchedulerConfig0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.UpdateSchedulerConfigRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceUpdateSchedulerConfig)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateSchedulerConfig(ctx, req.(*v1.UpdateSchedulerConfigRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SchedulerConfig)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_GetInstanceRuntime0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetInstanceRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceGetInstanceRuntime)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetInstanceRuntime(ctx, req.(*v1.GetInstanceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InstanceRuntime)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_ListInstanceEvents0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetInstanceRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceListInstanceEvents)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListInstanceEvents(ctx, req.(*v1.GetInstanceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InstanceEvents)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_AdminListPresets0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.AdminListPresetsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceAdminListPresets)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdminListPresets(ctx, req.(*v1.AdminListPresetsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AdminListPresetsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_AdminGetPreset0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.PresetRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceAdminGetPreset)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdminGetPreset(ctx, req.(*v1.PresetRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Preset)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_AdminCreatePreset0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CreatePresetRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceAdminCreatePreset)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdminCreatePreset(ctx, req.(*v1.CreatePresetRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Preset)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_AdminUpdatePreset0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.UpdatePresetRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceAdminUpdatePreset)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdminUpdatePreset(ctx, req.(*v1.UpdatePresetRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Preset)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_AdminSetPresetEnabled0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.SetPresetEnabledRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceAdminSetPresetEnabled)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdminSetPresetEnabled(ctx, req.(*v1.SetPresetEnabledRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Preset)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_AdminDeletePreset0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.PresetRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceAdminDeletePreset)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdminDeletePreset(ctx, req.(*v1.PresetRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Empty)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _InstanceService_CreateInstance0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
@@ -260,15 +557,27 @@ func _InstanceService_ExecInstance0_HTTP_Handler(srv InstanceServiceHTTPServer) 
 }
 
 type InstanceServiceHTTPClient interface {
+	AdminCreatePreset(ctx context.Context, req *v1.CreatePresetRequest, opts ...http.CallOption) (rsp *v1.Preset, err error)
+	AdminDeletePreset(ctx context.Context, req *v1.PresetRequest, opts ...http.CallOption) (rsp *v1.Empty, err error)
+	AdminGetPreset(ctx context.Context, req *v1.PresetRequest, opts ...http.CallOption) (rsp *v1.Preset, err error)
+	AdminListPresets(ctx context.Context, req *v1.AdminListPresetsRequest, opts ...http.CallOption) (rsp *v1.AdminListPresetsResponse, err error)
+	AdminSetPresetEnabled(ctx context.Context, req *v1.SetPresetEnabledRequest, opts ...http.CallOption) (rsp *v1.Preset, err error)
+	AdminUpdatePreset(ctx context.Context, req *v1.UpdatePresetRequest, opts ...http.CallOption) (rsp *v1.Preset, err error)
 	CreateInstance(ctx context.Context, req *v1.CreateInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	DeleteInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	ExecInstance(ctx context.Context, req *v1.ExecInstanceRequest, opts ...http.CallOption) (rsp *v1.ExecInstanceResponse, err error)
 	GetInstance(ctx context.Context, req *v1.GetInstanceRequest, opts ...http.CallOption) (rsp *v1.Instance, err error)
 	GetInstanceOperation(ctx context.Context, req *v1.GetOperationRequest, opts ...http.CallOption) (rsp *v1.Operation, err error)
+	GetInstanceRuntime(ctx context.Context, req *v1.GetInstanceRequest, opts ...http.CallOption) (rsp *v1.InstanceRuntime, err error)
+	GetInstanceSchedulingSettings(ctx context.Context, req *v1.InstanceSchedulingSettingsRequest, opts ...http.CallOption) (rsp *v1.InstanceSchedulingSettings, err error)
+	GetSchedulerConfig(ctx context.Context, req *v1.SchedulerConfigRequest, opts ...http.CallOption) (rsp *v1.SchedulerConfig, err error)
+	ListInstanceEvents(ctx context.Context, req *v1.GetInstanceRequest, opts ...http.CallOption) (rsp *v1.InstanceEvents, err error)
 	ListInstancePresets(ctx context.Context, req *v1.ListPresetsRequest, opts ...http.CallOption) (rsp *v1.ListPresetsResponse, err error)
 	ListInstances(ctx context.Context, req *v1.ListInstancesRequest, opts ...http.CallOption) (rsp *v1.ListInstancesResponse, err error)
 	StartInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	StopInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
+	UpdateInstanceSchedulingSettings(ctx context.Context, req *v1.UpdateInstanceSchedulingSettingsRequest, opts ...http.CallOption) (rsp *v1.InstanceSchedulingSettings, err error)
+	UpdateSchedulerConfig(ctx context.Context, req *v1.UpdateSchedulerConfigRequest, opts ...http.CallOption) (rsp *v1.SchedulerConfig, err error)
 }
 
 type InstanceServiceHTTPClientImpl struct {
@@ -277,6 +586,84 @@ type InstanceServiceHTTPClientImpl struct {
 
 func NewInstanceServiceHTTPClient(client *http.Client) InstanceServiceHTTPClient {
 	return &InstanceServiceHTTPClientImpl{client}
+}
+
+func (c *InstanceServiceHTTPClientImpl) AdminCreatePreset(ctx context.Context, in *v1.CreatePresetRequest, opts ...http.CallOption) (*v1.Preset, error) {
+	var out v1.Preset
+	pattern := "/api/v1/admin/compute-presets"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceAdminCreatePreset))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) AdminDeletePreset(ctx context.Context, in *v1.PresetRequest, opts ...http.CallOption) (*v1.Empty, error) {
+	var out v1.Empty
+	pattern := "/api/v1/admin/compute-presets/{id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceAdminDeletePreset))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) AdminGetPreset(ctx context.Context, in *v1.PresetRequest, opts ...http.CallOption) (*v1.Preset, error) {
+	var out v1.Preset
+	pattern := "/api/v1/admin/compute-presets/{id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceAdminGetPreset))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) AdminListPresets(ctx context.Context, in *v1.AdminListPresetsRequest, opts ...http.CallOption) (*v1.AdminListPresetsResponse, error) {
+	var out v1.AdminListPresetsResponse
+	pattern := "/api/v1/admin/compute-presets"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceAdminListPresets))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) AdminSetPresetEnabled(ctx context.Context, in *v1.SetPresetEnabledRequest, opts ...http.CallOption) (*v1.Preset, error) {
+	var out v1.Preset
+	pattern := "/api/v1/admin/compute-presets/{id}:set-enabled"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceAdminSetPresetEnabled))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) AdminUpdatePreset(ctx context.Context, in *v1.UpdatePresetRequest, opts ...http.CallOption) (*v1.Preset, error) {
+	var out v1.Preset
+	pattern := "/api/v1/admin/compute-presets/{id}"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceAdminUpdatePreset))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PATCH", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *InstanceServiceHTTPClientImpl) CreateInstance(ctx context.Context, in *v1.CreateInstanceRequest, opts ...http.CallOption) (*v1.Acceptance, error) {
@@ -344,6 +731,58 @@ func (c *InstanceServiceHTTPClientImpl) GetInstanceOperation(ctx context.Context
 	return &out, nil
 }
 
+func (c *InstanceServiceHTTPClientImpl) GetInstanceRuntime(ctx context.Context, in *v1.GetInstanceRequest, opts ...http.CallOption) (*v1.InstanceRuntime, error) {
+	var out v1.InstanceRuntime
+	pattern := "/api/v1/instances/{instance_id}/runtime"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceGetInstanceRuntime))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) GetInstanceSchedulingSettings(ctx context.Context, in *v1.InstanceSchedulingSettingsRequest, opts ...http.CallOption) (*v1.InstanceSchedulingSettings, error) {
+	var out v1.InstanceSchedulingSettings
+	pattern := "/api/v1/admin/instance-scheduling-settings"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceGetInstanceSchedulingSettings))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) GetSchedulerConfig(ctx context.Context, in *v1.SchedulerConfigRequest, opts ...http.CallOption) (*v1.SchedulerConfig, error) {
+	var out v1.SchedulerConfig
+	pattern := "/api/v1/admin/scheduler-config"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceGetSchedulerConfig))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) ListInstanceEvents(ctx context.Context, in *v1.GetInstanceRequest, opts ...http.CallOption) (*v1.InstanceEvents, error) {
+	var out v1.InstanceEvents
+	pattern := "/api/v1/instances/{instance_id}/events"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceListInstanceEvents))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *InstanceServiceHTTPClientImpl) ListInstancePresets(ctx context.Context, in *v1.ListPresetsRequest, opts ...http.CallOption) (*v1.ListPresetsResponse, error) {
 	var out v1.ListPresetsResponse
 	pattern := "/api/v1/instance-presets"
@@ -390,6 +829,32 @@ func (c *InstanceServiceHTTPClientImpl) StopInstance(ctx context.Context, in *v1
 	opts = append(opts, http.Operation(OperationInstanceServiceStopInstance))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) UpdateInstanceSchedulingSettings(ctx context.Context, in *v1.UpdateInstanceSchedulingSettingsRequest, opts ...http.CallOption) (*v1.InstanceSchedulingSettings, error) {
+	var out v1.InstanceSchedulingSettings
+	pattern := "/api/v1/admin/instance-scheduling-settings"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceUpdateInstanceSchedulingSettings))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) UpdateSchedulerConfig(ctx context.Context, in *v1.UpdateSchedulerConfigRequest, opts ...http.CallOption) (*v1.SchedulerConfig, error) {
+	var out v1.SchedulerConfig
+	pattern := "/api/v1/admin/scheduler-config"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceUpdateSchedulerConfig))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

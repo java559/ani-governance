@@ -11,15 +11,19 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib" // database/sql pgx 驱动
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	entsql "entgo.io/ent/dialect/sql"
@@ -720,4 +724,80 @@ func quotaPGSQL(name string) string {
 		panic(err)
 	}
 	return string(contents)
+}
+
+// CPU commands reuse the durable queue but cannot manufacture GPU quota facts.
+func TestQuotaPostgresInstanceCPUCommands(t *testing.T) {
+	c := newLedgerPGClient(t)
+	cleanLedger(t, c)
+	repo := newTestRepo(c)
+	tid, _ := seedTenantPlan(t, c, "cpu-command", 8)
+	input := occupyInput(c, tid, "7", uuid.NewString(), 1)
+	business := &res.CreateSpec{Name: "cpu", ImageId: "img_" + strings.Repeat("a", 32), ImageScope: "platform", PresetId: "20000000-0000-4000-8000-000000000001", InstanceKind: "container", ComputeType: "cpu", Scheduling: &res.SchedulingOptions{PodPlacement: res.SchedulingOptions_NONE.Enum()}, ClusterId: uuid.NewString(), Namespace: "tenant-cpu", ImageReference: "registry.invalid/cpu@sha256:" + strings.Repeat("a", 64), Cpu: "1", Memory: "1Gi", ServiceAccount: "workload", StorageClass: "workspace", WorkspaceSize: "1Gi", Shell: "/bin/bash", Uid: 1000, Gid: 1000}
+
+	raw, e := res.CanonicalBusinessPayload(business)
+	require.NoError(t, e)
+	digest, e := res.BusinessPayloadDigest(business)
+	require.NoError(t, e)
+	frozen := InstanceCPUCanonical{Schema: InstanceCPUCanonicalSchema, BusinessPayload: raw, BusinessPayloadDigest: digest}
+	canonical, e := json.Marshal(frozen)
+	require.NoError(t, e)
+	input.OwnerService, input.Action, input.CanonicalRequest, input.Items = instanceCPUOwner, instanceCPUCreateAction, string(canonical), nil
+	first, e := repo.Occupy(context.Background(), input)
+	require.NoError(t, e)
+	require.Empty(t, first.ChargeIDs)
+	replay, e := repo.Occupy(context.Background(), input)
+	require.NoError(t, e)
+	require.True(t, replay.Replayed)
+	require.Equal(t, first.OperationID, replay.OperationID)
+	for _, alter := range []func(*QuotaOccupyInput){
+		func(i *QuotaOccupyInput) { i.OwnerService = "ani-inference" },
+		func(i *QuotaOccupyInput) { i.Action = "CPU_CREATE" },
+		func(i *QuotaOccupyInput) { i.Items = []QuotaOccupyItem{{QuotaCode: QuotaCodeGpuCount, Units: 1}} },
+		func(i *QuotaOccupyInput) { i.CanonicalRequest = `{"schema":"unknown"}` },
+	} {
+		bad := *input
+		bad.IdempotencyKey = uuid.NewString()
+		alter(&bad)
+		_, e = repo.Occupy(context.Background(), &bad)
+		require.Error(t, e, "zero charges are restricted to compiled CPU instance commands")
+	}
+	claimed, e := repo.ClaimDispatchable(context.Background(), "cpu-worker", time.Minute, 1)
+	require.NoError(t, e)
+	require.Len(t, claimed, 1)
+	require.Empty(t, claimed[0].Charges)
+	acked, e := repo.AckDispatched(context.Background(), tid, first.OperationID, claimed[0].LeaseGeneration, `{"accepted":true}`)
+	require.NoError(t, e)
+	require.True(t, acked)
+	frozen.DeleteExpectedVersion = 4
+	deletionJSON, e := json.Marshal(frozen)
+	require.NoError(t, e)
+	deletion := &QuotaDeleteInput{TenantID: tid, ActorType: input.ActorType, ActorID: input.ActorID, OwnerService: instanceCPUOwner, Action: instanceCPUDeleteAction, IdempotencyKey: uuid.NewString(), RequestHash: "cpu-delete-v4", CanonicalRequest: string(deletionJSON), ResourceID: first.ResourceID}
+	deleted, e := repo.CreateDeleteOperation(context.Background(), deletion)
+	require.NoError(t, e)
+	require.False(t, deleted.LocalCanceled)
+	claimed, e = repo.ClaimDispatchable(context.Background(), "cpu-delete-worker", time.Minute, 1)
+	require.NoError(t, e)
+	require.Len(t, claimed, 1)
+	require.Equal(t, first.OperationID, claimed[0].CreateOperationID)
+	require.Equal(t, string(deletionJSON), claimed[0].CanonicalRequest)
+	require.Empty(t, claimed[0].Charges)
+	again, e := repo.CreateDeleteOperation(context.Background(), deletion)
+	require.NoError(t, e)
+	require.True(t, again.Replayed)
+	require.Equal(t, deleted.OperationID, again.OperationID)
+	unsent := *input
+	unsent.ResourceID, unsent.IdempotencyKey = uuid.NewString(), uuid.NewString()
+	queued, e := repo.Occupy(context.Background(), &unsent)
+	require.NoError(t, e)
+	canceled := *deletion
+	canceled.ResourceID, canceled.IdempotencyKey = queued.ResourceID, uuid.NewString()
+	canceled.RequestHash = "cpu-cancel-unsent"
+	out, e := repo.CreateDeleteOperation(context.Background(), &canceled)
+	require.NoError(t, e)
+	require.True(t, out.LocalCanceled)
+	require.Empty(t, out.ChargeIDs)
+	candidates, e := repo.ScanGpuCreatePage(context.Background(), 0, 100)
+	require.NoError(t, e)
+	require.Empty(t, candidates)
 }

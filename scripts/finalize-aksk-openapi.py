@@ -8,13 +8,13 @@ import re
 
 path = pathlib.Path(__file__).resolve().parents[1] / "app/admin/service/cmd/server/assets/openapi.yaml"
 
-def remove_synthetic_200(text, route, status):
+def remove_synthetic_200(text, route, status, method="post"):
     start = text.index("    " + route + ":\n")
     end = text.find("\n    /", start + 1)
     if end == -1:
         end = text.index("\ncomponents:", start)
     section = text[start:end]
-    post = section.index("        post:\n")
+    post = section.index("        " + method + ":\n")
     prefix, operation = section[:post], section[post:]
     if '"' + status + '":' not in operation and "'" + status + "':" not in operation:
         raise SystemExit("source Create operation must explicitly declare " + status)
@@ -108,6 +108,65 @@ def repair_network_operation(text, proto_source=None):
     return text.replace(marker, marker + network_operation_schema(proto_source), 1)
 
 
+def add_instance_log_stream(text):
+    # A protobuf server stream has a dedicated HTTP implementation. Describe
+    # its actual SSE wire format instead of gnostic's inferred unary JSON.
+    if "            operationId: InstanceService_GetInstanceRuntime\n" not in text:
+        return text
+    route = "    /api/v1/instances/{instance_id}/logs:\n"
+    if route in text:
+        raise SystemExit("instance logs must be declared once as SSE")
+    operation = """    /api/v1/instances/{instance_id}/logs:
+        get:
+            tags:
+                - InstanceService
+            operationId: InstanceService_StreamInstanceLogs
+            description: Read current workspace stdout/stderr. READY is verified before HTTP headers; subsequent errors are SSE events. No resume cursor.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - name: tailLines
+                  in: query
+                  schema:
+                    type: integer
+                    minimum: 1
+                    maximum: 1000
+                    default: 100
+                - name: follow
+                  in: query
+                  schema:
+                    type: boolean
+                    default: true
+            responses:
+                "200":
+                    description: SSE log/end/error JSON events with comment heartbeats; no-store and proxy buffering disabled.
+                    content:
+                        text/event-stream:
+                            schema:
+                                type: string
+                "400":
+                    description: Invalid query
+                "403":
+                    description: Instance access denied
+                "404":
+                    description: Instance or current workspace Pod absent
+                "429":
+                    description: Connection limit reached
+                "503":
+                    description: Diagnostic target or upstream unavailable before READY
+"""
+    marker = "components:\n"
+    if text.count(marker) != 1:
+        raise SystemExit("expected one OpenAPI components section")
+    return text.replace(marker, operation + marker, 1)
+
+
 def finalize(text):
     text = remove_synthetic_200(text, "/api/v1/auth/api-keys", "201")
     # Minimal generator fixtures may omit ModelDev. Its public contract test
@@ -115,9 +174,20 @@ def finalize(text):
     if "    /api/v1/modeldev/executions:\n" in text:
         text = remove_synthetic_200(text, "/api/v1/modeldev/executions", "202")
         text = remove_synthetic_200(text, "/api/v1/modeldev/executions/{execution_id}:stop", "202")
+    for route, status, method in (
+        ("/api/v1/admin/compute-presets", "201", "post"),
+        ("/api/v1/admin/compute-presets/{id}", "204", "delete"),
+        ("/api/v1/instances", "202", "post"),
+        ("/api/v1/instances/{data.instance_id}:start", "202", "post"),
+        ("/api/v1/instances/{data.instance_id}:stop", "202", "post"),
+        ("/api/v1/instances/{data.instance_id}", "202", "delete"),
+        ("/api/v1/instances/{data.instance_id}/exec", "202", "post"),
+    ):
+        if "    " + route + ":\n" in text:
+            text = remove_synthetic_200(text, route, status, method)
     # response_body endpoints retain their explicit public-object schema,
     # including the Network/Image mutation responses and existing details.
-    return repair_network_operation(remove_shadowed_200(text))
+    return add_instance_log_stream(repair_network_operation(remove_shadowed_200(text)))
 
 
 if __name__ == "__main__":

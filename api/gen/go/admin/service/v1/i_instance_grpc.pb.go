@@ -20,21 +20,49 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	InstanceService_CreateInstance_FullMethodName       = "/admin.service.v1.InstanceService/CreateInstance"
-	InstanceService_ListInstances_FullMethodName        = "/admin.service.v1.InstanceService/ListInstances"
-	InstanceService_GetInstance_FullMethodName          = "/admin.service.v1.InstanceService/GetInstance"
-	InstanceService_StartInstance_FullMethodName        = "/admin.service.v1.InstanceService/StartInstance"
-	InstanceService_StopInstance_FullMethodName         = "/admin.service.v1.InstanceService/StopInstance"
-	InstanceService_DeleteInstance_FullMethodName       = "/admin.service.v1.InstanceService/DeleteInstance"
-	InstanceService_GetInstanceOperation_FullMethodName = "/admin.service.v1.InstanceService/GetInstanceOperation"
-	InstanceService_ListInstancePresets_FullMethodName  = "/admin.service.v1.InstanceService/ListInstancePresets"
-	InstanceService_ExecInstance_FullMethodName         = "/admin.service.v1.InstanceService/ExecInstance"
+	InstanceService_GetInstanceSchedulingSettings_FullMethodName    = "/admin.service.v1.InstanceService/GetInstanceSchedulingSettings"
+	InstanceService_UpdateInstanceSchedulingSettings_FullMethodName = "/admin.service.v1.InstanceService/UpdateInstanceSchedulingSettings"
+	InstanceService_GetSchedulerConfig_FullMethodName               = "/admin.service.v1.InstanceService/GetSchedulerConfig"
+	InstanceService_UpdateSchedulerConfig_FullMethodName            = "/admin.service.v1.InstanceService/UpdateSchedulerConfig"
+	InstanceService_GetInstanceRuntime_FullMethodName               = "/admin.service.v1.InstanceService/GetInstanceRuntime"
+	InstanceService_ListInstanceEvents_FullMethodName               = "/admin.service.v1.InstanceService/ListInstanceEvents"
+	InstanceService_StreamInstanceLogs_FullMethodName               = "/admin.service.v1.InstanceService/StreamInstanceLogs"
+	InstanceService_AdminListPresets_FullMethodName                 = "/admin.service.v1.InstanceService/AdminListPresets"
+	InstanceService_AdminGetPreset_FullMethodName                   = "/admin.service.v1.InstanceService/AdminGetPreset"
+	InstanceService_AdminCreatePreset_FullMethodName                = "/admin.service.v1.InstanceService/AdminCreatePreset"
+	InstanceService_AdminUpdatePreset_FullMethodName                = "/admin.service.v1.InstanceService/AdminUpdatePreset"
+	InstanceService_AdminSetPresetEnabled_FullMethodName            = "/admin.service.v1.InstanceService/AdminSetPresetEnabled"
+	InstanceService_AdminDeletePreset_FullMethodName                = "/admin.service.v1.InstanceService/AdminDeletePreset"
+	InstanceService_CreateInstance_FullMethodName                   = "/admin.service.v1.InstanceService/CreateInstance"
+	InstanceService_ListInstances_FullMethodName                    = "/admin.service.v1.InstanceService/ListInstances"
+	InstanceService_GetInstance_FullMethodName                      = "/admin.service.v1.InstanceService/GetInstance"
+	InstanceService_StartInstance_FullMethodName                    = "/admin.service.v1.InstanceService/StartInstance"
+	InstanceService_StopInstance_FullMethodName                     = "/admin.service.v1.InstanceService/StopInstance"
+	InstanceService_DeleteInstance_FullMethodName                   = "/admin.service.v1.InstanceService/DeleteInstance"
+	InstanceService_GetInstanceOperation_FullMethodName             = "/admin.service.v1.InstanceService/GetInstanceOperation"
+	InstanceService_ListInstancePresets_FullMethodName              = "/admin.service.v1.InstanceService/ListInstancePresets"
+	InstanceService_ExecInstance_FullMethodName                     = "/admin.service.v1.InstanceService/ExecInstance"
 )
 
 // InstanceServiceClient is the client API for InstanceService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InstanceServiceClient interface {
+	GetInstanceSchedulingSettings(ctx context.Context, in *v1.InstanceSchedulingSettingsRequest, opts ...grpc.CallOption) (*v1.InstanceSchedulingSettings, error)
+	UpdateInstanceSchedulingSettings(ctx context.Context, in *v1.UpdateInstanceSchedulingSettingsRequest, opts ...grpc.CallOption) (*v1.InstanceSchedulingSettings, error)
+	GetSchedulerConfig(ctx context.Context, in *v1.SchedulerConfigRequest, opts ...grpc.CallOption) (*v1.SchedulerConfig, error)
+	UpdateSchedulerConfig(ctx context.Context, in *v1.UpdateSchedulerConfigRequest, opts ...grpc.CallOption) (*v1.SchedulerConfig, error)
+	GetInstanceRuntime(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.InstanceRuntime, error)
+	ListInstanceEvents(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.InstanceEvents, error)
+	// HTTP is a dedicated SSE handler. OpenAPI is supplied by the source
+	// postprocessor rather than representing this stream as a unary JSON reply.
+	StreamInstanceLogs(ctx context.Context, in *v1.InstanceLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[v1.InstanceLogFrame], error)
+	AdminListPresets(ctx context.Context, in *v1.AdminListPresetsRequest, opts ...grpc.CallOption) (*v1.AdminListPresetsResponse, error)
+	AdminGetPreset(ctx context.Context, in *v1.PresetRequest, opts ...grpc.CallOption) (*v1.Preset, error)
+	AdminCreatePreset(ctx context.Context, in *v1.CreatePresetRequest, opts ...grpc.CallOption) (*v1.Preset, error)
+	AdminUpdatePreset(ctx context.Context, in *v1.UpdatePresetRequest, opts ...grpc.CallOption) (*v1.Preset, error)
+	AdminSetPresetEnabled(ctx context.Context, in *v1.SetPresetEnabledRequest, opts ...grpc.CallOption) (*v1.Preset, error)
+	AdminDeletePreset(ctx context.Context, in *v1.PresetRequest, opts ...grpc.CallOption) (*v1.Empty, error)
 	CreateInstance(ctx context.Context, in *v1.CreateInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
 	ListInstances(ctx context.Context, in *v1.ListInstancesRequest, opts ...grpc.CallOption) (*v1.ListInstancesResponse, error)
 	GetInstance(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.Instance, error)
@@ -52,6 +80,145 @@ type instanceServiceClient struct {
 
 func NewInstanceServiceClient(cc grpc.ClientConnInterface) InstanceServiceClient {
 	return &instanceServiceClient{cc}
+}
+
+func (c *instanceServiceClient) GetInstanceSchedulingSettings(ctx context.Context, in *v1.InstanceSchedulingSettingsRequest, opts ...grpc.CallOption) (*v1.InstanceSchedulingSettings, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InstanceSchedulingSettings)
+	err := c.cc.Invoke(ctx, InstanceService_GetInstanceSchedulingSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) UpdateInstanceSchedulingSettings(ctx context.Context, in *v1.UpdateInstanceSchedulingSettingsRequest, opts ...grpc.CallOption) (*v1.InstanceSchedulingSettings, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InstanceSchedulingSettings)
+	err := c.cc.Invoke(ctx, InstanceService_UpdateInstanceSchedulingSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) GetSchedulerConfig(ctx context.Context, in *v1.SchedulerConfigRequest, opts ...grpc.CallOption) (*v1.SchedulerConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SchedulerConfig)
+	err := c.cc.Invoke(ctx, InstanceService_GetSchedulerConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) UpdateSchedulerConfig(ctx context.Context, in *v1.UpdateSchedulerConfigRequest, opts ...grpc.CallOption) (*v1.SchedulerConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SchedulerConfig)
+	err := c.cc.Invoke(ctx, InstanceService_UpdateSchedulerConfig_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) GetInstanceRuntime(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.InstanceRuntime, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InstanceRuntime)
+	err := c.cc.Invoke(ctx, InstanceService_GetInstanceRuntime_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) ListInstanceEvents(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.InstanceEvents, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InstanceEvents)
+	err := c.cc.Invoke(ctx, InstanceService_ListInstanceEvents_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) StreamInstanceLogs(ctx context.Context, in *v1.InstanceLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[v1.InstanceLogFrame], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &InstanceService_ServiceDesc.Streams[0], InstanceService_StreamInstanceLogs_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[v1.InstanceLogsRequest, v1.InstanceLogFrame]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type InstanceService_StreamInstanceLogsClient = grpc.ServerStreamingClient[v1.InstanceLogFrame]
+
+func (c *instanceServiceClient) AdminListPresets(ctx context.Context, in *v1.AdminListPresetsRequest, opts ...grpc.CallOption) (*v1.AdminListPresetsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AdminListPresetsResponse)
+	err := c.cc.Invoke(ctx, InstanceService_AdminListPresets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) AdminGetPreset(ctx context.Context, in *v1.PresetRequest, opts ...grpc.CallOption) (*v1.Preset, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Preset)
+	err := c.cc.Invoke(ctx, InstanceService_AdminGetPreset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) AdminCreatePreset(ctx context.Context, in *v1.CreatePresetRequest, opts ...grpc.CallOption) (*v1.Preset, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Preset)
+	err := c.cc.Invoke(ctx, InstanceService_AdminCreatePreset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) AdminUpdatePreset(ctx context.Context, in *v1.UpdatePresetRequest, opts ...grpc.CallOption) (*v1.Preset, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Preset)
+	err := c.cc.Invoke(ctx, InstanceService_AdminUpdatePreset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) AdminSetPresetEnabled(ctx context.Context, in *v1.SetPresetEnabledRequest, opts ...grpc.CallOption) (*v1.Preset, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Preset)
+	err := c.cc.Invoke(ctx, InstanceService_AdminSetPresetEnabled_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) AdminDeletePreset(ctx context.Context, in *v1.PresetRequest, opts ...grpc.CallOption) (*v1.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Empty)
+	err := c.cc.Invoke(ctx, InstanceService_AdminDeletePreset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *instanceServiceClient) CreateInstance(ctx context.Context, in *v1.CreateInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error) {
@@ -148,6 +315,21 @@ func (c *instanceServiceClient) ExecInstance(ctx context.Context, in *v1.ExecIns
 // All implementations must embed UnimplementedInstanceServiceServer
 // for forward compatibility.
 type InstanceServiceServer interface {
+	GetInstanceSchedulingSettings(context.Context, *v1.InstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
+	UpdateInstanceSchedulingSettings(context.Context, *v1.UpdateInstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
+	GetSchedulerConfig(context.Context, *v1.SchedulerConfigRequest) (*v1.SchedulerConfig, error)
+	UpdateSchedulerConfig(context.Context, *v1.UpdateSchedulerConfigRequest) (*v1.SchedulerConfig, error)
+	GetInstanceRuntime(context.Context, *v1.GetInstanceRequest) (*v1.InstanceRuntime, error)
+	ListInstanceEvents(context.Context, *v1.GetInstanceRequest) (*v1.InstanceEvents, error)
+	// HTTP is a dedicated SSE handler. OpenAPI is supplied by the source
+	// postprocessor rather than representing this stream as a unary JSON reply.
+	StreamInstanceLogs(*v1.InstanceLogsRequest, grpc.ServerStreamingServer[v1.InstanceLogFrame]) error
+	AdminListPresets(context.Context, *v1.AdminListPresetsRequest) (*v1.AdminListPresetsResponse, error)
+	AdminGetPreset(context.Context, *v1.PresetRequest) (*v1.Preset, error)
+	AdminCreatePreset(context.Context, *v1.CreatePresetRequest) (*v1.Preset, error)
+	AdminUpdatePreset(context.Context, *v1.UpdatePresetRequest) (*v1.Preset, error)
+	AdminSetPresetEnabled(context.Context, *v1.SetPresetEnabledRequest) (*v1.Preset, error)
+	AdminDeletePreset(context.Context, *v1.PresetRequest) (*v1.Empty, error)
 	CreateInstance(context.Context, *v1.CreateInstanceRequest) (*v1.Acceptance, error)
 	ListInstances(context.Context, *v1.ListInstancesRequest) (*v1.ListInstancesResponse, error)
 	GetInstance(context.Context, *v1.GetInstanceRequest) (*v1.Instance, error)
@@ -167,6 +349,45 @@ type InstanceServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedInstanceServiceServer struct{}
 
+func (UnimplementedInstanceServiceServer) GetInstanceSchedulingSettings(context.Context, *v1.InstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInstanceSchedulingSettings not implemented")
+}
+func (UnimplementedInstanceServiceServer) UpdateInstanceSchedulingSettings(context.Context, *v1.UpdateInstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateInstanceSchedulingSettings not implemented")
+}
+func (UnimplementedInstanceServiceServer) GetSchedulerConfig(context.Context, *v1.SchedulerConfigRequest) (*v1.SchedulerConfig, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSchedulerConfig not implemented")
+}
+func (UnimplementedInstanceServiceServer) UpdateSchedulerConfig(context.Context, *v1.UpdateSchedulerConfigRequest) (*v1.SchedulerConfig, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSchedulerConfig not implemented")
+}
+func (UnimplementedInstanceServiceServer) GetInstanceRuntime(context.Context, *v1.GetInstanceRequest) (*v1.InstanceRuntime, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInstanceRuntime not implemented")
+}
+func (UnimplementedInstanceServiceServer) ListInstanceEvents(context.Context, *v1.GetInstanceRequest) (*v1.InstanceEvents, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInstanceEvents not implemented")
+}
+func (UnimplementedInstanceServiceServer) StreamInstanceLogs(*v1.InstanceLogsRequest, grpc.ServerStreamingServer[v1.InstanceLogFrame]) error {
+	return status.Error(codes.Unimplemented, "method StreamInstanceLogs not implemented")
+}
+func (UnimplementedInstanceServiceServer) AdminListPresets(context.Context, *v1.AdminListPresetsRequest) (*v1.AdminListPresetsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminListPresets not implemented")
+}
+func (UnimplementedInstanceServiceServer) AdminGetPreset(context.Context, *v1.PresetRequest) (*v1.Preset, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminGetPreset not implemented")
+}
+func (UnimplementedInstanceServiceServer) AdminCreatePreset(context.Context, *v1.CreatePresetRequest) (*v1.Preset, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminCreatePreset not implemented")
+}
+func (UnimplementedInstanceServiceServer) AdminUpdatePreset(context.Context, *v1.UpdatePresetRequest) (*v1.Preset, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminUpdatePreset not implemented")
+}
+func (UnimplementedInstanceServiceServer) AdminSetPresetEnabled(context.Context, *v1.SetPresetEnabledRequest) (*v1.Preset, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminSetPresetEnabled not implemented")
+}
+func (UnimplementedInstanceServiceServer) AdminDeletePreset(context.Context, *v1.PresetRequest) (*v1.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdminDeletePreset not implemented")
+}
 func (UnimplementedInstanceServiceServer) CreateInstance(context.Context, *v1.CreateInstanceRequest) (*v1.Acceptance, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateInstance not implemented")
 }
@@ -213,6 +434,233 @@ func RegisterInstanceServiceServer(s grpc.ServiceRegistrar, srv InstanceServiceS
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&InstanceService_ServiceDesc, srv)
+}
+
+func _InstanceService_GetInstanceSchedulingSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.InstanceSchedulingSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).GetInstanceSchedulingSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_GetInstanceSchedulingSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).GetInstanceSchedulingSettings(ctx, req.(*v1.InstanceSchedulingSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_UpdateInstanceSchedulingSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdateInstanceSchedulingSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).UpdateInstanceSchedulingSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_UpdateInstanceSchedulingSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).UpdateInstanceSchedulingSettings(ctx, req.(*v1.UpdateInstanceSchedulingSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_GetSchedulerConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.SchedulerConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).GetSchedulerConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_GetSchedulerConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).GetSchedulerConfig(ctx, req.(*v1.SchedulerConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_UpdateSchedulerConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdateSchedulerConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).UpdateSchedulerConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_UpdateSchedulerConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).UpdateSchedulerConfig(ctx, req.(*v1.UpdateSchedulerConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_GetInstanceRuntime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetInstanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).GetInstanceRuntime(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_GetInstanceRuntime_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).GetInstanceRuntime(ctx, req.(*v1.GetInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_ListInstanceEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetInstanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).ListInstanceEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_ListInstanceEvents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).ListInstanceEvents(ctx, req.(*v1.GetInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_StreamInstanceLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(v1.InstanceLogsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(InstanceServiceServer).StreamInstanceLogs(m, &grpc.GenericServerStream[v1.InstanceLogsRequest, v1.InstanceLogFrame]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type InstanceService_StreamInstanceLogsServer = grpc.ServerStreamingServer[v1.InstanceLogFrame]
+
+func _InstanceService_AdminListPresets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.AdminListPresetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).AdminListPresets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_AdminListPresets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).AdminListPresets(ctx, req.(*v1.AdminListPresetsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_AdminGetPreset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.PresetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).AdminGetPreset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_AdminGetPreset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).AdminGetPreset(ctx, req.(*v1.PresetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_AdminCreatePreset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreatePresetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).AdminCreatePreset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_AdminCreatePreset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).AdminCreatePreset(ctx, req.(*v1.CreatePresetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_AdminUpdatePreset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdatePresetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).AdminUpdatePreset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_AdminUpdatePreset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).AdminUpdatePreset(ctx, req.(*v1.UpdatePresetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_AdminSetPresetEnabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.SetPresetEnabledRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).AdminSetPresetEnabled(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_AdminSetPresetEnabled_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).AdminSetPresetEnabled(ctx, req.(*v1.SetPresetEnabledRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_AdminDeletePreset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.PresetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).AdminDeletePreset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_AdminDeletePreset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).AdminDeletePreset(ctx, req.(*v1.PresetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _InstanceService_CreateInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -385,6 +833,54 @@ var InstanceService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*InstanceServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "GetInstanceSchedulingSettings",
+			Handler:    _InstanceService_GetInstanceSchedulingSettings_Handler,
+		},
+		{
+			MethodName: "UpdateInstanceSchedulingSettings",
+			Handler:    _InstanceService_UpdateInstanceSchedulingSettings_Handler,
+		},
+		{
+			MethodName: "GetSchedulerConfig",
+			Handler:    _InstanceService_GetSchedulerConfig_Handler,
+		},
+		{
+			MethodName: "UpdateSchedulerConfig",
+			Handler:    _InstanceService_UpdateSchedulerConfig_Handler,
+		},
+		{
+			MethodName: "GetInstanceRuntime",
+			Handler:    _InstanceService_GetInstanceRuntime_Handler,
+		},
+		{
+			MethodName: "ListInstanceEvents",
+			Handler:    _InstanceService_ListInstanceEvents_Handler,
+		},
+		{
+			MethodName: "AdminListPresets",
+			Handler:    _InstanceService_AdminListPresets_Handler,
+		},
+		{
+			MethodName: "AdminGetPreset",
+			Handler:    _InstanceService_AdminGetPreset_Handler,
+		},
+		{
+			MethodName: "AdminCreatePreset",
+			Handler:    _InstanceService_AdminCreatePreset_Handler,
+		},
+		{
+			MethodName: "AdminUpdatePreset",
+			Handler:    _InstanceService_AdminUpdatePreset_Handler,
+		},
+		{
+			MethodName: "AdminSetPresetEnabled",
+			Handler:    _InstanceService_AdminSetPresetEnabled_Handler,
+		},
+		{
+			MethodName: "AdminDeletePreset",
+			Handler:    _InstanceService_AdminDeletePreset_Handler,
+		},
+		{
 			MethodName: "CreateInstance",
 			Handler:    _InstanceService_CreateInstance_Handler,
 		},
@@ -421,6 +917,12 @@ var InstanceService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _InstanceService_ExecInstance_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamInstanceLogs",
+			Handler:       _InstanceService_StreamInstanceLogs_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "admin/service/v1/i_instance.proto",
 }

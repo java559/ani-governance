@@ -942,6 +942,686 @@ func (x *ListModelsResponse) GetMeta() *CursorPageMeta {
 	return nil
 }
 
+type SearchExternalModelsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	Keyword       string                 `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	Owner         string                 `protobuf:"bytes,3,opt,name=owner,proto3" json:"owner,omitempty"`
+	Task          string                 `protobuf:"bytes,4,opt,name=task,proto3" json:"task,omitempty"`
+	Library       string                 `protobuf:"bytes,5,opt,name=library,proto3" json:"library,omitempty"`
+	Page          *CursorPage            `protobuf:"bytes,6,opt,name=page,proto3" json:"page,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchExternalModelsRequest) Reset() {
+	*x = SearchExternalModelsRequest{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchExternalModelsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchExternalModelsRequest) ProtoMessage() {}
+
+func (x *SearchExternalModelsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchExternalModelsRequest.ProtoReflect.Descriptor instead.
+func (*SearchExternalModelsRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SearchExternalModelsRequest) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *SearchExternalModelsRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
+}
+
+func (x *SearchExternalModelsRequest) GetOwner() string {
+	if x != nil {
+		return x.Owner
+	}
+	return ""
+}
+
+func (x *SearchExternalModelsRequest) GetTask() string {
+	if x != nil {
+		return x.Task
+	}
+	return ""
+}
+
+func (x *SearchExternalModelsRequest) GetLibrary() string {
+	if x != nil {
+		return x.Library
+	}
+	return ""
+}
+
+func (x *SearchExternalModelsRequest) GetPage() *CursorPage {
+	if x != nil {
+		return x.Page
+	}
+	return nil
+}
+
+type ExternalModelCandidate struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	RepoId        string                 `protobuf:"bytes,2,opt,name=repo_id,proto3" json:"repo_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,4,opt,name=display_name,proto3" json:"display_name,omitempty"`
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	Revision      string                 `protobuf:"bytes,6,opt,name=revision,proto3" json:"revision,omitempty"`
+	SizeBytes     int64                  `protobuf:"varint,7,opt,name=size_bytes,proto3" json:"size_bytes,omitempty"`
+	Tags          []string               `protobuf:"bytes,8,rep,name=tags,proto3" json:"tags,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExternalModelCandidate) Reset() {
+	*x = ExternalModelCandidate{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExternalModelCandidate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExternalModelCandidate) ProtoMessage() {}
+
+func (x *ExternalModelCandidate) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExternalModelCandidate.ProtoReflect.Descriptor instead.
+func (*ExternalModelCandidate) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ExternalModelCandidate) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *ExternalModelCandidate) GetRepoId() string {
+	if x != nil {
+		return x.RepoId
+	}
+	return ""
+}
+
+func (x *ExternalModelCandidate) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ExternalModelCandidate) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *ExternalModelCandidate) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ExternalModelCandidate) GetRevision() string {
+	if x != nil {
+		return x.Revision
+	}
+	return ""
+}
+
+func (x *ExternalModelCandidate) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *ExternalModelCandidate) GetTags() []string {
+	if x != nil {
+		return x.Tags
+	}
+	return nil
+}
+
+func (x *ExternalModelCandidate) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+type SearchExternalModelsResponse struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Candidates    []*ExternalModelCandidate `protobuf:"bytes,1,rep,name=candidates,proto3" json:"candidates,omitempty"`
+	Meta          *CursorPageMeta           `protobuf:"bytes,2,opt,name=meta,proto3" json:"meta,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchExternalModelsResponse) Reset() {
+	*x = SearchExternalModelsResponse{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchExternalModelsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchExternalModelsResponse) ProtoMessage() {}
+
+func (x *SearchExternalModelsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchExternalModelsResponse.ProtoReflect.Descriptor instead.
+func (*SearchExternalModelsResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SearchExternalModelsResponse) GetCandidates() []*ExternalModelCandidate {
+	if x != nil {
+		return x.Candidates
+	}
+	return nil
+}
+
+func (x *SearchExternalModelsResponse) GetMeta() *CursorPageMeta {
+	if x != nil {
+		return x.Meta
+	}
+	return nil
+}
+
+type DeleteModelRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ModelId       string                 `protobuf:"bytes,1,opt,name=model_id,proto3" json:"model_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteModelRequest) Reset() {
+	*x = DeleteModelRequest{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteModelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteModelRequest) ProtoMessage() {}
+
+func (x *DeleteModelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteModelRequest.ProtoReflect.Descriptor instead.
+func (*DeleteModelRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *DeleteModelRequest) GetModelId() string {
+	if x != nil {
+		return x.ModelId
+	}
+	return ""
+}
+
+type DeleteModelVersionRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ModelVersionId string                 `protobuf:"bytes,1,opt,name=model_version_id,proto3" json:"model_version_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DeleteModelVersionRequest) Reset() {
+	*x = DeleteModelVersionRequest{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteModelVersionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteModelVersionRequest) ProtoMessage() {}
+
+func (x *DeleteModelVersionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteModelVersionRequest.ProtoReflect.Descriptor instead.
+func (*DeleteModelVersionRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *DeleteModelVersionRequest) GetModelVersionId() string {
+	if x != nil {
+		return x.ModelVersionId
+	}
+	return ""
+}
+
+type GetUploadURLData struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Version        string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	FileName       string                 `protobuf:"bytes,2,opt,name=file_name,proto3" json:"file_name,omitempty"`
+	SizeBytes      int64                  `protobuf:"varint,3,opt,name=size_bytes,proto3" json:"size_bytes,omitempty"`
+	IdempotencyKey string                 `protobuf:"bytes,4,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
+	ChecksumSha256 string                 `protobuf:"bytes,5,opt,name=checksum_sha256,proto3" json:"checksum_sha256,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetUploadURLData) Reset() {
+	*x = GetUploadURLData{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUploadURLData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUploadURLData) ProtoMessage() {}
+
+func (x *GetUploadURLData) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUploadURLData.ProtoReflect.Descriptor instead.
+func (*GetUploadURLData) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetUploadURLData) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *GetUploadURLData) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *GetUploadURLData) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *GetUploadURLData) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *GetUploadURLData) GetChecksumSha256() string {
+	if x != nil {
+		return x.ChecksumSha256
+	}
+	return ""
+}
+
+type GetUploadURLRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ModelId       string                 `protobuf:"bytes,1,opt,name=model_id,proto3" json:"model_id,omitempty"`
+	Data          *GetUploadURLData      `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUploadURLRequest) Reset() {
+	*x = GetUploadURLRequest{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUploadURLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUploadURLRequest) ProtoMessage() {}
+
+func (x *GetUploadURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUploadURLRequest.ProtoReflect.Descriptor instead.
+func (*GetUploadURLRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetUploadURLRequest) GetModelId() string {
+	if x != nil {
+		return x.ModelId
+	}
+	return ""
+}
+
+func (x *GetUploadURLRequest) GetData() *GetUploadURLData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type GetUploadURLResponse struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UploadUrl      string                 `protobuf:"bytes,1,opt,name=upload_url,proto3" json:"upload_url,omitempty"`
+	StoragePath    string                 `protobuf:"bytes,2,opt,name=storage_path,proto3" json:"storage_path,omitempty"`
+	DocId          string                 `protobuf:"bytes,3,opt,name=doc_id,proto3" json:"doc_id,omitempty"`
+	ExpiresAt      *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,proto3" json:"expires_at,omitempty"`
+	UploadHeaders  map[string]string      `protobuf:"bytes,5,rep,name=upload_headers,proto3" json:"upload_headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ModelVersionId string                 `protobuf:"bytes,6,opt,name=model_version_id,proto3" json:"model_version_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetUploadURLResponse) Reset() {
+	*x = GetUploadURLResponse{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUploadURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUploadURLResponse) ProtoMessage() {}
+
+func (x *GetUploadURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUploadURLResponse.ProtoReflect.Descriptor instead.
+func (*GetUploadURLResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetUploadURLResponse) GetUploadUrl() string {
+	if x != nil {
+		return x.UploadUrl
+	}
+	return ""
+}
+
+func (x *GetUploadURLResponse) GetStoragePath() string {
+	if x != nil {
+		return x.StoragePath
+	}
+	return ""
+}
+
+func (x *GetUploadURLResponse) GetDocId() string {
+	if x != nil {
+		return x.DocId
+	}
+	return ""
+}
+
+func (x *GetUploadURLResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *GetUploadURLResponse) GetUploadHeaders() map[string]string {
+	if x != nil {
+		return x.UploadHeaders
+	}
+	return nil
+}
+
+func (x *GetUploadURLResponse) GetModelVersionId() string {
+	if x != nil {
+		return x.ModelVersionId
+	}
+	return ""
+}
+
+type GetModelDownloadURLRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ModelVersionId string                 `protobuf:"bytes,1,opt,name=model_version_id,proto3" json:"model_version_id,omitempty"`
+	FilePath       string                 `protobuf:"bytes,2,opt,name=file_path,proto3" json:"file_path,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetModelDownloadURLRequest) Reset() {
+	*x = GetModelDownloadURLRequest{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetModelDownloadURLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetModelDownloadURLRequest) ProtoMessage() {}
+
+func (x *GetModelDownloadURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetModelDownloadURLRequest.ProtoReflect.Descriptor instead.
+func (*GetModelDownloadURLRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetModelDownloadURLRequest) GetModelVersionId() string {
+	if x != nil {
+		return x.ModelVersionId
+	}
+	return ""
+}
+
+func (x *GetModelDownloadURLRequest) GetFilePath() string {
+	if x != nil {
+		return x.FilePath
+	}
+	return ""
+}
+
+type GetModelDownloadURLResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DownloadUrl   string                 `protobuf:"bytes,1,opt,name=download_url,proto3" json:"download_url,omitempty"`
+	StoragePath   string                 `protobuf:"bytes,2,opt,name=storage_path,proto3" json:"storage_path,omitempty"`
+	IsEncrypted   bool                   `protobuf:"varint,3,opt,name=is_encrypted,proto3" json:"is_encrypted,omitempty"`
+	EncryptAlgo   string                 `protobuf:"bytes,4,opt,name=encrypt_algo,proto3" json:"encrypt_algo,omitempty"`
+	EncryptHint   string                 `protobuf:"bytes,5,opt,name=encrypt_hint,proto3" json:"encrypt_hint,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=expires_at,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetModelDownloadURLResponse) Reset() {
+	*x = GetModelDownloadURLResponse{}
+	mi := &file_catalog_service_v1_model_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetModelDownloadURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetModelDownloadURLResponse) ProtoMessage() {}
+
+func (x *GetModelDownloadURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_model_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetModelDownloadURLResponse.ProtoReflect.Descriptor instead.
+func (*GetModelDownloadURLResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetModelDownloadURLResponse) GetDownloadUrl() string {
+	if x != nil {
+		return x.DownloadUrl
+	}
+	return ""
+}
+
+func (x *GetModelDownloadURLResponse) GetStoragePath() string {
+	if x != nil {
+		return x.StoragePath
+	}
+	return ""
+}
+
+func (x *GetModelDownloadURLResponse) GetIsEncrypted() bool {
+	if x != nil {
+		return x.IsEncrypted
+	}
+	return false
+}
+
+func (x *GetModelDownloadURLResponse) GetEncryptAlgo() string {
+	if x != nil {
+		return x.EncryptAlgo
+	}
+	return ""
+}
+
+func (x *GetModelDownloadURLResponse) GetEncryptHint() string {
+	if x != nil {
+		return x.EncryptHint
+	}
+	return ""
+}
+
+func (x *GetModelDownloadURLResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
 type CreateModelVersionData struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ModelId        string                 `protobuf:"bytes,1,opt,name=model_id,proto3" json:"model_id,omitempty"`
@@ -963,7 +1643,7 @@ type CreateModelVersionData struct {
 
 func (x *CreateModelVersionData) Reset() {
 	*x = CreateModelVersionData{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[12]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -975,7 +1655,7 @@ func (x *CreateModelVersionData) String() string {
 func (*CreateModelVersionData) ProtoMessage() {}
 
 func (x *CreateModelVersionData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[12]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -988,7 +1668,7 @@ func (x *CreateModelVersionData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateModelVersionData.ProtoReflect.Descriptor instead.
 func (*CreateModelVersionData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{12}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateModelVersionData) GetModelId() string {
@@ -1091,7 +1771,7 @@ type CreateModelVersionRequest struct {
 
 func (x *CreateModelVersionRequest) Reset() {
 	*x = CreateModelVersionRequest{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[13]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1103,7 +1783,7 @@ func (x *CreateModelVersionRequest) String() string {
 func (*CreateModelVersionRequest) ProtoMessage() {}
 
 func (x *CreateModelVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[13]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1116,7 +1796,7 @@ func (x *CreateModelVersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateModelVersionRequest.ProtoReflect.Descriptor instead.
 func (*CreateModelVersionRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{13}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *CreateModelVersionRequest) GetData() *CreateModelVersionData {
@@ -1135,7 +1815,7 @@ type CreateModelVersionResponse struct {
 
 func (x *CreateModelVersionResponse) Reset() {
 	*x = CreateModelVersionResponse{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[14]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1147,7 +1827,7 @@ func (x *CreateModelVersionResponse) String() string {
 func (*CreateModelVersionResponse) ProtoMessage() {}
 
 func (x *CreateModelVersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[14]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1160,7 +1840,7 @@ func (x *CreateModelVersionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateModelVersionResponse.ProtoReflect.Descriptor instead.
 func (*CreateModelVersionResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{14}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CreateModelVersionResponse) GetVersion() *ModelVersion {
@@ -1181,7 +1861,7 @@ type GetModelVersionRequest struct {
 
 func (x *GetModelVersionRequest) Reset() {
 	*x = GetModelVersionRequest{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[15]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1193,7 +1873,7 @@ func (x *GetModelVersionRequest) String() string {
 func (*GetModelVersionRequest) ProtoMessage() {}
 
 func (x *GetModelVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[15]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1206,7 +1886,7 @@ func (x *GetModelVersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModelVersionRequest.ProtoReflect.Descriptor instead.
 func (*GetModelVersionRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{15}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetModelVersionRequest) GetModelVersionId() string {
@@ -1240,7 +1920,7 @@ type GetModelVersionResponse struct {
 
 func (x *GetModelVersionResponse) Reset() {
 	*x = GetModelVersionResponse{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[16]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1252,7 +1932,7 @@ func (x *GetModelVersionResponse) String() string {
 func (*GetModelVersionResponse) ProtoMessage() {}
 
 func (x *GetModelVersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[16]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1265,7 +1945,7 @@ func (x *GetModelVersionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetModelVersionResponse.ProtoReflect.Descriptor instead.
 func (*GetModelVersionResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{16}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetModelVersionResponse) GetModel() *Model {
@@ -1292,7 +1972,7 @@ type ListModelVersionsRequest struct {
 
 func (x *ListModelVersionsRequest) Reset() {
 	*x = ListModelVersionsRequest{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[17]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1304,7 +1984,7 @@ func (x *ListModelVersionsRequest) String() string {
 func (*ListModelVersionsRequest) ProtoMessage() {}
 
 func (x *ListModelVersionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[17]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1317,7 +1997,7 @@ func (x *ListModelVersionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModelVersionsRequest.ProtoReflect.Descriptor instead.
 func (*ListModelVersionsRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{17}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ListModelVersionsRequest) GetModelId() string {
@@ -1344,7 +2024,7 @@ type ListModelVersionsResponse struct {
 
 func (x *ListModelVersionsResponse) Reset() {
 	*x = ListModelVersionsResponse{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[18]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1356,7 +2036,7 @@ func (x *ListModelVersionsResponse) String() string {
 func (*ListModelVersionsResponse) ProtoMessage() {}
 
 func (x *ListModelVersionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[18]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1369,7 +2049,7 @@ func (x *ListModelVersionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListModelVersionsResponse.ProtoReflect.Descriptor instead.
 func (*ListModelVersionsResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{18}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ListModelVersionsResponse) GetVersions() []*ModelVersion {
@@ -1401,7 +2081,7 @@ type ImportModelData struct {
 
 func (x *ImportModelData) Reset() {
 	*x = ImportModelData{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[19]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1413,7 +2093,7 @@ func (x *ImportModelData) String() string {
 func (*ImportModelData) ProtoMessage() {}
 
 func (x *ImportModelData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[19]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1426,7 +2106,7 @@ func (x *ImportModelData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportModelData.ProtoReflect.Descriptor instead.
 func (*ImportModelData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{19}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ImportModelData) GetSource() string {
@@ -1487,7 +2167,7 @@ type ImportModelRequest struct {
 
 func (x *ImportModelRequest) Reset() {
 	*x = ImportModelRequest{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[20]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1499,7 +2179,7 @@ func (x *ImportModelRequest) String() string {
 func (*ImportModelRequest) ProtoMessage() {}
 
 func (x *ImportModelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[20]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1512,7 +2192,7 @@ func (x *ImportModelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportModelRequest.ProtoReflect.Descriptor instead.
 func (*ImportModelRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{20}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ImportModelRequest) GetData() *ImportModelData {
@@ -1531,7 +2211,7 @@ type ImportModelResponse struct {
 
 func (x *ImportModelResponse) Reset() {
 	*x = ImportModelResponse{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[21]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1543,7 +2223,7 @@ func (x *ImportModelResponse) String() string {
 func (*ImportModelResponse) ProtoMessage() {}
 
 func (x *ImportModelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[21]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1556,7 +2236,7 @@ func (x *ImportModelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportModelResponse.ProtoReflect.Descriptor instead.
 func (*ImportModelResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{21}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ImportModelResponse) GetTask() *ImportTask {
@@ -1575,7 +2255,7 @@ type GetImportTaskRequest struct {
 
 func (x *GetImportTaskRequest) Reset() {
 	*x = GetImportTaskRequest{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[22]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1587,7 +2267,7 @@ func (x *GetImportTaskRequest) String() string {
 func (*GetImportTaskRequest) ProtoMessage() {}
 
 func (x *GetImportTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[22]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1600,7 +2280,7 @@ func (x *GetImportTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetImportTaskRequest.ProtoReflect.Descriptor instead.
 func (*GetImportTaskRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{22}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetImportTaskRequest) GetTaskId() string {
@@ -1619,7 +2299,7 @@ type GetImportTaskResponse struct {
 
 func (x *GetImportTaskResponse) Reset() {
 	*x = GetImportTaskResponse{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[23]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1631,7 +2311,7 @@ func (x *GetImportTaskResponse) String() string {
 func (*GetImportTaskResponse) ProtoMessage() {}
 
 func (x *GetImportTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[23]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1644,7 +2324,7 @@ func (x *GetImportTaskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetImportTaskResponse.ProtoReflect.Descriptor instead.
 func (*GetImportTaskResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{23}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetImportTaskResponse) GetTask() *ImportTask {
@@ -1663,7 +2343,7 @@ type RetryImportTaskRequest struct {
 
 func (x *RetryImportTaskRequest) Reset() {
 	*x = RetryImportTaskRequest{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[24]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1675,7 +2355,7 @@ func (x *RetryImportTaskRequest) String() string {
 func (*RetryImportTaskRequest) ProtoMessage() {}
 
 func (x *RetryImportTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[24]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1688,7 +2368,7 @@ func (x *RetryImportTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetryImportTaskRequest.ProtoReflect.Descriptor instead.
 func (*RetryImportTaskRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{24}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *RetryImportTaskRequest) GetTaskId() string {
@@ -1707,7 +2387,7 @@ type RetryImportTaskResponse struct {
 
 func (x *RetryImportTaskResponse) Reset() {
 	*x = RetryImportTaskResponse{}
-	mi := &file_catalog_service_v1_model_proto_msgTypes[25]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1719,7 +2399,7 @@ func (x *RetryImportTaskResponse) String() string {
 func (*RetryImportTaskResponse) ProtoMessage() {}
 
 func (x *RetryImportTaskResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_model_proto_msgTypes[25]
+	mi := &file_catalog_service_v1_model_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1732,7 +2412,7 @@ func (x *RetryImportTaskResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RetryImportTaskResponse.ProtoReflect.Descriptor instead.
 func (*RetryImportTaskResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{25}
+	return file_catalog_service_v1_model_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *RetryImportTaskResponse) GetTask() *ImportTask {
@@ -1836,7 +2516,74 @@ const file_catalog_service_v1_model_proto_rawDesc = "" +
 	"capability\"\x7f\n" +
 	"\x12ListModelsResponse\x121\n" +
 	"\x06models\x18\x01 \x03(\v2\x19.catalog.service.v1.ModelR\x06models\x126\n" +
-	"\x04meta\x18\x02 \x01(\v2\".catalog.service.v1.CursorPageMetaR\x04meta\"\xe0\x03\n" +
+	"\x04meta\x18\x02 \x01(\v2\".catalog.service.v1.CursorPageMetaR\x04meta\"\xc7\x01\n" +
+	"\x1bSearchExternalModelsRequest\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\x12\x18\n" +
+	"\akeyword\x18\x02 \x01(\tR\akeyword\x12\x14\n" +
+	"\x05owner\x18\x03 \x01(\tR\x05owner\x12\x12\n" +
+	"\x04task\x18\x04 \x01(\tR\x04task\x12\x18\n" +
+	"\alibrary\x18\x05 \x01(\tR\alibrary\x122\n" +
+	"\x04page\x18\x06 \x01(\v2\x1e.catalog.service.v1.CursorPageR\x04page\"\xb0\x02\n" +
+	"\x16ExternalModelCandidate\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\x12\x18\n" +
+	"\arepo_id\x18\x02 \x01(\tR\arepo_id\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\"\n" +
+	"\fdisplay_name\x18\x04 \x01(\tR\fdisplay_name\x12 \n" +
+	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x1a\n" +
+	"\brevision\x18\x06 \x01(\tR\brevision\x12\x1e\n" +
+	"\n" +
+	"size_bytes\x18\a \x01(\x03R\n" +
+	"size_bytes\x12\x12\n" +
+	"\x04tags\x18\b \x03(\tR\x04tags\x12:\n" +
+	"\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updated_at\"\xa2\x01\n" +
+	"\x1cSearchExternalModelsResponse\x12J\n" +
+	"\n" +
+	"candidates\x18\x01 \x03(\v2*.catalog.service.v1.ExternalModelCandidateR\n" +
+	"candidates\x126\n" +
+	"\x04meta\x18\x02 \x01(\v2\".catalog.service.v1.CursorPageMetaR\x04meta\"0\n" +
+	"\x12DeleteModelRequest\x12\x1a\n" +
+	"\bmodel_id\x18\x01 \x01(\tR\bmodel_id\"G\n" +
+	"\x19DeleteModelVersionRequest\x12*\n" +
+	"\x10model_version_id\x18\x01 \x01(\tR\x10model_version_id\"\xbe\x01\n" +
+	"\x10GetUploadURLData\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\x12\x1c\n" +
+	"\tfile_name\x18\x02 \x01(\tR\tfile_name\x12\x1e\n" +
+	"\n" +
+	"size_bytes\x18\x03 \x01(\x03R\n" +
+	"size_bytes\x12(\n" +
+	"\x0fidempotency_key\x18\x04 \x01(\tR\x0fidempotency_key\x12(\n" +
+	"\x0fchecksum_sha256\x18\x05 \x01(\tR\x0fchecksum_sha256\"k\n" +
+	"\x13GetUploadURLRequest\x12\x1a\n" +
+	"\bmodel_id\x18\x01 \x01(\tR\bmodel_id\x128\n" +
+	"\x04data\x18\x02 \x01(\v2$.catalog.service.v1.GetUploadURLDataR\x04data\"\x81\x03\n" +
+	"\x14GetUploadURLResponse\x12\x1e\n" +
+	"\n" +
+	"upload_url\x18\x01 \x01(\tR\n" +
+	"upload_url\x12\"\n" +
+	"\fstorage_path\x18\x02 \x01(\tR\fstorage_path\x12\x16\n" +
+	"\x06doc_id\x18\x03 \x01(\tR\x06doc_id\x12:\n" +
+	"\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"expires_at\x12c\n" +
+	"\x0eupload_headers\x18\x05 \x03(\v2;.catalog.service.v1.GetUploadURLResponse.UploadHeadersEntryR\x0eupload_headers\x12*\n" +
+	"\x10model_version_id\x18\x06 \x01(\tR\x10model_version_id\x1a@\n" +
+	"\x12UploadHeadersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"f\n" +
+	"\x1aGetModelDownloadURLRequest\x12*\n" +
+	"\x10model_version_id\x18\x01 \x01(\tR\x10model_version_id\x12\x1c\n" +
+	"\tfile_path\x18\x02 \x01(\tR\tfile_path\"\x8d\x02\n" +
+	"\x1bGetModelDownloadURLResponse\x12\"\n" +
+	"\fdownload_url\x18\x01 \x01(\tR\fdownload_url\x12\"\n" +
+	"\fstorage_path\x18\x02 \x01(\tR\fstorage_path\x12\"\n" +
+	"\fis_encrypted\x18\x03 \x01(\bR\fis_encrypted\x12\"\n" +
+	"\fencrypt_algo\x18\x04 \x01(\tR\fencrypt_algo\x12\"\n" +
+	"\fencrypt_hint\x18\x05 \x01(\tR\fencrypt_hint\x12:\n" +
+	"\n" +
+	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"expires_at\"\xe0\x03\n" +
 	"\x16CreateModelVersionData\x12\x1a\n" +
 	"\bmodel_id\x18\x01 \x01(\tR\bmodel_id\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x16\n" +
@@ -1906,65 +2653,84 @@ func file_catalog_service_v1_model_proto_rawDescGZIP() []byte {
 	return file_catalog_service_v1_model_proto_rawDescData
 }
 
-var file_catalog_service_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
+var file_catalog_service_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_catalog_service_v1_model_proto_goTypes = []any{
-	(*ModelVersion)(nil),               // 0: catalog.service.v1.ModelVersion
-	(*Model)(nil),                      // 1: catalog.service.v1.Model
-	(*ImportTask)(nil),                 // 2: catalog.service.v1.ImportTask
-	(*CursorPage)(nil),                 // 3: catalog.service.v1.CursorPage
-	(*CursorPageMeta)(nil),             // 4: catalog.service.v1.CursorPageMeta
-	(*CreateModelData)(nil),            // 5: catalog.service.v1.CreateModelData
-	(*CreateModelRequest)(nil),         // 6: catalog.service.v1.CreateModelRequest
-	(*CreateModelResponse)(nil),        // 7: catalog.service.v1.CreateModelResponse
-	(*GetModelRequest)(nil),            // 8: catalog.service.v1.GetModelRequest
-	(*GetModelResponse)(nil),           // 9: catalog.service.v1.GetModelResponse
-	(*ListModelsRequest)(nil),          // 10: catalog.service.v1.ListModelsRequest
-	(*ListModelsResponse)(nil),         // 11: catalog.service.v1.ListModelsResponse
-	(*CreateModelVersionData)(nil),     // 12: catalog.service.v1.CreateModelVersionData
-	(*CreateModelVersionRequest)(nil),  // 13: catalog.service.v1.CreateModelVersionRequest
-	(*CreateModelVersionResponse)(nil), // 14: catalog.service.v1.CreateModelVersionResponse
-	(*GetModelVersionRequest)(nil),     // 15: catalog.service.v1.GetModelVersionRequest
-	(*GetModelVersionResponse)(nil),    // 16: catalog.service.v1.GetModelVersionResponse
-	(*ListModelVersionsRequest)(nil),   // 17: catalog.service.v1.ListModelVersionsRequest
-	(*ListModelVersionsResponse)(nil),  // 18: catalog.service.v1.ListModelVersionsResponse
-	(*ImportModelData)(nil),            // 19: catalog.service.v1.ImportModelData
-	(*ImportModelRequest)(nil),         // 20: catalog.service.v1.ImportModelRequest
-	(*ImportModelResponse)(nil),        // 21: catalog.service.v1.ImportModelResponse
-	(*GetImportTaskRequest)(nil),       // 22: catalog.service.v1.GetImportTaskRequest
-	(*GetImportTaskResponse)(nil),      // 23: catalog.service.v1.GetImportTaskResponse
-	(*RetryImportTaskRequest)(nil),     // 24: catalog.service.v1.RetryImportTaskRequest
-	(*RetryImportTaskResponse)(nil),    // 25: catalog.service.v1.RetryImportTaskResponse
-	(*timestamppb.Timestamp)(nil),      // 26: google.protobuf.Timestamp
+	(*ModelVersion)(nil),                 // 0: catalog.service.v1.ModelVersion
+	(*Model)(nil),                        // 1: catalog.service.v1.Model
+	(*ImportTask)(nil),                   // 2: catalog.service.v1.ImportTask
+	(*CursorPage)(nil),                   // 3: catalog.service.v1.CursorPage
+	(*CursorPageMeta)(nil),               // 4: catalog.service.v1.CursorPageMeta
+	(*CreateModelData)(nil),              // 5: catalog.service.v1.CreateModelData
+	(*CreateModelRequest)(nil),           // 6: catalog.service.v1.CreateModelRequest
+	(*CreateModelResponse)(nil),          // 7: catalog.service.v1.CreateModelResponse
+	(*GetModelRequest)(nil),              // 8: catalog.service.v1.GetModelRequest
+	(*GetModelResponse)(nil),             // 9: catalog.service.v1.GetModelResponse
+	(*ListModelsRequest)(nil),            // 10: catalog.service.v1.ListModelsRequest
+	(*ListModelsResponse)(nil),           // 11: catalog.service.v1.ListModelsResponse
+	(*SearchExternalModelsRequest)(nil),  // 12: catalog.service.v1.SearchExternalModelsRequest
+	(*ExternalModelCandidate)(nil),       // 13: catalog.service.v1.ExternalModelCandidate
+	(*SearchExternalModelsResponse)(nil), // 14: catalog.service.v1.SearchExternalModelsResponse
+	(*DeleteModelRequest)(nil),           // 15: catalog.service.v1.DeleteModelRequest
+	(*DeleteModelVersionRequest)(nil),    // 16: catalog.service.v1.DeleteModelVersionRequest
+	(*GetUploadURLData)(nil),             // 17: catalog.service.v1.GetUploadURLData
+	(*GetUploadURLRequest)(nil),          // 18: catalog.service.v1.GetUploadURLRequest
+	(*GetUploadURLResponse)(nil),         // 19: catalog.service.v1.GetUploadURLResponse
+	(*GetModelDownloadURLRequest)(nil),   // 20: catalog.service.v1.GetModelDownloadURLRequest
+	(*GetModelDownloadURLResponse)(nil),  // 21: catalog.service.v1.GetModelDownloadURLResponse
+	(*CreateModelVersionData)(nil),       // 22: catalog.service.v1.CreateModelVersionData
+	(*CreateModelVersionRequest)(nil),    // 23: catalog.service.v1.CreateModelVersionRequest
+	(*CreateModelVersionResponse)(nil),   // 24: catalog.service.v1.CreateModelVersionResponse
+	(*GetModelVersionRequest)(nil),       // 25: catalog.service.v1.GetModelVersionRequest
+	(*GetModelVersionResponse)(nil),      // 26: catalog.service.v1.GetModelVersionResponse
+	(*ListModelVersionsRequest)(nil),     // 27: catalog.service.v1.ListModelVersionsRequest
+	(*ListModelVersionsResponse)(nil),    // 28: catalog.service.v1.ListModelVersionsResponse
+	(*ImportModelData)(nil),              // 29: catalog.service.v1.ImportModelData
+	(*ImportModelRequest)(nil),           // 30: catalog.service.v1.ImportModelRequest
+	(*ImportModelResponse)(nil),          // 31: catalog.service.v1.ImportModelResponse
+	(*GetImportTaskRequest)(nil),         // 32: catalog.service.v1.GetImportTaskRequest
+	(*GetImportTaskResponse)(nil),        // 33: catalog.service.v1.GetImportTaskResponse
+	(*RetryImportTaskRequest)(nil),       // 34: catalog.service.v1.RetryImportTaskRequest
+	(*RetryImportTaskResponse)(nil),      // 35: catalog.service.v1.RetryImportTaskResponse
+	nil,                                  // 36: catalog.service.v1.GetUploadURLResponse.UploadHeadersEntry
+	(*timestamppb.Timestamp)(nil),        // 37: google.protobuf.Timestamp
 }
 var file_catalog_service_v1_model_proto_depIdxs = []int32{
-	26, // 0: catalog.service.v1.ModelVersion.created_at:type_name -> google.protobuf.Timestamp
+	37, // 0: catalog.service.v1.ModelVersion.created_at:type_name -> google.protobuf.Timestamp
 	0,  // 1: catalog.service.v1.Model.versions:type_name -> catalog.service.v1.ModelVersion
-	26, // 2: catalog.service.v1.Model.created_at:type_name -> google.protobuf.Timestamp
-	26, // 3: catalog.service.v1.Model.updated_at:type_name -> google.protobuf.Timestamp
-	26, // 4: catalog.service.v1.ImportTask.created_at:type_name -> google.protobuf.Timestamp
-	26, // 5: catalog.service.v1.ImportTask.completed_at:type_name -> google.protobuf.Timestamp
+	37, // 2: catalog.service.v1.Model.created_at:type_name -> google.protobuf.Timestamp
+	37, // 3: catalog.service.v1.Model.updated_at:type_name -> google.protobuf.Timestamp
+	37, // 4: catalog.service.v1.ImportTask.created_at:type_name -> google.protobuf.Timestamp
+	37, // 5: catalog.service.v1.ImportTask.completed_at:type_name -> google.protobuf.Timestamp
 	5,  // 6: catalog.service.v1.CreateModelRequest.data:type_name -> catalog.service.v1.CreateModelData
 	1,  // 7: catalog.service.v1.CreateModelResponse.model:type_name -> catalog.service.v1.Model
 	1,  // 8: catalog.service.v1.GetModelResponse.model:type_name -> catalog.service.v1.Model
 	3,  // 9: catalog.service.v1.ListModelsRequest.page:type_name -> catalog.service.v1.CursorPage
 	1,  // 10: catalog.service.v1.ListModelsResponse.models:type_name -> catalog.service.v1.Model
 	4,  // 11: catalog.service.v1.ListModelsResponse.meta:type_name -> catalog.service.v1.CursorPageMeta
-	12, // 12: catalog.service.v1.CreateModelVersionRequest.data:type_name -> catalog.service.v1.CreateModelVersionData
-	0,  // 13: catalog.service.v1.CreateModelVersionResponse.version:type_name -> catalog.service.v1.ModelVersion
-	1,  // 14: catalog.service.v1.GetModelVersionResponse.model:type_name -> catalog.service.v1.Model
-	0,  // 15: catalog.service.v1.GetModelVersionResponse.version:type_name -> catalog.service.v1.ModelVersion
-	3,  // 16: catalog.service.v1.ListModelVersionsRequest.page:type_name -> catalog.service.v1.CursorPage
-	0,  // 17: catalog.service.v1.ListModelVersionsResponse.versions:type_name -> catalog.service.v1.ModelVersion
-	4,  // 18: catalog.service.v1.ListModelVersionsResponse.meta:type_name -> catalog.service.v1.CursorPageMeta
-	19, // 19: catalog.service.v1.ImportModelRequest.data:type_name -> catalog.service.v1.ImportModelData
-	2,  // 20: catalog.service.v1.ImportModelResponse.task:type_name -> catalog.service.v1.ImportTask
-	2,  // 21: catalog.service.v1.GetImportTaskResponse.task:type_name -> catalog.service.v1.ImportTask
-	2,  // 22: catalog.service.v1.RetryImportTaskResponse.task:type_name -> catalog.service.v1.ImportTask
-	23, // [23:23] is the sub-list for method output_type
-	23, // [23:23] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	3,  // 12: catalog.service.v1.SearchExternalModelsRequest.page:type_name -> catalog.service.v1.CursorPage
+	37, // 13: catalog.service.v1.ExternalModelCandidate.updated_at:type_name -> google.protobuf.Timestamp
+	13, // 14: catalog.service.v1.SearchExternalModelsResponse.candidates:type_name -> catalog.service.v1.ExternalModelCandidate
+	4,  // 15: catalog.service.v1.SearchExternalModelsResponse.meta:type_name -> catalog.service.v1.CursorPageMeta
+	17, // 16: catalog.service.v1.GetUploadURLRequest.data:type_name -> catalog.service.v1.GetUploadURLData
+	37, // 17: catalog.service.v1.GetUploadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
+	36, // 18: catalog.service.v1.GetUploadURLResponse.upload_headers:type_name -> catalog.service.v1.GetUploadURLResponse.UploadHeadersEntry
+	37, // 19: catalog.service.v1.GetModelDownloadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
+	22, // 20: catalog.service.v1.CreateModelVersionRequest.data:type_name -> catalog.service.v1.CreateModelVersionData
+	0,  // 21: catalog.service.v1.CreateModelVersionResponse.version:type_name -> catalog.service.v1.ModelVersion
+	1,  // 22: catalog.service.v1.GetModelVersionResponse.model:type_name -> catalog.service.v1.Model
+	0,  // 23: catalog.service.v1.GetModelVersionResponse.version:type_name -> catalog.service.v1.ModelVersion
+	3,  // 24: catalog.service.v1.ListModelVersionsRequest.page:type_name -> catalog.service.v1.CursorPage
+	0,  // 25: catalog.service.v1.ListModelVersionsResponse.versions:type_name -> catalog.service.v1.ModelVersion
+	4,  // 26: catalog.service.v1.ListModelVersionsResponse.meta:type_name -> catalog.service.v1.CursorPageMeta
+	29, // 27: catalog.service.v1.ImportModelRequest.data:type_name -> catalog.service.v1.ImportModelData
+	2,  // 28: catalog.service.v1.ImportModelResponse.task:type_name -> catalog.service.v1.ImportTask
+	2,  // 29: catalog.service.v1.GetImportTaskResponse.task:type_name -> catalog.service.v1.ImportTask
+	2,  // 30: catalog.service.v1.RetryImportTaskResponse.task:type_name -> catalog.service.v1.ImportTask
+	31, // [31:31] is the sub-list for method output_type
+	31, // [31:31] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_catalog_service_v1_model_proto_init() }
@@ -1978,7 +2744,7 @@ func file_catalog_service_v1_model_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_service_v1_model_proto_rawDesc), len(file_catalog_service_v1_model_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   26,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -42,7 +42,7 @@ func TestGpuCapabilityRequiresSameOwnerActions(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := NewQuotaAdapterRegistry()
-			if err := r.Register(capabilityTestBinding{owner: "ani-inference", actions: tc.owned}); err != nil {
+			if err := r.Register(capabilityTestBinding{owner: InstanceOwner, actions: tc.owned}); err != nil {
 				t.Fatal(err)
 			}
 			if len(tc.foreign) > 0 {
@@ -50,7 +50,7 @@ func TestGpuCapabilityRequiresSameOwnerActions(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			if got := r.GPUExecutionEnabled("ani-inference"); got != tc.enabled {
+			if got := r.GPUExecutionEnabled(InstanceOwner); got != tc.enabled {
 				t.Fatalf("execution enabled=%t, want %t", got, tc.enabled)
 			}
 			if got := r.EnforcesQuota(GpuSharedQuotaCode); got != tc.enabled {
@@ -60,5 +60,15 @@ func TestGpuCapabilityRequiresSameOwnerActions(t *testing.T) {
 				t.Fatal("unsupported capability enabled")
 			}
 		})
+	}
+}
+
+func TestGpuCapabilityRejectsDeferredOwner(t *testing.T) {
+	r := NewQuotaAdapterRegistry()
+	if err := r.Register(capabilityTestBinding{owner: "ani-inference", actions: []string{"CAPABILITY_TEST_CREATE", "CAPABILITY_TEST_DELETE"}}); err != nil {
+		t.Fatal(err)
+	}
+	if r.GPUExecutionEnabled("ani-inference") || r.EnforcesQuota(GpuSharedQuotaCode) || r.EnforcesQuota(GpuPhysicalQuotaCode) {
+		t.Fatal("a deferred owner cannot enable GPU admission")
 	}
 }

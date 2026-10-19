@@ -16,7 +16,10 @@ service AcceleratorAdminService {
   rpc AdoptSupplyGroup(catalog.service.v1.AdoptAcceleratorSupplyRequest) returns (catalog.service.v1.AcceleratorSupply) { option (google.api.http) = {post:"/api/v1/admin/accelerator/supply-groups:adopt" body:"*"}; }
   rpc SetAdmission(catalog.service.v1.SetAcceleratorAdmissionRequest) returns (catalog.service.v1.AcceleratorSupply) { option (google.api.http) = {post:"/api/v1/admin/accelerator/supply-groups/{group_id}:set-admission" body:"*"}; }
   rpc AdminListProfiles(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorProfiles) { option (google.api.http) = {get:"/api/v1/admin/accelerator/profiles"}; }
-  rpc PublishProfile(catalog.service.v1.PublishAcceleratorProfileRequest) returns (catalog.service.v1.AcceleratorProfile) { option (google.api.http) = {post:"/api/v1/admin/accelerator/profiles" body:"*"}; }
+  rpc CreateProfile(catalog.service.v1.CreateAcceleratorProfileRequest) returns (catalog.service.v1.AcceleratorProfile) { option (google.api.http) = {post:"/api/v1/admin/accelerator/profiles" body:"*"}; }
+  rpc PreviewProfile(catalog.service.v1.PreviewAcceleratorProfileRequest) returns (catalog.service.v1.AcceleratorProfilePreview) { option (google.api.http) = {get:"/api/v1/admin/accelerator/profiles:preview"}; }
+  rpc SetProfileState(catalog.service.v1.SetAcceleratorProfileStateRequest) returns (catalog.service.v1.AcceleratorProfile) { option (google.api.http) = {post:"/api/v1/admin/accelerator/profiles/{profile_id}:set-state" body:"*"}; }
+  rpc DeleteProfile(catalog.service.v1.DeleteAcceleratorProfileRequest) returns (catalog.service.v1.AcceleratorProfile) { option (google.api.http) = {post:"/api/v1/admin/accelerator/profiles/{profile_id}:delete" body:"*"}; }
   rpc ListDevices(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorDevices) { option (google.api.http) = {get:"/api/v1/admin/accelerator/devices"}; }
   rpc AdminListBindings(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorAdminBindings) { option (google.api.http) = {get:"/api/v1/admin/accelerator/bindings"}; }
   rpc AdminGetCapacity(catalog.service.v1.AcceleratorVersionRequest) returns (catalog.service.v1.AcceleratorCapacity) { option (google.api.http) = {get:"/api/v1/admin/accelerator/capacity"}; }
