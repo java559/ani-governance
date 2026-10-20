@@ -6,7 +6,7 @@ import (
 
 	kerrors "github.com/go-kratos/kratos/v2/errors"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
-	view "go-wind-admin/api/gen/go/instance/service/v1"
+	view "go-wind-admin/api/gen/go/compute/service/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
 )
@@ -38,7 +38,7 @@ func TestInstancePresetUsesProfileLimit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewInstanceService(nil, nil, nil, nil, nil, InstanceCatalogConfig{ClusterID: plan.Request.ClusterId, Admin: &instanceProfileLimitAdmin{plan: plan}})
+	s := NewComputePresetService(nil, ComputeCatalogConfig{ClusterID: plan.Request.ClusterId, Admin: &instanceProfileLimitAdmin{plan: plan}})
 	input := &view.PresetGpuInput{ProfileId: plan.Profile.ProfileId, ProfileVersion: plan.Profile.ProfileVersion, DevicesPerInstance: plan.Request.DevicesPerReplica}
 	ref, err := s.resolvePresetGPU(context.Background(), "governance:user:9", input)
 	if err != nil {

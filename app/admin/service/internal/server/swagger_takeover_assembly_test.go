@@ -89,6 +89,7 @@ func newRestServerWithSwagger(t *testing.T, enableSwagger bool) http.Handler {
 		nil,                               // imageService
 		nil,                               // modeldevService
 		service.NewModelService(nil, nil), // modelService: preserve route registration without a downstream client
+		nil,                               // computeService
 	)
 	require.NoError(t, err)
 	require.NotNil(t, srv, "NewRestServer must build a server for this configuration")

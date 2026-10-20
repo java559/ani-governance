@@ -1,0 +1,14 @@
+syntax = "proto3";
+package admin.service.v1;
+import "google/api/annotations.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "compute/service/v1/compute.proto";
+
+service ComputePresetService {
+ rpc AdminListPresets(compute.service.v1.AdminListPresetsRequest) returns(compute.service.v1.AdminListPresetsResponse) { option(google.api.http)={get:"/api/v1/admin/compute-presets"}; }
+ rpc AdminGetPreset(compute.service.v1.PresetRequest) returns(compute.service.v1.Preset) { option(google.api.http)={get:"/api/v1/admin/compute-presets/{id}"}; }
+ rpc AdminCreatePreset(compute.service.v1.CreatePresetRequest) returns(compute.service.v1.Preset) { option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "201" value: { response: { description: "Created" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/Preset" } } } }] } } } }] } }; option(google.api.http)={post:"/api/v1/admin/compute-presets" body:"*"}; }
+ rpc AdminUpdatePreset(compute.service.v1.UpdatePresetRequest) returns(compute.service.v1.Preset) { option(google.api.http)={patch:"/api/v1/admin/compute-presets/{id}" body:"*"}; }
+ rpc AdminSetPresetEnabled(compute.service.v1.SetPresetEnabledRequest) returns(compute.service.v1.Preset) { option(google.api.http)={post:"/api/v1/admin/compute-presets/{id}:set-enabled" body:"*"}; }
+ rpc AdminDeletePreset(compute.service.v1.PresetRequest) returns(compute.service.v1.Empty) { option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "204" value: { response: { description: "Deleted" } } }] } }; option(google.api.http)={delete:"/api/v1/admin/compute-presets/{id}"}; }
+}

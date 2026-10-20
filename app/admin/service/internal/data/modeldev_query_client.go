@@ -58,17 +58,17 @@ func modelDevValidExecution(in *modeldevv1.ExecutionView) bool {
 		in.States.ComputeState != 0 && in.States.DeliveryState != 0 && in.States.CloseState != 0 && in.States.ResourceState != 0
 }
 
-func (c *ModelDevClient) ListExecutionArtifacts(ctx context.Context, scope ModelDevResolveScope, id string, size uint32, token string) (*modeldevv1.ListExecutionArtifactsResponse, error) {
+func (c *ModelDevClient) ListExecutionArtifacts(ctx context.Context, scope ModelDevResolveScope, id string, page, pageSize uint32) (*modeldevv1.ListExecutionArtifactsResponse, error) {
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListExecutionArtifacts_FullMethodName)
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutionArtifacts(call, &modeldevv1.ListExecutionArtifactsRequest{ExecutionId: id, Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutionArtifacts(call, &modeldevv1.ListExecutionArtifactsRequest{ExecutionId: id, Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Artifacts) > 100 || len(out.NextCursor) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Artifacts) > 100 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := map[string]bool{}

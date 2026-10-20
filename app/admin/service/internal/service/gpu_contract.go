@@ -196,13 +196,14 @@ type GpuQuotaItem struct {
 // Only Governance stores the original quota vector. The owner receives the
 // business payload containing its single accepted execution and display snapshot.
 type GpuCanonical struct {
-	SchemaVersion         uint32          `json:"schema_version"`
-	GpuRequest            *acc.GpuRequest `json:"gpu_request"`
-	BusinessPayload       json.RawMessage `json:"business_payload"`
-	BusinessPayloadDigest string          `json:"business_payload_digest"`
-	MeteringVersion       string          `json:"metering_version"`
-	QuotaItems            []GpuQuotaItem  `json:"quota_items"`
-	DeleteExpectedVersion int64           `json:"delete_expected_version,omitempty"`
+	SchemaVersion           uint32          `json:"schema_version"`
+	InstanceContractVersion uint32          `json:"instance_contract_version"`
+	GpuRequest              *acc.GpuRequest `json:"gpu_request"`
+	BusinessPayload         json.RawMessage `json:"business_payload"`
+	BusinessPayloadDigest   string          `json:"business_payload_digest"`
+	MeteringVersion         string          `json:"metering_version"`
+	QuotaItems              []GpuQuotaItem  `json:"quota_items"`
+	DeleteExpectedVersion   int64           `json:"delete_expected_version,omitempty"`
 }
 
 func isGpuCanonical(raw []byte) bool {
@@ -215,7 +216,7 @@ func DecodeGpuCanonical(raw []byte) (*GpuCanonical, error) {
 	var c GpuCanonical
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
-	if dec.Decode(&c) != nil || c.SchemaVersion != 3 || c.DeleteExpectedVersion < 0 || c.MeteringVersion != GpuMeteringVersion || c.GpuRequest == nil || len(c.QuotaItems) == 0 {
+	if dec.Decode(&c) != nil || c.SchemaVersion != 3 || c.InstanceContractVersion != data.CurrentInstanceContractVersion || c.DeleteExpectedVersion < 0 || c.MeteringVersion != GpuMeteringVersion || c.GpuRequest == nil || len(c.QuotaItems) == 0 {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU canonical")
 	}
 	encoded, err := gpuCanonicalJSON(c)
@@ -240,6 +241,9 @@ func DecodeGpuCanonical(raw []byte) (*GpuCanonical, error) {
 	business, err := res.DecodeBusinessPayload(c.BusinessPayload)
 	if err != nil {
 		return nil, err
+	}
+	if business.InstanceContractVersion != data.CurrentInstanceContractVersion {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "instance contract version mismatch")
 	}
 	_, err = GpuResolvedQuota(&acc.ResolvedGpuRequest{Execution: business.GpuExecution, Selection: business.GpuDisplay, QuotaItems: []*acc.GpuQuotaItem{{QuotaCode: q.QuotaCode, Units: q.Units}}}, c.GpuRequest)
 	if err != nil {

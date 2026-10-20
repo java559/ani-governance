@@ -8,8 +8,8 @@ import (
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
-	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
-	view "go-wind-admin/api/gen/go/instance/service/v1"
+	res "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
+	view "go-wind-admin/api/gen/go/compute/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
@@ -30,9 +30,9 @@ type instancePresetOwnerProbe struct {
 	reply    func(int, *res.ListPresetsRequest) (*res.ListPresetsResponse, error)
 }
 
-func (p *instancePresetOwnerProbe) Presets(_ context.Context, tenant, actor string, r *res.ListPresetsRequest) (*res.ListPresetsResponse, error) {
+func (p *instancePresetOwnerProbe) ListPresets(_ context.Context, tenant, actor string, r *res.ListPresetsRequest) (*res.ListPresetsResponse, error) {
 	p.t.Helper()
-	if tenant != p.tenant || r.TenantId != p.tenant || actor != "governance:user:9" {
+	if tenant != p.tenant || r.TenantId != p.tenant || actor != "governance:user:9" || r.Usage != res.Usage_CONTAINER_INSTANCE {
 		p.t.Fatalf("untrusted owner identity: %s %s %#v", tenant, actor, r)
 	}
 	p.requests = append(p.requests, proto.Clone(r).(*res.ListPresetsRequest))
@@ -105,7 +105,7 @@ func instancePresetContext(tenant uint32) context.Context {
 	return auth.NewPrincipalContext(context.Background(), &auth.Principal{Type: auth.SubjectUser, TenantID: tenant, ID: 9})
 }
 func instancePresetService(owner *instancePresetOwnerProbe, a InstanceActionAuthorizer, catalog InstanceGPUCatalog, cluster string) *InstanceService {
-	return NewInstanceService(nil, NewInstanceGpuBinding(owner, a, cluster), instancePresetTenantResolver{}, nil, nil, InstanceCatalogConfig{ClusterID: cluster, Catalog: catalog})
+	return NewInstanceService(nil, NewInstanceGpuBinding(owner, a, cluster), instancePresetTenantResolver{}, nil, nil, InstanceCatalogConfig{ClusterID: cluster, Compute: owner, Catalog: catalog})
 }
 func instancePresetBuilder(t *testing.T) *gpuPlanFixture {
 	t.Helper()

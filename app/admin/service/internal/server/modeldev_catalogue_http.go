@@ -16,11 +16,11 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 	route.GET(data.ModelDevListPresetsPath, func(ctx khttp.Context) error {
 		modelDevQueryHeaders(ctx)
 		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListPresets)
-		size, token, _, err := modelDevCatalogueSelectors(ctx.Request(), false)
+		size, pageSize, _, err := modelDevCatalogueSelectors(ctx.Request(), false)
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListPresetsRequest{Limit: size, Cursor: token}
+		in := &modeldevv1.ListPresetsRequest{Page: size, PageSize: pageSize}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.ListPresets(c, v.(*modeldevv1.ListPresetsRequest))
 		})
@@ -33,11 +33,11 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 	route.GET(data.ModelDevListInputVersionsPath, func(ctx khttp.Context) error {
 		modelDevQueryHeaders(ctx)
 		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListInputVersions)
-		size, token, state, err := modelDevCatalogueSelectors(ctx.Request(), true)
+		size, pageSize, state, err := modelDevCatalogueSelectors(ctx.Request(), true)
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListInputVersionsRequest{Limit: size, Cursor: token, State: state}
+		in := &modeldevv1.ListInputVersionsRequest{Page: size, PageSize: pageSize, State: state}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.ListInputVersions(c, v.(*modeldevv1.ListInputVersionsRequest))
 		})
@@ -68,40 +68,36 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 	})
 }
 
-func modelDevCatalogueSelectors(request *http.Request, allowState bool) (uint32, string, *string, error) {
+func modelDevCatalogueSelectors(request *http.Request, allowState bool) (*uint32, *uint32, *string, error) {
 	query, err := modelDevBoundedQuery(request)
 	if err != nil {
-		return 0, "", nil, err
+		return nil, nil, nil, err
 	}
-	var size uint32
-	var token string
+	var page, pageSize *uint32
 	var state *string
 	for name, values := range query {
 		switch name {
-		case "limit":
-			size, err = modelDevQueryPositiveBound(values[0], 100)
-		case "cursor":
-			if len(values[0]) > 2048 {
-				return 0, "", nil, invalidModelDevQueryHTTP()
-			}
-			token = values[0]
+		case "page":
+			page, err = modelDevPagePointer(values[0])
+		case "pageSize":
+			pageSize, err = modelDevPageSizePointer(values[0])
 		case "state":
 			if !allowState {
-				return 0, "", nil, invalidModelDevQueryHTTP()
+				return nil, nil, nil, invalidModelDevQueryHTTP()
 			}
 			value := values[0]
 			switch value {
 			case "FIXING", "VALIDATING", "READY", "FAILED":
 				state = &value
 			default:
-				return 0, "", nil, invalidModelDevQueryHTTP()
+				return nil, nil, nil, invalidModelDevQueryHTTP()
 			}
 		default:
-			return 0, "", nil, invalidModelDevQueryHTTP()
+			return nil, nil, nil, invalidModelDevQueryHTTP()
 		}
 		if err != nil {
-			return 0, "", nil, err
+			return nil, nil, nil, err
 		}
 	}
-	return size, token, state, nil
+	return page, pageSize, state, nil
 }

@@ -11,6 +11,7 @@ import (
 var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"ImageService":            identityV1.Module_IMAGE,
 	"InstanceService":         identityV1.Module_INSTANCE,
+	"ComputePresetService":    identityV1.Module_SYSTEM,
 	"AcceleratorAdminService": identityV1.Module_ACCELERATOR,
 	"AcceleratorService":      identityV1.Module_ACCELERATOR,
 	"QuotaSelfService":        identityV1.Module_TENANT,

@@ -1418,28 +1418,48 @@ func init() {
 	quotaoperationDescRequestHash := quotaoperationFields[9].Descriptor()
 	// quotaoperation.RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
 	quotaoperation.RequestHashValidator = quotaoperationDescRequestHash.Validators[0].(func(string) error)
+	// quotaoperationDescInstanceContractVersion is the schema descriptor for instance_contract_version field.
+	quotaoperationDescInstanceContractVersion := quotaoperationFields[10].Descriptor()
+	// quotaoperation.DefaultInstanceContractVersion holds the default value on creation for the instance_contract_version field.
+	quotaoperation.DefaultInstanceContractVersion = quotaoperationDescInstanceContractVersion.Default.(uint32)
+	// quotaoperation.InstanceContractVersionValidator is a validator for the "instance_contract_version" field. It is called by the builders before save.
+	quotaoperation.InstanceContractVersionValidator = func() func(uint32) error {
+		validators := quotaoperationDescInstanceContractVersion.Validators
+		fns := [...]func(uint32) error{
+			validators[0].(func(uint32) error),
+			validators[1].(func(uint32) error),
+		}
+		return func(instance_contract_version uint32) error {
+			for _, fn := range fns {
+				if err := fn(instance_contract_version); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// quotaoperationDescCanonicalRequest is the schema descriptor for canonical_request field.
-	quotaoperationDescCanonicalRequest := quotaoperationFields[10].Descriptor()
+	quotaoperationDescCanonicalRequest := quotaoperationFields[11].Descriptor()
 	// quotaoperation.CanonicalRequestValidator is a validator for the "canonical_request" field. It is called by the builders before save.
 	quotaoperation.CanonicalRequestValidator = quotaoperationDescCanonicalRequest.Validators[0].(func(string) error)
 	// quotaoperationDescAttemptCount is the schema descriptor for attempt_count field.
-	quotaoperationDescAttemptCount := quotaoperationFields[12].Descriptor()
+	quotaoperationDescAttemptCount := quotaoperationFields[13].Descriptor()
 	// quotaoperation.DefaultAttemptCount holds the default value on creation for the attempt_count field.
 	quotaoperation.DefaultAttemptCount = quotaoperationDescAttemptCount.Default.(int)
 	// quotaoperationDescLeaseGeneration is the schema descriptor for lease_generation field.
-	quotaoperationDescLeaseGeneration := quotaoperationFields[13].Descriptor()
+	quotaoperationDescLeaseGeneration := quotaoperationFields[14].Descriptor()
 	// quotaoperation.DefaultLeaseGeneration holds the default value on creation for the lease_generation field.
 	quotaoperation.DefaultLeaseGeneration = quotaoperationDescLeaseGeneration.Default.(int64)
 	// quotaoperationDescRetryBlocked is the schema descriptor for retry_blocked field.
-	quotaoperationDescRetryBlocked := quotaoperationFields[14].Descriptor()
+	quotaoperationDescRetryBlocked := quotaoperationFields[15].Descriptor()
 	// quotaoperation.DefaultRetryBlocked holds the default value on creation for the retry_blocked field.
 	quotaoperation.DefaultRetryBlocked = quotaoperationDescRetryBlocked.Default.(bool)
 	// quotaoperationDescLastErrorCode is the schema descriptor for last_error_code field.
-	quotaoperationDescLastErrorCode := quotaoperationFields[15].Descriptor()
+	quotaoperationDescLastErrorCode := quotaoperationFields[16].Descriptor()
 	// quotaoperation.LastErrorCodeValidator is a validator for the "last_error_code" field. It is called by the builders before save.
 	quotaoperation.LastErrorCodeValidator = quotaoperationDescLastErrorCode.Validators[0].(func(string) error)
 	// quotaoperationDescLeaseOwner is the schema descriptor for lease_owner field.
-	quotaoperationDescLeaseOwner := quotaoperationFields[17].Descriptor()
+	quotaoperationDescLeaseOwner := quotaoperationFields[18].Descriptor()
 	// quotaoperation.LeaseOwnerValidator is a validator for the "lease_owner" field. It is called by the builders before save.
 	quotaoperation.LeaseOwnerValidator = quotaoperationDescLeaseOwner.Validators[0].(func(string) error)
 	// quotaoperationDescID is the schema descriptor for id field.

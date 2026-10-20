@@ -7,6 +7,7 @@ import (
 
 	kerrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/stretchr/testify/require"
+	computeview "go-wind-admin/api/gen/go/compute/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	"google.golang.org/protobuf/proto"
 )
@@ -112,7 +113,7 @@ func TestInstanceHTTPRejectsAmbiguousJSONAndCallerIdentity(t *testing.T) {
 func TestInstanceHTTPPresetPatchPreservesGPUClearAndFalse(t *testing.T) {
 	request := httptest.NewRequest("PATCH", "/api/v1/admin/compute-presets/20000000-0000-4000-8000-000000000001", strings.NewReader(`{"data":{"gpu":null,"enabled":false},"update_mask":"gpu,enabled"}`))
 	request.Header.Set("Content-Type", "application/json")
-	message := new(view.UpdatePresetRequest)
+	message := new(computeview.UpdatePresetRequest)
 	require.NoError(t, decodeInstanceHTTP(request, message))
 	require.NotNil(t, message.Data)
 	require.Nil(t, message.Data.Gpu, "gpu:null remains an explicit mask-directed clear")
@@ -162,15 +163,15 @@ func TestInstanceQueryPagePresenceAndFilters(t *testing.T) {
 		{name: "maximum", query: "page=4294967295&pageSize=100", page: proto.Uint32(4294967295), size: proto.Uint32(100)},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			for _, message := range []proto.Message{new(view.ListInstancesRequest), new(view.ListPresetsRequest), new(view.AdminListPresetsRequest)} {
+			for _, message := range []proto.Message{new(view.ListInstancesRequest), new(computeview.ListPresetsRequest), new(computeview.AdminListPresetsRequest)} {
 				require.NoError(t, decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instances?"+tc.query, nil), message))
 				var page, size *uint32
 				switch m := message.(type) {
 				case *view.ListInstancesRequest:
 					page, size = m.Page, m.PageSize
-				case *view.ListPresetsRequest:
+				case *computeview.ListPresetsRequest:
 					page, size = m.Page, m.PageSize
-				case *view.AdminListPresetsRequest:
+				case *computeview.AdminListPresetsRequest:
 					page, size = m.Page, m.PageSize
 				}
 				require.Equal(t, tc.page, page, "page and pageSize absence must remain independently visible")
@@ -184,12 +185,12 @@ func TestInstanceQueryPagePresenceAndFilters(t *testing.T) {
 	require.Equal(t, "cpu", instances.ComputeType)
 	require.Equal(t, "running", instances.ObservedState)
 	require.Equal(t, "work%_", instances.Name)
-	presets := new(view.ListPresetsRequest)
+	presets := new(computeview.ListPresetsRequest)
 	require.NoError(t, decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instance-presets?compute_type=gpu&gpu_mode=SHARED_FIXED&code=gpu-small", nil), presets))
 	require.Equal(t, "gpu", presets.ComputeType)
 	require.Equal(t, "SHARED_FIXED", presets.GpuMode)
 	require.Equal(t, "gpu-small", presets.Code)
-	admin := new(view.AdminListPresetsRequest)
+	admin := new(computeview.AdminListPresetsRequest)
 	require.NoError(t, decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/admin/compute-presets?enabled=false", nil), admin))
 	require.NotNil(t, admin.Enabled)
 	require.False(t, *admin.Enabled)
@@ -202,7 +203,7 @@ func TestInstanceQueryRejectsNonCanonicalPaging(t *testing.T) {
 		"page=1;pageSize=2", "page=%ZZ", "after_id=cursor", "afterId=cursor", "cursor=cursor", "size=20", "limit=20", "page_size=20", "sort=name",
 	} {
 		t.Run(query, func(t *testing.T) {
-			for _, message := range []proto.Message{new(view.ListInstancesRequest), new(view.ListPresetsRequest), new(view.AdminListPresetsRequest)} {
+			for _, message := range []proto.Message{new(view.ListInstancesRequest), new(computeview.ListPresetsRequest), new(computeview.AdminListPresetsRequest)} {
 				err := decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instances?"+query, nil), message)
 				require.Error(t, err)
 				require.EqualValues(t, 400, kerrors.Code(err))
@@ -214,9 +215,9 @@ func TestInstanceQueryRejectsNonCanonicalPaging(t *testing.T) {
 		require.Error(t, err, query)
 	}
 	for _, query := range []string{"instance_kind=container", "compute_type=CPU", "gpu_mode=unknown", "enabled=true", "name=" + strings.Repeat("界", 129), "code=" + strings.Repeat("a", 65)} {
-		err := decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instance-presets?"+query, nil), new(view.ListPresetsRequest))
+		err := decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instance-presets?"+query, nil), new(computeview.ListPresetsRequest))
 		require.Error(t, err, query)
 	}
-	err := decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/admin/compute-presets?enabled=0", nil), new(view.AdminListPresetsRequest))
+	err := decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/admin/compute-presets?enabled=0", nil), new(computeview.AdminListPresetsRequest))
 	require.Error(t, err)
 }

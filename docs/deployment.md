@@ -206,6 +206,29 @@ gow run admin
 
 通过 CLI/SQL 改数据后重启服务实例，使内存中的 Casbin 策略刷新；启动只读取策略。管理 API 入口按现有逻辑刷新当前实例，不能据此声称其他实例的策略已同步。
 
+### 算力规格管理归属迁移
+
+平台规格管理使用 `ComputePresetService`、既有 `SYSTEM` 管理分类和
+`compute:preset:admin:list/read/create/update/delete`；set-enabled 复用 update。
+租户目录 `GET /api/v1/instance-presets` 仍要求 `instance:preset:read` 和 `INSTANCE`。
+`SYSTEM` 不是租户使用算力的套餐授权，平台管理仍检查真实平台用户、tenant=0、平台角色和精确权限。
+
+首次安装只在显式同步新 API 目录后执行
+[`register-compute-permissions.sql`](../scripts/ops/sql/register-compute-permissions.sql)。
+新权限初始为 OFF，后续启用和角色绑定由明确的权限管理操作完成；它不授角色、不改变已有权限启停或关联限制，不适用于已有旧管理权限的库。
+已有库在联合迁移演练及匹配版本门禁通过后，暂停规格写入和实例新受理，处理在途请求并停止所有旧 SQL/RPC 访问进程；
+对已核对且备份的 Gov 库显式执行
+[`migrate-compute-preset-permissions.sql`](../scripts/ops/sql/migrate-compute-preset-permissions.sql)。
+它只原地改名五个管理 permission code，并按 path/method 更新六条 API 的 owner、operation 和 SYSTEM 分类；
+ID、启停、角色/API 关系和审计字段保持，源目标冲突、缺项或异常 owner 会整事务失败。
+新 Res 就绪后启动新 Gov，刷新所有实例的 Casbin 策略并取得新身份凭据，验证平台权限和租户目录后再受控恢复受理；
+不运行 `SyncPermissions`、不重复首次种子、不批量补权。
+
+Gov 权限库与 Res 规格库分别提交，必须分别记录结果。恢复时先停止新进程，根据两库实际提交状态协调执行
+[`restore-instance-preset-permissions.sql`](../scripts/ops/sql/restore-instance-preset-permissions.sql)
+及 Res 已演练的逆向迁移，恢复匹配二进制、刷新全部策略并验证后才开放受理。
+这些脚本存在不表示已经在目标库执行或已完成容器业务验收。
+
 ### 补齐旧库的租户登出授权
 
 2026-09-21 已在首次种子中补上 `sys:tenant_manager` → `POST /api/v1/auth/logout`。用旧种子初始化的数据库，需要显式执行一次数据补丁；重跑 `admin init` 不会修复已初始化的库。

@@ -8,9 +8,13 @@ BEGIN
   ('POST','/api/v1/instances','instance:create'),
   ('GET','/api/v1/instances','instance:list'),
   ('GET','/api/v1/instances/{instance_id}','instance:read'),
+  ('GET','/api/v1/instances/{instance_id}/configuration','instance:read'),
+  ('GET','/api/v1/instances/mountable-pvcs','instance:create'),
   ('GET','/api/v1/instances/{instance_id}/runtime','instance:read'),
   ('GET','/api/v1/instances/{instance_id}/events','instance:read'),
   ('GET','/api/v1/instances/{instance_id}/logs','instance:read'),
+  ('POST','/api/v1/instances/{instance_id}/metrics/query','instance:read'),
+  ('GET','/api/v1/instances/{instance_id}/metrics/latest','instance:read'),
   ('GET','/api/v1/admin/scheduler-config','instance:scheduler:read'),
   ('PUT','/api/v1/admin/scheduler-config','instance:scheduler:update'),
   ('GET','/api/v1/admin/instance-scheduling-settings','instance:scheduling:read'),
@@ -20,13 +24,7 @@ BEGIN
   ('DELETE','/api/v1/instances/{data.instance_id}','instance:delete'),
   ('GET','/api/v1/instance-operations/{operation_id}','instance:operation:read'),
   ('GET','/api/v1/instance-presets','instance:preset:read'),
-  ('POST','/api/v1/instances/{data.instance_id}/exec','instance:exec'),
-  ('GET','/api/v1/admin/compute-presets','instance:preset:admin:list'),
-  ('POST','/api/v1/admin/compute-presets','instance:preset:admin:create'),
-  ('GET','/api/v1/admin/compute-presets/{id}','instance:preset:admin:read'),
-  ('PATCH','/api/v1/admin/compute-presets/{id}','instance:preset:admin:update'),
-  ('POST','/api/v1/admin/compute-presets/{id}:set-enabled','instance:preset:admin:update'),
-  ('DELETE','/api/v1/admin/compute-presets/{id}','instance:preset:admin:delete')
+  ('POST','/api/v1/instances/{data.instance_id}/exec','instance:exec')
  ) AS routes(method,path,code) LOOP
   SELECT count(*),min(id) INTO route_count,aid FROM sys_apis
    WHERE path=r.path AND method=r.method AND module='InstanceService'

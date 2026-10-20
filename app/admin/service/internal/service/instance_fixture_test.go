@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func instanceResourceProcess(t *testing.T, plan *gpuPlanFixture) (*data.InstanceClient, *testutil.InstanceResourcePeer) {
+func instanceResourceProcess(t *testing.T, plan *gpuPlanFixture) (*data.InstanceClient, *data.ComputeClient, *testutil.InstanceResourcePeer) {
 	var request *acc.GpuRequest
 	var profile *acc.GpuProfile
 	if plan != nil {
@@ -18,8 +18,8 @@ func instanceResourceProcess(t *testing.T, plan *gpuPlanFixture) (*data.Instance
 		profile = plan.Profile
 	}
 	peer := testutil.StartInstanceResourcePeer(t, request, profile)
-	client, closeClient, e := data.NewInstanceClientFromEnv()
+	client, compute, closeClient, e := data.NewResourceClientsFromEnv()
 	require.NoError(t, e)
 	t.Cleanup(closeClient)
-	return client, peer
+	return client, compute, peer
 }

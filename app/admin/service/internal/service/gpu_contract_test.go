@@ -1,8 +1,12 @@
 package service
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"github.com/stretchr/testify/require"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	protocol "github.com/zhangzhe-ctrl/ani-accelerator-service/pkg/gpuprotocol"
+	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 	"math"
@@ -118,13 +122,35 @@ func TestQuotaDurableAckFields(t *testing.T) {
 
 func TestGpuChargesCompleteAndOrderIndependent(t *testing.T) {
 	c := &GpuCanonical{QuotaItems: []GpuQuotaItem{{GpuSharedQuotaCode, 8192}, {"storage.bytes", 10}}}
-	valid := []QuotaChargeRef{{"storage", "storage.bytes", 10}, {"gpu", GpuSharedQuotaCode, 8192}}
+	valid := []QuotaChargeRef{{ChargeID: "storage", QuotaCode: "storage.bytes", ChargedUnits: 10}, {ChargeID: "gpu", QuotaCode: GpuSharedQuotaCode, ChargedUnits: 8192}}
 	if e := ValidateGpuCharges(c, valid); e != nil {
 		t.Fatal(e)
 	}
-	for _, invalid := range [][]QuotaChargeRef{nil, valid[:1], {valid[0], valid[0]}, {valid[1], {"gpu", "storage.bytes", 10}}, {valid[0], {"gpu", GpuSharedQuotaCode, 12}}} {
+	for _, invalid := range [][]QuotaChargeRef{nil, valid[:1], {valid[0], valid[0]}, {valid[1], {ChargeID: "gpu", QuotaCode: "storage.bytes", ChargedUnits: 10}}, {valid[0], {ChargeID: "gpu", QuotaCode: GpuSharedQuotaCode, ChargedUnits: 12}}} {
 		if e := ValidateGpuCharges(c, invalid); e == nil {
 			t.Fatal("invalid charges")
 		}
+	}
+}
+
+func TestGpuCurrentInstanceContractRejectsRetiredEnvelope(t *testing.T) {
+	plan, _, _ := gpuVector(t)
+	business := instanceSettingsBusiness(t)
+	business.ComputeType = "gpu"
+	business.GpuExecution, business.GpuDisplay = plan.Resolved.Execution, plan.Resolved.Selection
+	payload, err := res.CanonicalBusinessPayloadVersion(business, 2)
+	require.NoError(t, err)
+	sum := sha256.Sum256(payload)
+	command := GpuCanonical{SchemaVersion: 3, InstanceContractVersion: 2, GpuRequest: plan.Request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion, QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}}
+	raw, err := gpuCanonicalJSON(command)
+	require.NoError(t, err)
+	_, err = DecodeGpuCanonical(raw)
+	require.NoError(t, err)
+	for _, version := range []uint32{0, 1, 3} {
+		command.InstanceContractVersion = version
+		raw, err = gpuCanonicalJSON(command)
+		require.NoError(t, err)
+		_, err = DecodeGpuCanonical(raw)
+		require.Error(t, err)
 	}
 }

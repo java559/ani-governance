@@ -31,14 +31,14 @@ func TestGpuProjectionOnlyGpuTerminal(t *testing.T) {
 		t.Fatal(e)
 	}
 	sum := sha256.Sum256(body)
-	c := GpuCanonical{SchemaVersion: 3, GpuRequest: p.Request, BusinessPayload: body, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion, QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}, {QuotaCode: "storage.bytes", Units: 20}}}
+	c := GpuCanonical{SchemaVersion: 3, InstanceContractVersion: 2, GpuRequest: p.Request, BusinessPayload: body, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion, QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}, {QuotaCode: "storage.bytes", Units: 20}}}
 	raw, err := gpuCanonicalJSON(c)
 	if err != nil {
 		t.Fatal(err)
 	}
 	now := time.Date(2026, 9, 23, 0, 0, 0, 123, time.UTC)
 	tid := uint32(1)
-	op := &ent.QuotaOperation{TenantID: &tid, CreatedAt: &now, OperationID: "10000000-0000-4000-8000-000000000001", ResourceID: "10000000-0000-4000-8000-000000000002", ResourceTenantID: "10000000-0000-4000-8000-000000000003", OwnerService: InstanceOwner, CanonicalRequest: string(raw), DispatchState: quotaoperation.DispatchStateAcked, AttemptCount: 1}
+	op := &ent.QuotaOperation{InstanceContractVersion: 2, TenantID: &tid, CreatedAt: &now, OperationID: "10000000-0000-4000-8000-000000000001", ResourceID: "10000000-0000-4000-8000-000000000002", ResourceTenantID: "10000000-0000-4000-8000-000000000003", OwnerService: InstanceOwner, CanonicalRequest: string(raw), DispatchState: quotaoperation.DispatchStateAcked, AttemptCount: 1}
 	charges := []*ent.QuotaCharge{{TenantID: &tid, OperationID: op.OperationID, ChargeID: "gpu", QuotaCode: GpuSharedQuotaCode, OriginalUnits: 8192}, {TenantID: &tid, OperationID: op.OperationID, ChargeID: "storage", QuotaCode: "storage.bytes", OriginalUnits: 20}}
 	declared, e := deriveGpuProjection(op, charges, false)
 	if e != nil || declared.Revision != 1 {

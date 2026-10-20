@@ -7,18 +7,22 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
+	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	api "go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/permission"
+	entplan "go-wind-admin/app/admin/service/internal/data/ent/plan"
 	"go-wind-admin/app/admin/service/internal/data/ent/planmodule"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
@@ -35,17 +39,20 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
 
-// These two doubles are only the Resource resolution and Acc RPC boundaries.
-// Current authorization and original-request admission execute real PG code.
+// Resource calls delegate to the real mTLS/PG provider. Only dependency failure
+// injection and the external Acc plan response are controlled here.
 type instanceResolutionPeer struct {
 	InstanceOwnerClient
+	mu          sync.Mutex
 	plan        *gpuPlanFixture
 	calls       int
 	unavailable bool
 }
 
 func (p *instanceResolutionPeer) Resolve(ctx context.Context, tenant, actor string, d *res.CreateInstanceData, defaults *res.SchedulingOptions) (*res.CreateSpec, error) {
+	p.mu.Lock()
 	p.calls++
+	p.mu.Unlock()
 	if p.unavailable {
 		return nil, errors.New("external image/preset unavailable")
 	}
@@ -56,13 +63,16 @@ func (p *instanceResolutionPeer) Resolve(ctx context.Context, tenant, actor stri
 }
 
 type instancePlanPeer struct {
+	mu          sync.Mutex
 	plan        *gpuPlanFixture
 	calls       int
 	unavailable bool
 }
 
 func (p *instancePlanPeer) ResolveGpuRequest(_ context.Context, r *acc.ResolveGpuRequestRequest, _ ...grpc.CallOption) (*acc.ResolvedGpuRequest, error) {
+	p.mu.Lock()
 	p.calls++
+	p.mu.Unlock()
 	if p.unavailable {
 		return nil, errors.New("external Acc unavailable")
 	}
@@ -78,6 +88,7 @@ func TestInstanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T)
 }
 
 func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu bool, schedulingScenario ...bool) {
+	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "true")
 	c := testutil.NewQuotaPGClient(t)
 	testutil.ResetQuotaFixture(t, c)
 	sys := appViewer.NewSystemViewerContext(context.Background())
@@ -89,6 +100,7 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 	require.NoError(t, e)
 	if !cpu {
 		require.NoError(t, c.Client().PlanQuota.Create().SetPlanID(p.ID).SetQuotaCode(GpuSharedQuotaCode).SetQuotaValue(20000).Exec(sys))
+		require.NoError(t, c.Client().PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.ModuleAccelerator).Exec(sys))
 	}
 	require.NoError(t, c.Client().PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.Module("INSTANCE")).Exec(sys))
 	operator, e := c.Client().User.Create().SetTenantID(tenant.ID).SetUsername("instance-" + fixture).SetStatus(user.StatusNormal).Save(sys)
@@ -127,7 +139,7 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 	if cpu {
 		fixturePlan, expectedPlanCalls = nil, 0
 	}
-	owner, peer := instanceResourceProcess(t, fixturePlan)
+	owner, computeOwner, peer := instanceResourceProcess(t, fixturePlan)
 	resource := &instanceResolutionPeer{InstanceOwnerClient: owner, plan: plan}
 	plans := &instancePlanPeer{plan: plan}
 	var schedulingStore *instanceSchedulingReplayStore
@@ -145,7 +157,11 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 		schedulingStore = &instanceSchedulingReplayStore{InstanceSchedulingStore: settingsRepo}
 		schedulingPolicy = NewInstanceSchedulingPolicy(schedulingStore, data.NewTenantRepo(bctx, c), &instanceSettingsClusterProbe{}, peer.ClusterID)
 	}
-	binding := NewInstanceGpuBinding(resource, data.NewInstanceAuthorizationRepo(c), peer.ClusterID, schedulingPolicy)
+	authorization := data.NewInstanceAuthorizationRepo(c)
+	if !cpu {
+		require.ErrorIs(t, authorization.AuthorizeCatalog(requestCtx, tenant.ID, operator.ID), data.ErrActionAuthorizationDenied, "Profile catalog permission is absent, while GPU use remains eligible")
+	}
+	binding := NewInstanceGpuBinding(resource, authorization, peer.ClusterID, schedulingPolicy)
 	registry := NewQuotaAdapterRegistry()
 	require.NoError(t, registry.Register(binding))
 	ledger := data.NewQuotaLedgerRepo(bctx, c)
@@ -178,9 +194,16 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 	operation, e := ledger.GetOperationForUser(requestCtx, tenant.ID, first.OperationID)
 	require.NoError(t, e)
 	require.Equal(t, quotaoperation.DispatchStateAcked, operation.DispatchState, "real Resource durable ACK required")
+	require.EqualValues(t, 2, operation.InstanceContractVersion)
 	instance, e := owner.Get(requestCtx, tenant.ResourceTenantID, "governance:user:"+strconv.FormatUint(uint64(operator.ID), 10), first.ResourceID)
 	require.NoError(t, e)
 	require.Equal(t, first.OperationID, instance.CreateOperationId)
+	configuration, err := owner.Configuration(requestCtx, tenant.ResourceTenantID, "governance:user:"+strconv.FormatUint(uint64(operator.ID), 10), first.ResourceID)
+	require.NoError(t, err)
+	require.EqualValues(t, 2, configuration.InstanceContractVersion)
+	require.Equal(t, "/workspace", configuration.WorkspaceMountPath, "omitted optional configuration resolves the normal current defaults")
+	require.Empty(t, configuration.VolumeMounts)
+	require.Empty(t, configuration.Env)
 	require.EqualValues(t, 1, instance.Version)
 	require.Equal(t, "container", instance.InstanceKind)
 	require.Equal(t, peer.PresetID, instance.PresetId)
@@ -204,10 +227,27 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 	}
 	if schedulingStore != nil {
 		require.NoError(t, settingsRepo.SaveInstanceSchedulingSettings(sys, peer.ClusterID, operator.ID, []byte(`{"defaults":{"pod_placement":"COLOCATE_PREFERRED"},"priority_class_allowlists":[]}`)))
-		_, err := owner.AdminUpdatePreset(sys, "governance:user:1", &res.AdminUpdatePresetRequest{Id: peer.PresetID, Data: &res.PresetData{CpuMillis: 2000, MemoryMib: 4096}, UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"cpu_millis", "memory_mib"}}})
+		_, err := computeOwner.AdminUpdatePreset(sys, "governance:user:1", &compute.AdminUpdatePresetRequest{Id: peer.PresetID, Data: &compute.PresetData{CpuMillis: 2000, MemoryMib: 4096}, UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"cpu_millis", "memory_mib"}}})
 		require.NoError(t, err)
 		schedulingStore.fail = true
 	}
+	if !cpu {
+		_, err := c.Client().PlanModule.Delete().Where(planmodule.HasPlanWith(entplan.IDEQ(p.ID)), planmodule.ModuleEQ(planmodule.ModuleAccelerator)).Exec(sys)
+		require.NoError(t, err)
+	}
+	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "false")
+	closedBinding := NewInstanceGpuBinding(resource, data.NewInstanceAuthorizationRepo(c), peer.ClusterID, schedulingPolicy)
+	closedAcceptance, err := NewGpuAcceptance(ledger, registry, data.NewTenantRepo(bctx, c), planResolver, closedBinding, nil)
+	require.NoError(t, err)
+	_, err = closedAcceptance.AcceptGpuCreate(requestCtx, uuid.NewString(), nil, public)
+	require.Error(t, err)
+	require.EqualValues(t, 503, kratoserrors.FromError(err).Code)
+	require.Equal(t, "INSTANCE_CREATE_DISABLED", kratoserrors.FromError(err).Reason)
+	frozenReplay, err := closedAcceptance.AcceptGpuCreate(requestCtx, key, nil, public)
+	require.NoError(t, err, "maintenance gate retains current accepted replay")
+	require.Equal(t, first.OperationID, frozenReplay.OperationID)
+	require.True(t, frozenReplay.Replayed)
+	require.Equal(t, 1, resource.calls, "closed admission must not call current resolution")
 	resource.unavailable = true
 	plans.unavailable = true
 	replay, e := acceptance.AcceptGpuCreate(requestCtx, key, nil, public)
@@ -236,6 +276,11 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 	_, e = acceptance.AcceptGpuCreate(requestCtx, key, nil, changed)
 	require.Error(t, e)
 	require.Equal(t, 1, resource.calls)
+	changed.Name = public.Name
+	changed.PresetId = uuid.NewString()
+	_, e = acceptance.AcceptGpuCreate(requestCtx, key, nil, changed)
+	require.Error(t, e)
+	require.Equal(t, 1, resource.calls)
 	require.NoError(t, c.Client().UserRole.UpdateOneID(membership.ID).SetStatus(userrole.StatusDisabled).Exec(sys))
 	_, e = acceptance.AcceptGpuCreate(requestCtx, key, nil, public)
 	require.Error(t, e, "revoked current role must deny even frozen replay")
@@ -249,7 +294,7 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 		require.Empty(t, candidates, "CPU must never enter Acc usage projection")
 		require.NoError(t, c.Client().UserRole.UpdateOneID(membership.ID).SetStatus(userrole.StatusActive).Exec(sys))
 		deleteKey := uuid.NewString()
-		accepted, e := acceptance.AcceptGpuDeleteVersion(requestCtx, deleteKey, first.ResourceID, instance.Version)
+		accepted, e := closedAcceptance.AcceptGpuDeleteVersion(requestCtx, deleteKey, first.ResourceID, instance.Version)
 		require.NoError(t, e)
 		require.Equal(t, "QUEUED_FOR_OWNER", accepted.Result)
 		repeated, e := acceptance.AcceptGpuDeleteVersion(requestCtx, deleteKey, first.ResourceID, instance.Version)
@@ -303,6 +348,54 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 		return
 	}
 	require.Len(t, charges, 1)
+	// Current business permission remains valid, but a new GPU key must check
+	// today's eligibility. The original key above never re-ran that gate.
+	require.NoError(t, c.Client().UserRole.UpdateOneID(membership.ID).SetStatus(userrole.StatusActive).Exec(sys))
+	resource.unavailable = false
+	_, e = acceptance.AcceptGpuCreate(requestCtx, uuid.NewString(), nil, public)
+	require.EqualValues(t, 403, kratoserrors.FromError(e).Code)
+	require.Equal(t, "GPU_USE_DENIED", kratoserrors.FromError(e).Reason)
+	require.Equal(t, expectedPlanCalls, plans.calls, "denied new GPU use cannot call ACC")
+	operations, e := c.Client().QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(tenant.ID)).Count(sys)
+	require.NoError(t, e)
+	require.Equal(t, 1, operations, "denied new GPU use cannot persist admission or charges")
+	require.NoError(t, c.Client().PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.ModuleAccelerator).Exec(sys))
+	plans.unavailable = false
+	concurrentKey := uuid.NewString()
+	results := make(chan *data.QuotaOccupyResult, 8)
+	failures := make(chan error, 8)
+	var group sync.WaitGroup
+	for i := 0; i < 8; i++ {
+		group.Add(1)
+		go func() {
+			defer group.Done()
+			result, err := acceptance.AcceptGpuCreate(requestCtx, concurrentKey, nil, public)
+			results <- result
+			failures <- err
+		}()
+	}
+	group.Wait()
+	close(results)
+	close(failures)
+	for err := range failures {
+		require.NoError(t, err)
+	}
+	var unique *data.QuotaOccupyResult
+	for result := range results {
+		require.NotNil(t, result)
+		if unique == nil {
+			unique = result
+		}
+		require.Equal(t, unique.OperationID, result.OperationID)
+		require.Equal(t, unique.ResourceID, result.ResourceID)
+		require.Equal(t, unique.ChargeIDs, result.ChargeIDs)
+	}
+	concurrentCharges, e := ledger.GetChargesForOperation(requestCtx, tenant.ID, unique.OperationID)
+	require.NoError(t, e)
+	require.Len(t, concurrentCharges, 1)
+	concurrentDelete, e := acceptance.AcceptGpuDeleteVersion(requestCtx, uuid.NewString(), unique.ResourceID, 1)
+	require.NoError(t, e)
+	require.Equal(t, "CANCELED_BEFORE_DISPATCH", concurrentDelete.Result)
 	release := &data.QuotaReleaseInput{OwnerService: InstanceOwner, ReleaseEventID: uuid.NewString(), OperationID: first.OperationID, Reason: "RESOURCE_RELEASED", PayloadHash: "original-event", PayloadJSON: `{"scope":"owner-release"}`, ResourceID: first.ResourceID, Complete: true}
 	wrong := *release
 	wrong.OwnerService = "ani-inference"

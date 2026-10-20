@@ -107,7 +107,7 @@ func (p *instanceSettingsResolveProbe) Resolve(_ context.Context, tenant, actor 
 }
 func instanceSettingsBusiness(t *testing.T) *res.CreateSpec {
 	t.Helper()
-	return &res.CreateSpec{Name: "workspace", ImageId: "img_10000000000040008000000000000001", ImageScope: "platform", PresetId: "10000000-0000-4000-8000-000000000002", ImageReference: "registry.invalid/image@sha256:" + strings.Repeat("a", 64), Cpu: "1000m", Memory: "2048Mi", ClusterId: "10000000-0000-4000-8000-000000000001", Namespace: "workspaces", ServiceAccount: "workspace", StorageClass: "cephfs", WorkspaceSize: "1Gi", Shell: "/bin/sh", Uid: 1000, Gid: 1000, InstanceKind: "container", ComputeType: "cpu", Scheduling: &res.SchedulingOptions{PodPlacement: res.SchedulingOptions_NONE.Enum()}}
+	return &res.CreateSpec{InstanceContractVersion: 2, WorkspaceMountPath: "/workspace", Name: "workspace", ImageId: "img_10000000000040008000000000000001", ImageScope: "platform", PresetId: "10000000-0000-4000-8000-000000000002", ImageReference: "registry.invalid/image@sha256:" + strings.Repeat("a", 64), Cpu: "1000m", Memory: "2048Mi", ClusterId: "10000000-0000-4000-8000-000000000001", Namespace: "workspaces", ServiceAccount: "workspace", StorageClass: "cephfs", WorkspaceSize: "1Gi", Shell: "/bin/sh", Uid: 1000, Gid: 1000, InstanceKind: "container", ComputeType: "cpu", Scheduling: &res.SchedulingOptions{PodPlacement: res.SchedulingOptions_NONE.Enum()}}
 }
 func instanceSettingsData(s *res.CreateSpec) *res.CreateInstanceData {
 	return &res.CreateInstanceData{Name: s.Name, ImageId: s.ImageId, ImageScope: s.ImageScope, PresetId: s.PresetId}

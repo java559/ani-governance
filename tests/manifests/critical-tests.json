@@ -22,7 +22,13 @@
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestQuotaAdminAndSelfDomainViews"},
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestQuotaAdminEnvelopeWireContract"},
   {"Package":"go-wind-admin/app/admin/service/internal/data","Test":"TestQuotaResourceReleasedOriginalLedgerAndEventFence"},
+  {"Package":"go-wind-admin/app/admin/service/internal/data","Test":"TestInstanceCPUCurrentContractRejectsRetiredVersions"},
+  {"Package":"go-wind-admin/app/admin/service/internal/data","Test":"TestInstanceCPUCurrentLiteralEnvironmentBytesSurviveEnvelopeAndDelete"},
+  {"Package":"go-wind-admin/app/admin/service/internal/data","Test":"TestQuotaPostgresInstanceConcurrentAdmissionUsesCurrentContract"},
+  {"Package":"go-wind-admin/app/admin/service/internal/data","Test":"TestQuotaPostgresInstanceRejectsRetiredAdmission"},
   {"Package":"go-wind-admin/app/admin/service/internal/server","Test":"TestInstancePublicHTTPPersistentIntakeAndCommands"},
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestInstanceCurrentAuthorizationOriginalReplayAndOwnerRelease"},
+  {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestGpuCurrentInstanceContractRejectsRetiredEnvelope"},
+  {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestInstanceConfigurationQueryAcceptsOnlyCurrentContract"},
   {"Package":"go-wind-admin/app/admin/service/internal/server","Test":"TestNewRestServerOmitsDeferredInferenceManagement"}
 ]

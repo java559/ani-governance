@@ -46,6 +46,8 @@ type QuotaOperation struct {
 	IdempotencyKey string `json:"idempotency_key,omitempty"`
 	// 规范请求哈希
 	RequestHash string `json:"request_hash,omitempty"`
+	// InstanceContractVersion holds the value of the "instance_contract_version" field.
+	InstanceContractVersion uint32 `json:"instance_contract_version,omitempty"`
 	// 规范请求（schema_version=1）
 	CanonicalRequest string `json:"canonical_request,omitempty"`
 	// 投递状态
@@ -76,7 +78,7 @@ func (*QuotaOperation) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case quotaoperation.FieldRetryBlocked:
 			values[i] = new(sql.NullBool)
-		case quotaoperation.FieldID, quotaoperation.FieldTenantID, quotaoperation.FieldAttemptCount, quotaoperation.FieldLeaseGeneration:
+		case quotaoperation.FieldID, quotaoperation.FieldTenantID, quotaoperation.FieldInstanceContractVersion, quotaoperation.FieldAttemptCount, quotaoperation.FieldLeaseGeneration:
 			values[i] = new(sql.NullInt64)
 		case quotaoperation.FieldOperationID, quotaoperation.FieldResourceTenantID, quotaoperation.FieldResourceID, quotaoperation.FieldCreateOperationID, quotaoperation.FieldActorType, quotaoperation.FieldActorID, quotaoperation.FieldOwnerService, quotaoperation.FieldAction, quotaoperation.FieldIdempotencyKey, quotaoperation.FieldRequestHash, quotaoperation.FieldCanonicalRequest, quotaoperation.FieldDispatchState, quotaoperation.FieldLastErrorCode, quotaoperation.FieldLeaseOwner, quotaoperation.FieldAckJSON:
 			values[i] = new(sql.NullString)
@@ -191,6 +193,12 @@ func (_m *QuotaOperation) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field request_hash", values[i])
 			} else if value.Valid {
 				_m.RequestHash = value.String
+			}
+		case quotaoperation.FieldInstanceContractVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field instance_contract_version", values[i])
+			} else if value.Valid {
+				_m.InstanceContractVersion = uint32(value.Int64)
 			}
 		case quotaoperation.FieldCanonicalRequest:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -344,6 +352,9 @@ func (_m *QuotaOperation) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("request_hash=")
 	builder.WriteString(_m.RequestHash)
+	builder.WriteString(", ")
+	builder.WriteString("instance_contract_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.InstanceContractVersion))
 	builder.WriteString(", ")
 	builder.WriteString("canonical_request=")
 	builder.WriteString(_m.CanonicalRequest)

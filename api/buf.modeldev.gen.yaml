@@ -1,0 +1,26 @@
+version: v2
+# 定向模板：只重新生成 ModelDev BFF 的公共查询响应/请求 Proto
+# （api/protos/modeldev/service/v1/execution.proto）。与 buf.gen.yaml 对同一文件的
+# 生成结果保持一致，仅用于增量改动时的局部重生成。分页协议已由 limit/cursor 迁移为
+# page/pageSize；legacy 字段保持 reserved。
+clean: false
+managed:
+  enabled: true
+  disable:
+    - module: buf.build/googleapis/googleapis
+    - module: buf.build/gnostic/gnostic
+  override:
+    - file_option: go_package_prefix
+      value: go-wind-admin/api/gen/go
+    # 本地化分页 Proto（api/localdeps/pagination，源码与 go-crud/api@v0.0.7 逐字节一致）。
+    - file_option: go_package
+      path: pagination/v1
+      value: go-wind-admin/pkg/localdeps/go-crud/api/gen/go/pagination/v1
+inputs:
+  - directory: protos
+    paths:
+      - protos/modeldev/service/v1/execution.proto
+plugins:
+  - local: [go, run, google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11]
+    out: gen/go
+    opt: paths=source_relative

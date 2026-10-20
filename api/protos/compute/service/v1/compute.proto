@@ -1,0 +1,63 @@
+syntax = "proto3";
+package compute.service.v1;
+import "google/protobuf/field_mask.proto";
+
+message GpuSummary {
+ string profile_id = 1 [json_name = "profile_id"];
+ uint64 profile_version = 2 [json_name = "profile_version"];
+ string mode = 3;
+ string model_key = 4 [json_name = "model_key"];
+ uint32 devices_per_instance = 5 [json_name = "devices_per_instance"];
+ reserved 6, 7; reserved "shared_memory_mib_per_device", "shared_memory_mib_total";
+ int64 memory_mib_per_device = 9 [json_name = "memory_mib_per_device"];
+ int64 memory_mib_total = 10 [json_name = "memory_mib_total"];
+
+ uint32 core_limit_percent = 8 [json_name = "core_limit_percent"];
+}
+
+message ListPresetsRequest {
+ optional uint32 page = 1;
+ optional uint32 page_size = 2 [json_name = "pageSize"];
+ string name = 3; string code = 4;
+ string compute_type = 5 [json_name = "compute_type"];
+ string gpu_mode = 6 [json_name = "gpu_mode"];
+}
+message Preset {
+ string id = 1; string name = 3;
+ reserved 2, 4, 5, 6; reserved "version", "cpu", "memory", "instance_type";
+ string code = 7; string description = 8;
+ string compute_type = 9 [json_name = "compute_type"];
+ int64 cpu_millis = 10 [json_name = "cpu_millis"];
+ int64 memory_mib = 11 [json_name = "memory_mib"];
+ bool enabled = 12; GpuSummary gpu = 13;
+ string created_at = 14 [json_name = "created_at"];
+ string updated_at = 15 [json_name = "updated_at"];
+ bool selectable = 16; string unavailable_reason = 17 [json_name = "unavailable_reason"];
+}
+message ListPresetsResponse { repeated Preset items = 1; int64 total = 2; string gpu_catalog_status = 3 [json_name = "gpu_catalog_status"]; string gpu_catalog_reason = 4 [json_name = "gpu_catalog_reason"]; }
+message PresetGpuInput {
+ string profile_id = 1 [json_name = "profile_id"];
+ uint64 profile_version = 2 [json_name = "profile_version"];
+ uint32 devices_per_instance = 3 [json_name = "devices_per_instance"];
+}
+message PresetData {
+ string code = 1; string name = 2; string description = 3;
+ string compute_type = 4 [json_name = "compute_type"];
+ int64 cpu_millis = 5 [json_name = "cpu_millis"];
+ int64 memory_mib = 6 [json_name = "memory_mib"];
+ optional bool enabled = 7; PresetGpuInput gpu = 8;
+}
+message AdminListPresetsRequest {
+ optional uint32 page = 1; optional uint32 page_size = 2 [json_name = "pageSize"];
+ string name = 3; string code = 4;
+ string compute_type = 5 [json_name = "compute_type"];
+ string gpu_mode = 6 [json_name = "gpu_mode"];
+ optional bool enabled = 7;
+}
+message AdminListPresetsResponse { repeated Preset items = 1; int64 total = 2; }
+message PresetRequest { string id = 1; }
+message CreatePresetRequest { PresetData data = 1; }
+message UpdatePresetRequest { string id = 1; PresetData data = 2; google.protobuf.FieldMask update_mask = 3 [json_name = "update_mask"]; }
+message SetPresetEnabledData { optional bool enabled = 1; }
+message SetPresetEnabledRequest { string id = 1; SetPresetEnabledData data = 2; }
+message Empty {}

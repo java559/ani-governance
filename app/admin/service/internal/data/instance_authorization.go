@@ -11,6 +11,8 @@ const InstanceCreatePath = "/api/v1/instances"
 const InstanceDeletePath = "/api/v1/instances/{data.instance_id}"
 const InstanceStartPath = "/api/v1/instances/{data.instance_id}:start"
 const InstanceStopPath = "/api/v1/instances/{data.instance_id}:stop"
+const InstanceMountablePVCsPath = "/api/v1/instances/mountable-pvcs"
+const InstanceConfigurationPath = "/api/v1/instances/{instance_id}/configuration"
 const InstanceGetPath = "/api/v1/instances/{instance_id}"
 const InstanceOperationPath = "/api/v1/instance-operations/{operation_id}"
 const InstancePresetPath = "/api/v1/instance-presets"
@@ -18,6 +20,8 @@ const InstanceExecPath = "/api/v1/instances/{data.instance_id}/exec"
 const InstanceRuntimePath = "/api/v1/instances/{instance_id}/runtime"
 const InstanceEventsPath = "/api/v1/instances/{instance_id}/events"
 const InstanceLogsPath = "/api/v1/instances/{instance_id}/logs"
+const InstanceMetricsQueryPath = "/api/v1/instances/{instance_id}/metrics/query"
+const InstanceMetricsLatestPath = "/api/v1/instances/{instance_id}/metrics/latest"
 
 func InstanceModuleRegistered() bool {
 	id, ok := identity.Module_value["INSTANCE"]
@@ -39,9 +43,9 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 		allowed = method == "POST" || method == "GET"
 	case InstanceDeletePath:
 		allowed = method == "DELETE"
-	case InstanceStartPath, InstanceStopPath, InstanceExecPath:
+	case InstanceStartPath, InstanceStopPath, InstanceExecPath, InstanceMetricsQueryPath:
 		allowed = method == "POST"
-	case InstanceGetPath, InstanceOperationPath, InstancePresetPath, InstanceRuntimePath, InstanceEventsPath, InstanceLogsPath:
+	case InstanceGetPath, InstanceOperationPath, InstancePresetPath, InstanceRuntimePath, InstanceEventsPath, InstanceLogsPath, InstanceMountablePVCsPath, InstanceConfigurationPath, InstanceMetricsLatestPath:
 		allowed = method == "GET"
 	}
 	if !allowed || r == nil || r.current == nil {
@@ -57,4 +61,14 @@ func (r *InstanceAuthorizationRepo) AuthorizeCatalog(ctx context.Context, tenant
 		return ErrActionAuthorizationDenied
 	}
 	return r.current.authorizeRoute(ctx, tenant, user, "/api/v1/accelerator/profiles", "ACCELERATOR", "GET")
+}
+
+func (r *InstanceAuthorizationRepo) AuthorizeGpuUse(ctx context.Context, tenant, user uint32) error {
+	if r == nil || r.current == nil {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		return ErrActionAuthorizationUnavailable
+	}
+	return NewGpuUseAuthorizationRepo(r.current.entClient).AuthorizeGpuUse(ctx, tenant, user)
 }

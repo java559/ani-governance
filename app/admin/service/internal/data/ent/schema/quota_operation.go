@@ -24,7 +24,8 @@ func (QuotaOperation) Annotations() []schema.Annotation {
 			Charset:   "utf8mb4",
 			Collation: "utf8mb4_bin",
 			Checks: map[string]string{
-				"sys_quota_operations_tenant_positive_ck": `tenant_id > 0`,
+				"sys_quota_operations_tenant_positive_ck":           `tenant_id > 0`,
+				"sys_quota_operations_instance_contract_version_ck": `instance_contract_version IN (1, 2)`,
 			},
 		},
 		entsql.WithComments(true),
@@ -95,6 +96,9 @@ func (QuotaOperation) Fields() []ent.Field {
 			Comment("规范请求哈希").
 			NotEmpty().
 			Immutable(),
+
+		// Server-selected immutable instance admission contract; old rows remain v1.
+		field.Uint32("instance_contract_version").Default(1).Min(1).Max(2).Immutable(),
 
 		// 经校验的业务参数（schema_version=1，固定字段顺序）。
 		// 不得保存 Bearer、密码、Cookie、签名头或私钥。

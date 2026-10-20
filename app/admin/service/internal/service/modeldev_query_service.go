@@ -61,14 +61,18 @@ func (s *ModelDevService) ListExecutions(ctx context.Context, in *modeldevv1.Lis
 	if err != nil {
 		return nil, err
 	}
-	if in == nil || in.Limit > 100 || len(in.Cursor) > 2048 {
+	if in == nil {
 		return nil, modelDevQueryInvalid()
 	}
-	out, err := s.resolver.ListExecutions(ctx, scope, in.Limit, in.Cursor)
+	page, pageSize, err := resolveModelDevPage(in.Page, in.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	out, err := s.resolver.ListExecutions(ctx, scope, page, pageSize)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
-	reply := &modeldevv1.ListExecutionsResponse{NextCursor: out.NextCursor, Total: out.Total}
+	reply := &modeldevv1.ListExecutionsResponse{Total: out.Total}
 	for _, execution := range out.Executions {
 		reply.Items = append(reply.Items, modelDevPublicExecution(execution))
 	}
@@ -114,18 +118,40 @@ func (s *ModelDevService) ListExecutionArtifacts(ctx context.Context, in *modeld
 	if err != nil {
 		return nil, err
 	}
-	if in == nil || !modelDevQueryUUID(in.ExecutionId) || in.Limit > 100 || len(in.Cursor) > 2048 {
+	if in == nil || !modelDevQueryUUID(in.ExecutionId) {
 		return nil, modelDevQueryInvalid()
 	}
-	out, err := s.resolver.ListExecutionArtifacts(ctx, scope, in.ExecutionId, in.Limit, in.Cursor)
+	page, pageSize, err := resolveModelDevPage(in.Page, in.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	out, err := s.resolver.ListExecutionArtifacts(ctx, scope, in.ExecutionId, page, pageSize)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
-	reply := &modeldevv1.ListExecutionArtifactsResponse{NextCursor: out.NextCursor, Total: out.Total}
+	reply := &modeldevv1.ListExecutionArtifactsResponse{Total: out.Total}
 	for _, artifact := range out.Artifacts {
 		reply.Items = append(reply.Items, modelDevPublicArtifact(artifact))
 	}
 	return reply, nil
+}
+
+// resolveModelDevPage resolves the independent page/pageSize defaults and
+// validates them, mirroring the VPC page contract. A missing field keeps its
+// own default (1 or 20); an explicit zero or a size above 100 is rejected
+// rather than silently corrected.
+func resolveModelDevPage(page, pageSize *uint32) (uint32, uint32, error) {
+	p, size := uint32(1), uint32(20)
+	if page != nil {
+		p = *page
+	}
+	if pageSize != nil {
+		size = *pageSize
+	}
+	if p == 0 || size == 0 || size > 100 {
+		return 0, 0, modelDevQueryInvalid()
+	}
+	return p, size, nil
 }
 
 func (s *ModelDevService) AuthorizeArtifactDownload(ctx context.Context, in *modeldevv1.AuthorizeArtifactDownloadRequest) (*modeldevv1.AuthorizeArtifactDownloadResponse, error) {

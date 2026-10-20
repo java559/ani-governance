@@ -42,6 +42,8 @@ const (
 	FieldIdempotencyKey = "idempotency_key"
 	// FieldRequestHash holds the string denoting the request_hash field in the database.
 	FieldRequestHash = "request_hash"
+	// FieldInstanceContractVersion holds the string denoting the instance_contract_version field in the database.
+	FieldInstanceContractVersion = "instance_contract_version"
 	// FieldCanonicalRequest holds the string denoting the canonical_request field in the database.
 	FieldCanonicalRequest = "canonical_request"
 	// FieldDispatchState holds the string denoting the dispatch_state field in the database.
@@ -83,6 +85,7 @@ var Columns = []string{
 	FieldAction,
 	FieldIdempotencyKey,
 	FieldRequestHash,
+	FieldInstanceContractVersion,
 	FieldCanonicalRequest,
 	FieldDispatchState,
 	FieldAttemptCount,
@@ -135,6 +138,10 @@ var (
 	IdempotencyKeyValidator func(string) error
 	// RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
 	RequestHashValidator func(string) error
+	// DefaultInstanceContractVersion holds the default value on creation for the "instance_contract_version" field.
+	DefaultInstanceContractVersion uint32
+	// InstanceContractVersionValidator is a validator for the "instance_contract_version" field. It is called by the builders before save.
+	InstanceContractVersionValidator func(uint32) error
 	// CanonicalRequestValidator is a validator for the "canonical_request" field. It is called by the builders before save.
 	CanonicalRequestValidator func(string) error
 	// DefaultAttemptCount holds the default value on creation for the "attempt_count" field.
@@ -256,6 +263,11 @@ func ByIdempotencyKey(opts ...sql.OrderTermOption) OrderOption {
 // ByRequestHash orders the results by the request_hash field.
 func ByRequestHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRequestHash, opts...).ToFunc()
+}
+
+// ByInstanceContractVersion orders the results by the instance_contract_version field.
+func ByInstanceContractVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInstanceContractVersion, opts...).ToFunc()
 }
 
 // ByCanonicalRequest orders the results by the canonical_request field.

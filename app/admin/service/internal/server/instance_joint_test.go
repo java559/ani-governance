@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	authpb "go-wind-admin/api/gen/go/authentication/service/v1"
+	computeview "go-wind-admin/api/gen/go/compute/service/v1"
 	identity "go-wind-admin/api/gen/go/identity/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	"go-wind-admin/app/admin/service/cmd/server/assets"
@@ -180,9 +181,11 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 		t.Setenv("INSTANCE_JOINT_QUOTA_FILE", path)
 	}
 	resourcePeer := testutil.StartInstanceResourcePeer(t, gpuRequest, gpuProfile)
-	owner, closeOwner, e := data.NewInstanceClientFromEnv()
+	owner, computeOwner, closeOwner, e := data.NewResourceClientsFromEnv()
 	require.NoError(t, e)
 	t.Cleanup(closeOwner)
+	// This suite covers the current frozen instance admission contract.
+	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "true")
 	binding := service.NewInstanceGpuBinding(owner, data.NewInstanceAuthorizationRepo(c), resourcePeer.ClusterID)
 	registry := service.NewQuotaAdapterRegistry()
 	require.NoError(t, registry.Register(binding))
@@ -205,7 +208,7 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 		t.Cleanup(close)
 		sessions = client
 	}
-	handler := service.NewInstanceService(acceptance, binding, tenants, ledger, sessions, service.InstanceCatalogConfig{ClusterID: resourcePeer.ClusterID, Catalog: accelerator.Catalog})
+	handler := service.NewInstanceService(acceptance, binding, tenants, ledger, sessions, service.InstanceCatalogConfig{ClusterID: resourcePeer.ClusterID, Compute: computeOwner, Catalog: accelerator.Catalog})
 	if lifecycle {
 		sync := service.NewGpuUsageSyncWorker(ledger, accelerator, func(e error) { t.Log("Acc sync attempt failed", e) })
 		require.NoError(t, sync.Start(ctx))
@@ -266,6 +269,48 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 	require.True(t, replay.Replayed)
 	require.Equal(t, accepted.OperationId, replay.OperationId)
 	require.Equal(t, 1, plans.calls)
+	for _, field := range []string{"env", "labels"} {
+		encoded, err := protojson.Marshal(public)
+		require.NoError(t, err)
+		var payload map[string]any
+		require.NoError(t, json.Unmarshal(encoded, &payload))
+		object := payload["data"].(map[string]any)
+		if field == "env" {
+			object[field] = []any{}
+		} else {
+			object[field] = map[string]any{}
+		}
+		for _, configured := range []bool{false, true} {
+			if configured {
+				if field == "env" {
+					object[field] = []any{map[string]any{"name": "BUSINESS_VALUE", "value": " <literal> "}}
+				} else {
+					object[field] = map[string]any{"team": "science"}
+				}
+			}
+			body, err := json.Marshal(payload)
+			require.NoError(t, err)
+			rawRequest, err := http.NewRequest("POST", host.URL+"/api/v1/instances", bytes.NewReader(body))
+			require.NoError(t, err)
+			rawRequest.Header.Set("Content-Type", "application/json")
+			rawRequest.Header.Set("Authorization", "Bearer "+token)
+			response, err := host.Client().Do(rawRequest)
+			require.NoError(t, err)
+			raw, err := io.ReadAll(response.Body)
+			require.NoError(t, err)
+			require.NoError(t, response.Body.Close())
+			if configured {
+				require.Equal(t, http.StatusConflict, response.StatusCode, "%s changed current configuration: %s", field, raw)
+			} else {
+				require.Equal(t, http.StatusAccepted, response.StatusCode, "%s explicit empty current configuration: %s", field, raw)
+				var emptyReplay view.Acceptance
+				require.NoError(t, protojson.Unmarshal(raw, &emptyReplay))
+				require.True(t, emptyReplay.Replayed)
+				require.Equal(t, accepted.OperationId, emptyReplay.OperationId)
+			}
+		}
+	}
+	require.Equal(t, 1, plans.calls, "current replay and configuration conflicts cannot re-resolve or incur new quota")
 	instance := new(view.Instance)
 	request("GET", "/api/v1/instances/"+accepted.ResourceId, nil, instance, 200, token)
 	require.EqualValues(t, 1, instance.Version)
@@ -297,7 +342,7 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 	operation := new(view.Operation)
 	request("GET", "/api/v1/instance-operations/"+accepted.OperationId, nil, operation, 200, token)
 	require.Equal(t, accepted.ResourceId, operation.InstanceId)
-	presets := new(view.ListPresetsResponse)
+	presets := new(computeview.ListPresetsResponse)
 	request("GET", "/api/v1/instance-presets", nil, presets, 200, token)
 	require.Len(t, presets.Items, 1)
 	require.EqualValues(t, 1, presets.Total)

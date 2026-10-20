@@ -124,6 +124,11 @@ func RequestHash(v string) predicate.QuotaOperation {
 	return predicate.QuotaOperation(sql.FieldEQ(FieldRequestHash, v))
 }
 
+// InstanceContractVersion applies equality check predicate on the "instance_contract_version" field. It's identical to InstanceContractVersionEQ.
+func InstanceContractVersion(v uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldEQ(FieldInstanceContractVersion, v))
+}
+
 // CanonicalRequest applies equality check predicate on the "canonical_request" field. It's identical to CanonicalRequestEQ.
 func CanonicalRequest(v string) predicate.QuotaOperation {
 	return predicate.QuotaOperation(sql.FieldEQ(FieldCanonicalRequest, v))
@@ -1027,6 +1032,46 @@ func RequestHashEqualFold(v string) predicate.QuotaOperation {
 // RequestHashContainsFold applies the ContainsFold predicate on the "request_hash" field.
 func RequestHashContainsFold(v string) predicate.QuotaOperation {
 	return predicate.QuotaOperation(sql.FieldContainsFold(FieldRequestHash, v))
+}
+
+// InstanceContractVersionEQ applies the EQ predicate on the "instance_contract_version" field.
+func InstanceContractVersionEQ(v uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldEQ(FieldInstanceContractVersion, v))
+}
+
+// InstanceContractVersionNEQ applies the NEQ predicate on the "instance_contract_version" field.
+func InstanceContractVersionNEQ(v uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldNEQ(FieldInstanceContractVersion, v))
+}
+
+// InstanceContractVersionIn applies the In predicate on the "instance_contract_version" field.
+func InstanceContractVersionIn(vs ...uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldIn(FieldInstanceContractVersion, vs...))
+}
+
+// InstanceContractVersionNotIn applies the NotIn predicate on the "instance_contract_version" field.
+func InstanceContractVersionNotIn(vs ...uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldNotIn(FieldInstanceContractVersion, vs...))
+}
+
+// InstanceContractVersionGT applies the GT predicate on the "instance_contract_version" field.
+func InstanceContractVersionGT(v uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldGT(FieldInstanceContractVersion, v))
+}
+
+// InstanceContractVersionGTE applies the GTE predicate on the "instance_contract_version" field.
+func InstanceContractVersionGTE(v uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldGTE(FieldInstanceContractVersion, v))
+}
+
+// InstanceContractVersionLT applies the LT predicate on the "instance_contract_version" field.
+func InstanceContractVersionLT(v uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldLT(FieldInstanceContractVersion, v))
+}
+
+// InstanceContractVersionLTE applies the LTE predicate on the "instance_contract_version" field.
+func InstanceContractVersionLTE(v uint32) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldLTE(FieldInstanceContractVersion, v))
 }
 
 // CanonicalRequestEQ applies the EQ predicate on the "canonical_request" field.

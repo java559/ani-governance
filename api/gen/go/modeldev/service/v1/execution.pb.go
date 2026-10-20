@@ -187,10 +187,11 @@ func (x *GeneralParameter) GetValue() string {
 }
 
 // Catalogue metadata exposes selection and registered parameters only.
+// Gov public pagination uses page/pageSize; legacy limit/cursor stay reserved.
 type ListPresetsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Limit         uint32                 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	Cursor        string                 `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	Page          *uint32                `protobuf:"varint,3,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *uint32                `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -225,24 +226,23 @@ func (*ListPresetsRequest) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ListPresetsRequest) GetLimit() uint32 {
-	if x != nil {
-		return x.Limit
+func (x *ListPresetsRequest) GetPage() uint32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
 	}
 	return 0
 }
 
-func (x *ListPresetsRequest) GetCursor() string {
-	if x != nil {
-		return x.Cursor
+func (x *ListPresetsRequest) GetPageSize() uint32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
 	}
-	return ""
+	return 0
 }
 
 type ListPresetsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*PresetView          `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
 	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -283,13 +283,6 @@ func (x *ListPresetsResponse) GetItems() []*PresetView {
 		return x.Items
 	}
 	return nil
-}
-
-func (x *ListPresetsResponse) GetNextCursor() string {
-	if x != nil {
-		return x.NextCursor
-	}
-	return ""
 }
 
 func (x *ListPresetsResponse) GetTotal() uint64 {
@@ -581,9 +574,9 @@ func (x *GetInputVersionResponse) GetInputVersion() *InputVersionView {
 
 type ListInputVersionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Limit         uint32                 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	Cursor        string                 `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	State         *string                `protobuf:"bytes,3,opt,name=state,proto3,oneof" json:"state,omitempty"`
+	Page          *uint32                `protobuf:"varint,4,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *uint32                `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -618,20 +611,6 @@ func (*ListInputVersionsRequest) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ListInputVersionsRequest) GetLimit() uint32 {
-	if x != nil {
-		return x.Limit
-	}
-	return 0
-}
-
-func (x *ListInputVersionsRequest) GetCursor() string {
-	if x != nil {
-		return x.Cursor
-	}
-	return ""
-}
-
 func (x *ListInputVersionsRequest) GetState() string {
 	if x != nil && x.State != nil {
 		return *x.State
@@ -639,10 +618,23 @@ func (x *ListInputVersionsRequest) GetState() string {
 	return ""
 }
 
+func (x *ListInputVersionsRequest) GetPage() uint32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
+	}
+	return 0
+}
+
+func (x *ListInputVersionsRequest) GetPageSize() uint32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
+	}
+	return 0
+}
+
 type ListInputVersionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*InputVersionView    `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
 	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -683,13 +675,6 @@ func (x *ListInputVersionsResponse) GetItems() []*InputVersionView {
 		return x.Items
 	}
 	return nil
-}
-
-func (x *ListInputVersionsResponse) GetNextCursor() string {
-	if x != nil {
-		return x.NextCursor
-	}
-	return ""
 }
 
 func (x *ListInputVersionsResponse) GetTotal() uint64 {
@@ -1114,8 +1099,8 @@ func (x *GetExecutionResponse) GetExecution() *ExecutionView {
 
 type ListExecutionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Limit         uint32                 `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
-	Cursor        string                 `protobuf:"bytes,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	Page          *uint32                `protobuf:"varint,3,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *uint32                `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1150,24 +1135,23 @@ func (*ListExecutionsRequest) Descriptor() ([]byte, []int) {
 	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *ListExecutionsRequest) GetLimit() uint32 {
-	if x != nil {
-		return x.Limit
+func (x *ListExecutionsRequest) GetPage() uint32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
 	}
 	return 0
 }
 
-func (x *ListExecutionsRequest) GetCursor() string {
-	if x != nil {
-		return x.Cursor
+func (x *ListExecutionsRequest) GetPageSize() uint32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
 	}
-	return ""
+	return 0
 }
 
 type ListExecutionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*ExecutionView       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
 	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1208,13 +1192,6 @@ func (x *ListExecutionsResponse) GetItems() []*ExecutionView {
 		return x.Items
 	}
 	return nil
-}
-
-func (x *ListExecutionsResponse) GetNextCursor() string {
-	if x != nil {
-		return x.NextCursor
-	}
-	return ""
 }
 
 func (x *ListExecutionsResponse) GetTotal() uint64 {
@@ -1588,8 +1565,8 @@ func (x *ExecutionView) GetObservedAt() string {
 type ListExecutionArtifactsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecutionId   string                 `protobuf:"bytes,1,opt,name=execution_id,proto3" json:"execution_id,omitempty"`
-	Limit         uint32                 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Cursor        string                 `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	Page          *uint32                `protobuf:"varint,4,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *uint32                `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1631,24 +1608,23 @@ func (x *ListExecutionArtifactsRequest) GetExecutionId() string {
 	return ""
 }
 
-func (x *ListExecutionArtifactsRequest) GetLimit() uint32 {
-	if x != nil {
-		return x.Limit
+func (x *ListExecutionArtifactsRequest) GetPage() uint32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
 	}
 	return 0
 }
 
-func (x *ListExecutionArtifactsRequest) GetCursor() string {
-	if x != nil {
-		return x.Cursor
+func (x *ListExecutionArtifactsRequest) GetPageSize() uint32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
 	}
-	return ""
+	return 0
 }
 
 type ListExecutionArtifactsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*ArtifactView        `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,proto3" json:"next_cursor,omitempty"`
 	Total         uint64                 `protobuf:"varint,3,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1689,13 +1665,6 @@ func (x *ListExecutionArtifactsResponse) GetItems() []*ArtifactView {
 		return x.Items
 	}
 	return nil
-}
-
-func (x *ListExecutionArtifactsResponse) GetNextCursor() string {
-	if x != nil {
-		return x.NextCursor
-	}
-	return ""
 }
 
 func (x *ListExecutionArtifactsResponse) GetTotal() uint64 {
@@ -1929,14 +1898,16 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x10GeneralParameter\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\"B\n" +
-	"\x12ListPresetsRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
-	"\x06cursor\x18\x02 \x01(\tR\x06cursor\"\x84\x01\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"\x81\x01\n" +
+	"\x12ListPresetsRequest\x12\x17\n" +
+	"\x04page\x18\x03 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x04 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_sizeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\x05limitR\x06cursor\"u\n" +
 	"\x13ListPresetsResponse\x125\n" +
-	"\x05items\x18\x01 \x03(\v2\x1f.modeldev.service.v1.PresetViewR\x05items\x12 \n" +
-	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
-	"\x05total\x18\x03 \x01(\x04R\x05total\"\xe6\x02\n" +
+	"\x05items\x18\x01 \x03(\v2\x1f.modeldev.service.v1.PresetViewR\x05items\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"\xe6\x02\n" +
 	"\n" +
 	"PresetView\x12\x1c\n" +
 	"\tpreset_id\x18\x01 \x01(\tR\tpreset_id\x12\x12\n" +
@@ -1958,16 +1929,18 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x16GetInputVersionRequest\x12*\n" +
 	"\x10input_version_id\x18\x01 \x01(\tR\x10input_version_id\"f\n" +
 	"\x17GetInputVersionResponse\x12K\n" +
-	"\rinput_version\x18\x01 \x01(\v2%.modeldev.service.v1.InputVersionViewR\rinput_version\"m\n" +
-	"\x18ListInputVersionsRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
-	"\x06cursor\x18\x02 \x01(\tR\x06cursor\x12\x19\n" +
-	"\x05state\x18\x03 \x01(\tH\x00R\x05state\x88\x01\x01B\b\n" +
-	"\x06_state\"\x90\x01\n" +
+	"\rinput_version\x18\x01 \x01(\v2%.modeldev.service.v1.InputVersionViewR\rinput_version\"\xac\x01\n" +
+	"\x18ListInputVersionsRequest\x12\x19\n" +
+	"\x05state\x18\x03 \x01(\tH\x00R\x05state\x88\x01\x01\x12\x17\n" +
+	"\x04page\x18\x04 \x01(\rH\x01R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x05 \x01(\rH\x02R\bpageSize\x88\x01\x01B\b\n" +
+	"\x06_stateB\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_sizeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\x05limitR\x06cursor\"\x81\x01\n" +
 	"\x19ListInputVersionsResponse\x12;\n" +
-	"\x05items\x18\x01 \x03(\v2%.modeldev.service.v1.InputVersionViewR\x05items\x12 \n" +
-	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
-	"\x05total\x18\x03 \x01(\x04R\x05total\"\x88\x02\n" +
+	"\x05items\x18\x01 \x03(\v2%.modeldev.service.v1.InputVersionViewR\x05items\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"\x88\x02\n" +
 	"\x10InputVersionView\x12*\n" +
 	"\x10input_version_id\x18\x01 \x01(\tR\x10input_version_id\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x16\n" +
@@ -2001,14 +1974,16 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x13GetExecutionRequest\x12\"\n" +
 	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\"X\n" +
 	"\x14GetExecutionResponse\x12@\n" +
-	"\texecution\x18\x01 \x01(\v2\".modeldev.service.v1.ExecutionViewR\texecution\"E\n" +
-	"\x15ListExecutionsRequest\x12\x14\n" +
-	"\x05limit\x18\x01 \x01(\rR\x05limit\x12\x16\n" +
-	"\x06cursor\x18\x02 \x01(\tR\x06cursor\"\x8a\x01\n" +
+	"\texecution\x18\x01 \x01(\v2\".modeldev.service.v1.ExecutionViewR\texecution\"\x84\x01\n" +
+	"\x15ListExecutionsRequest\x12\x17\n" +
+	"\x04page\x18\x03 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x04 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_sizeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\x05limitR\x06cursor\"{\n" +
 	"\x16ListExecutionsResponse\x128\n" +
-	"\x05items\x18\x01 \x03(\v2\".modeldev.service.v1.ExecutionViewR\x05items\x12 \n" +
-	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
-	"\x05total\x18\x03 \x01(\x04R\x05total\"{\n" +
+	"\x05items\x18\x01 \x03(\v2\".modeldev.service.v1.ExecutionViewR\x05items\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"{\n" +
 	"\x17GetExecutionLogsRequest\x12\"\n" +
 	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\x12\x1e\n" +
 	"\n" +
@@ -2044,15 +2019,17 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x10close_generation\x18\x0f \x01(\x04R\x10close_generation\x12 \n" +
 	"\vaccepted_at\x18\x10 \x01(\tR\vaccepted_at\x12 \n" +
 	"\vdeadline_at\x18\x11 \x01(\tR\vdeadline_at\x12 \n" +
-	"\vobserved_at\x18\x12 \x01(\tR\vobserved_at\"q\n" +
+	"\vobserved_at\x18\x12 \x01(\tR\vobserved_at\"\xb0\x01\n" +
 	"\x1dListExecutionArtifactsRequest\x12\"\n" +
-	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\x12\x14\n" +
-	"\x05limit\x18\x02 \x01(\rR\x05limit\x12\x16\n" +
-	"\x06cursor\x18\x03 \x01(\tR\x06cursor\"\x91\x01\n" +
+	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\x12\x17\n" +
+	"\x04page\x18\x04 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x05 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_sizeJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04R\x05limitR\x06cursor\"\x82\x01\n" +
 	"\x1eListExecutionArtifactsResponse\x127\n" +
-	"\x05items\x18\x01 \x03(\v2!.modeldev.service.v1.ArtifactViewR\x05items\x12 \n" +
-	"\vnext_cursor\x18\x02 \x01(\tR\vnext_cursor\x12\x14\n" +
-	"\x05total\x18\x03 \x01(\x04R\x05total\"\x86\x02\n" +
+	"\x05items\x18\x01 \x03(\v2!.modeldev.service.v1.ArtifactViewR\x05items\x12\x14\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"\x86\x02\n" +
 	"\fArtifactView\x12 \n" +
 	"\vartifact_id\x18\x01 \x01(\tR\vartifact_id\x12\"\n" +
 	"\fexecution_id\x18\x02 \x01(\tR\fexecution_id\x12\x1a\n" +
@@ -2144,7 +2121,10 @@ func file_modeldev_service_v1_execution_proto_init() {
 		return
 	}
 	file_modeldev_service_v1_execution_proto_msgTypes[0].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[2].OneofWrappers = []any{}
 	file_modeldev_service_v1_execution_proto_msgTypes[8].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[16].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[22].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

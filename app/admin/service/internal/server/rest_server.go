@@ -195,6 +195,7 @@ func NewRestServer(
 	imageService *service.ImageService,
 	modeldevService *service.ModelDevService,
 	modelService *service.ModelService,
+	computeService *service.ComputePresetService,
 	instanceServices ...*service.InstanceService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
@@ -283,6 +284,9 @@ func NewRestServer(
 	}
 	if len(instanceServices) > 0 && instanceServices[0] != nil {
 		RegisterInstanceHTTPServer(srv, instanceServices[0])
+	}
+	if computeService != nil {
+		RegisterComputeHTTPServer(srv, computeService)
 	}
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {

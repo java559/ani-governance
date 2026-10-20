@@ -9,9 +9,11 @@ import (
 	"sort"
 	"strconv"
 
+	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
 	commandv1 "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/command/v1"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
+	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -124,7 +126,10 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	if err != nil {
 		return nil, err
 	}
-	if err = s.binding.AuthorizeGpu(ctx, p, s.binding.CreateAction(), ""); err != nil {
+	grant, err := authorizeGpuBusiness(ctx, p, compute.Usage_CONTAINER_INSTANCE, s.binding.CreateAction(), func() error {
+		return s.binding.AuthorizeGpu(ctx, p, s.binding.CreateAction(), "")
+	})
+	if err != nil {
 		return nil, err
 	}
 	_, resolvesBusiness := s.binding.(GpuBusinessResolver)
@@ -139,39 +144,31 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid resource tenant mapping")
 	}
 	actorID := strconv.FormatUint(uint64(p.ID), 10)
-	var businessObject map[string]any
-	var businessBytes []byte
-	if canonical, ok := s.binding.(interface {
-		CanonicalGpuBusiness(proto.Message) ([]byte, error)
-	}); ok {
-		businessBytes, err = canonical.CanonicalGpuBusiness(business)
-		if err == nil {
-			err = json.Unmarshal(businessBytes, &businessObject)
-		}
-	} else {
-		businessObject, err = gpuCanonicalMessage(business.ProtoReflect())
-		if err == nil {
-			businessBytes, err = gpuCanonicalJSON(businessObject)
-		}
-	}
-	if err != nil {
-		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid business payload")
-	}
-	var gpuObject map[string]any
-	if gpu != nil {
-		gpuObject, err = gpuCanonicalMessage(gpu.ProtoReflect())
-		if err != nil {
-			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU request")
-		}
-	}
-	requestHash, err := gpuHash(map[string]any{"schema": "gov-gpu-create-v1", "tenant_id": tenant, "actor_type": string(p.Type), "actor_id": actorID, "owner": s.binding.OwnerService(), "action": s.binding.CreateAction(), "gpu_request": gpuObject, "business_type": string(business.ProtoReflect().Descriptor().FullName()), "business": businessObject})
-	if err != nil {
-		return nil, err
-	}
+	// Current authorization precedes lookup; only the current instance contract is executable.
 	old, err := s.ledger.FindIdempotentOperation(ctx, p.TenantID, string(p.Type), actorID, s.binding.CreateAction(), key)
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, err
 	}
+	version := data.CurrentInstanceContractVersion
+	if old != nil && old.InstanceContractVersion != version {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
+	}
+	publicBusiness := proto.Clone(business)
+	var publicGpu *acc.GpuRequest
+	if gpu != nil {
+		publicGpu = proto.Clone(gpu).(*acc.GpuRequest)
+	}
+	requestHash, err := s.createRequestHash(tenant, string(p.Type), actorID, publicGpu, publicBusiness, version)
+	if err != nil {
+		if old != nil {
+			return nil, quotapb.ErrorIdempotencyConflict("%s", "request differs from original acceptance")
+		}
+		if _, instance := publicBusiness.(*res.CreateInstanceData); instance {
+			return nil, instanceBusinessError(err)
+		}
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid business payload")
+	}
+	var businessBytes []byte
 	if old != nil {
 		if old.OwnerService != s.binding.OwnerService() || old.ResourceTenantID != tenant || old.RequestHash != requestHash {
 			return nil, quotapb.ErrorIdempotencyConflict("%s", "request differs from original acceptance")
@@ -208,6 +205,9 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 		}
 		return &data.QuotaOccupyResult{OperationID: old.OperationID, ResourceID: old.ResourceID, ChargeIDs: ids, Replayed: true}, nil
 	}
+	if binding, ok := s.binding.(*InstanceGpuBinding); ok && !binding.newCreateEnabled {
+		return nil, kratoserrors.ServiceUnavailable("INSTANCE_CREATE_DISABLED", "new instance admission is disabled")
+	}
 	if !s.registry.GPUExecutionEnabled(s.binding.OwnerService()) || s.registry.Lookup(s.binding.OwnerService(), s.binding.CreateAction()) == nil {
 		return nil, quotapb.ErrorQuotaAdapterUnavailable("%s", "GPU business owner is not enabled")
 	}
@@ -224,6 +224,7 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 		}); ok {
 			businessBytes, err = canonical.CanonicalGpuBusiness(business)
 		} else {
+			var businessObject map[string]any
 			businessObject, err = gpuCanonicalMessage(business.ProtoReflect())
 			if err == nil {
 				businessBytes, err = gpuCanonicalJSON(businessObject)
@@ -233,11 +234,23 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid resolved business payload")
 		}
 	}
+	if instance, ok := business.(*res.CreateSpec); ok && instance != nil {
+		if instance.InstanceContractVersion != version {
+			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "instance contract version mismatch")
+		}
+	}
 	if instance, ok := business.(*res.CreateSpec); ok && instance != nil && instance.InstanceKind == "container" && instance.ComputeType == "cpu" {
 		return s.acceptInstanceCPUCreate(ctx, p, tenant, actorID, key, requestHash, instance, businessBytes)
 	}
 	if gpu == nil || s.plans == nil {
 		return nil, quotapb.ErrorQuotaAdapterUnavailable("%s", "GPU plan resolution unavailable")
+	}
+	eligibility, ok := s.binding.(GpuUseEligibility)
+	if !ok {
+		return nil, gpuUseUnavailable()
+	}
+	if err = authorizeNewGpuUse(ctx, grant, eligibility); err != nil {
+		return nil, err
 	}
 	extra, err := s.binding.ValidateGpuBusiness(ctx, business)
 	if err != nil {
@@ -288,7 +301,7 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	items := append([]data.QuotaOccupyItem{item}, extra...)
 	sort.Slice(items, func(i, j int) bool { return items[i].QuotaCode < items[j].QuotaCode })
 	sum := sha256.Sum256(businessBytes)
-	c := GpuCanonical{SchemaVersion: 3, GpuRequest: gpu, BusinessPayload: businessBytes, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion}
+	c := GpuCanonical{SchemaVersion: 3, InstanceContractVersion: version, GpuRequest: gpu, BusinessPayload: businessBytes, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion}
 	for _, q := range items {
 		c.QuotaItems = append(c.QuotaItems, GpuQuotaItem{QuotaCode: q.QuotaCode, Units: q.Units})
 	}
@@ -299,7 +312,7 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	if _, err = DecodeGpuCanonical(canonical); err != nil {
 		return nil, err
 	}
-	result, err := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: uuid.NewString(), ActorType: string(p.Type), ActorID: actorID, OwnerService: s.binding.OwnerService(), Action: s.binding.CreateAction(), IdempotencyKey: key, RequestHash: requestHash, CanonicalRequest: string(canonical), Items: items})
+	result, err := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: uuid.NewString(), ActorType: string(p.Type), ActorID: actorID, OwnerService: s.binding.OwnerService(), Action: s.binding.CreateAction(), IdempotencyKey: key, RequestHash: requestHash, CanonicalRequest: string(canonical), Items: items, InstanceContractVersion: version})
 	if err == nil && s.worker != nil {
 		s.worker.Notify()
 	}
@@ -353,6 +366,9 @@ func (s *GpuAcceptance) acceptGpuDelete(ctx context.Context, key, resource strin
 		}
 		return nil, err
 	}
+	if old.InstanceContractVersion != data.CurrentInstanceContractVersion {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
+	}
 	if data.IsInstanceCPUCanonical([]byte(old.CanonicalRequest)) {
 		return s.acceptInstanceCPUDelete(ctx, p, key, resource, version, old)
 	}
@@ -370,7 +386,7 @@ func (s *GpuAcceptance) acceptGpuDelete(ctx context.Context, key, resource strin
 		return nil, lookupErr
 	}
 	if existing != nil {
-		if existing.OwnerService != old.OwnerService || existing.ResourceTenantID != old.ResourceTenantID || existing.ResourceID != resource || existing.RequestHash != hash || existing.CreateOperationID == nil || *existing.CreateOperationID != old.OperationID {
+		if existing.InstanceContractVersion != data.CurrentInstanceContractVersion || existing.OwnerService != old.OwnerService || existing.ResourceTenantID != old.ResourceTenantID || existing.ResourceID != resource || existing.RequestHash != hash || existing.CreateOperationID == nil || *existing.CreateOperationID != old.OperationID {
 			return nil, quotapb.ErrorIdempotencyConflict("%s", "delete request differs from original acceptance")
 		}
 		response := &commandv1.GpuDeleteAcceptance{DeleteOperationId: existing.OperationID, ResourceId: existing.ResourceID, Result: "QUEUED_FOR_OWNER", DispatchOperationId: existing.OperationID}
@@ -479,4 +495,48 @@ func gpuAccountingTerminal(op *ent.QuotaOperation, charges []*ent.QuotaCharge) b
 		}
 	}
 	return true
+}
+
+// Current instance intent binds every public configuration field.
+func (s *GpuAcceptance) createRequestHash(tenant, actorType, actorID string, gpu *acc.GpuRequest, business proto.Message, version uint32) (string, error) {
+	if version != data.CurrentInstanceContractVersion {
+		return "", quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
+	}
+	var object map[string]any
+	if canonical, ok := s.binding.(interface {
+		CanonicalGpuBusinessVersion(proto.Message, uint32) ([]byte, error)
+	}); ok {
+		raw, err := canonical.CanonicalGpuBusinessVersion(business, version)
+		if err != nil {
+			return "", err
+		}
+		if err = json.Unmarshal(raw, &object); err != nil {
+			return "", err
+		}
+	} else if canonical, ok := s.binding.(interface {
+		CanonicalGpuBusiness(proto.Message) ([]byte, error)
+	}); ok {
+		raw, err := canonical.CanonicalGpuBusiness(business)
+		if err != nil {
+			return "", err
+		}
+		if err = json.Unmarshal(raw, &object); err != nil {
+			return "", err
+		}
+	} else {
+		var err error
+		object, err = gpuCanonicalMessage(business.ProtoReflect())
+		if err != nil {
+			return "", err
+		}
+	}
+	var gpuObject map[string]any
+	if gpu != nil {
+		var err error
+		gpuObject, err = gpuCanonicalMessage(gpu.ProtoReflect())
+		if err != nil {
+			return "", err
+		}
+	}
+	return gpuHash(map[string]any{"schema": "gov-instance-create-v2", "tenant_id": tenant, "actor_type": actorType, "actor_id": actorID, "owner": s.binding.OwnerService(), "action": s.binding.CreateAction(), "gpu_request": gpuObject, "business_type": string(business.ProtoReflect().Descriptor().FullName()), "business": object})
 }

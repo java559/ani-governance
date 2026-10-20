@@ -1,8 +1,44 @@
 syntax = "proto3";
 package instance.service.v1;
-import "google/protobuf/field_mask.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
+import "gnostic/openapi/v3/annotations.proto";
+
+message QueryInstanceMetricsRequest {
+  string instance_id = 1 [json_name = "instance_id"];
+  QueryInstanceMetricsData data = 2;
+}
+message QueryInstanceMetricsData {
+  repeated string metric_codes = 1 [json_name = "metric_codes"];
+  google.protobuf.Timestamp start = 2;
+  google.protobuf.Timestamp end = 3;
+  optional uint32 step_seconds = 4 [json_name = "step_seconds"];
+}
+message QueryInstanceMetricsResponse { InstanceMetricsRangeData data = 1; }
+message InstanceMetricsRangeData {
+  string instance_id = 1 [json_name = "instance_id"];
+  google.protobuf.Timestamp start = 2;
+  google.protobuf.Timestamp end = 3;
+  uint32 step_seconds = 4 [json_name = "step_seconds"];
+  repeated InstanceMetricSeries series = 5;
+}
+message GetInstanceLatestMetricsResponse { InstanceMetricsLatestData data = 1; }
+message InstanceMetricsLatestData {
+  string instance_id = 1 [json_name = "instance_id"];
+  google.protobuf.Timestamp evaluated_at = 2 [json_name = "evaluated_at"];
+  repeated InstanceMetricSeries series = 3;
+}
+message InstanceMetricSeries {
+  string metric_code = 1 [json_name = "metric_code"];
+  string unit = 2;
+  string status = 3;
+  repeated InstanceMetricPoint points = 4;
+}
+message InstanceMetricPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.DoubleValue value = 2 [(gnostic.openapi.v3.property) = { nullable: true }];
+  optional string gap_reason = 3 [json_name = "gap_reason"];
+}
 
 message SchedulingOptions {
  enum PodPlacement { POD_PLACEMENT_UNSPECIFIED = 0; NONE = 1; COLOCATE_PREFERRED = 2; SPREAD_PREFERRED = 3; }
@@ -19,6 +55,45 @@ message CreateInstanceData {
   reserved 6;
   reserved "preset_version";
   SchedulingOptions scheduling = 7;
+  optional string workspace_mount_path = 8 [json_name = "workspace_mount_path"];
+  repeated VolumeMount volume_mounts = 9 [json_name = "volume_mounts"];
+  NetworkSelection network = 10;
+  map<string, string> labels = 11;
+  map<string, string> annotations = 12;
+  repeated InstanceEnvVar env = 13;
+}
+message VolumeMount {
+ string pvc_name = 1 [json_name = "pvc_name"];
+ string mount_path = 2 [json_name = "mount_path"];
+ bool read_only = 3 [json_name = "read_only"];
+}
+message NetworkSelection {
+ string vpc_id = 1 [json_name = "vpc_id"];
+ string subnet_id = 2 [json_name = "subnet_id"];
+}
+message InstanceEnvVar { string name = 1; string value = 2; }
+message ListMountablePVCsRequest {
+ optional uint32 page = 1;
+ optional uint32 page_size = 2 [json_name = "pageSize"];
+ string name = 3;
+}
+message MountablePVC {
+ string pvc_name = 1 [json_name = "pvc_name"]; string phase = 2;
+ string requested_capacity = 3 [json_name = "requested_capacity"];
+ repeated string access_modes = 4 [json_name = "access_modes"];
+ string volume_mode = 5 [json_name = "volume_mode"];
+ bool selectable = 6; string unavailable_reason = 7 [json_name = "unavailable_reason"];
+}
+message ListMountablePVCsResponse { repeated MountablePVC items = 1; int64 total = 2; }
+message InstanceConfiguration {
+ string instance_id = 1 [json_name = "instance_id"];
+ // 服务器保存的当前配置合同版本，固定为 2。
+ uint32 instance_contract_version = 2 [json_name = "instance_contract_version"];
+ string workspace_mount_path = 3 [json_name = "workspace_mount_path"];
+ repeated VolumeMount volume_mounts = 4 [json_name = "volume_mounts"];
+ NetworkSelection network = 5;
+ map<string,string> labels = 6; map<string,string> annotations = 7;
+ repeated InstanceEnvVar env = 8;
 }
 message CreateInstanceRequest { CreateInstanceData data = 1; }
 message ChangeInstanceData { string instance_id = 1; string idempotency_key = 2; int64 expected_version = 3; }
@@ -33,13 +108,6 @@ message ListInstancesRequest {
  string compute_type = 6 [json_name = "compute_type"];
  string observed_state = 7;
  string name = 8;
-}
-message ListPresetsRequest {
- optional uint32 page = 1;
- optional uint32 page_size = 2 [json_name = "pageSize"];
- string name = 3; string code = 4;
- string compute_type = 5 [json_name = "compute_type"];
- string gpu_mode = 6 [json_name = "gpu_mode"];
 }
 message GetOperationRequest { string operation_id = 1 [json_name = "operation_id"]; }
 message ExecInstanceData { string instance_id = 1; string idempotency_key = 2; int64 expected_version = 3; int32 rows = 4; int32 cols = 5; }
@@ -60,6 +128,11 @@ message Instance {
  string preset_code = 24 [json_name = "preset_code"];
  GpuSummary gpu_summary = 25 [json_name = "gpu_summary"];
  SchedulingOptions scheduling = 26;
+ // Safe lifecycle observations; dynamic state does not alter the frozen CREATE.
+ string network_state = 27;
+ string network_reason = 28;
+ bool network_cleaned = 29;
+ bool volume_references_released = 30;
 }
 message ListInstancesResponse { repeated Instance items = 1; reserved 2; reserved "next_after_id"; int64 total = 3; }
 message Acceptance { string operation_id = 1; string resource_id = 2; bool replayed = 3; string result = 4; }
@@ -76,45 +149,6 @@ message GpuSummary {
 
  uint32 core_limit_percent = 8 [json_name = "core_limit_percent"];
 }
-message Preset {
- string id = 1; string name = 3;
- reserved 2, 4, 5, 6; reserved "version", "cpu", "memory", "instance_type";
- string code = 7; string description = 8;
- string compute_type = 9 [json_name = "compute_type"];
- int64 cpu_millis = 10 [json_name = "cpu_millis"];
- int64 memory_mib = 11 [json_name = "memory_mib"];
- bool enabled = 12; GpuSummary gpu = 13;
- string created_at = 14 [json_name = "created_at"];
- string updated_at = 15 [json_name = "updated_at"];
- bool selectable = 16; string unavailable_reason = 17 [json_name = "unavailable_reason"];
-}
-message ListPresetsResponse { repeated Preset items = 1; int64 total = 2; string gpu_catalog_status = 3 [json_name = "gpu_catalog_status"]; string gpu_catalog_reason = 4 [json_name = "gpu_catalog_reason"]; }
-message PresetGpuInput {
- string profile_id = 1 [json_name = "profile_id"];
- uint64 profile_version = 2 [json_name = "profile_version"];
- uint32 devices_per_instance = 3 [json_name = "devices_per_instance"];
-}
-message PresetData {
- string code = 1; string name = 2; string description = 3;
- string compute_type = 4 [json_name = "compute_type"];
- int64 cpu_millis = 5 [json_name = "cpu_millis"];
- int64 memory_mib = 6 [json_name = "memory_mib"];
- optional bool enabled = 7; PresetGpuInput gpu = 8;
-}
-message AdminListPresetsRequest {
- optional uint32 page = 1; optional uint32 page_size = 2 [json_name = "pageSize"];
- string name = 3; string code = 4;
- string compute_type = 5 [json_name = "compute_type"];
- string gpu_mode = 6 [json_name = "gpu_mode"];
- optional bool enabled = 7;
-}
-message AdminListPresetsResponse { repeated Preset items = 1; int64 total = 2; }
-message PresetRequest { string id = 1; }
-message CreatePresetRequest { PresetData data = 1; }
-message UpdatePresetRequest { string id = 1; PresetData data = 2; google.protobuf.FieldMask update_mask = 3 [json_name = "update_mask"]; }
-message SetPresetEnabledData { optional bool enabled = 1; }
-message SetPresetEnabledRequest { string id = 1; SetPresetEnabledData data = 2; }
-message Empty {}
 message EnvironmentSource { string name = 1; string source_type = 2; }
 message RuntimeMount { string name = 1; string volume_type = 2; string mount_path = 3; bool read_only = 4; }
 message RuntimePod {

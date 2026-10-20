@@ -2455,6 +2455,7 @@ var (
 		{Name: "action", Type: field.TypeString, Comment: "业务动作（adapter 注册表键）"},
 		{Name: "idempotency_key", Type: field.TypeString, Comment: "幂等键（UUID）"},
 		{Name: "request_hash", Type: field.TypeString, Comment: "规范请求哈希"},
+		{Name: "instance_contract_version", Type: field.TypeUint32, Default: 1},
 		{Name: "canonical_request", Type: field.TypeString, Size: 2147483647, Comment: "规范请求（schema_version=1）"},
 		{Name: "dispatch_state", Type: field.TypeEnum, Comment: "投递状态", Enums: []string{"QUEUED", "DISPATCHING", "UNKNOWN", "ACKED", "CANCELED_UNSENT"}, Default: "QUEUED"},
 		{Name: "attempt_count", Type: field.TypeInt, Comment: "已尝试发送次数", Default: 0},
@@ -2491,7 +2492,7 @@ var (
 			{
 				Name:    "idx_sys_quota_operations_dispatch",
 				Unique:  false,
-				Columns: []*schema.Column{SysQuotaOperationsColumns[16], SysQuotaOperationsColumns[21]},
+				Columns: []*schema.Column{SysQuotaOperationsColumns[17], SysQuotaOperationsColumns[22]},
 			},
 			{
 				Name:    "uix_sys_quota_operations_create_resource",
@@ -3754,7 +3755,8 @@ func init() {
 		Collation: "utf8mb4_bin",
 	}
 	SysQuotaOperationsTable.Annotation.Checks = map[string]string{
-		"sys_quota_operations_tenant_positive_ck": "tenant_id > 0",
+		"sys_quota_operations_instance_contract_version_ck": "instance_contract_version IN (1, 2)",
+		"sys_quota_operations_tenant_positive_ck":           "tenant_id > 0",
 	}
 	SysQuotaReleaseReceiptsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_quota_release_receipts",

@@ -26,13 +26,10 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 		}
 		for name, values := range query {
 			switch name {
-			case "limit":
-				in.Limit, err = modelDevQueryPositiveBound(values[0], 100)
-			case "cursor":
-				if len(values[0]) > 2048 {
-					return invalidModelDevQueryHTTP()
-				}
-				in.Cursor = values[0]
+			case "page":
+				in.Page, err = modelDevPagePointer(values[0])
+			case "pageSize":
+				in.PageSize, err = modelDevPageSizePointer(values[0])
 			default:
 				return invalidModelDevQueryHTTP()
 			}
@@ -111,13 +108,10 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 		}
 		for name, values := range query {
 			switch name {
-			case "limit":
-				in.Limit, err = modelDevQueryPositiveBound(values[0], 100)
-			case "cursor":
-				if len(values[0]) > 2048 {
-					return invalidModelDevQueryHTTP()
-				}
-				in.Cursor = values[0]
+			case "page":
+				in.Page, err = modelDevPagePointer(values[0])
+			case "pageSize":
+				in.PageSize, err = modelDevPageSizePointer(values[0])
 			default:
 				return invalidModelDevQueryHTTP()
 			}
@@ -174,6 +168,28 @@ func modelDevQueryPositiveBound(value string, maximum uint32) (uint32, error) {
 		return 0, invalidModelDevQueryHTTP()
 	}
 	return uint32(n), nil
+}
+
+// modelDevPagePointer parses a single canonical decimal page number in
+// 1..4294967295, mirroring the VPC page contract. A missing parameter stays nil
+// so the default is applied independently downstream.
+func modelDevPagePointer(value string) (*uint32, error) {
+	n, err := strconv.ParseUint(value, 10, 32)
+	if err != nil || n == 0 || value != strconv.FormatUint(n, 10) {
+		return nil, invalidModelDevQueryHTTP()
+	}
+	page := uint32(n)
+	return &page, nil
+}
+
+// modelDevPageSizePointer parses a canonical decimal page size in 1..100. An
+// explicit zero or an out-of-range value is rejected rather than corrected.
+func modelDevPageSizePointer(value string) (*uint32, error) {
+	n, err := modelDevQueryPositiveBound(value, 100)
+	if err != nil {
+		return nil, err
+	}
+	return &n, nil
 }
 
 func modelDevQueryHeaders(ctx khttp.Context) {

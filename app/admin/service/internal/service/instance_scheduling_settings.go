@@ -69,7 +69,7 @@ func validateInstanceSettings(in *view.InstanceSchedulingSettings) error {
 	return nil
 }
 func (p *InstanceSchedulingPolicy) read(ctx context.Context) (*view.InstanceSchedulingSettings, error) {
-	if p == nil || p.store == nil || !instanceCatalogUUID(p.clusterID) {
+	if p == nil || p.store == nil || !canonicalCatalogUUID(p.clusterID) {
 		return nil, errors.ServiceUnavailable("SCHEDULING_SETTINGS_UNAVAILABLE", "instance scheduling settings unavailable")
 	}
 	raw, err := p.store.ReadInstanceSchedulingSettings(ctx, p.clusterID)
@@ -172,7 +172,7 @@ func (s *InstanceService) UpdateInstanceSchedulingSettings(ctx context.Context, 
 		return nil, err
 	}
 	p := s.catalog.Settings
-	if p == nil || p.store == nil || p.tenants == nil || !instanceCatalogUUID(p.clusterID) {
+	if p == nil || p.store == nil || p.tenants == nil || !canonicalCatalogUUID(p.clusterID) {
 		return nil, errors.ServiceUnavailable("SCHEDULING_SETTINGS_UNAVAILABLE", "instance scheduling settings unavailable")
 	}
 	for _, row := range r.Data.PriorityClassAllowlists {

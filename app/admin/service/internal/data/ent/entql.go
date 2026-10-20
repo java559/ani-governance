@@ -1184,30 +1184,31 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "QuotaOperation",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			quotaoperation.FieldCreatedAt:         {Type: field.TypeTime, Column: quotaoperation.FieldCreatedAt},
-			quotaoperation.FieldUpdatedAt:         {Type: field.TypeTime, Column: quotaoperation.FieldUpdatedAt},
-			quotaoperation.FieldDeletedAt:         {Type: field.TypeTime, Column: quotaoperation.FieldDeletedAt},
-			quotaoperation.FieldTenantID:          {Type: field.TypeUint32, Column: quotaoperation.FieldTenantID},
-			quotaoperation.FieldOperationID:       {Type: field.TypeString, Column: quotaoperation.FieldOperationID},
-			quotaoperation.FieldResourceTenantID:  {Type: field.TypeString, Column: quotaoperation.FieldResourceTenantID},
-			quotaoperation.FieldResourceID:        {Type: field.TypeString, Column: quotaoperation.FieldResourceID},
-			quotaoperation.FieldCreateOperationID: {Type: field.TypeString, Column: quotaoperation.FieldCreateOperationID},
-			quotaoperation.FieldActorType:         {Type: field.TypeString, Column: quotaoperation.FieldActorType},
-			quotaoperation.FieldActorID:           {Type: field.TypeString, Column: quotaoperation.FieldActorID},
-			quotaoperation.FieldOwnerService:      {Type: field.TypeString, Column: quotaoperation.FieldOwnerService},
-			quotaoperation.FieldAction:            {Type: field.TypeString, Column: quotaoperation.FieldAction},
-			quotaoperation.FieldIdempotencyKey:    {Type: field.TypeString, Column: quotaoperation.FieldIdempotencyKey},
-			quotaoperation.FieldRequestHash:       {Type: field.TypeString, Column: quotaoperation.FieldRequestHash},
-			quotaoperation.FieldCanonicalRequest:  {Type: field.TypeString, Column: quotaoperation.FieldCanonicalRequest},
-			quotaoperation.FieldDispatchState:     {Type: field.TypeEnum, Column: quotaoperation.FieldDispatchState},
-			quotaoperation.FieldAttemptCount:      {Type: field.TypeInt, Column: quotaoperation.FieldAttemptCount},
-			quotaoperation.FieldLeaseGeneration:   {Type: field.TypeInt64, Column: quotaoperation.FieldLeaseGeneration},
-			quotaoperation.FieldRetryBlocked:      {Type: field.TypeBool, Column: quotaoperation.FieldRetryBlocked},
-			quotaoperation.FieldLastErrorCode:     {Type: field.TypeString, Column: quotaoperation.FieldLastErrorCode},
-			quotaoperation.FieldNextAttemptAt:     {Type: field.TypeTime, Column: quotaoperation.FieldNextAttemptAt},
-			quotaoperation.FieldLeaseOwner:        {Type: field.TypeString, Column: quotaoperation.FieldLeaseOwner},
-			quotaoperation.FieldLeaseUntil:        {Type: field.TypeTime, Column: quotaoperation.FieldLeaseUntil},
-			quotaoperation.FieldAckJSON:           {Type: field.TypeString, Column: quotaoperation.FieldAckJSON},
+			quotaoperation.FieldCreatedAt:               {Type: field.TypeTime, Column: quotaoperation.FieldCreatedAt},
+			quotaoperation.FieldUpdatedAt:               {Type: field.TypeTime, Column: quotaoperation.FieldUpdatedAt},
+			quotaoperation.FieldDeletedAt:               {Type: field.TypeTime, Column: quotaoperation.FieldDeletedAt},
+			quotaoperation.FieldTenantID:                {Type: field.TypeUint32, Column: quotaoperation.FieldTenantID},
+			quotaoperation.FieldOperationID:             {Type: field.TypeString, Column: quotaoperation.FieldOperationID},
+			quotaoperation.FieldResourceTenantID:        {Type: field.TypeString, Column: quotaoperation.FieldResourceTenantID},
+			quotaoperation.FieldResourceID:              {Type: field.TypeString, Column: quotaoperation.FieldResourceID},
+			quotaoperation.FieldCreateOperationID:       {Type: field.TypeString, Column: quotaoperation.FieldCreateOperationID},
+			quotaoperation.FieldActorType:               {Type: field.TypeString, Column: quotaoperation.FieldActorType},
+			quotaoperation.FieldActorID:                 {Type: field.TypeString, Column: quotaoperation.FieldActorID},
+			quotaoperation.FieldOwnerService:            {Type: field.TypeString, Column: quotaoperation.FieldOwnerService},
+			quotaoperation.FieldAction:                  {Type: field.TypeString, Column: quotaoperation.FieldAction},
+			quotaoperation.FieldIdempotencyKey:          {Type: field.TypeString, Column: quotaoperation.FieldIdempotencyKey},
+			quotaoperation.FieldRequestHash:             {Type: field.TypeString, Column: quotaoperation.FieldRequestHash},
+			quotaoperation.FieldInstanceContractVersion: {Type: field.TypeUint32, Column: quotaoperation.FieldInstanceContractVersion},
+			quotaoperation.FieldCanonicalRequest:        {Type: field.TypeString, Column: quotaoperation.FieldCanonicalRequest},
+			quotaoperation.FieldDispatchState:           {Type: field.TypeEnum, Column: quotaoperation.FieldDispatchState},
+			quotaoperation.FieldAttemptCount:            {Type: field.TypeInt, Column: quotaoperation.FieldAttemptCount},
+			quotaoperation.FieldLeaseGeneration:         {Type: field.TypeInt64, Column: quotaoperation.FieldLeaseGeneration},
+			quotaoperation.FieldRetryBlocked:            {Type: field.TypeBool, Column: quotaoperation.FieldRetryBlocked},
+			quotaoperation.FieldLastErrorCode:           {Type: field.TypeString, Column: quotaoperation.FieldLastErrorCode},
+			quotaoperation.FieldNextAttemptAt:           {Type: field.TypeTime, Column: quotaoperation.FieldNextAttemptAt},
+			quotaoperation.FieldLeaseOwner:              {Type: field.TypeString, Column: quotaoperation.FieldLeaseOwner},
+			quotaoperation.FieldLeaseUntil:              {Type: field.TypeTime, Column: quotaoperation.FieldLeaseUntil},
+			quotaoperation.FieldAckJSON:                 {Type: field.TypeString, Column: quotaoperation.FieldAckJSON},
 		},
 	}
 	graph.Nodes[41] = &sqlgraph.Node{
@@ -6656,6 +6657,11 @@ func (f *QuotaOperationFilter) WhereIdempotencyKey(p entql.StringP) {
 // WhereRequestHash applies the entql string predicate on the request_hash field.
 func (f *QuotaOperationFilter) WhereRequestHash(p entql.StringP) {
 	f.Where(p.Field(quotaoperation.FieldRequestHash))
+}
+
+// WhereInstanceContractVersion applies the entql uint32 predicate on the instance_contract_version field.
+func (f *QuotaOperationFilter) WhereInstanceContractVersion(p entql.Uint32P) {
+	f.Where(p.Field(quotaoperation.FieldInstanceContractVersion))
 }
 
 // WhereCanonicalRequest applies the entql string predicate on the canonical_request field.

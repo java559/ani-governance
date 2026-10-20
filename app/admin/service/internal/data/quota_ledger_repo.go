@@ -55,6 +55,7 @@ type QuotaOccupyInput struct {
 	TenantID                                                                                                              uint32
 	ResourceTenantID, ResourceID, ActorType, ActorID, OwnerService, Action, IdempotencyKey, RequestHash, CanonicalRequest string
 	Items                                                                                                                 []QuotaOccupyItem
+	InstanceContractVersion                                                                                               uint32
 }
 type QuotaOccupyResult struct {
 	OperationID, ResourceID string
@@ -156,6 +157,9 @@ func (r *QuotaLedgerRepo) Occupy(ctx context.Context, in *QuotaOccupyInput) (out
 	if in == nil || in.TenantID == 0 || in.IdempotencyKey == "" || in.RequestHash == "" || in.CanonicalRequest == "" || in.ResourceTenantID == "" || in.ResourceID == "" || in.OwnerService == "" || in.Action == "" || in.ActorType == "" || in.ActorID == "" {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "incomplete quota input")
 	}
+	if in.OwnerService == instanceCPUOwner && in.Action == instanceCPUCreateAction && in.InstanceContractVersion != CurrentInstanceContractVersion {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
+	}
 	cpu := in.Action == instanceCPUCreateAction && AllowsInstanceCPUCommand(in.OwnerService, in.Action, in.CanonicalRequest)
 	if (len(in.Items) == 0 && !cpu) || (cpu && len(in.Items) != 0) || (IsInstanceCPUCanonical([]byte(in.CanonicalRequest)) && !cpu) {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid original charge vector")
@@ -183,7 +187,7 @@ func (r *QuotaLedgerRepo) Occupy(ctx context.Context, in *QuotaOccupyInput) (out
 		// Replay precedes current subscription/capability checks and reuses the first snapshot.
 		op, err := tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(in.TenantID), quotaoperation.ActorTypeEQ(in.ActorType), quotaoperation.ActorIDEQ(in.ActorID), quotaoperation.ActionEQ(in.Action), quotaoperation.IdempotencyKeyEQ(in.IdempotencyKey)).Only(ctx)
 		if err == nil {
-			if op.RequestHash != in.RequestHash || op.OwnerService != in.OwnerService {
+			if op.RequestHash != in.RequestHash || op.OwnerService != in.OwnerService || op.ResourceTenantID != in.ResourceTenantID {
 				return quotapb.ErrorIdempotencyConflict("%s", "idempotency payload mismatch")
 			}
 			charges, e := tx.QuotaCharge.Query().Where(quotacharge.TenantIDEQ(in.TenantID), quotacharge.OperationIDEQ(op.OperationID)).Order(ent.Asc(quotacharge.FieldQuotaCode), ent.Asc(quotacharge.FieldChargeID)).All(ctx)
@@ -235,7 +239,16 @@ func (r *QuotaLedgerRepo) Occupy(ctx context.Context, in *QuotaOccupyInput) (out
 				return quotapb.ErrorQuotaExceeded("%s", "quota exceeded: "+it.QuotaCode)
 			}
 		}
-		op, err = tx.QuotaOperation.Create().SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(in.TenantID).SetResourceTenantID(in.ResourceTenantID).SetResourceID(in.ResourceID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(in.CanonicalRequest).SetDispatchState(quotaoperation.DispatchState("QUEUED")).Save(ctx)
+		version := in.InstanceContractVersion
+		// Other quota actions retain their independent storage default; Instance
+		// CREATE already requires the explicit current contract above.
+		if version == 0 {
+			version = 1
+		}
+		if version != 1 && version != 2 {
+			return quotapb.ErrorInvalidQuotaRequest("%s", "invalid instance contract")
+		}
+		op, err = tx.QuotaOperation.Create().SetInstanceContractVersion(version).SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(in.TenantID).SetResourceTenantID(in.ResourceTenantID).SetResourceID(in.ResourceID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(in.CanonicalRequest).SetDispatchState(quotaoperation.DispatchState("QUEUED")).Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -570,7 +583,7 @@ func (r *QuotaLedgerRepo) CreateDeleteOperation(ctx context.Context, in *QuotaDe
 				return e
 			}
 		}
-		op, e := tx.QuotaOperation.Create().SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(tid).SetResourceTenantID(original.ResourceTenantID).SetResourceID(original.ResourceID).SetNillableCreateOperationID(&original.OperationID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(canonical).SetDispatchState(quotaoperation.DispatchState(state)).Save(ctx)
+		op, e := tx.QuotaOperation.Create().SetInstanceContractVersion(original.InstanceContractVersion).SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(tid).SetResourceTenantID(original.ResourceTenantID).SetResourceID(original.ResourceID).SetNillableCreateOperationID(&original.OperationID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(canonical).SetDispatchState(quotaoperation.DispatchState(state)).Save(ctx)
 		if e != nil {
 			return e
 		}

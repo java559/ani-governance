@@ -8,11 +8,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (c *ModelDevClient) ListExecutions(ctx context.Context, scope ModelDevResolveScope, size uint32, token string) (*modeldevv1.ListExecutionsResponse, error) {
-	if size == 0 {
-		size = 20
-	}
-	if size > 100 || len(token) > 2048 {
+func (c *ModelDevClient) ListExecutions(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32) (*modeldevv1.ListExecutionsResponse, error) {
+	if page == 0 || pageSize == 0 || pageSize > 100 {
 		return nil, modelDevQueryUnavailable()
 	}
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListExecutions_FullMethodName)
@@ -20,11 +17,11 @@ func (c *ModelDevClient) ListExecutions(ctx context.Context, scope ModelDevResol
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutions(call, &modeldevv1.ListExecutionsRequest{Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListExecutions(call, &modeldevv1.ListExecutionsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Executions) > int(size) || len(out.NextCursor) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Executions) > int(pageSize) {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := make(map[string]bool, len(out.Executions))

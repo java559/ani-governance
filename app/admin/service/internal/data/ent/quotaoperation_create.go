@@ -146,6 +146,20 @@ func (_c *QuotaOperationCreate) SetRequestHash(v string) *QuotaOperationCreate {
 	return _c
 }
 
+// SetInstanceContractVersion sets the "instance_contract_version" field.
+func (_c *QuotaOperationCreate) SetInstanceContractVersion(v uint32) *QuotaOperationCreate {
+	_c.mutation.SetInstanceContractVersion(v)
+	return _c
+}
+
+// SetNillableInstanceContractVersion sets the "instance_contract_version" field if the given value is not nil.
+func (_c *QuotaOperationCreate) SetNillableInstanceContractVersion(v *uint32) *QuotaOperationCreate {
+	if v != nil {
+		_c.SetInstanceContractVersion(*v)
+	}
+	return _c
+}
+
 // SetCanonicalRequest sets the "canonical_request" field.
 func (_c *QuotaOperationCreate) SetCanonicalRequest(v string) *QuotaOperationCreate {
 	_c.mutation.SetCanonicalRequest(v)
@@ -325,6 +339,10 @@ func (_c *QuotaOperationCreate) defaults() error {
 		v := quotaoperation.DefaultTenantID
 		_c.mutation.SetTenantID(v)
 	}
+	if _, ok := _c.mutation.InstanceContractVersion(); !ok {
+		v := quotaoperation.DefaultInstanceContractVersion
+		_c.mutation.SetInstanceContractVersion(v)
+	}
 	if _, ok := _c.mutation.DispatchState(); !ok {
 		v := quotaoperation.DefaultDispatchState
 		_c.mutation.SetDispatchState(v)
@@ -421,6 +439,14 @@ func (_c *QuotaOperationCreate) check() error {
 	if v, ok := _c.mutation.RequestHash(); ok {
 		if err := quotaoperation.RequestHashValidator(v); err != nil {
 			return &ValidationError{Name: "request_hash", err: fmt.Errorf(`ent: validator failed for field "QuotaOperation.request_hash": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.InstanceContractVersion(); !ok {
+		return &ValidationError{Name: "instance_contract_version", err: errors.New(`ent: missing required field "QuotaOperation.instance_contract_version"`)}
+	}
+	if v, ok := _c.mutation.InstanceContractVersion(); ok {
+		if err := quotaoperation.InstanceContractVersionValidator(v); err != nil {
+			return &ValidationError{Name: "instance_contract_version", err: fmt.Errorf(`ent: validator failed for field "QuotaOperation.instance_contract_version": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.CanonicalRequest(); !ok {
@@ -551,6 +577,10 @@ func (_c *QuotaOperationCreate) createSpec() (*QuotaOperation, *sqlgraph.CreateS
 	if value, ok := _c.mutation.RequestHash(); ok {
 		_spec.SetField(quotaoperation.FieldRequestHash, field.TypeString, value)
 		_node.RequestHash = value
+	}
+	if value, ok := _c.mutation.InstanceContractVersion(); ok {
+		_spec.SetField(quotaoperation.FieldInstanceContractVersion, field.TypeUint32, value)
+		_node.InstanceContractVersion = value
 	}
 	if value, ok := _c.mutation.CanonicalRequest(); ok {
 		_spec.SetField(quotaoperation.FieldCanonicalRequest, field.TypeString, value)
@@ -882,6 +912,9 @@ func (u *QuotaOperationUpsertOne) UpdateNewValues() *QuotaOperationUpsertOne {
 		}
 		if _, exists := u.create.mutation.RequestHash(); exists {
 			s.SetIgnore(quotaoperation.FieldRequestHash)
+		}
+		if _, exists := u.create.mutation.InstanceContractVersion(); exists {
+			s.SetIgnore(quotaoperation.FieldInstanceContractVersion)
 		}
 		if _, exists := u.create.mutation.CanonicalRequest(); exists {
 			s.SetIgnore(quotaoperation.FieldCanonicalRequest)
@@ -1351,6 +1384,9 @@ func (u *QuotaOperationUpsertBulk) UpdateNewValues() *QuotaOperationUpsertBulk {
 			}
 			if _, exists := b.mutation.RequestHash(); exists {
 				s.SetIgnore(quotaoperation.FieldRequestHash)
+			}
+			if _, exists := b.mutation.InstanceContractVersion(); exists {
+				s.SetIgnore(quotaoperation.FieldInstanceContractVersion)
 			}
 			if _, exists := b.mutation.CanonicalRequest(); exists {
 				s.SetIgnore(quotaoperation.FieldCanonicalRequest)

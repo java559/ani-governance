@@ -39,12 +39,14 @@ ID 规则：`execution_id`、`preset_id`、`input_version_id`、`artifact_id` �
 
 ### 分页约定
 
-- 列表类接口统一使用 `limit` + `cursor`（游标分页，与 users/VPC 一致）。
-- `limit` 上限 **100**；`cursor` 上限 **2048 字节**。
-- 返回 `next_cursor`；为空表示没有下一页。首次不传 `cursor`，后续原样回传上一页的 `next_cursor`。
-- 列表一起返回 `total`（uint64，**JSON 中是十进制字符串**）：同租户、同权限、同筛选条件下的匹配总数，不受窗口影响（不是本页条数）。
-- `limit` 要么**不传**（用后端默认值），要么传 **1\~100 的规范十进制正整数**；显式传 `0`、超上限或非规范写法（如前导零）会返回 `400`。
-- `cursor` 可直接透传，无需解析；换筛选或换排序时请从首页重新取数。
+- 列表类接口统一使用 `page` + `pageSize`（页码分页，与 Gov 前端 HTTP 接口规范一致）。
+- `page` 从 **1** 开始（不传默认 `1`）；`pageSize` 不传默认 **20**，合法范围 **1\~100**。
+- 两个参数**各自独立取默认值**：例如只传 `page=3` 时 `pageSize` 仍为 20。
+- 响应只返回 `items` + `total`，**不再返回游标字段**（旧的 `limit` / `cursor` / `next_cursor` 已退役）。
+- `total`（uint64，**JSON 中是十进制字符串**）：同租户、同权限、同筛选条件下的匹配总数，不受分页窗口影响（不是本页条数）。
+- 参数要么**不传**（用默认值），要么传**规范十进制正整数**；显式传 `page=0`、`pageSize=0`、`pageSize` 超 100、前导零、小数、重复参数、未声明的 query（含旧的 `limit` / `cursor`）都会返回 `400`。
+- 支持**直接跳到任意合法页**，不必从首页顺次翻；页码超出最后一页时 `items` 为 `[]`、`total` 仍为实际匹配总数。
+- 排序由后端固定，前端不要传排序参数；连续请求之间数据可能变化，分页不表示结果被冻结。
 
 ***
 
@@ -69,7 +71,7 @@ ModelDev 的查询、创建与停止都**要求租户具备** **`ALL`** **数据
 
 ### 4.1 训练预设 `GET /admin/v1/modeldev/presets`
 
-Query：`limit`、`cursor`。
+Query：`page`、`pageSize`。
 
 响应：
 
@@ -97,7 +99,6 @@ Query：`limit`、`cursor`。
       "new_submissions_enabled": true
     }
   ],
-  "next_cursor": "",
   "total": "1"
 }
 ```
@@ -111,7 +112,7 @@ Query：`limit`、`cursor`。
 
 ### 4.2 输入数据集 `GET /admin/v1/modeldev/input-versions`
 
-Query：`limit`、`cursor`、`state`（可选）。
+Query：`page`、`pageSize`、`state`（可选）。
 
 - `state` 只接受：`FIXING` | `VALIDATING` | `READY` | `FAILED`。
 - **发起训练只能选** **`state=READY`** **的数据集**，建议前端直接传 `?state=READY`。
@@ -132,7 +133,6 @@ Query：`limit`、`cursor`、`state`（可选）。
       "created_at": "2026-10-10T08:00:00Z"
     }
   ],
-  "next_cursor": "",
   "total": "1"
 }
 ```
@@ -288,7 +288,7 @@ Authorization: Bearer <access-token>
 
 ### 4.7 产物列表 `GET /admin/v1/modeldev/executions/{execution_id}/artifacts`
 
-Query：`limit`、`cursor`。先等 `delivery_state=PUBLISHED` 再拉取才有内容。
+Query：`page`、`pageSize`。先等 `delivery_state=PUBLISHED` 再拉取才有内容。
 
 响应：
 
@@ -306,7 +306,6 @@ Query：`limit`、`cursor`。先等 `delivery_state=PUBLISHED` 再拉取才有�
       "verified_at": "2026-10-10T08:20:00Z"
     }
   ],
-  "next_cursor": "",
   "total": "4"
 }
 ```
@@ -368,7 +367,7 @@ Query：`limit`、`cursor`。先等 `delivery_state=PUBLISHED` 再拉取才有�
 
 | HTTP | 场景                                                                                                | 前端建议                           |
 | ---- | ------------------------------------------------------------------------------------------------- | ------------------------------ |
-| 400  | 参数非法 / 未知或重复 query / 显式传 `limit=0`                                                            | 表单校验提示                         |
+| 400  | 参数非法 / 未知或重复 query / 显式传 `page=0`、`pageSize=0`，或已退役的 `limit` / `cursor`                                                            | 表单校验提示                         |
 | 401  | 未登录 / 凭证无效                                                                                        | 登录或刷新 token                    |
 | 403  | 无权限 / 套餐未含 MODEL / 路由未登记 / 数据范围不是 `ALL` / 传了 `source_execution_id`                                | 提示无权限，勿重试                      |
 | 404  | 资源不可用（含跨租户不可见）                                                                                    | 提示不存在                          |
@@ -425,7 +424,7 @@ Query：`limit`、`cursor`。先等 `delivery_state=PUBLISHED` 再拉取才有�
 | **一键重跑 / 复制历史任务**         | 无。`source_execution_id` 当前被拒绝。                     |
 | **删除 / 归档历史执行**           | 普通用户无此接口（清理是管理员受管操作）。                              |
 | **训练完成站内消息通知**            | 当前无面向用户的完成通知闭环。                                    |
-| **列表总数** **`total`**      | 列表只返回游标，无总数。                                       |
+| **游标续页（`next_cursor`）**   | 无。分页只有 `page` / `pageSize`（见 §2）；`total` 已返回。 |
 | **GPU / 分布式 / 微调 / 推理服务** | 均不在当前范围，仅 CPU 固定训练方案。                              |
 
 ***

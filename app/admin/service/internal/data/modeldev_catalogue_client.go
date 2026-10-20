@@ -9,17 +9,17 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (c *ModelDevClient) ListPresets(ctx context.Context, scope ModelDevResolveScope, size uint32, token string) (*modeldevv1.ListPresetsResponse, error) {
+func (c *ModelDevClient) ListPresets(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32) (*modeldevv1.ListPresetsResponse, error) {
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListPresets_FullMethodName)
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListPresets(call, &modeldevv1.ListPresetsRequest{Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListPresets(call, &modeldevv1.ListPresetsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Presets) > 100 || len(out.NextCursor) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Presets) > 100 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := map[string]bool{}
@@ -66,17 +66,17 @@ func (c *ModelDevClient) GetInputVersion(ctx context.Context, scope ModelDevReso
 	return out, nil
 }
 
-func (c *ModelDevClient) ListInputVersions(ctx context.Context, scope ModelDevResolveScope, size uint32, token string, state *modeldevv1.InputState) (*modeldevv1.ListInputVersionsResponse, error) {
+func (c *ModelDevClient) ListInputVersions(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32, state *modeldevv1.InputState) (*modeldevv1.ListInputVersionsResponse, error) {
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListInputVersions_FullMethodName)
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListInputVersions(call, &modeldevv1.ListInputVersionsRequest{Page: &modeldevv1.PageRequest{Limit: size, Cursor: token}, State: state}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListInputVersions(call, &modeldevv1.ListInputVersionsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}, State: state}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.InputVersions) > 100 || len(out.NextCursor) > 2048 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.InputVersions) > 100 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := map[string]bool{}

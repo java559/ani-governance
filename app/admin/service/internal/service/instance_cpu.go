@@ -22,15 +22,15 @@ func (s *GpuAcceptance) acceptInstanceCPUCreate(ctx context.Context, p *auth.Pri
 	if e != nil {
 		return nil, e
 	}
-	c := data.InstanceCPUCanonical{Schema: data.InstanceCPUCanonicalSchema, BusinessPayload: raw, BusinessPayloadDigest: digest}
-	canonical, e := json.Marshal(c)
+	c := data.InstanceCPUCanonical{Schema: data.InstanceCPUCanonicalSchema, InstanceContractVersion: data.CurrentInstanceContractVersion, BusinessPayload: raw, BusinessPayloadDigest: digest}
+	canonical, e := data.MarshalInstanceCPUCanonical(&c)
 	if e != nil {
 		return nil, e
 	}
 	if _, e = data.DecodeInstanceCPUCanonical(canonical); e != nil {
 		return nil, e
 	}
-	result, e := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: uuid.NewString(), ActorType: string(p.Type), ActorID: actorID, OwnerService: InstanceOwner, Action: InstanceCreateAction, IdempotencyKey: key, RequestHash: requestHash, CanonicalRequest: string(canonical)})
+	result, e := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: uuid.NewString(), ActorType: string(p.Type), ActorID: actorID, OwnerService: InstanceOwner, Action: InstanceCreateAction, IdempotencyKey: key, RequestHash: requestHash, CanonicalRequest: string(canonical), InstanceContractVersion: data.CurrentInstanceContractVersion})
 	if e == nil && s.worker != nil {
 		s.worker.Notify()
 	}
@@ -68,7 +68,7 @@ func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Pri
 		}
 	}
 	c.DeleteExpectedVersion = version
-	raw, e := json.Marshal(c)
+	raw, e := data.MarshalInstanceCPUCanonical(c)
 	if e != nil {
 		return nil, e
 	}

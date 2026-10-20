@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-kratos/kratos/v2/errors"
+	computeview "go-wind-admin/api/gen/go/compute/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -54,7 +55,7 @@ func decodeInstanceHTTP(r *http.Request, message proto.Message) error {
 		if value, ok := data["priority_class_allowlists"]; !ok || bytes.Equal(bytes.TrimSpace(value), []byte("null")) || json.Unmarshal(value, &allowlists) != nil {
 			return invalid
 		}
-	case *view.UpdatePresetRequest, *view.SetPresetEnabledRequest:
+	case *computeview.UpdatePresetRequest, *computeview.SetPresetEnabledRequest:
 		var envelope map[string]json.RawMessage
 		if json.Unmarshal(raw, &envelope) != nil {
 			return invalid
@@ -62,7 +63,7 @@ func decodeInstanceHTTP(r *http.Request, message proto.Message) error {
 		if _, present := envelope["id"]; present {
 			return invalid
 		}
-		if _, update := message.(*view.UpdatePresetRequest); update {
+		if _, update := message.(*computeview.UpdatePresetRequest); update {
 			var data map[string]json.RawMessage
 			if json.Unmarshal(envelope["data"], &data) != nil {
 				return invalid
@@ -80,6 +81,9 @@ func decodeInstanceHTTP(r *http.Request, message proto.Message) error {
 		var data map[string]json.RawMessage
 		if json.Unmarshal(envelope["data"], &data) != nil {
 			return invalid
+		}
+		if err := validateInstanceConfigurationJSON(data); err != nil {
+			return err
 		}
 		if value, present := data["scheduling"]; present {
 			if err := validateSchedulingJSON(value); err != nil {
@@ -122,6 +126,9 @@ func instanceHTTPError(err error) error {
 		code, reason = 499, "INSTANCE_CANCELED"
 	}
 	message := status.Convert(err).Message()
+	if status.Code(err) == codes.ResourceExhausted && message == "INSTANCE_PVC_CATALOG_LIMIT" {
+		code = 422
+	}
 	if instancePublicReason.MatchString(message) && (strings.HasPrefix(message, "INSTANCE_") || strings.HasPrefix(message, "COMPUTE_PRESET_") || strings.HasPrefix(message, "SCHEDULING_") || message == "INVALID_INSTANCE_REQUEST" || message == "INVALID_SCHEDULING_OPTIONS") {
 		reason = message
 	}
@@ -161,15 +168,19 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 	invalid := errors.BadRequest("INVALID_INSTANCE_REQUEST", "invalid instance query")
 	allowed := map[string]bool{}
 	switch message.(type) {
+	case *view.ListMountablePVCsRequest:
+		for _, k := range []string{"page", "pageSize", "name"} {
+			allowed[k] = true
+		}
 	case *view.ListInstancesRequest:
 		for _, k := range []string{"page", "pageSize", "instance_kind", "compute_type", "observedState", "name"} {
 			allowed[k] = true
 		}
-	case *view.ListPresetsRequest, *view.AdminListPresetsRequest:
+	case *computeview.ListPresetsRequest, *computeview.AdminListPresetsRequest:
 		for _, k := range []string{"page", "pageSize", "name", "code", "compute_type", "gpu_mode"} {
 			allowed[k] = true
 		}
-		if _, admin := message.(*view.AdminListPresetsRequest); admin {
+		if _, admin := message.(*computeview.AdminListPresetsRequest); admin {
 			allowed["enabled"] = true
 		}
 	}
@@ -238,6 +249,51 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 	}
 	if err = (protojson.UnmarshalOptions{DiscardUnknown: false}).Unmarshal(raw, message); err != nil {
 		return invalid
+	}
+	return nil
+}
+
+// ProtoJSON treats null as absence, so reject it before decoding user config.
+func validateInstanceConfigurationJSON(data map[string]json.RawMessage) error {
+	invalid := errors.BadRequest("INVALID_INSTANCE_REQUEST", "invalid instance configuration")
+	var rejectNull func(any) bool
+	rejectNull = func(v any) bool {
+		switch value := v.(type) {
+		case nil:
+			return true
+		case map[string]any:
+			for _, child := range value {
+				if rejectNull(child) {
+					return true
+				}
+			}
+		case []any:
+			for _, child := range value {
+				if rejectNull(child) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	for _, field := range []string{"workspace_mount_path", "volume_mounts", "network", "labels", "annotations", "env"} {
+		raw, present := data[field]
+		if !present {
+			continue
+		}
+		var value any
+		if json.Unmarshal(raw, &value) != nil || rejectNull(value) {
+			return invalid
+		}
+		if field == "workspace_mount_path" && value == "" {
+			return invalid
+		}
+		if field == "network" {
+			object, ok := value.(map[string]any)
+			if !ok || len(object) == 0 {
+				return invalid
+			}
+		}
 	}
 	return nil
 }

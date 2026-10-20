@@ -3212,6 +3212,7 @@ CREATE TABLE "sys_quota_operations" (
   "action" character varying NOT NULL,
   "idempotency_key" character varying NOT NULL,
   "request_hash" character varying NOT NULL,
+  "instance_contract_version" bigint NOT NULL DEFAULT 1,
   "canonical_request" text NOT NULL,
   "dispatch_state" character varying NOT NULL DEFAULT 'QUEUED',
   "attempt_count" bigint NOT NULL DEFAULT 0,
@@ -3225,6 +3226,7 @@ CREATE TABLE "sys_quota_operations" (
   PRIMARY KEY ("id"),
   CONSTRAINT "sys_quota_operations_tenant_resource_mapping_fkey" FOREIGN KEY ("tenant_id", "resource_tenant_id") REFERENCES "sys_tenants" ("id", "resource_tenant_id") ON DELETE RESTRICT,
   CONSTRAINT "sys_quota_operations_tenant_fkey" FOREIGN KEY ("tenant_id") REFERENCES "sys_tenants" ("id") ON DELETE RESTRICT,
+  CONSTRAINT "sys_quota_operations_instance_contract_version_ck" CHECK (instance_contract_version IN (1, 2)),
   CONSTRAINT "sys_quota_operations_tenant_positive_ck" CHECK (tenant_id > 0)
 );
 -- Create index "sys_quota_operations_operation_id_key" to table: "sys_quota_operations"

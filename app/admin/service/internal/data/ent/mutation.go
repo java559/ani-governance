@@ -59042,40 +59042,42 @@ func (m *QuotaDefinitionMutation) ResetEdge(name string) error {
 // QuotaOperationMutation represents an operation that mutates the QuotaOperation nodes in the graph.
 type QuotaOperationMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uint32
-	created_at          *time.Time
-	updated_at          *time.Time
-	deleted_at          *time.Time
-	tenant_id           *uint32
-	addtenant_id        *int32
-	operation_id        *string
-	resource_tenant_id  *string
-	resource_id         *string
-	create_operation_id *string
-	actor_type          *string
-	actor_id            *string
-	owner_service       *string
-	action              *string
-	idempotency_key     *string
-	request_hash        *string
-	canonical_request   *string
-	dispatch_state      *quotaoperation.DispatchState
-	attempt_count       *int
-	addattempt_count    *int
-	lease_generation    *int64
-	addlease_generation *int64
-	retry_blocked       *bool
-	last_error_code     *string
-	next_attempt_at     *time.Time
-	lease_owner         *string
-	lease_until         *time.Time
-	ack_json            *string
-	clearedFields       map[string]struct{}
-	done                bool
-	oldValue            func(context.Context) (*QuotaOperation, error)
-	predicates          []predicate.QuotaOperation
+	op                           Op
+	typ                          string
+	id                           *uint32
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	deleted_at                   *time.Time
+	tenant_id                    *uint32
+	addtenant_id                 *int32
+	operation_id                 *string
+	resource_tenant_id           *string
+	resource_id                  *string
+	create_operation_id          *string
+	actor_type                   *string
+	actor_id                     *string
+	owner_service                *string
+	action                       *string
+	idempotency_key              *string
+	request_hash                 *string
+	instance_contract_version    *uint32
+	addinstance_contract_version *int32
+	canonical_request            *string
+	dispatch_state               *quotaoperation.DispatchState
+	attempt_count                *int
+	addattempt_count             *int
+	lease_generation             *int64
+	addlease_generation          *int64
+	retry_blocked                *bool
+	last_error_code              *string
+	next_attempt_at              *time.Time
+	lease_owner                  *string
+	lease_until                  *time.Time
+	ack_json                     *string
+	clearedFields                map[string]struct{}
+	done                         bool
+	oldValue                     func(context.Context) (*QuotaOperation, error)
+	predicates                   []predicate.QuotaOperation
 }
 
 var _ ent.Mutation = (*QuotaOperationMutation)(nil)
@@ -59772,6 +59774,62 @@ func (m *QuotaOperationMutation) ResetRequestHash() {
 	m.request_hash = nil
 }
 
+// SetInstanceContractVersion sets the "instance_contract_version" field.
+func (m *QuotaOperationMutation) SetInstanceContractVersion(u uint32) {
+	m.instance_contract_version = &u
+	m.addinstance_contract_version = nil
+}
+
+// InstanceContractVersion returns the value of the "instance_contract_version" field in the mutation.
+func (m *QuotaOperationMutation) InstanceContractVersion() (r uint32, exists bool) {
+	v := m.instance_contract_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInstanceContractVersion returns the old "instance_contract_version" field's value of the QuotaOperation entity.
+// If the QuotaOperation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuotaOperationMutation) OldInstanceContractVersion(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInstanceContractVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInstanceContractVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInstanceContractVersion: %w", err)
+	}
+	return oldValue.InstanceContractVersion, nil
+}
+
+// AddInstanceContractVersion adds u to the "instance_contract_version" field.
+func (m *QuotaOperationMutation) AddInstanceContractVersion(u int32) {
+	if m.addinstance_contract_version != nil {
+		*m.addinstance_contract_version += u
+	} else {
+		m.addinstance_contract_version = &u
+	}
+}
+
+// AddedInstanceContractVersion returns the value that was added to the "instance_contract_version" field in this mutation.
+func (m *QuotaOperationMutation) AddedInstanceContractVersion() (r int32, exists bool) {
+	v := m.addinstance_contract_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetInstanceContractVersion resets all changes to the "instance_contract_version" field.
+func (m *QuotaOperationMutation) ResetInstanceContractVersion() {
+	m.instance_contract_version = nil
+	m.addinstance_contract_version = nil
+}
+
 // SetCanonicalRequest sets the "canonical_request" field.
 func (m *QuotaOperationMutation) SetCanonicalRequest(s string) {
 	m.canonical_request = &s
@@ -60271,7 +60329,7 @@ func (m *QuotaOperationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QuotaOperationMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 25)
 	if m.created_at != nil {
 		fields = append(fields, quotaoperation.FieldCreatedAt)
 	}
@@ -60313,6 +60371,9 @@ func (m *QuotaOperationMutation) Fields() []string {
 	}
 	if m.request_hash != nil {
 		fields = append(fields, quotaoperation.FieldRequestHash)
+	}
+	if m.instance_contract_version != nil {
+		fields = append(fields, quotaoperation.FieldInstanceContractVersion)
 	}
 	if m.canonical_request != nil {
 		fields = append(fields, quotaoperation.FieldCanonicalRequest)
@@ -60380,6 +60441,8 @@ func (m *QuotaOperationMutation) Field(name string) (ent.Value, bool) {
 		return m.IdempotencyKey()
 	case quotaoperation.FieldRequestHash:
 		return m.RequestHash()
+	case quotaoperation.FieldInstanceContractVersion:
+		return m.InstanceContractVersion()
 	case quotaoperation.FieldCanonicalRequest:
 		return m.CanonicalRequest()
 	case quotaoperation.FieldDispatchState:
@@ -60437,6 +60500,8 @@ func (m *QuotaOperationMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldIdempotencyKey(ctx)
 	case quotaoperation.FieldRequestHash:
 		return m.OldRequestHash(ctx)
+	case quotaoperation.FieldInstanceContractVersion:
+		return m.OldInstanceContractVersion(ctx)
 	case quotaoperation.FieldCanonicalRequest:
 		return m.OldCanonicalRequest(ctx)
 	case quotaoperation.FieldDispatchState:
@@ -60564,6 +60629,13 @@ func (m *QuotaOperationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRequestHash(v)
 		return nil
+	case quotaoperation.FieldInstanceContractVersion:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInstanceContractVersion(v)
+		return nil
 	case quotaoperation.FieldCanonicalRequest:
 		v, ok := value.(string)
 		if !ok {
@@ -60645,6 +60717,9 @@ func (m *QuotaOperationMutation) AddedFields() []string {
 	if m.addtenant_id != nil {
 		fields = append(fields, quotaoperation.FieldTenantID)
 	}
+	if m.addinstance_contract_version != nil {
+		fields = append(fields, quotaoperation.FieldInstanceContractVersion)
+	}
 	if m.addattempt_count != nil {
 		fields = append(fields, quotaoperation.FieldAttemptCount)
 	}
@@ -60661,6 +60736,8 @@ func (m *QuotaOperationMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case quotaoperation.FieldTenantID:
 		return m.AddedTenantID()
+	case quotaoperation.FieldInstanceContractVersion:
+		return m.AddedInstanceContractVersion()
 	case quotaoperation.FieldAttemptCount:
 		return m.AddedAttemptCount()
 	case quotaoperation.FieldLeaseGeneration:
@@ -60680,6 +60757,13 @@ func (m *QuotaOperationMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddTenantID(v)
+		return nil
+	case quotaoperation.FieldInstanceContractVersion:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddInstanceContractVersion(v)
 		return nil
 	case quotaoperation.FieldAttemptCount:
 		v, ok := value.(int)
@@ -60826,6 +60910,9 @@ func (m *QuotaOperationMutation) ResetField(name string) error {
 		return nil
 	case quotaoperation.FieldRequestHash:
 		m.ResetRequestHash()
+		return nil
+	case quotaoperation.FieldInstanceContractVersion:
+		m.ResetInstanceContractVersion()
 		return nil
 	case quotaoperation.FieldCanonicalRequest:
 		m.ResetCanonicalRequest()

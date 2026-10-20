@@ -41,8 +41,19 @@ message GeneralParameter {
 }
 
 // Catalogue metadata exposes selection and registered parameters only.
-message ListPresetsRequest { uint32 limit = 1 [json_name = "limit"]; string cursor = 2 [json_name = "cursor"]; }
-message ListPresetsResponse { repeated PresetView items = 1; string next_cursor = 2 [json_name = "next_cursor"]; uint64 total = 3 [json_name = "total"]; }
+// Gov public pagination uses page/pageSize; legacy limit/cursor stay reserved.
+message ListPresetsRequest {
+  reserved 1, 2;
+  reserved "limit", "cursor";
+  optional uint32 page = 3 [json_name = "page"];
+  optional uint32 page_size = 4 [json_name = "pageSize"];
+}
+message ListPresetsResponse {
+  repeated PresetView items = 1;
+  reserved 2;
+  reserved "next_cursor";
+  uint64 total = 3 [json_name = "total"];
+}
 message PresetView {
   string preset_id = 1 [json_name = "preset_id"];
   string name = 2;
@@ -65,11 +76,18 @@ message ParameterRule {
 message GetInputVersionRequest { string input_version_id = 1 [json_name = "input_version_id"]; }
 message GetInputVersionResponse { InputVersionView input_version = 1 [json_name = "input_version"]; }
 message ListInputVersionsRequest {
-  uint32 limit = 1 [json_name = "limit"];
-  string cursor = 2 [json_name = "cursor"];
+  reserved 1, 2;
+  reserved "limit", "cursor";
   optional string state = 3;
+  optional uint32 page = 4 [json_name = "page"];
+  optional uint32 page_size = 5 [json_name = "pageSize"];
 }
-message ListInputVersionsResponse { repeated InputVersionView items = 1; string next_cursor = 2 [json_name = "next_cursor"]; uint64 total = 3 [json_name = "total"]; }
+message ListInputVersionsResponse {
+  repeated InputVersionView items = 1;
+  reserved 2;
+  reserved "next_cursor";
+  uint64 total = 3 [json_name = "total"];
+}
 message InputVersionView {
   string input_version_id = 1 [json_name = "input_version_id"];
   string state = 2;
@@ -109,12 +127,15 @@ message StopExecutionResponse {
 message GetExecutionRequest { string execution_id = 1 [json_name = "execution_id"]; }
 message GetExecutionResponse { ExecutionView execution = 1; }
 message ListExecutionsRequest {
-  uint32 limit = 1 [json_name = "limit"];
-  string cursor = 2 [json_name = "cursor"];
+  reserved 1, 2;
+  reserved "limit", "cursor";
+  optional uint32 page = 3 [json_name = "page"];
+  optional uint32 page_size = 4 [json_name = "pageSize"];
 }
 message ListExecutionsResponse {
   repeated ExecutionView items = 1;
-  string next_cursor = 2 [json_name = "next_cursor"];
+  reserved 2;
+  reserved "next_cursor";
   uint64 total = 3 [json_name = "total"];
 }
 message GetExecutionLogsRequest {
@@ -155,12 +176,15 @@ message ExecutionView {
 }
 message ListExecutionArtifactsRequest {
   string execution_id = 1 [json_name = "execution_id"];
-  uint32 limit = 2 [json_name = "limit"];
-  string cursor = 3 [json_name = "cursor"];
+  reserved 2, 3;
+  reserved "limit", "cursor";
+  optional uint32 page = 4 [json_name = "page"];
+  optional uint32 page_size = 5 [json_name = "pageSize"];
 }
 message ListExecutionArtifactsResponse {
   repeated ArtifactView items = 1;
-  string next_cursor = 2 [json_name = "next_cursor"];
+  reserved 2;
+  reserved "next_cursor";
   uint64 total = 3 [json_name = "total"];
 }
 message ArtifactView {

@@ -7,9 +7,9 @@
 package servicev1
 
 import (
+	_ "github.com/google/gnostic/openapiv3"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	wrapperspb "google.golang.org/protobuf/types/known/wrapperspb"
 	reflect "reflect"
@@ -73,7 +73,7 @@ func (x SchedulingOptions_PodPlacement) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SchedulingOptions_PodPlacement.Descriptor instead.
 func (SchedulingOptions_PodPlacement) EnumDescriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{0, 0}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{8, 0}
 }
 
 type InstanceLogFrame_Kind int32
@@ -128,7 +128,479 @@ func (x InstanceLogFrame_Kind) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use InstanceLogFrame_Kind.Descriptor instead.
 func (InstanceLogFrame_Kind) EnumDescriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{36, 0}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{38, 0}
+}
+
+type QueryInstanceMetricsRequest struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	InstanceId    string                    `protobuf:"bytes,1,opt,name=instance_id,proto3" json:"instance_id,omitempty"`
+	Data          *QueryInstanceMetricsData `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryInstanceMetricsRequest) Reset() {
+	*x = QueryInstanceMetricsRequest{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryInstanceMetricsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryInstanceMetricsRequest) ProtoMessage() {}
+
+func (x *QueryInstanceMetricsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryInstanceMetricsRequest.ProtoReflect.Descriptor instead.
+func (*QueryInstanceMetricsRequest) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *QueryInstanceMetricsRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *QueryInstanceMetricsRequest) GetData() *QueryInstanceMetricsData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type QueryInstanceMetricsData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MetricCodes   []string               `protobuf:"bytes,1,rep,name=metric_codes,proto3" json:"metric_codes,omitempty"`
+	Start         *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=start,proto3" json:"start,omitempty"`
+	End           *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
+	StepSeconds   *uint32                `protobuf:"varint,4,opt,name=step_seconds,proto3,oneof" json:"step_seconds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryInstanceMetricsData) Reset() {
+	*x = QueryInstanceMetricsData{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryInstanceMetricsData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryInstanceMetricsData) ProtoMessage() {}
+
+func (x *QueryInstanceMetricsData) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryInstanceMetricsData.ProtoReflect.Descriptor instead.
+func (*QueryInstanceMetricsData) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *QueryInstanceMetricsData) GetMetricCodes() []string {
+	if x != nil {
+		return x.MetricCodes
+	}
+	return nil
+}
+
+func (x *QueryInstanceMetricsData) GetStart() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Start
+	}
+	return nil
+}
+
+func (x *QueryInstanceMetricsData) GetEnd() *timestamppb.Timestamp {
+	if x != nil {
+		return x.End
+	}
+	return nil
+}
+
+func (x *QueryInstanceMetricsData) GetStepSeconds() uint32 {
+	if x != nil && x.StepSeconds != nil {
+		return *x.StepSeconds
+	}
+	return 0
+}
+
+type QueryInstanceMetricsResponse struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Data          *InstanceMetricsRangeData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QueryInstanceMetricsResponse) Reset() {
+	*x = QueryInstanceMetricsResponse{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QueryInstanceMetricsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QueryInstanceMetricsResponse) ProtoMessage() {}
+
+func (x *QueryInstanceMetricsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QueryInstanceMetricsResponse.ProtoReflect.Descriptor instead.
+func (*QueryInstanceMetricsResponse) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *QueryInstanceMetricsResponse) GetData() *InstanceMetricsRangeData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type InstanceMetricsRangeData struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	InstanceId    string                  `protobuf:"bytes,1,opt,name=instance_id,proto3" json:"instance_id,omitempty"`
+	Start         *timestamppb.Timestamp  `protobuf:"bytes,2,opt,name=start,proto3" json:"start,omitempty"`
+	End           *timestamppb.Timestamp  `protobuf:"bytes,3,opt,name=end,proto3" json:"end,omitempty"`
+	StepSeconds   uint32                  `protobuf:"varint,4,opt,name=step_seconds,proto3" json:"step_seconds,omitempty"`
+	Series        []*InstanceMetricSeries `protobuf:"bytes,5,rep,name=series,proto3" json:"series,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceMetricsRangeData) Reset() {
+	*x = InstanceMetricsRangeData{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceMetricsRangeData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceMetricsRangeData) ProtoMessage() {}
+
+func (x *InstanceMetricsRangeData) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceMetricsRangeData.ProtoReflect.Descriptor instead.
+func (*InstanceMetricsRangeData) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *InstanceMetricsRangeData) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *InstanceMetricsRangeData) GetStart() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Start
+	}
+	return nil
+}
+
+func (x *InstanceMetricsRangeData) GetEnd() *timestamppb.Timestamp {
+	if x != nil {
+		return x.End
+	}
+	return nil
+}
+
+func (x *InstanceMetricsRangeData) GetStepSeconds() uint32 {
+	if x != nil {
+		return x.StepSeconds
+	}
+	return 0
+}
+
+func (x *InstanceMetricsRangeData) GetSeries() []*InstanceMetricSeries {
+	if x != nil {
+		return x.Series
+	}
+	return nil
+}
+
+type GetInstanceLatestMetricsResponse struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	Data          *InstanceMetricsLatestData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetInstanceLatestMetricsResponse) Reset() {
+	*x = GetInstanceLatestMetricsResponse{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetInstanceLatestMetricsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInstanceLatestMetricsResponse) ProtoMessage() {}
+
+func (x *GetInstanceLatestMetricsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInstanceLatestMetricsResponse.ProtoReflect.Descriptor instead.
+func (*GetInstanceLatestMetricsResponse) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetInstanceLatestMetricsResponse) GetData() *InstanceMetricsLatestData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type InstanceMetricsLatestData struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	InstanceId    string                  `protobuf:"bytes,1,opt,name=instance_id,proto3" json:"instance_id,omitempty"`
+	EvaluatedAt   *timestamppb.Timestamp  `protobuf:"bytes,2,opt,name=evaluated_at,proto3" json:"evaluated_at,omitempty"`
+	Series        []*InstanceMetricSeries `protobuf:"bytes,3,rep,name=series,proto3" json:"series,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceMetricsLatestData) Reset() {
+	*x = InstanceMetricsLatestData{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceMetricsLatestData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceMetricsLatestData) ProtoMessage() {}
+
+func (x *InstanceMetricsLatestData) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceMetricsLatestData.ProtoReflect.Descriptor instead.
+func (*InstanceMetricsLatestData) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *InstanceMetricsLatestData) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *InstanceMetricsLatestData) GetEvaluatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.EvaluatedAt
+	}
+	return nil
+}
+
+func (x *InstanceMetricsLatestData) GetSeries() []*InstanceMetricSeries {
+	if x != nil {
+		return x.Series
+	}
+	return nil
+}
+
+type InstanceMetricSeries struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MetricCode    string                 `protobuf:"bytes,1,opt,name=metric_code,proto3" json:"metric_code,omitempty"`
+	Unit          string                 `protobuf:"bytes,2,opt,name=unit,proto3" json:"unit,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Points        []*InstanceMetricPoint `protobuf:"bytes,4,rep,name=points,proto3" json:"points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceMetricSeries) Reset() {
+	*x = InstanceMetricSeries{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceMetricSeries) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceMetricSeries) ProtoMessage() {}
+
+func (x *InstanceMetricSeries) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceMetricSeries.ProtoReflect.Descriptor instead.
+func (*InstanceMetricSeries) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *InstanceMetricSeries) GetMetricCode() string {
+	if x != nil {
+		return x.MetricCode
+	}
+	return ""
+}
+
+func (x *InstanceMetricSeries) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *InstanceMetricSeries) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *InstanceMetricSeries) GetPoints() []*InstanceMetricPoint {
+	if x != nil {
+		return x.Points
+	}
+	return nil
+}
+
+type InstanceMetricPoint struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Timestamp     *timestamppb.Timestamp  `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Value         *wrapperspb.DoubleValue `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	GapReason     *string                 `protobuf:"bytes,3,opt,name=gap_reason,proto3,oneof" json:"gap_reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceMetricPoint) Reset() {
+	*x = InstanceMetricPoint{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceMetricPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceMetricPoint) ProtoMessage() {}
+
+func (x *InstanceMetricPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceMetricPoint.ProtoReflect.Descriptor instead.
+func (*InstanceMetricPoint) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *InstanceMetricPoint) GetTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamp
+	}
+	return nil
+}
+
+func (x *InstanceMetricPoint) GetValue() *wrapperspb.DoubleValue {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+func (x *InstanceMetricPoint) GetGapReason() string {
+	if x != nil && x.GapReason != nil {
+		return *x.GapReason
+	}
+	return ""
 }
 
 type SchedulingOptions struct {
@@ -141,7 +613,7 @@ type SchedulingOptions struct {
 
 func (x *SchedulingOptions) Reset() {
 	*x = SchedulingOptions{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[0]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -153,7 +625,7 @@ func (x *SchedulingOptions) String() string {
 func (*SchedulingOptions) ProtoMessage() {}
 
 func (x *SchedulingOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[0]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -166,7 +638,7 @@ func (x *SchedulingOptions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulingOptions.ProtoReflect.Descriptor instead.
 func (*SchedulingOptions) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{0}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SchedulingOptions) GetPodPlacement() SchedulingOptions_PodPlacement {
@@ -184,20 +656,26 @@ func (x *SchedulingOptions) GetPriorityClassName() string {
 }
 
 type CreateInstanceData struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ImageId        string                 `protobuf:"bytes,3,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
-	ImageScope     string                 `protobuf:"bytes,4,opt,name=image_scope,json=imageScope,proto3" json:"image_scope,omitempty"`
-	PresetId       string                 `protobuf:"bytes,5,opt,name=preset_id,json=presetId,proto3" json:"preset_id,omitempty"`
-	Scheduling     *SchedulingOptions     `protobuf:"bytes,7,opt,name=scheduling,proto3" json:"scheduling,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey     string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ImageId            string                 `protobuf:"bytes,3,opt,name=image_id,json=imageId,proto3" json:"image_id,omitempty"`
+	ImageScope         string                 `protobuf:"bytes,4,opt,name=image_scope,json=imageScope,proto3" json:"image_scope,omitempty"`
+	PresetId           string                 `protobuf:"bytes,5,opt,name=preset_id,json=presetId,proto3" json:"preset_id,omitempty"`
+	Scheduling         *SchedulingOptions     `protobuf:"bytes,7,opt,name=scheduling,proto3" json:"scheduling,omitempty"`
+	WorkspaceMountPath *string                `protobuf:"bytes,8,opt,name=workspace_mount_path,proto3,oneof" json:"workspace_mount_path,omitempty"`
+	VolumeMounts       []*VolumeMount         `protobuf:"bytes,9,rep,name=volume_mounts,proto3" json:"volume_mounts,omitempty"`
+	Network            *NetworkSelection      `protobuf:"bytes,10,opt,name=network,proto3" json:"network,omitempty"`
+	Labels             map[string]string      `protobuf:"bytes,11,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations        map[string]string      `protobuf:"bytes,12,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Env                []*InstanceEnvVar      `protobuf:"bytes,13,rep,name=env,proto3" json:"env,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateInstanceData) Reset() {
 	*x = CreateInstanceData{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[1]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -209,7 +687,7 @@ func (x *CreateInstanceData) String() string {
 func (*CreateInstanceData) ProtoMessage() {}
 
 func (x *CreateInstanceData) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[1]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -222,7 +700,7 @@ func (x *CreateInstanceData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateInstanceData.ProtoReflect.Descriptor instead.
 func (*CreateInstanceData) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{1}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CreateInstanceData) GetIdempotencyKey() string {
@@ -267,6 +745,517 @@ func (x *CreateInstanceData) GetScheduling() *SchedulingOptions {
 	return nil
 }
 
+func (x *CreateInstanceData) GetWorkspaceMountPath() string {
+	if x != nil && x.WorkspaceMountPath != nil {
+		return *x.WorkspaceMountPath
+	}
+	return ""
+}
+
+func (x *CreateInstanceData) GetVolumeMounts() []*VolumeMount {
+	if x != nil {
+		return x.VolumeMounts
+	}
+	return nil
+}
+
+func (x *CreateInstanceData) GetNetwork() *NetworkSelection {
+	if x != nil {
+		return x.Network
+	}
+	return nil
+}
+
+func (x *CreateInstanceData) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *CreateInstanceData) GetAnnotations() map[string]string {
+	if x != nil {
+		return x.Annotations
+	}
+	return nil
+}
+
+func (x *CreateInstanceData) GetEnv() []*InstanceEnvVar {
+	if x != nil {
+		return x.Env
+	}
+	return nil
+}
+
+type VolumeMount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PvcName       string                 `protobuf:"bytes,1,opt,name=pvc_name,proto3" json:"pvc_name,omitempty"`
+	MountPath     string                 `protobuf:"bytes,2,opt,name=mount_path,proto3" json:"mount_path,omitempty"`
+	ReadOnly      bool                   `protobuf:"varint,3,opt,name=read_only,proto3" json:"read_only,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeMount) Reset() {
+	*x = VolumeMount{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeMount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeMount) ProtoMessage() {}
+
+func (x *VolumeMount) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeMount.ProtoReflect.Descriptor instead.
+func (*VolumeMount) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *VolumeMount) GetPvcName() string {
+	if x != nil {
+		return x.PvcName
+	}
+	return ""
+}
+
+func (x *VolumeMount) GetMountPath() string {
+	if x != nil {
+		return x.MountPath
+	}
+	return ""
+}
+
+func (x *VolumeMount) GetReadOnly() bool {
+	if x != nil {
+		return x.ReadOnly
+	}
+	return false
+}
+
+type NetworkSelection struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VpcId         string                 `protobuf:"bytes,1,opt,name=vpc_id,proto3" json:"vpc_id,omitempty"`
+	SubnetId      string                 `protobuf:"bytes,2,opt,name=subnet_id,proto3" json:"subnet_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NetworkSelection) Reset() {
+	*x = NetworkSelection{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NetworkSelection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkSelection) ProtoMessage() {}
+
+func (x *NetworkSelection) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkSelection.ProtoReflect.Descriptor instead.
+func (*NetworkSelection) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *NetworkSelection) GetVpcId() string {
+	if x != nil {
+		return x.VpcId
+	}
+	return ""
+}
+
+func (x *NetworkSelection) GetSubnetId() string {
+	if x != nil {
+		return x.SubnetId
+	}
+	return ""
+}
+
+type InstanceEnvVar struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceEnvVar) Reset() {
+	*x = InstanceEnvVar{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceEnvVar) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceEnvVar) ProtoMessage() {}
+
+func (x *InstanceEnvVar) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceEnvVar.ProtoReflect.Descriptor instead.
+func (*InstanceEnvVar) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *InstanceEnvVar) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *InstanceEnvVar) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+type ListMountablePVCsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMountablePVCsRequest) Reset() {
+	*x = ListMountablePVCsRequest{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMountablePVCsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMountablePVCsRequest) ProtoMessage() {}
+
+func (x *ListMountablePVCsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMountablePVCsRequest.ProtoReflect.Descriptor instead.
+func (*ListMountablePVCsRequest) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListMountablePVCsRequest) GetPage() uint32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
+	}
+	return 0
+}
+
+func (x *ListMountablePVCsRequest) GetPageSize() uint32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
+	}
+	return 0
+}
+
+func (x *ListMountablePVCsRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type MountablePVC struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	PvcName           string                 `protobuf:"bytes,1,opt,name=pvc_name,proto3" json:"pvc_name,omitempty"`
+	Phase             string                 `protobuf:"bytes,2,opt,name=phase,proto3" json:"phase,omitempty"`
+	RequestedCapacity string                 `protobuf:"bytes,3,opt,name=requested_capacity,proto3" json:"requested_capacity,omitempty"`
+	AccessModes       []string               `protobuf:"bytes,4,rep,name=access_modes,proto3" json:"access_modes,omitempty"`
+	VolumeMode        string                 `protobuf:"bytes,5,opt,name=volume_mode,proto3" json:"volume_mode,omitempty"`
+	Selectable        bool                   `protobuf:"varint,6,opt,name=selectable,proto3" json:"selectable,omitempty"`
+	UnavailableReason string                 `protobuf:"bytes,7,opt,name=unavailable_reason,proto3" json:"unavailable_reason,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *MountablePVC) Reset() {
+	*x = MountablePVC{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MountablePVC) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MountablePVC) ProtoMessage() {}
+
+func (x *MountablePVC) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MountablePVC.ProtoReflect.Descriptor instead.
+func (*MountablePVC) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *MountablePVC) GetPvcName() string {
+	if x != nil {
+		return x.PvcName
+	}
+	return ""
+}
+
+func (x *MountablePVC) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *MountablePVC) GetRequestedCapacity() string {
+	if x != nil {
+		return x.RequestedCapacity
+	}
+	return ""
+}
+
+func (x *MountablePVC) GetAccessModes() []string {
+	if x != nil {
+		return x.AccessModes
+	}
+	return nil
+}
+
+func (x *MountablePVC) GetVolumeMode() string {
+	if x != nil {
+		return x.VolumeMode
+	}
+	return ""
+}
+
+func (x *MountablePVC) GetSelectable() bool {
+	if x != nil {
+		return x.Selectable
+	}
+	return false
+}
+
+func (x *MountablePVC) GetUnavailableReason() string {
+	if x != nil {
+		return x.UnavailableReason
+	}
+	return ""
+}
+
+type ListMountablePVCsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*MountablePVC        `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMountablePVCsResponse) Reset() {
+	*x = ListMountablePVCsResponse{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMountablePVCsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMountablePVCsResponse) ProtoMessage() {}
+
+func (x *ListMountablePVCsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMountablePVCsResponse.ProtoReflect.Descriptor instead.
+func (*ListMountablePVCsResponse) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListMountablePVCsResponse) GetItems() []*MountablePVC {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListMountablePVCsResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type InstanceConfiguration struct {
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId string                 `protobuf:"bytes,1,opt,name=instance_id,proto3" json:"instance_id,omitempty"`
+	// 服务器保存的当前配置合同版本，固定为 2。
+	InstanceContractVersion uint32            `protobuf:"varint,2,opt,name=instance_contract_version,proto3" json:"instance_contract_version,omitempty"`
+	WorkspaceMountPath      string            `protobuf:"bytes,3,opt,name=workspace_mount_path,proto3" json:"workspace_mount_path,omitempty"`
+	VolumeMounts            []*VolumeMount    `protobuf:"bytes,4,rep,name=volume_mounts,proto3" json:"volume_mounts,omitempty"`
+	Network                 *NetworkSelection `protobuf:"bytes,5,opt,name=network,proto3" json:"network,omitempty"`
+	Labels                  map[string]string `protobuf:"bytes,6,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Annotations             map[string]string `protobuf:"bytes,7,rep,name=annotations,proto3" json:"annotations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Env                     []*InstanceEnvVar `protobuf:"bytes,8,rep,name=env,proto3" json:"env,omitempty"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *InstanceConfiguration) Reset() {
+	*x = InstanceConfiguration{}
+	mi := &file_instance_service_v1_instance_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceConfiguration) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceConfiguration) ProtoMessage() {}
+
+func (x *InstanceConfiguration) ProtoReflect() protoreflect.Message {
+	mi := &file_instance_service_v1_instance_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceConfiguration.ProtoReflect.Descriptor instead.
+func (*InstanceConfiguration) Descriptor() ([]byte, []int) {
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *InstanceConfiguration) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *InstanceConfiguration) GetInstanceContractVersion() uint32 {
+	if x != nil {
+		return x.InstanceContractVersion
+	}
+	return 0
+}
+
+func (x *InstanceConfiguration) GetWorkspaceMountPath() string {
+	if x != nil {
+		return x.WorkspaceMountPath
+	}
+	return ""
+}
+
+func (x *InstanceConfiguration) GetVolumeMounts() []*VolumeMount {
+	if x != nil {
+		return x.VolumeMounts
+	}
+	return nil
+}
+
+func (x *InstanceConfiguration) GetNetwork() *NetworkSelection {
+	if x != nil {
+		return x.Network
+	}
+	return nil
+}
+
+func (x *InstanceConfiguration) GetLabels() map[string]string {
+	if x != nil {
+		return x.Labels
+	}
+	return nil
+}
+
+func (x *InstanceConfiguration) GetAnnotations() map[string]string {
+	if x != nil {
+		return x.Annotations
+	}
+	return nil
+}
+
+func (x *InstanceConfiguration) GetEnv() []*InstanceEnvVar {
+	if x != nil {
+		return x.Env
+	}
+	return nil
+}
+
 type CreateInstanceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          *CreateInstanceData    `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
@@ -276,7 +1265,7 @@ type CreateInstanceRequest struct {
 
 func (x *CreateInstanceRequest) Reset() {
 	*x = CreateInstanceRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[2]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +1277,7 @@ func (x *CreateInstanceRequest) String() string {
 func (*CreateInstanceRequest) ProtoMessage() {}
 
 func (x *CreateInstanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[2]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,7 +1290,7 @@ func (x *CreateInstanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateInstanceRequest.ProtoReflect.Descriptor instead.
 func (*CreateInstanceRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{2}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CreateInstanceRequest) GetData() *CreateInstanceData {
@@ -322,7 +1311,7 @@ type ChangeInstanceData struct {
 
 func (x *ChangeInstanceData) Reset() {
 	*x = ChangeInstanceData{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[3]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -334,7 +1323,7 @@ func (x *ChangeInstanceData) String() string {
 func (*ChangeInstanceData) ProtoMessage() {}
 
 func (x *ChangeInstanceData) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[3]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -347,7 +1336,7 @@ func (x *ChangeInstanceData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangeInstanceData.ProtoReflect.Descriptor instead.
 func (*ChangeInstanceData) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{3}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ChangeInstanceData) GetInstanceId() string {
@@ -380,7 +1369,7 @@ type ChangeInstanceRequest struct {
 
 func (x *ChangeInstanceRequest) Reset() {
 	*x = ChangeInstanceRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[4]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -392,7 +1381,7 @@ func (x *ChangeInstanceRequest) String() string {
 func (*ChangeInstanceRequest) ProtoMessage() {}
 
 func (x *ChangeInstanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[4]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -405,7 +1394,7 @@ func (x *ChangeInstanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangeInstanceRequest.ProtoReflect.Descriptor instead.
 func (*ChangeInstanceRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{4}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ChangeInstanceRequest) GetData() *ChangeInstanceData {
@@ -424,7 +1413,7 @@ type GetInstanceRequest struct {
 
 func (x *GetInstanceRequest) Reset() {
 	*x = GetInstanceRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[5]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -436,7 +1425,7 @@ func (x *GetInstanceRequest) String() string {
 func (*GetInstanceRequest) ProtoMessage() {}
 
 func (x *GetInstanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[5]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -449,7 +1438,7 @@ func (x *GetInstanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInstanceRequest.ProtoReflect.Descriptor instead.
 func (*GetInstanceRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{5}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetInstanceRequest) GetInstanceId() string {
@@ -473,7 +1462,7 @@ type ListInstancesRequest struct {
 
 func (x *ListInstancesRequest) Reset() {
 	*x = ListInstancesRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[6]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -485,7 +1474,7 @@ func (x *ListInstancesRequest) String() string {
 func (*ListInstancesRequest) ProtoMessage() {}
 
 func (x *ListInstancesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[6]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -498,7 +1487,7 @@ func (x *ListInstancesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInstancesRequest.ProtoReflect.Descriptor instead.
 func (*ListInstancesRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{6}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListInstancesRequest) GetPage() uint32 {
@@ -543,90 +1532,6 @@ func (x *ListInstancesRequest) GetName() string {
 	return ""
 }
 
-type ListPresetsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	PageSize      *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Code          string                 `protobuf:"bytes,4,opt,name=code,proto3" json:"code,omitempty"`
-	ComputeType   string                 `protobuf:"bytes,5,opt,name=compute_type,proto3" json:"compute_type,omitempty"`
-	GpuMode       string                 `protobuf:"bytes,6,opt,name=gpu_mode,proto3" json:"gpu_mode,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListPresetsRequest) Reset() {
-	*x = ListPresetsRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListPresetsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListPresetsRequest) ProtoMessage() {}
-
-func (x *ListPresetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListPresetsRequest.ProtoReflect.Descriptor instead.
-func (*ListPresetsRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ListPresetsRequest) GetPage() uint32 {
-	if x != nil && x.Page != nil {
-		return *x.Page
-	}
-	return 0
-}
-
-func (x *ListPresetsRequest) GetPageSize() uint32 {
-	if x != nil && x.PageSize != nil {
-		return *x.PageSize
-	}
-	return 0
-}
-
-func (x *ListPresetsRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *ListPresetsRequest) GetCode() string {
-	if x != nil {
-		return x.Code
-	}
-	return ""
-}
-
-func (x *ListPresetsRequest) GetComputeType() string {
-	if x != nil {
-		return x.ComputeType
-	}
-	return ""
-}
-
-func (x *ListPresetsRequest) GetGpuMode() string {
-	if x != nil {
-		return x.GpuMode
-	}
-	return ""
-}
-
 type GetOperationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OperationId   string                 `protobuf:"bytes,1,opt,name=operation_id,proto3" json:"operation_id,omitempty"`
@@ -636,7 +1541,7 @@ type GetOperationRequest struct {
 
 func (x *GetOperationRequest) Reset() {
 	*x = GetOperationRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[8]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -648,7 +1553,7 @@ func (x *GetOperationRequest) String() string {
 func (*GetOperationRequest) ProtoMessage() {}
 
 func (x *GetOperationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[8]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -661,7 +1566,7 @@ func (x *GetOperationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetOperationRequest.ProtoReflect.Descriptor instead.
 func (*GetOperationRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{8}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetOperationRequest) GetOperationId() string {
@@ -684,7 +1589,7 @@ type ExecInstanceData struct {
 
 func (x *ExecInstanceData) Reset() {
 	*x = ExecInstanceData{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[9]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -696,7 +1601,7 @@ func (x *ExecInstanceData) String() string {
 func (*ExecInstanceData) ProtoMessage() {}
 
 func (x *ExecInstanceData) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[9]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -709,7 +1614,7 @@ func (x *ExecInstanceData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecInstanceData.ProtoReflect.Descriptor instead.
 func (*ExecInstanceData) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{9}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ExecInstanceData) GetInstanceId() string {
@@ -756,7 +1661,7 @@ type ExecInstanceRequest struct {
 
 func (x *ExecInstanceRequest) Reset() {
 	*x = ExecInstanceRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[10]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -768,7 +1673,7 @@ func (x *ExecInstanceRequest) String() string {
 func (*ExecInstanceRequest) ProtoMessage() {}
 
 func (x *ExecInstanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[10]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -781,7 +1686,7 @@ func (x *ExecInstanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecInstanceRequest.ProtoReflect.Descriptor instead.
 func (*ExecInstanceRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{10}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ExecInstanceRequest) GetData() *ExecInstanceData {
@@ -817,13 +1722,18 @@ type Instance struct {
 	PresetCode        string                 `protobuf:"bytes,24,opt,name=preset_code,proto3" json:"preset_code,omitempty"`
 	GpuSummary        *GpuSummary            `protobuf:"bytes,25,opt,name=gpu_summary,proto3" json:"gpu_summary,omitempty"`
 	Scheduling        *SchedulingOptions     `protobuf:"bytes,26,opt,name=scheduling,proto3" json:"scheduling,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Safe lifecycle observations; dynamic state does not alter the frozen CREATE.
+	NetworkState             string `protobuf:"bytes,27,opt,name=network_state,json=networkState,proto3" json:"network_state,omitempty"`
+	NetworkReason            string `protobuf:"bytes,28,opt,name=network_reason,json=networkReason,proto3" json:"network_reason,omitempty"`
+	NetworkCleaned           bool   `protobuf:"varint,29,opt,name=network_cleaned,json=networkCleaned,proto3" json:"network_cleaned,omitempty"`
+	VolumeReferencesReleased bool   `protobuf:"varint,30,opt,name=volume_references_released,json=volumeReferencesReleased,proto3" json:"volume_references_released,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *Instance) Reset() {
 	*x = Instance{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[11]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -835,7 +1745,7 @@ func (x *Instance) String() string {
 func (*Instance) ProtoMessage() {}
 
 func (x *Instance) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[11]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -848,7 +1758,7 @@ func (x *Instance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Instance.ProtoReflect.Descriptor instead.
 func (*Instance) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{11}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *Instance) GetId() string {
@@ -1019,6 +1929,34 @@ func (x *Instance) GetScheduling() *SchedulingOptions {
 	return nil
 }
 
+func (x *Instance) GetNetworkState() string {
+	if x != nil {
+		return x.NetworkState
+	}
+	return ""
+}
+
+func (x *Instance) GetNetworkReason() string {
+	if x != nil {
+		return x.NetworkReason
+	}
+	return ""
+}
+
+func (x *Instance) GetNetworkCleaned() bool {
+	if x != nil {
+		return x.NetworkCleaned
+	}
+	return false
+}
+
+func (x *Instance) GetVolumeReferencesReleased() bool {
+	if x != nil {
+		return x.VolumeReferencesReleased
+	}
+	return false
+}
+
 type ListInstancesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*Instance            `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -1029,7 +1967,7 @@ type ListInstancesResponse struct {
 
 func (x *ListInstancesResponse) Reset() {
 	*x = ListInstancesResponse{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[12]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1041,7 +1979,7 @@ func (x *ListInstancesResponse) String() string {
 func (*ListInstancesResponse) ProtoMessage() {}
 
 func (x *ListInstancesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[12]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1054,7 +1992,7 @@ func (x *ListInstancesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInstancesResponse.ProtoReflect.Descriptor instead.
 func (*ListInstancesResponse) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{12}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ListInstancesResponse) GetItems() []*Instance {
@@ -1083,7 +2021,7 @@ type Acceptance struct {
 
 func (x *Acceptance) Reset() {
 	*x = Acceptance{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[13]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1095,7 +2033,7 @@ func (x *Acceptance) String() string {
 func (*Acceptance) ProtoMessage() {}
 
 func (x *Acceptance) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[13]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1108,7 +2046,7 @@ func (x *Acceptance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Acceptance.ProtoReflect.Descriptor instead.
 func (*Acceptance) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{13}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *Acceptance) GetOperationId() string {
@@ -1153,7 +2091,7 @@ type Operation struct {
 
 func (x *Operation) Reset() {
 	*x = Operation{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[14]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1165,7 +2103,7 @@ func (x *Operation) String() string {
 func (*Operation) ProtoMessage() {}
 
 func (x *Operation) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[14]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1178,7 +2116,7 @@ func (x *Operation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Operation.ProtoReflect.Descriptor instead.
 func (*Operation) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{14}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *Operation) GetId() string {
@@ -1239,7 +2177,7 @@ type GpuSummary struct {
 
 func (x *GpuSummary) Reset() {
 	*x = GpuSummary{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[15]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1251,7 +2189,7 @@ func (x *GpuSummary) String() string {
 func (*GpuSummary) ProtoMessage() {}
 
 func (x *GpuSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[15]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1264,7 +2202,7 @@ func (x *GpuSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GpuSummary.ProtoReflect.Descriptor instead.
 func (*GpuSummary) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{15}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GpuSummary) GetProfileId() string {
@@ -1323,798 +2261,6 @@ func (x *GpuSummary) GetCoreLimitPercent() uint32 {
 	return 0
 }
 
-type Preset struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name              string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Code              string                 `protobuf:"bytes,7,opt,name=code,proto3" json:"code,omitempty"`
-	Description       string                 `protobuf:"bytes,8,opt,name=description,proto3" json:"description,omitempty"`
-	ComputeType       string                 `protobuf:"bytes,9,opt,name=compute_type,proto3" json:"compute_type,omitempty"`
-	CpuMillis         int64                  `protobuf:"varint,10,opt,name=cpu_millis,proto3" json:"cpu_millis,omitempty"`
-	MemoryMib         int64                  `protobuf:"varint,11,opt,name=memory_mib,proto3" json:"memory_mib,omitempty"`
-	Enabled           bool                   `protobuf:"varint,12,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Gpu               *GpuSummary            `protobuf:"bytes,13,opt,name=gpu,proto3" json:"gpu,omitempty"`
-	CreatedAt         string                 `protobuf:"bytes,14,opt,name=created_at,proto3" json:"created_at,omitempty"`
-	UpdatedAt         string                 `protobuf:"bytes,15,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
-	Selectable        bool                   `protobuf:"varint,16,opt,name=selectable,proto3" json:"selectable,omitempty"`
-	UnavailableReason string                 `protobuf:"bytes,17,opt,name=unavailable_reason,proto3" json:"unavailable_reason,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
-}
-
-func (x *Preset) Reset() {
-	*x = Preset{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Preset) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Preset) ProtoMessage() {}
-
-func (x *Preset) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Preset.ProtoReflect.Descriptor instead.
-func (*Preset) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *Preset) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *Preset) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Preset) GetCode() string {
-	if x != nil {
-		return x.Code
-	}
-	return ""
-}
-
-func (x *Preset) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-func (x *Preset) GetComputeType() string {
-	if x != nil {
-		return x.ComputeType
-	}
-	return ""
-}
-
-func (x *Preset) GetCpuMillis() int64 {
-	if x != nil {
-		return x.CpuMillis
-	}
-	return 0
-}
-
-func (x *Preset) GetMemoryMib() int64 {
-	if x != nil {
-		return x.MemoryMib
-	}
-	return 0
-}
-
-func (x *Preset) GetEnabled() bool {
-	if x != nil {
-		return x.Enabled
-	}
-	return false
-}
-
-func (x *Preset) GetGpu() *GpuSummary {
-	if x != nil {
-		return x.Gpu
-	}
-	return nil
-}
-
-func (x *Preset) GetCreatedAt() string {
-	if x != nil {
-		return x.CreatedAt
-	}
-	return ""
-}
-
-func (x *Preset) GetUpdatedAt() string {
-	if x != nil {
-		return x.UpdatedAt
-	}
-	return ""
-}
-
-func (x *Preset) GetSelectable() bool {
-	if x != nil {
-		return x.Selectable
-	}
-	return false
-}
-
-func (x *Preset) GetUnavailableReason() string {
-	if x != nil {
-		return x.UnavailableReason
-	}
-	return ""
-}
-
-type ListPresetsResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Items            []*Preset              `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	Total            int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
-	GpuCatalogStatus string                 `protobuf:"bytes,3,opt,name=gpu_catalog_status,proto3" json:"gpu_catalog_status,omitempty"`
-	GpuCatalogReason string                 `protobuf:"bytes,4,opt,name=gpu_catalog_reason,proto3" json:"gpu_catalog_reason,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *ListPresetsResponse) Reset() {
-	*x = ListPresetsResponse{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListPresetsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListPresetsResponse) ProtoMessage() {}
-
-func (x *ListPresetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListPresetsResponse.ProtoReflect.Descriptor instead.
-func (*ListPresetsResponse) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *ListPresetsResponse) GetItems() []*Preset {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
-func (x *ListPresetsResponse) GetTotal() int64 {
-	if x != nil {
-		return x.Total
-	}
-	return 0
-}
-
-func (x *ListPresetsResponse) GetGpuCatalogStatus() string {
-	if x != nil {
-		return x.GpuCatalogStatus
-	}
-	return ""
-}
-
-func (x *ListPresetsResponse) GetGpuCatalogReason() string {
-	if x != nil {
-		return x.GpuCatalogReason
-	}
-	return ""
-}
-
-type PresetGpuInput struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	ProfileId          string                 `protobuf:"bytes,1,opt,name=profile_id,proto3" json:"profile_id,omitempty"`
-	ProfileVersion     uint64                 `protobuf:"varint,2,opt,name=profile_version,proto3" json:"profile_version,omitempty"`
-	DevicesPerInstance uint32                 `protobuf:"varint,3,opt,name=devices_per_instance,proto3" json:"devices_per_instance,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *PresetGpuInput) Reset() {
-	*x = PresetGpuInput{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PresetGpuInput) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PresetGpuInput) ProtoMessage() {}
-
-func (x *PresetGpuInput) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PresetGpuInput.ProtoReflect.Descriptor instead.
-func (*PresetGpuInput) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *PresetGpuInput) GetProfileId() string {
-	if x != nil {
-		return x.ProfileId
-	}
-	return ""
-}
-
-func (x *PresetGpuInput) GetProfileVersion() uint64 {
-	if x != nil {
-		return x.ProfileVersion
-	}
-	return 0
-}
-
-func (x *PresetGpuInput) GetDevicesPerInstance() uint32 {
-	if x != nil {
-		return x.DevicesPerInstance
-	}
-	return 0
-}
-
-type PresetData struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	ComputeType   string                 `protobuf:"bytes,4,opt,name=compute_type,proto3" json:"compute_type,omitempty"`
-	CpuMillis     int64                  `protobuf:"varint,5,opt,name=cpu_millis,proto3" json:"cpu_millis,omitempty"`
-	MemoryMib     int64                  `protobuf:"varint,6,opt,name=memory_mib,proto3" json:"memory_mib,omitempty"`
-	Enabled       *bool                  `protobuf:"varint,7,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
-	Gpu           *PresetGpuInput        `protobuf:"bytes,8,opt,name=gpu,proto3" json:"gpu,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PresetData) Reset() {
-	*x = PresetData{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[19]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PresetData) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PresetData) ProtoMessage() {}
-
-func (x *PresetData) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[19]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PresetData.ProtoReflect.Descriptor instead.
-func (*PresetData) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{19}
-}
-
-func (x *PresetData) GetCode() string {
-	if x != nil {
-		return x.Code
-	}
-	return ""
-}
-
-func (x *PresetData) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *PresetData) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-func (x *PresetData) GetComputeType() string {
-	if x != nil {
-		return x.ComputeType
-	}
-	return ""
-}
-
-func (x *PresetData) GetCpuMillis() int64 {
-	if x != nil {
-		return x.CpuMillis
-	}
-	return 0
-}
-
-func (x *PresetData) GetMemoryMib() int64 {
-	if x != nil {
-		return x.MemoryMib
-	}
-	return 0
-}
-
-func (x *PresetData) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
-	}
-	return false
-}
-
-func (x *PresetData) GetGpu() *PresetGpuInput {
-	if x != nil {
-		return x.Gpu
-	}
-	return nil
-}
-
-type AdminListPresetsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	PageSize      *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Code          string                 `protobuf:"bytes,4,opt,name=code,proto3" json:"code,omitempty"`
-	ComputeType   string                 `protobuf:"bytes,5,opt,name=compute_type,proto3" json:"compute_type,omitempty"`
-	GpuMode       string                 `protobuf:"bytes,6,opt,name=gpu_mode,proto3" json:"gpu_mode,omitempty"`
-	Enabled       *bool                  `protobuf:"varint,7,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AdminListPresetsRequest) Reset() {
-	*x = AdminListPresetsRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AdminListPresetsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AdminListPresetsRequest) ProtoMessage() {}
-
-func (x *AdminListPresetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[20]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AdminListPresetsRequest.ProtoReflect.Descriptor instead.
-func (*AdminListPresetsRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{20}
-}
-
-func (x *AdminListPresetsRequest) GetPage() uint32 {
-	if x != nil && x.Page != nil {
-		return *x.Page
-	}
-	return 0
-}
-
-func (x *AdminListPresetsRequest) GetPageSize() uint32 {
-	if x != nil && x.PageSize != nil {
-		return *x.PageSize
-	}
-	return 0
-}
-
-func (x *AdminListPresetsRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *AdminListPresetsRequest) GetCode() string {
-	if x != nil {
-		return x.Code
-	}
-	return ""
-}
-
-func (x *AdminListPresetsRequest) GetComputeType() string {
-	if x != nil {
-		return x.ComputeType
-	}
-	return ""
-}
-
-func (x *AdminListPresetsRequest) GetGpuMode() string {
-	if x != nil {
-		return x.GpuMode
-	}
-	return ""
-}
-
-func (x *AdminListPresetsRequest) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
-	}
-	return false
-}
-
-type AdminListPresetsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Items         []*Preset              `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AdminListPresetsResponse) Reset() {
-	*x = AdminListPresetsResponse{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AdminListPresetsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AdminListPresetsResponse) ProtoMessage() {}
-
-func (x *AdminListPresetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[21]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AdminListPresetsResponse.ProtoReflect.Descriptor instead.
-func (*AdminListPresetsResponse) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{21}
-}
-
-func (x *AdminListPresetsResponse) GetItems() []*Preset {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
-func (x *AdminListPresetsResponse) GetTotal() int64 {
-	if x != nil {
-		return x.Total
-	}
-	return 0
-}
-
-type PresetRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PresetRequest) Reset() {
-	*x = PresetRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PresetRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PresetRequest) ProtoMessage() {}
-
-func (x *PresetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PresetRequest.ProtoReflect.Descriptor instead.
-func (*PresetRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{22}
-}
-
-func (x *PresetRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-type CreatePresetRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Data          *PresetData            `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreatePresetRequest) Reset() {
-	*x = CreatePresetRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreatePresetRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreatePresetRequest) ProtoMessage() {}
-
-func (x *CreatePresetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreatePresetRequest.ProtoReflect.Descriptor instead.
-func (*CreatePresetRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *CreatePresetRequest) GetData() *PresetData {
-	if x != nil {
-		return x.Data
-	}
-	return nil
-}
-
-type UpdatePresetRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Data          *PresetData            `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
-	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,3,opt,name=update_mask,proto3" json:"update_mask,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UpdatePresetRequest) Reset() {
-	*x = UpdatePresetRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[24]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UpdatePresetRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UpdatePresetRequest) ProtoMessage() {}
-
-func (x *UpdatePresetRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[24]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UpdatePresetRequest.ProtoReflect.Descriptor instead.
-func (*UpdatePresetRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{24}
-}
-
-func (x *UpdatePresetRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *UpdatePresetRequest) GetData() *PresetData {
-	if x != nil {
-		return x.Data
-	}
-	return nil
-}
-
-func (x *UpdatePresetRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
-	if x != nil {
-		return x.UpdateMask
-	}
-	return nil
-}
-
-type SetPresetEnabledData struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Enabled       *bool                  `protobuf:"varint,1,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetPresetEnabledData) Reset() {
-	*x = SetPresetEnabledData{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[25]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetPresetEnabledData) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetPresetEnabledData) ProtoMessage() {}
-
-func (x *SetPresetEnabledData) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[25]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetPresetEnabledData.ProtoReflect.Descriptor instead.
-func (*SetPresetEnabledData) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{25}
-}
-
-func (x *SetPresetEnabledData) GetEnabled() bool {
-	if x != nil && x.Enabled != nil {
-		return *x.Enabled
-	}
-	return false
-}
-
-type SetPresetEnabledRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Data          *SetPresetEnabledData  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *SetPresetEnabledRequest) Reset() {
-	*x = SetPresetEnabledRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *SetPresetEnabledRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SetPresetEnabledRequest) ProtoMessage() {}
-
-func (x *SetPresetEnabledRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SetPresetEnabledRequest.ProtoReflect.Descriptor instead.
-func (*SetPresetEnabledRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *SetPresetEnabledRequest) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *SetPresetEnabledRequest) GetData() *SetPresetEnabledData {
-	if x != nil {
-		return x.Data
-	}
-	return nil
-}
-
-type Empty struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Empty) Reset() {
-	*x = Empty{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[27]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Empty) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Empty) ProtoMessage() {}
-
-func (x *Empty) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[27]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Empty.ProtoReflect.Descriptor instead.
-func (*Empty) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{27}
-}
-
 type EnvironmentSource struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -2125,7 +2271,7 @@ type EnvironmentSource struct {
 
 func (x *EnvironmentSource) Reset() {
 	*x = EnvironmentSource{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[28]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2137,7 +2283,7 @@ func (x *EnvironmentSource) String() string {
 func (*EnvironmentSource) ProtoMessage() {}
 
 func (x *EnvironmentSource) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[28]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2150,7 +2296,7 @@ func (x *EnvironmentSource) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnvironmentSource.ProtoReflect.Descriptor instead.
 func (*EnvironmentSource) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{28}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *EnvironmentSource) GetName() string {
@@ -2179,7 +2325,7 @@ type RuntimeMount struct {
 
 func (x *RuntimeMount) Reset() {
 	*x = RuntimeMount{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[29]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2191,7 +2337,7 @@ func (x *RuntimeMount) String() string {
 func (*RuntimeMount) ProtoMessage() {}
 
 func (x *RuntimeMount) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[29]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2204,7 +2350,7 @@ func (x *RuntimeMount) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeMount.ProtoReflect.Descriptor instead.
 func (*RuntimeMount) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{29}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *RuntimeMount) GetName() string {
@@ -2253,7 +2399,7 @@ type RuntimePod struct {
 
 func (x *RuntimePod) Reset() {
 	*x = RuntimePod{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[30]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2265,7 +2411,7 @@ func (x *RuntimePod) String() string {
 func (*RuntimePod) ProtoMessage() {}
 
 func (x *RuntimePod) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[30]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2278,7 +2424,7 @@ func (x *RuntimePod) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimePod.ProtoReflect.Descriptor instead.
 func (*RuntimePod) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{30}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *RuntimePod) GetName() string {
@@ -2361,7 +2507,7 @@ type RuntimeStatefulSet struct {
 
 func (x *RuntimeStatefulSet) Reset() {
 	*x = RuntimeStatefulSet{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[31]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2373,7 +2519,7 @@ func (x *RuntimeStatefulSet) String() string {
 func (*RuntimeStatefulSet) ProtoMessage() {}
 
 func (x *RuntimeStatefulSet) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[31]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2386,7 +2532,7 @@ func (x *RuntimeStatefulSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RuntimeStatefulSet.ProtoReflect.Descriptor instead.
 func (*RuntimeStatefulSet) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{31}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *RuntimeStatefulSet) GetDesiredReplicas() *wrapperspb.Int32Value {
@@ -2416,7 +2562,7 @@ type InstanceRuntime struct {
 
 func (x *InstanceRuntime) Reset() {
 	*x = InstanceRuntime{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[32]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2428,7 +2574,7 @@ func (x *InstanceRuntime) String() string {
 func (*InstanceRuntime) ProtoMessage() {}
 
 func (x *InstanceRuntime) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[32]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2441,7 +2587,7 @@ func (x *InstanceRuntime) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceRuntime.ProtoReflect.Descriptor instead.
 func (*InstanceRuntime) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{32}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *InstanceRuntime) GetInstanceId() string {
@@ -2492,7 +2638,7 @@ type InstanceEvent struct {
 
 func (x *InstanceEvent) Reset() {
 	*x = InstanceEvent{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[33]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2504,7 +2650,7 @@ func (x *InstanceEvent) String() string {
 func (*InstanceEvent) ProtoMessage() {}
 
 func (x *InstanceEvent) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[33]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2517,7 +2663,7 @@ func (x *InstanceEvent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceEvent.ProtoReflect.Descriptor instead.
 func (*InstanceEvent) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{33}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *InstanceEvent) GetType() string {
@@ -2567,7 +2713,7 @@ type InstanceEvents struct {
 
 func (x *InstanceEvents) Reset() {
 	*x = InstanceEvents{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[34]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2579,7 +2725,7 @@ func (x *InstanceEvents) String() string {
 func (*InstanceEvents) ProtoMessage() {}
 
 func (x *InstanceEvents) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[34]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2592,7 +2738,7 @@ func (x *InstanceEvents) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceEvents.ProtoReflect.Descriptor instead.
 func (*InstanceEvents) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{34}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *InstanceEvents) GetPodUid() *wrapperspb.StringValue {
@@ -2634,7 +2780,7 @@ type InstanceLogsRequest struct {
 
 func (x *InstanceLogsRequest) Reset() {
 	*x = InstanceLogsRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[35]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2646,7 +2792,7 @@ func (x *InstanceLogsRequest) String() string {
 func (*InstanceLogsRequest) ProtoMessage() {}
 
 func (x *InstanceLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[35]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2659,7 +2805,7 @@ func (x *InstanceLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceLogsRequest.ProtoReflect.Descriptor instead.
 func (*InstanceLogsRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{35}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *InstanceLogsRequest) GetInstanceId() string {
@@ -2694,7 +2840,7 @@ type InstanceLogFrame struct {
 
 func (x *InstanceLogFrame) Reset() {
 	*x = InstanceLogFrame{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[36]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2706,7 +2852,7 @@ func (x *InstanceLogFrame) String() string {
 func (*InstanceLogFrame) ProtoMessage() {}
 
 func (x *InstanceLogFrame) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[36]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2719,7 +2865,7 @@ func (x *InstanceLogFrame) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceLogFrame.ProtoReflect.Descriptor instead.
 func (*InstanceLogFrame) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{36}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *InstanceLogFrame) GetKind() InstanceLogFrame_Kind {
@@ -2754,7 +2900,7 @@ type ExecInstanceResponse struct {
 
 func (x *ExecInstanceResponse) Reset() {
 	*x = ExecInstanceResponse{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[37]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2766,7 +2912,7 @@ func (x *ExecInstanceResponse) String() string {
 func (*ExecInstanceResponse) ProtoMessage() {}
 
 func (x *ExecInstanceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[37]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2779,7 +2925,7 @@ func (x *ExecInstanceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecInstanceResponse.ProtoReflect.Descriptor instead.
 func (*ExecInstanceResponse) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{37}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ExecInstanceResponse) GetSessionId() string {
@@ -2812,7 +2958,7 @@ type SchedulerConfigRequest struct {
 
 func (x *SchedulerConfigRequest) Reset() {
 	*x = SchedulerConfigRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[38]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2824,7 +2970,7 @@ func (x *SchedulerConfigRequest) String() string {
 func (*SchedulerConfigRequest) ProtoMessage() {}
 
 func (x *SchedulerConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[38]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2837,7 +2983,7 @@ func (x *SchedulerConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerConfigRequest.ProtoReflect.Descriptor instead.
 func (*SchedulerConfigRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{38}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{40}
 }
 
 type SchedulerConfig struct {
@@ -2850,7 +2996,7 @@ type SchedulerConfig struct {
 
 func (x *SchedulerConfig) Reset() {
 	*x = SchedulerConfig{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[39]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2862,7 +3008,7 @@ func (x *SchedulerConfig) String() string {
 func (*SchedulerConfig) ProtoMessage() {}
 
 func (x *SchedulerConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[39]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2875,7 +3021,7 @@ func (x *SchedulerConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerConfig.ProtoReflect.Descriptor instead.
 func (*SchedulerConfig) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{39}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *SchedulerConfig) GetConfig() string {
@@ -2902,7 +3048,7 @@ type SchedulerConfigData struct {
 
 func (x *SchedulerConfigData) Reset() {
 	*x = SchedulerConfigData{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[40]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2914,7 +3060,7 @@ func (x *SchedulerConfigData) String() string {
 func (*SchedulerConfigData) ProtoMessage() {}
 
 func (x *SchedulerConfigData) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[40]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2927,7 +3073,7 @@ func (x *SchedulerConfigData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulerConfigData.ProtoReflect.Descriptor instead.
 func (*SchedulerConfigData) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{40}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *SchedulerConfigData) GetConfig() string {
@@ -2953,7 +3099,7 @@ type UpdateSchedulerConfigRequest struct {
 
 func (x *UpdateSchedulerConfigRequest) Reset() {
 	*x = UpdateSchedulerConfigRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[41]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2965,7 +3111,7 @@ func (x *UpdateSchedulerConfigRequest) String() string {
 func (*UpdateSchedulerConfigRequest) ProtoMessage() {}
 
 func (x *UpdateSchedulerConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[41]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2978,7 +3124,7 @@ func (x *UpdateSchedulerConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSchedulerConfigRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSchedulerConfigRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{41}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *UpdateSchedulerConfigRequest) GetData() *SchedulerConfigData {
@@ -2998,7 +3144,7 @@ type PriorityClassAllowlist struct {
 
 func (x *PriorityClassAllowlist) Reset() {
 	*x = PriorityClassAllowlist{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[42]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3010,7 +3156,7 @@ func (x *PriorityClassAllowlist) String() string {
 func (*PriorityClassAllowlist) ProtoMessage() {}
 
 func (x *PriorityClassAllowlist) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[42]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3023,7 +3169,7 @@ func (x *PriorityClassAllowlist) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PriorityClassAllowlist.ProtoReflect.Descriptor instead.
 func (*PriorityClassAllowlist) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{42}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *PriorityClassAllowlist) GetTenantId() uint32 {
@@ -3050,7 +3196,7 @@ type InstanceSchedulingSettings struct {
 
 func (x *InstanceSchedulingSettings) Reset() {
 	*x = InstanceSchedulingSettings{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[43]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3062,7 +3208,7 @@ func (x *InstanceSchedulingSettings) String() string {
 func (*InstanceSchedulingSettings) ProtoMessage() {}
 
 func (x *InstanceSchedulingSettings) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[43]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3075,7 +3221,7 @@ func (x *InstanceSchedulingSettings) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InstanceSchedulingSettings.ProtoReflect.Descriptor instead.
 func (*InstanceSchedulingSettings) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{43}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *InstanceSchedulingSettings) GetDefaults() *SchedulingOptions {
@@ -3100,7 +3246,7 @@ type InstanceSchedulingSettingsRequest struct {
 
 func (x *InstanceSchedulingSettingsRequest) Reset() {
 	*x = InstanceSchedulingSettingsRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[44]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3112,7 +3258,7 @@ func (x *InstanceSchedulingSettingsRequest) String() string {
 func (*InstanceSchedulingSettingsRequest) ProtoMessage() {}
 
 func (x *InstanceSchedulingSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[44]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3125,7 +3271,7 @@ func (x *InstanceSchedulingSettingsRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use InstanceSchedulingSettingsRequest.ProtoReflect.Descriptor instead.
 func (*InstanceSchedulingSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{44}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{46}
 }
 
 type UpdateInstanceSchedulingSettingsRequest struct {
@@ -3137,7 +3283,7 @@ type UpdateInstanceSchedulingSettingsRequest struct {
 
 func (x *UpdateInstanceSchedulingSettingsRequest) Reset() {
 	*x = UpdateInstanceSchedulingSettingsRequest{}
-	mi := &file_instance_service_v1_instance_proto_msgTypes[45]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3149,7 +3295,7 @@ func (x *UpdateInstanceSchedulingSettingsRequest) String() string {
 func (*UpdateInstanceSchedulingSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateInstanceSchedulingSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_instance_service_v1_instance_proto_msgTypes[45]
+	mi := &file_instance_service_v1_instance_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3162,7 +3308,7 @@ func (x *UpdateInstanceSchedulingSettingsRequest) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use UpdateInstanceSchedulingSettingsRequest.ProtoReflect.Descriptor instead.
 func (*UpdateInstanceSchedulingSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{45}
+	return file_instance_service_v1_instance_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *UpdateInstanceSchedulingSettingsRequest) GetData() *InstanceSchedulingSettings {
@@ -3176,7 +3322,42 @@ var File_instance_service_v1_instance_proto protoreflect.FileDescriptor
 
 const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\n" +
-	"\"instance/service/v1/instance.proto\x12\x13instance.service.v1\x1a google/protobuf/field_mask.proto\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbb\x02\n" +
+	"\"instance/service/v1/instance.proto\x12\x13instance.service.v1\x1a\x1egoogle/protobuf/wrappers.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a$gnostic/openapi/v3/annotations.proto\"\x82\x01\n" +
+	"\x1bQueryInstanceMetricsRequest\x12 \n" +
+	"\vinstance_id\x18\x01 \x01(\tR\vinstance_id\x12A\n" +
+	"\x04data\x18\x02 \x01(\v2-.instance.service.v1.QueryInstanceMetricsDataR\x04data\"\xd8\x01\n" +
+	"\x18QueryInstanceMetricsData\x12\"\n" +
+	"\fmetric_codes\x18\x01 \x03(\tR\fmetric_codes\x120\n" +
+	"\x05start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05start\x12,\n" +
+	"\x03end\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03end\x12'\n" +
+	"\fstep_seconds\x18\x04 \x01(\rH\x00R\fstep_seconds\x88\x01\x01B\x0f\n" +
+	"\r_step_seconds\"a\n" +
+	"\x1cQueryInstanceMetricsResponse\x12A\n" +
+	"\x04data\x18\x01 \x01(\v2-.instance.service.v1.InstanceMetricsRangeDataR\x04data\"\x83\x02\n" +
+	"\x18InstanceMetricsRangeData\x12 \n" +
+	"\vinstance_id\x18\x01 \x01(\tR\vinstance_id\x120\n" +
+	"\x05start\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x05start\x12,\n" +
+	"\x03end\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\x03end\x12\"\n" +
+	"\fstep_seconds\x18\x04 \x01(\rR\fstep_seconds\x12A\n" +
+	"\x06series\x18\x05 \x03(\v2).instance.service.v1.InstanceMetricSeriesR\x06series\"f\n" +
+	" GetInstanceLatestMetricsResponse\x12B\n" +
+	"\x04data\x18\x01 \x01(\v2..instance.service.v1.InstanceMetricsLatestDataR\x04data\"\xc0\x01\n" +
+	"\x19InstanceMetricsLatestData\x12 \n" +
+	"\vinstance_id\x18\x01 \x01(\tR\vinstance_id\x12>\n" +
+	"\fevaluated_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\fevaluated_at\x12A\n" +
+	"\x06series\x18\x03 \x03(\v2).instance.service.v1.InstanceMetricSeriesR\x06series\"\xa6\x01\n" +
+	"\x14InstanceMetricSeries\x12 \n" +
+	"\vmetric_code\x18\x01 \x01(\tR\vmetric_code\x12\x12\n" +
+	"\x04unit\x18\x02 \x01(\tR\x04unit\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12@\n" +
+	"\x06points\x18\x04 \x03(\v2(.instance.service.v1.InstanceMetricPointR\x06points\"\xbe\x01\n" +
+	"\x13InstanceMetricPoint\x128\n" +
+	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x129\n" +
+	"\x05value\x18\x02 \x01(\v2\x1c.google.protobuf.DoubleValueB\x05\xbaG\x02\b\x01R\x05value\x12#\n" +
+	"\n" +
+	"gap_reason\x18\x03 \x01(\tH\x00R\n" +
+	"gap_reason\x88\x01\x01B\r\n" +
+	"\v_gap_reason\"\xbb\x02\n" +
 	"\x11SchedulingOptions\x12^\n" +
 	"\rpod_placement\x18\x01 \x01(\x0e23.instance.service.v1.SchedulingOptions.PodPlacementH\x00R\rpod_placement\x88\x01\x01\x125\n" +
 	"\x13priority_class_name\x18\x02 \x01(\tH\x01R\x13priority_class_name\x88\x01\x01\"e\n" +
@@ -3186,7 +3367,7 @@ const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\x12COLOCATE_PREFERRED\x10\x02\x12\x14\n" +
 	"\x10SPREAD_PREFERRED\x10\x03B\x10\n" +
 	"\x0e_pod_placementB\x16\n" +
-	"\x14_priority_class_name\"\x88\x02\n" +
+	"\x14_priority_class_name\"\xbe\x06\n" +
 	"\x12CreateInstanceData\x12'\n" +
 	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
@@ -3196,7 +3377,68 @@ const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\tpreset_id\x18\x05 \x01(\tR\bpresetId\x12F\n" +
 	"\n" +
 	"scheduling\x18\a \x01(\v2&.instance.service.v1.SchedulingOptionsR\n" +
-	"schedulingJ\x04\b\x06\x10\aR\x0epreset_version\"T\n" +
+	"scheduling\x127\n" +
+	"\x14workspace_mount_path\x18\b \x01(\tH\x00R\x14workspace_mount_path\x88\x01\x01\x12F\n" +
+	"\rvolume_mounts\x18\t \x03(\v2 .instance.service.v1.VolumeMountR\rvolume_mounts\x12?\n" +
+	"\anetwork\x18\n" +
+	" \x01(\v2%.instance.service.v1.NetworkSelectionR\anetwork\x12K\n" +
+	"\x06labels\x18\v \x03(\v23.instance.service.v1.CreateInstanceData.LabelsEntryR\x06labels\x12Z\n" +
+	"\vannotations\x18\f \x03(\v28.instance.service.v1.CreateInstanceData.AnnotationsEntryR\vannotations\x125\n" +
+	"\x03env\x18\r \x03(\v2#.instance.service.v1.InstanceEnvVarR\x03env\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
+	"\x10AnnotationsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x17\n" +
+	"\x15_workspace_mount_pathJ\x04\b\x06\x10\aR\x0epreset_version\"g\n" +
+	"\vVolumeMount\x12\x1a\n" +
+	"\bpvc_name\x18\x01 \x01(\tR\bpvc_name\x12\x1e\n" +
+	"\n" +
+	"mount_path\x18\x02 \x01(\tR\n" +
+	"mount_path\x12\x1c\n" +
+	"\tread_only\x18\x03 \x01(\bR\tread_only\"H\n" +
+	"\x10NetworkSelection\x12\x16\n" +
+	"\x06vpc_id\x18\x01 \x01(\tR\x06vpc_id\x12\x1c\n" +
+	"\tsubnet_id\x18\x02 \x01(\tR\tsubnet_id\":\n" +
+	"\x0eInstanceEnvVar\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"\x80\x01\n" +
+	"\x18ListMountablePVCsRequest\x12\x17\n" +
+	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04nameB\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_size\"\x86\x02\n" +
+	"\fMountablePVC\x12\x1a\n" +
+	"\bpvc_name\x18\x01 \x01(\tR\bpvc_name\x12\x14\n" +
+	"\x05phase\x18\x02 \x01(\tR\x05phase\x12.\n" +
+	"\x12requested_capacity\x18\x03 \x01(\tR\x12requested_capacity\x12\"\n" +
+	"\faccess_modes\x18\x04 \x03(\tR\faccess_modes\x12 \n" +
+	"\vvolume_mode\x18\x05 \x01(\tR\vvolume_mode\x12\x1e\n" +
+	"\n" +
+	"selectable\x18\x06 \x01(\bR\n" +
+	"selectable\x12.\n" +
+	"\x12unavailable_reason\x18\a \x01(\tR\x12unavailable_reason\"j\n" +
+	"\x19ListMountablePVCsResponse\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.instance.service.v1.MountablePVCR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\x95\x05\n" +
+	"\x15InstanceConfiguration\x12 \n" +
+	"\vinstance_id\x18\x01 \x01(\tR\vinstance_id\x12<\n" +
+	"\x19instance_contract_version\x18\x02 \x01(\rR\x19instance_contract_version\x122\n" +
+	"\x14workspace_mount_path\x18\x03 \x01(\tR\x14workspace_mount_path\x12F\n" +
+	"\rvolume_mounts\x18\x04 \x03(\v2 .instance.service.v1.VolumeMountR\rvolume_mounts\x12?\n" +
+	"\anetwork\x18\x05 \x01(\v2%.instance.service.v1.NetworkSelectionR\anetwork\x12N\n" +
+	"\x06labels\x18\x06 \x03(\v26.instance.service.v1.InstanceConfiguration.LabelsEntryR\x06labels\x12]\n" +
+	"\vannotations\x18\a \x03(\v2;.instance.service.v1.InstanceConfiguration.AnnotationsEntryR\vannotations\x125\n" +
+	"\x03env\x18\b \x03(\v2#.instance.service.v1.InstanceEnvVarR\x03env\x1a9\n" +
+	"\vLabelsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a>\n" +
+	"\x10AnnotationsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"T\n" +
 	"\x15CreateInstanceRequest\x12;\n" +
 	"\x04data\x18\x01 \x01(\v2'.instance.service.v1.CreateInstanceDataR\x04data\"\x89\x01\n" +
 	"\x12ChangeInstanceData\x12\x1f\n" +
@@ -3217,17 +3459,7 @@ const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\x04name\x18\b \x01(\tR\x04nameB\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
-	"_page_sizeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\bafter_id\"\xce\x01\n" +
-	"\x12ListPresetsRequest\x12\x17\n" +
-	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
-	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
-	"\x04code\x18\x04 \x01(\tR\x04code\x12\"\n" +
-	"\fcompute_type\x18\x05 \x01(\tR\fcompute_type\x12\x1a\n" +
-	"\bgpu_mode\x18\x06 \x01(\tR\bgpu_modeB\a\n" +
-	"\x05_pageB\f\n" +
-	"\n" +
-	"_page_size\"9\n" +
+	"_page_sizeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\bafter_id\"9\n" +
 	"\x13GetOperationRequest\x12\"\n" +
 	"\foperation_id\x18\x01 \x01(\tR\foperation_id\"\xaf\x01\n" +
 	"\x10ExecInstanceData\x12\x1f\n" +
@@ -3238,7 +3470,7 @@ const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\x04rows\x18\x04 \x01(\x05R\x04rows\x12\x12\n" +
 	"\x04cols\x18\x05 \x01(\x05R\x04cols\"P\n" +
 	"\x13ExecInstanceRequest\x129\n" +
-	"\x04data\x18\x01 \x01(\v2%.instance.service.v1.ExecInstanceDataR\x04data\"\x94\a\n" +
+	"\x04data\x18\x01 \x01(\v2%.instance.service.v1.ExecInstanceDataR\x04data\"\xc7\b\n" +
 	"\bInstance\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -3266,7 +3498,11 @@ const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\vgpu_summary\x18\x19 \x01(\v2\x1f.instance.service.v1.GpuSummaryR\vgpu_summary\x12F\n" +
 	"\n" +
 	"scheduling\x18\x1a \x01(\v2&.instance.service.v1.SchedulingOptionsR\n" +
-	"schedulingJ\x04\b\n" +
+	"scheduling\x12#\n" +
+	"\rnetwork_state\x18\x1b \x01(\tR\fnetworkState\x12%\n" +
+	"\x0enetwork_reason\x18\x1c \x01(\tR\rnetworkReason\x12'\n" +
+	"\x0fnetwork_cleaned\x18\x1d \x01(\bR\x0enetworkCleaned\x12<\n" +
+	"\x1avolume_references_released\x18\x1e \x01(\bR\x18volumeReferencesReleasedJ\x04\b\n" +
 	"\x10\vJ\x04\b\x10\x10\x11R\x0epreset_versionR\rinstance_type\"w\n" +
 	"\x15ListInstancesResponse\x123\n" +
 	"\x05items\x18\x01 \x03(\v2\x1d.instance.service.v1.InstanceR\x05items\x12\x14\n" +
@@ -3298,91 +3534,7 @@ const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\x15memory_mib_per_device\x18\t \x01(\x03R\x15memory_mib_per_device\x12*\n" +
 	"\x10memory_mib_total\x18\n" +
 	" \x01(\x03R\x10memory_mib_total\x12.\n" +
-	"\x12core_limit_percent\x18\b \x01(\rR\x12core_limit_percentJ\x04\b\x06\x10\aJ\x04\b\a\x10\bR\x1cshared_memory_mib_per_deviceR\x17shared_memory_mib_total\"\xe0\x03\n" +
-	"\x06Preset\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
-	"\x04code\x18\a \x01(\tR\x04code\x12 \n" +
-	"\vdescription\x18\b \x01(\tR\vdescription\x12\"\n" +
-	"\fcompute_type\x18\t \x01(\tR\fcompute_type\x12\x1e\n" +
-	"\n" +
-	"cpu_millis\x18\n" +
-	" \x01(\x03R\n" +
-	"cpu_millis\x12\x1e\n" +
-	"\n" +
-	"memory_mib\x18\v \x01(\x03R\n" +
-	"memory_mib\x12\x18\n" +
-	"\aenabled\x18\f \x01(\bR\aenabled\x121\n" +
-	"\x03gpu\x18\r \x01(\v2\x1f.instance.service.v1.GpuSummaryR\x03gpu\x12\x1e\n" +
-	"\n" +
-	"created_at\x18\x0e \x01(\tR\n" +
-	"created_at\x12\x1e\n" +
-	"\n" +
-	"updated_at\x18\x0f \x01(\tR\n" +
-	"updated_at\x12\x1e\n" +
-	"\n" +
-	"selectable\x18\x10 \x01(\bR\n" +
-	"selectable\x12.\n" +
-	"\x12unavailable_reason\x18\x11 \x01(\tR\x12unavailable_reasonJ\x04\b\x02\x10\x03J\x04\b\x04\x10\x05J\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\aversionR\x03cpuR\x06memoryR\rinstance_type\"\xbe\x01\n" +
-	"\x13ListPresetsResponse\x121\n" +
-	"\x05items\x18\x01 \x03(\v2\x1b.instance.service.v1.PresetR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\x12.\n" +
-	"\x12gpu_catalog_status\x18\x03 \x01(\tR\x12gpu_catalog_status\x12.\n" +
-	"\x12gpu_catalog_reason\x18\x04 \x01(\tR\x12gpu_catalog_reason\"\x8e\x01\n" +
-	"\x0ePresetGpuInput\x12\x1e\n" +
-	"\n" +
-	"profile_id\x18\x01 \x01(\tR\n" +
-	"profile_id\x12(\n" +
-	"\x0fprofile_version\x18\x02 \x01(\x04R\x0fprofile_version\x122\n" +
-	"\x14devices_per_instance\x18\x03 \x01(\rR\x14devices_per_instance\"\x9c\x02\n" +
-	"\n" +
-	"PresetData\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\"\n" +
-	"\fcompute_type\x18\x04 \x01(\tR\fcompute_type\x12\x1e\n" +
-	"\n" +
-	"cpu_millis\x18\x05 \x01(\x03R\n" +
-	"cpu_millis\x12\x1e\n" +
-	"\n" +
-	"memory_mib\x18\x06 \x01(\x03R\n" +
-	"memory_mib\x12\x1d\n" +
-	"\aenabled\x18\a \x01(\bH\x00R\aenabled\x88\x01\x01\x125\n" +
-	"\x03gpu\x18\b \x01(\v2#.instance.service.v1.PresetGpuInputR\x03gpuB\n" +
-	"\n" +
-	"\b_enabled\"\xfe\x01\n" +
-	"\x17AdminListPresetsRequest\x12\x17\n" +
-	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
-	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
-	"\x04code\x18\x04 \x01(\tR\x04code\x12\"\n" +
-	"\fcompute_type\x18\x05 \x01(\tR\fcompute_type\x12\x1a\n" +
-	"\bgpu_mode\x18\x06 \x01(\tR\bgpu_mode\x12\x1d\n" +
-	"\aenabled\x18\a \x01(\bH\x02R\aenabled\x88\x01\x01B\a\n" +
-	"\x05_pageB\f\n" +
-	"\n" +
-	"_page_sizeB\n" +
-	"\n" +
-	"\b_enabled\"c\n" +
-	"\x18AdminListPresetsResponse\x121\n" +
-	"\x05items\x18\x01 \x03(\v2\x1b.instance.service.v1.PresetR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\x1f\n" +
-	"\rPresetRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"J\n" +
-	"\x13CreatePresetRequest\x123\n" +
-	"\x04data\x18\x01 \x01(\v2\x1f.instance.service.v1.PresetDataR\x04data\"\x98\x01\n" +
-	"\x13UpdatePresetRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x123\n" +
-	"\x04data\x18\x02 \x01(\v2\x1f.instance.service.v1.PresetDataR\x04data\x12<\n" +
-	"\vupdate_mask\x18\x03 \x01(\v2\x1a.google.protobuf.FieldMaskR\vupdate_mask\"A\n" +
-	"\x14SetPresetEnabledData\x12\x1d\n" +
-	"\aenabled\x18\x01 \x01(\bH\x00R\aenabled\x88\x01\x01B\n" +
-	"\n" +
-	"\b_enabled\"h\n" +
-	"\x17SetPresetEnabledRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12=\n" +
-	"\x04data\x18\x02 \x01(\v2).instance.service.v1.SetPresetEnabledDataR\x04data\"\a\n" +
-	"\x05Empty\"H\n" +
+	"\x12core_limit_percent\x18\b \x01(\rR\x12core_limit_percentJ\x04\b\x06\x10\aJ\x04\b\a\x10\bR\x1cshared_memory_mib_per_deviceR\x17shared_memory_mib_total\"H\n" +
 	"\x11EnvironmentSource\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
 	"\vsource_type\x18\x02 \x01(\tR\n" +
@@ -3485,101 +3637,123 @@ func file_instance_service_v1_instance_proto_rawDescGZIP() []byte {
 }
 
 var file_instance_service_v1_instance_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_instance_service_v1_instance_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
+var file_instance_service_v1_instance_proto_msgTypes = make([]protoimpl.MessageInfo, 52)
 var file_instance_service_v1_instance_proto_goTypes = []any{
 	(SchedulingOptions_PodPlacement)(0),             // 0: instance.service.v1.SchedulingOptions.PodPlacement
 	(InstanceLogFrame_Kind)(0),                      // 1: instance.service.v1.InstanceLogFrame.Kind
-	(*SchedulingOptions)(nil),                       // 2: instance.service.v1.SchedulingOptions
-	(*CreateInstanceData)(nil),                      // 3: instance.service.v1.CreateInstanceData
-	(*CreateInstanceRequest)(nil),                   // 4: instance.service.v1.CreateInstanceRequest
-	(*ChangeInstanceData)(nil),                      // 5: instance.service.v1.ChangeInstanceData
-	(*ChangeInstanceRequest)(nil),                   // 6: instance.service.v1.ChangeInstanceRequest
-	(*GetInstanceRequest)(nil),                      // 7: instance.service.v1.GetInstanceRequest
-	(*ListInstancesRequest)(nil),                    // 8: instance.service.v1.ListInstancesRequest
-	(*ListPresetsRequest)(nil),                      // 9: instance.service.v1.ListPresetsRequest
-	(*GetOperationRequest)(nil),                     // 10: instance.service.v1.GetOperationRequest
-	(*ExecInstanceData)(nil),                        // 11: instance.service.v1.ExecInstanceData
-	(*ExecInstanceRequest)(nil),                     // 12: instance.service.v1.ExecInstanceRequest
-	(*Instance)(nil),                                // 13: instance.service.v1.Instance
-	(*ListInstancesResponse)(nil),                   // 14: instance.service.v1.ListInstancesResponse
-	(*Acceptance)(nil),                              // 15: instance.service.v1.Acceptance
-	(*Operation)(nil),                               // 16: instance.service.v1.Operation
-	(*GpuSummary)(nil),                              // 17: instance.service.v1.GpuSummary
-	(*Preset)(nil),                                  // 18: instance.service.v1.Preset
-	(*ListPresetsResponse)(nil),                     // 19: instance.service.v1.ListPresetsResponse
-	(*PresetGpuInput)(nil),                          // 20: instance.service.v1.PresetGpuInput
-	(*PresetData)(nil),                              // 21: instance.service.v1.PresetData
-	(*AdminListPresetsRequest)(nil),                 // 22: instance.service.v1.AdminListPresetsRequest
-	(*AdminListPresetsResponse)(nil),                // 23: instance.service.v1.AdminListPresetsResponse
-	(*PresetRequest)(nil),                           // 24: instance.service.v1.PresetRequest
-	(*CreatePresetRequest)(nil),                     // 25: instance.service.v1.CreatePresetRequest
-	(*UpdatePresetRequest)(nil),                     // 26: instance.service.v1.UpdatePresetRequest
-	(*SetPresetEnabledData)(nil),                    // 27: instance.service.v1.SetPresetEnabledData
-	(*SetPresetEnabledRequest)(nil),                 // 28: instance.service.v1.SetPresetEnabledRequest
-	(*Empty)(nil),                                   // 29: instance.service.v1.Empty
-	(*EnvironmentSource)(nil),                       // 30: instance.service.v1.EnvironmentSource
-	(*RuntimeMount)(nil),                            // 31: instance.service.v1.RuntimeMount
-	(*RuntimePod)(nil),                              // 32: instance.service.v1.RuntimePod
-	(*RuntimeStatefulSet)(nil),                      // 33: instance.service.v1.RuntimeStatefulSet
-	(*InstanceRuntime)(nil),                         // 34: instance.service.v1.InstanceRuntime
-	(*InstanceEvent)(nil),                           // 35: instance.service.v1.InstanceEvent
-	(*InstanceEvents)(nil),                          // 36: instance.service.v1.InstanceEvents
-	(*InstanceLogsRequest)(nil),                     // 37: instance.service.v1.InstanceLogsRequest
-	(*InstanceLogFrame)(nil),                        // 38: instance.service.v1.InstanceLogFrame
-	(*ExecInstanceResponse)(nil),                    // 39: instance.service.v1.ExecInstanceResponse
-	(*SchedulerConfigRequest)(nil),                  // 40: instance.service.v1.SchedulerConfigRequest
-	(*SchedulerConfig)(nil),                         // 41: instance.service.v1.SchedulerConfig
-	(*SchedulerConfigData)(nil),                     // 42: instance.service.v1.SchedulerConfigData
-	(*UpdateSchedulerConfigRequest)(nil),            // 43: instance.service.v1.UpdateSchedulerConfigRequest
-	(*PriorityClassAllowlist)(nil),                  // 44: instance.service.v1.PriorityClassAllowlist
-	(*InstanceSchedulingSettings)(nil),              // 45: instance.service.v1.InstanceSchedulingSettings
-	(*InstanceSchedulingSettingsRequest)(nil),       // 46: instance.service.v1.InstanceSchedulingSettingsRequest
-	(*UpdateInstanceSchedulingSettingsRequest)(nil), // 47: instance.service.v1.UpdateInstanceSchedulingSettingsRequest
-	(*fieldmaskpb.FieldMask)(nil),                   // 48: google.protobuf.FieldMask
-	(*wrapperspb.Int32Value)(nil),                   // 49: google.protobuf.Int32Value
-	(*timestamppb.Timestamp)(nil),                   // 50: google.protobuf.Timestamp
-	(*wrapperspb.Int64Value)(nil),                   // 51: google.protobuf.Int64Value
-	(*wrapperspb.StringValue)(nil),                  // 52: google.protobuf.StringValue
+	(*QueryInstanceMetricsRequest)(nil),             // 2: instance.service.v1.QueryInstanceMetricsRequest
+	(*QueryInstanceMetricsData)(nil),                // 3: instance.service.v1.QueryInstanceMetricsData
+	(*QueryInstanceMetricsResponse)(nil),            // 4: instance.service.v1.QueryInstanceMetricsResponse
+	(*InstanceMetricsRangeData)(nil),                // 5: instance.service.v1.InstanceMetricsRangeData
+	(*GetInstanceLatestMetricsResponse)(nil),        // 6: instance.service.v1.GetInstanceLatestMetricsResponse
+	(*InstanceMetricsLatestData)(nil),               // 7: instance.service.v1.InstanceMetricsLatestData
+	(*InstanceMetricSeries)(nil),                    // 8: instance.service.v1.InstanceMetricSeries
+	(*InstanceMetricPoint)(nil),                     // 9: instance.service.v1.InstanceMetricPoint
+	(*SchedulingOptions)(nil),                       // 10: instance.service.v1.SchedulingOptions
+	(*CreateInstanceData)(nil),                      // 11: instance.service.v1.CreateInstanceData
+	(*VolumeMount)(nil),                             // 12: instance.service.v1.VolumeMount
+	(*NetworkSelection)(nil),                        // 13: instance.service.v1.NetworkSelection
+	(*InstanceEnvVar)(nil),                          // 14: instance.service.v1.InstanceEnvVar
+	(*ListMountablePVCsRequest)(nil),                // 15: instance.service.v1.ListMountablePVCsRequest
+	(*MountablePVC)(nil),                            // 16: instance.service.v1.MountablePVC
+	(*ListMountablePVCsResponse)(nil),               // 17: instance.service.v1.ListMountablePVCsResponse
+	(*InstanceConfiguration)(nil),                   // 18: instance.service.v1.InstanceConfiguration
+	(*CreateInstanceRequest)(nil),                   // 19: instance.service.v1.CreateInstanceRequest
+	(*ChangeInstanceData)(nil),                      // 20: instance.service.v1.ChangeInstanceData
+	(*ChangeInstanceRequest)(nil),                   // 21: instance.service.v1.ChangeInstanceRequest
+	(*GetInstanceRequest)(nil),                      // 22: instance.service.v1.GetInstanceRequest
+	(*ListInstancesRequest)(nil),                    // 23: instance.service.v1.ListInstancesRequest
+	(*GetOperationRequest)(nil),                     // 24: instance.service.v1.GetOperationRequest
+	(*ExecInstanceData)(nil),                        // 25: instance.service.v1.ExecInstanceData
+	(*ExecInstanceRequest)(nil),                     // 26: instance.service.v1.ExecInstanceRequest
+	(*Instance)(nil),                                // 27: instance.service.v1.Instance
+	(*ListInstancesResponse)(nil),                   // 28: instance.service.v1.ListInstancesResponse
+	(*Acceptance)(nil),                              // 29: instance.service.v1.Acceptance
+	(*Operation)(nil),                               // 30: instance.service.v1.Operation
+	(*GpuSummary)(nil),                              // 31: instance.service.v1.GpuSummary
+	(*EnvironmentSource)(nil),                       // 32: instance.service.v1.EnvironmentSource
+	(*RuntimeMount)(nil),                            // 33: instance.service.v1.RuntimeMount
+	(*RuntimePod)(nil),                              // 34: instance.service.v1.RuntimePod
+	(*RuntimeStatefulSet)(nil),                      // 35: instance.service.v1.RuntimeStatefulSet
+	(*InstanceRuntime)(nil),                         // 36: instance.service.v1.InstanceRuntime
+	(*InstanceEvent)(nil),                           // 37: instance.service.v1.InstanceEvent
+	(*InstanceEvents)(nil),                          // 38: instance.service.v1.InstanceEvents
+	(*InstanceLogsRequest)(nil),                     // 39: instance.service.v1.InstanceLogsRequest
+	(*InstanceLogFrame)(nil),                        // 40: instance.service.v1.InstanceLogFrame
+	(*ExecInstanceResponse)(nil),                    // 41: instance.service.v1.ExecInstanceResponse
+	(*SchedulerConfigRequest)(nil),                  // 42: instance.service.v1.SchedulerConfigRequest
+	(*SchedulerConfig)(nil),                         // 43: instance.service.v1.SchedulerConfig
+	(*SchedulerConfigData)(nil),                     // 44: instance.service.v1.SchedulerConfigData
+	(*UpdateSchedulerConfigRequest)(nil),            // 45: instance.service.v1.UpdateSchedulerConfigRequest
+	(*PriorityClassAllowlist)(nil),                  // 46: instance.service.v1.PriorityClassAllowlist
+	(*InstanceSchedulingSettings)(nil),              // 47: instance.service.v1.InstanceSchedulingSettings
+	(*InstanceSchedulingSettingsRequest)(nil),       // 48: instance.service.v1.InstanceSchedulingSettingsRequest
+	(*UpdateInstanceSchedulingSettingsRequest)(nil), // 49: instance.service.v1.UpdateInstanceSchedulingSettingsRequest
+	nil,                            // 50: instance.service.v1.CreateInstanceData.LabelsEntry
+	nil,                            // 51: instance.service.v1.CreateInstanceData.AnnotationsEntry
+	nil,                            // 52: instance.service.v1.InstanceConfiguration.LabelsEntry
+	nil,                            // 53: instance.service.v1.InstanceConfiguration.AnnotationsEntry
+	(*timestamppb.Timestamp)(nil),  // 54: google.protobuf.Timestamp
+	(*wrapperspb.DoubleValue)(nil), // 55: google.protobuf.DoubleValue
+	(*wrapperspb.Int32Value)(nil),  // 56: google.protobuf.Int32Value
+	(*wrapperspb.Int64Value)(nil),  // 57: google.protobuf.Int64Value
+	(*wrapperspb.StringValue)(nil), // 58: google.protobuf.StringValue
 }
 var file_instance_service_v1_instance_proto_depIdxs = []int32{
-	0,  // 0: instance.service.v1.SchedulingOptions.pod_placement:type_name -> instance.service.v1.SchedulingOptions.PodPlacement
-	2,  // 1: instance.service.v1.CreateInstanceData.scheduling:type_name -> instance.service.v1.SchedulingOptions
-	3,  // 2: instance.service.v1.CreateInstanceRequest.data:type_name -> instance.service.v1.CreateInstanceData
-	5,  // 3: instance.service.v1.ChangeInstanceRequest.data:type_name -> instance.service.v1.ChangeInstanceData
-	11, // 4: instance.service.v1.ExecInstanceRequest.data:type_name -> instance.service.v1.ExecInstanceData
-	17, // 5: instance.service.v1.Instance.gpu_summary:type_name -> instance.service.v1.GpuSummary
-	2,  // 6: instance.service.v1.Instance.scheduling:type_name -> instance.service.v1.SchedulingOptions
-	13, // 7: instance.service.v1.ListInstancesResponse.items:type_name -> instance.service.v1.Instance
-	17, // 8: instance.service.v1.Preset.gpu:type_name -> instance.service.v1.GpuSummary
-	18, // 9: instance.service.v1.ListPresetsResponse.items:type_name -> instance.service.v1.Preset
-	20, // 10: instance.service.v1.PresetData.gpu:type_name -> instance.service.v1.PresetGpuInput
-	18, // 11: instance.service.v1.AdminListPresetsResponse.items:type_name -> instance.service.v1.Preset
-	21, // 12: instance.service.v1.CreatePresetRequest.data:type_name -> instance.service.v1.PresetData
-	21, // 13: instance.service.v1.UpdatePresetRequest.data:type_name -> instance.service.v1.PresetData
-	48, // 14: instance.service.v1.UpdatePresetRequest.update_mask:type_name -> google.protobuf.FieldMask
-	27, // 15: instance.service.v1.SetPresetEnabledRequest.data:type_name -> instance.service.v1.SetPresetEnabledData
-	30, // 16: instance.service.v1.RuntimePod.environment_sources:type_name -> instance.service.v1.EnvironmentSource
-	31, // 17: instance.service.v1.RuntimePod.mounts:type_name -> instance.service.v1.RuntimeMount
-	49, // 18: instance.service.v1.RuntimeStatefulSet.desired_replicas:type_name -> google.protobuf.Int32Value
-	49, // 19: instance.service.v1.RuntimeStatefulSet.ready_replicas:type_name -> google.protobuf.Int32Value
-	50, // 20: instance.service.v1.InstanceRuntime.observed_at:type_name -> google.protobuf.Timestamp
-	32, // 21: instance.service.v1.InstanceRuntime.pod:type_name -> instance.service.v1.RuntimePod
-	33, // 22: instance.service.v1.InstanceRuntime.stateful_set:type_name -> instance.service.v1.RuntimeStatefulSet
-	50, // 23: instance.service.v1.InstanceEvent.last_occurred_at:type_name -> google.protobuf.Timestamp
-	51, // 24: instance.service.v1.InstanceEvent.count:type_name -> google.protobuf.Int64Value
-	52, // 25: instance.service.v1.InstanceEvents.pod_uid:type_name -> google.protobuf.StringValue
-	50, // 26: instance.service.v1.InstanceEvents.observed_at:type_name -> google.protobuf.Timestamp
-	35, // 27: instance.service.v1.InstanceEvents.events:type_name -> instance.service.v1.InstanceEvent
-	1,  // 28: instance.service.v1.InstanceLogFrame.kind:type_name -> instance.service.v1.InstanceLogFrame.Kind
-	42, // 29: instance.service.v1.UpdateSchedulerConfigRequest.data:type_name -> instance.service.v1.SchedulerConfigData
-	2,  // 30: instance.service.v1.InstanceSchedulingSettings.defaults:type_name -> instance.service.v1.SchedulingOptions
-	44, // 31: instance.service.v1.InstanceSchedulingSettings.priority_class_allowlists:type_name -> instance.service.v1.PriorityClassAllowlist
-	45, // 32: instance.service.v1.UpdateInstanceSchedulingSettingsRequest.data:type_name -> instance.service.v1.InstanceSchedulingSettings
-	33, // [33:33] is the sub-list for method output_type
-	33, // [33:33] is the sub-list for method input_type
-	33, // [33:33] is the sub-list for extension type_name
-	33, // [33:33] is the sub-list for extension extendee
-	0,  // [0:33] is the sub-list for field type_name
+	3,  // 0: instance.service.v1.QueryInstanceMetricsRequest.data:type_name -> instance.service.v1.QueryInstanceMetricsData
+	54, // 1: instance.service.v1.QueryInstanceMetricsData.start:type_name -> google.protobuf.Timestamp
+	54, // 2: instance.service.v1.QueryInstanceMetricsData.end:type_name -> google.protobuf.Timestamp
+	5,  // 3: instance.service.v1.QueryInstanceMetricsResponse.data:type_name -> instance.service.v1.InstanceMetricsRangeData
+	54, // 4: instance.service.v1.InstanceMetricsRangeData.start:type_name -> google.protobuf.Timestamp
+	54, // 5: instance.service.v1.InstanceMetricsRangeData.end:type_name -> google.protobuf.Timestamp
+	8,  // 6: instance.service.v1.InstanceMetricsRangeData.series:type_name -> instance.service.v1.InstanceMetricSeries
+	7,  // 7: instance.service.v1.GetInstanceLatestMetricsResponse.data:type_name -> instance.service.v1.InstanceMetricsLatestData
+	54, // 8: instance.service.v1.InstanceMetricsLatestData.evaluated_at:type_name -> google.protobuf.Timestamp
+	8,  // 9: instance.service.v1.InstanceMetricsLatestData.series:type_name -> instance.service.v1.InstanceMetricSeries
+	9,  // 10: instance.service.v1.InstanceMetricSeries.points:type_name -> instance.service.v1.InstanceMetricPoint
+	54, // 11: instance.service.v1.InstanceMetricPoint.timestamp:type_name -> google.protobuf.Timestamp
+	55, // 12: instance.service.v1.InstanceMetricPoint.value:type_name -> google.protobuf.DoubleValue
+	0,  // 13: instance.service.v1.SchedulingOptions.pod_placement:type_name -> instance.service.v1.SchedulingOptions.PodPlacement
+	10, // 14: instance.service.v1.CreateInstanceData.scheduling:type_name -> instance.service.v1.SchedulingOptions
+	12, // 15: instance.service.v1.CreateInstanceData.volume_mounts:type_name -> instance.service.v1.VolumeMount
+	13, // 16: instance.service.v1.CreateInstanceData.network:type_name -> instance.service.v1.NetworkSelection
+	50, // 17: instance.service.v1.CreateInstanceData.labels:type_name -> instance.service.v1.CreateInstanceData.LabelsEntry
+	51, // 18: instance.service.v1.CreateInstanceData.annotations:type_name -> instance.service.v1.CreateInstanceData.AnnotationsEntry
+	14, // 19: instance.service.v1.CreateInstanceData.env:type_name -> instance.service.v1.InstanceEnvVar
+	16, // 20: instance.service.v1.ListMountablePVCsResponse.items:type_name -> instance.service.v1.MountablePVC
+	12, // 21: instance.service.v1.InstanceConfiguration.volume_mounts:type_name -> instance.service.v1.VolumeMount
+	13, // 22: instance.service.v1.InstanceConfiguration.network:type_name -> instance.service.v1.NetworkSelection
+	52, // 23: instance.service.v1.InstanceConfiguration.labels:type_name -> instance.service.v1.InstanceConfiguration.LabelsEntry
+	53, // 24: instance.service.v1.InstanceConfiguration.annotations:type_name -> instance.service.v1.InstanceConfiguration.AnnotationsEntry
+	14, // 25: instance.service.v1.InstanceConfiguration.env:type_name -> instance.service.v1.InstanceEnvVar
+	11, // 26: instance.service.v1.CreateInstanceRequest.data:type_name -> instance.service.v1.CreateInstanceData
+	20, // 27: instance.service.v1.ChangeInstanceRequest.data:type_name -> instance.service.v1.ChangeInstanceData
+	25, // 28: instance.service.v1.ExecInstanceRequest.data:type_name -> instance.service.v1.ExecInstanceData
+	31, // 29: instance.service.v1.Instance.gpu_summary:type_name -> instance.service.v1.GpuSummary
+	10, // 30: instance.service.v1.Instance.scheduling:type_name -> instance.service.v1.SchedulingOptions
+	27, // 31: instance.service.v1.ListInstancesResponse.items:type_name -> instance.service.v1.Instance
+	32, // 32: instance.service.v1.RuntimePod.environment_sources:type_name -> instance.service.v1.EnvironmentSource
+	33, // 33: instance.service.v1.RuntimePod.mounts:type_name -> instance.service.v1.RuntimeMount
+	56, // 34: instance.service.v1.RuntimeStatefulSet.desired_replicas:type_name -> google.protobuf.Int32Value
+	56, // 35: instance.service.v1.RuntimeStatefulSet.ready_replicas:type_name -> google.protobuf.Int32Value
+	54, // 36: instance.service.v1.InstanceRuntime.observed_at:type_name -> google.protobuf.Timestamp
+	34, // 37: instance.service.v1.InstanceRuntime.pod:type_name -> instance.service.v1.RuntimePod
+	35, // 38: instance.service.v1.InstanceRuntime.stateful_set:type_name -> instance.service.v1.RuntimeStatefulSet
+	54, // 39: instance.service.v1.InstanceEvent.last_occurred_at:type_name -> google.protobuf.Timestamp
+	57, // 40: instance.service.v1.InstanceEvent.count:type_name -> google.protobuf.Int64Value
+	58, // 41: instance.service.v1.InstanceEvents.pod_uid:type_name -> google.protobuf.StringValue
+	54, // 42: instance.service.v1.InstanceEvents.observed_at:type_name -> google.protobuf.Timestamp
+	37, // 43: instance.service.v1.InstanceEvents.events:type_name -> instance.service.v1.InstanceEvent
+	1,  // 44: instance.service.v1.InstanceLogFrame.kind:type_name -> instance.service.v1.InstanceLogFrame.Kind
+	44, // 45: instance.service.v1.UpdateSchedulerConfigRequest.data:type_name -> instance.service.v1.SchedulerConfigData
+	10, // 46: instance.service.v1.InstanceSchedulingSettings.defaults:type_name -> instance.service.v1.SchedulingOptions
+	46, // 47: instance.service.v1.InstanceSchedulingSettings.priority_class_allowlists:type_name -> instance.service.v1.PriorityClassAllowlist
+	47, // 48: instance.service.v1.UpdateInstanceSchedulingSettingsRequest.data:type_name -> instance.service.v1.InstanceSchedulingSettings
+	49, // [49:49] is the sub-list for method output_type
+	49, // [49:49] is the sub-list for method input_type
+	49, // [49:49] is the sub-list for extension type_name
+	49, // [49:49] is the sub-list for extension extendee
+	0,  // [0:49] is the sub-list for field type_name
 }
 
 func init() { file_instance_service_v1_instance_proto_init() }
@@ -3587,20 +3761,20 @@ func file_instance_service_v1_instance_proto_init() {
 	if File_instance_service_v1_instance_proto != nil {
 		return
 	}
-	file_instance_service_v1_instance_proto_msgTypes[0].OneofWrappers = []any{}
-	file_instance_service_v1_instance_proto_msgTypes[6].OneofWrappers = []any{}
+	file_instance_service_v1_instance_proto_msgTypes[1].OneofWrappers = []any{}
 	file_instance_service_v1_instance_proto_msgTypes[7].OneofWrappers = []any{}
-	file_instance_service_v1_instance_proto_msgTypes[19].OneofWrappers = []any{}
-	file_instance_service_v1_instance_proto_msgTypes[20].OneofWrappers = []any{}
-	file_instance_service_v1_instance_proto_msgTypes[25].OneofWrappers = []any{}
-	file_instance_service_v1_instance_proto_msgTypes[35].OneofWrappers = []any{}
+	file_instance_service_v1_instance_proto_msgTypes[8].OneofWrappers = []any{}
+	file_instance_service_v1_instance_proto_msgTypes[9].OneofWrappers = []any{}
+	file_instance_service_v1_instance_proto_msgTypes[13].OneofWrappers = []any{}
+	file_instance_service_v1_instance_proto_msgTypes[21].OneofWrappers = []any{}
+	file_instance_service_v1_instance_proto_msgTypes[37].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_instance_service_v1_instance_proto_rawDesc), len(file_instance_service_v1_instance_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   46,
+			NumMessages:   52,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

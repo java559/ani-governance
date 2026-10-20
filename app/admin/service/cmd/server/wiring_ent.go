@@ -202,12 +202,18 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// 配额账本与持久化转发（QUOTA-GPU-LOCAL-01）
 	quotaLedgerRepo := data.NewQuotaLedgerRepo(ctx, entClient)
 	quotaRegistry := service.NewQuotaAdapterRegistry()
-	instanceOwner, closeInstance, err := data.NewInstanceClientFromEnv()
+	instanceOwner, computeOwner, closeResource, err := data.NewResourceClientsFromEnv()
 	if err != nil {
 		rollback()
 		return nil, nil, err
 	}
-	cleanups = append(cleanups, closeInstance)
+	cleanups = append(cleanups, closeResource)
+	observabilityClient, closeObservability, err := data.NewObservabilityClientFromEnv()
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	cleanups = append(cleanups, closeObservability)
 	var instanceClient service.InstanceOwnerClient
 	if instanceOwner != nil {
 		instanceClient = instanceOwner
@@ -366,11 +372,21 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		instanceSessions = instanceSession
 	}
 	instanceCatalog := service.InstanceCatalogConfig{ClusterID: os.Getenv("ANI_INSTANCE_CLUSTER_ID"), Cluster: instanceCluster, Settings: instanceScheduling}
+	computeCatalog := service.ComputeCatalogConfig{ClusterID: os.Getenv("ANI_INSTANCE_CLUSTER_ID")}
+	var computeClient service.ComputePresetOwner
+	if computeOwner != nil {
+		computeClient = computeOwner
+		instanceCatalog.Compute = computeOwner
+	}
+	if observabilityClient != nil {
+		instanceCatalog.Monitoring = observabilityClient
+	}
 	if acceleratorClient != nil {
-		instanceCatalog.Admin = acceleratorClient.Admin
+		computeCatalog.Admin = acceleratorClient.Admin
 		instanceCatalog.Catalog = acceleratorClient.Catalog
 	}
 	instanceService := service.NewInstanceService(instanceAcceptance, instanceBinding, tenantRepo, quotaLedgerRepo, instanceSessions, instanceCatalog)
+	computeService := service.NewComputePresetService(computeClient, computeCatalog)
 	modeldevService := service.NewModelDevService(modeldevAuthorizationRepo, tenantRepo, modeldevAcceptanceRepo, modeldevBindingRepo, modeldevClient)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
@@ -410,6 +426,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		imageService,
 		modeldevService,
 		modelService,
+		computeService,
 		instanceService,
 	)
 	if err != nil {

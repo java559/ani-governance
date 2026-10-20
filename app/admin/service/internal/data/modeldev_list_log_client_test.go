@@ -47,7 +47,7 @@ func (p *modelDevListLogPeer) ListExecutions(ctx context.Context, in *modeldevv1
 	if err := p.check(ctx, modeldevv1.ModelDevQueryService_ListExecutions_FullMethodName); err != nil {
 		return nil, err
 	}
-	if in.Page == nil || in.Page.Limit != 1 || in.Page.Cursor != "cursor" || in.ComputeState != nil || in.CloseState != nil || in.DeliveryState != nil {
+	if in.Page == nil || in.Page.Page == nil || *in.Page.Page != 1 || in.Page.PageSize == nil || *in.Page.PageSize != 1 || in.ComputeState != nil || in.CloseState != nil || in.DeliveryState != nil {
 		return nil, status.Error(codes.Internal, "selector mismatch")
 	}
 	return p.list, nil
@@ -64,7 +64,7 @@ func (p *modelDevListLogPeer) GetExecutionLogs(ctx context.Context, in *modeldev
 func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing.T) {
 	id := uuid.NewString()
 	execution := &modeldevv1.ExecutionView{Identity: &trainingv1.ExecutionIdentity{ExecutionId: id, OperationId: uuid.NewString(), ExecutionSpecHash: strings.Repeat("a", 64)}, Kind: trainingv1.ExecutionKind_EXECUTION_KIND_GENERAL_TRAINING, States: &modeldevv1.ExecutionStates{ComputeState: modeldevv1.ComputeState_COMPUTE_STATE_TRAINING, DeliveryState: modeldevv1.DeliveryState_DELIVERY_STATE_PENDING, CloseState: modeldevv1.CloseState_CLOSE_STATE_OPEN, ResourceState: modeldevv1.ResourceState_RESOURCE_STATE_NOT_APPLICABLE}, AcceptedAt: timestamppb.Now(), DeadlineAt: timestamppb.Now(), ObservedAt: timestamppb.Now()}
-	list := &modeldevv1.ListExecutionsResponse{Executions: []*modeldevv1.ExecutionView{execution}, NextCursor: "next"}
+	list := &modeldevv1.ListExecutionsResponse{Executions: []*modeldevv1.ExecutionView{execution}}
 	logs := &modeldevv1.GetExecutionLogsResponse{Source: &trainingv1.LogRef{LogId: uuid.NewString(), ResourceUid: uuid.NewString(), ContainerName: "node"}, Lines: []*modeldevv1.LogLine{{Timestamp: timestamppb.Now(), Text: "real stdout boundary sample"}}, ObservedAt: timestamppb.Now()}
 	for _, test := range []struct {
 		name              string
@@ -75,7 +75,6 @@ func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing
 		{"oversized list", func(p *modelDevListLogPeer) { p.list.Executions = append(p.list.Executions, p.list.Executions[0]) }, codes.Unavailable, codes.OK},
 		{"unknown state", func(p *modelDevListLogPeer) { p.list.Executions[0].States.ComputeState = 987 }, codes.Unavailable, codes.OK},
 		{"invalid execution", func(p *modelDevListLogPeer) { p.list.Executions[0].Identity.ExecutionId = "invalid" }, codes.Unavailable, codes.OK},
-		{"long cursor", func(p *modelDevListLogPeer) { p.list.NextCursor = strings.Repeat("x", 2049) }, codes.Unavailable, codes.OK},
 		{"log bytes", func(p *modelDevListLogPeer) { p.logs.Lines[0].Text = strings.Repeat("x", 33) }, codes.OK, codes.Unavailable},
 		{"log lines", func(p *modelDevListLogPeer) { p.logs.Lines = append(p.logs.Lines, p.logs.Lines[0]) }, codes.OK, codes.Unavailable},
 		{"missing actual timestamp", func(p *modelDevListLogPeer) { p.logs.Lines[0].Timestamp = nil }, codes.OK, codes.Unavailable},
@@ -100,13 +99,20 @@ func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing
 			require.NoError(t, err)
 			t.Cleanup(closeClient)
 			ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("x-ani-tenant-id", uuid.NewString(), "x-ani-actor", "governance:user:1", "x-ani-authorized-method", "forged", "x-secret-injected", "private"))
-			listed, err := client.ListExecutions(ctx, peer.scope, 1, "cursor")
+			listed, err := client.ListExecutions(ctx, peer.scope, 1, 1)
 			require.Equal(t, test.listCode, status.Code(err))
 			if err != nil {
 				require.Nil(t, listed)
 				require.NotContains(t, err.Error(), "private")
 			} else {
 				require.True(t, proto.Equal(peer.list, listed))
+			}
+			// An invalid page window is rejected before any downstream call.
+			if _, err := client.ListExecutions(ctx, peer.scope, 0, 20); status.Code(err) != codes.Unavailable {
+				t.Fatal("zero page was forwarded")
+			}
+			if _, err := client.ListExecutions(ctx, peer.scope, 1, 101); status.Code(err) != codes.Unavailable {
+				t.Fatal("out-of-range page size was forwarded")
 			}
 			got, err := client.GetExecutionLogs(ctx, peer.scope, id, 1, 32)
 			require.Equal(t, test.logCode, status.Code(err))

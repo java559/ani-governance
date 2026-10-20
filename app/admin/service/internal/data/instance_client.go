@@ -2,37 +2,18 @@ package data
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
 	terminal "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/terminal/v1"
 	pb "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
 type InstanceClient struct{ client pb.InstanceServiceClient }
 
-func NewInstanceClientFromEnv() (*InstanceClient, func(), error) {
-	addr := os.Getenv("ANI_INSTANCE_ADDR")
-	if addr == "" {
-		return nil, func() {}, nil
-	}
-	tls, e := resourceClientTLS(os.Getenv("ANI_INSTANCE_CA"), os.Getenv("ANI_INSTANCE_CERT"), os.Getenv("ANI_INSTANCE_KEY"))
-	if e != nil {
-		return nil, nil, fmt.Errorf("instance mTLS configuration invalid: %w", e)
-	}
-	conn, e := grpc.NewClient(addr, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tls)))
-	if e != nil {
-		return nil, nil, e
-	}
-	return &InstanceClient{pb.NewInstanceServiceClient(conn)}, func() { _ = conn.Close() }, nil
-}
 func instanceCall[T any](c *InstanceClient, ctx context.Context, tenant, actor string, fn func(context.Context) (T, error)) (T, error) {
 	var zero T
 	if c == nil || c.client == nil {
@@ -48,7 +29,7 @@ func instanceCall[T any](c *InstanceClient, ctx context.Context, tenant, actor s
 }
 func (c *InstanceClient) Resolve(ctx context.Context, t, a string, r *pb.CreateInstanceData, defaults *pb.SchedulingOptions) (*pb.CreateSpec, error) {
 	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.CreateSpec, error) {
-		return c.client.ResolveCreateSpec(ctx, &pb.ResolveCreateSpecRequest{TenantId: t, Data: r, SchedulingDefaults: defaults})
+		return c.client.ResolveCreateSpec(ctx, &pb.ResolveCreateSpecRequest{TenantId: t, Data: r, SchedulingDefaults: defaults, InstanceContractVersion: CurrentInstanceContractVersion})
 	})
 }
 
@@ -86,6 +67,13 @@ func (c *InstanceClient) Get(ctx context.Context, t, a, id string) (*pb.Instance
 		return c.client.GetInstance(ctx, &pb.GetInstanceRequest{TenantId: t, InstanceId: id})
 	})
 }
+func (c *InstanceClient) ResolveInstanceMetricScope(ctx context.Context, tenant, actor, id string) (*pb.InstanceMetricScope, error) {
+	call, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	return instanceCall(c, call, tenant, actor, func(ctx context.Context) (*pb.InstanceMetricScope, error) {
+		return c.client.ResolveInstanceMetricScope(ctx, &pb.GetInstanceRequest{TenantId: tenant, InstanceId: id})
+	})
+}
 func (c *InstanceClient) List(ctx context.Context, t, a string, r *pb.ListInstancesRequest) (*pb.ListInstancesResponse, error) {
 	if r == nil || r.TenantId != t {
 		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
@@ -99,16 +87,22 @@ func (c *InstanceClient) Operation(ctx context.Context, t, a, id string) (*pb.Op
 		return c.client.GetOperation(ctx, &pb.GetOperationRequest{TenantId: t, OperationId: id})
 	})
 }
-func (c *InstanceClient) Presets(ctx context.Context, t, a string, r *pb.ListPresetsRequest) (*pb.ListPresetsResponse, error) {
-	if r == nil || r.TenantId != t {
-		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
-	}
-	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.ListPresetsResponse, error) {
-		return c.client.ListPresets(ctx, r)
-	})
-}
 func (c *InstanceClient) Target(ctx context.Context, t, a, id string, version int64) (*terminal.TerminalTarget, error) {
 	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*terminal.TerminalTarget, error) {
 		return c.client.ResolveTerminalTarget(ctx, &pb.ResolveTerminalTargetRequest{TenantId: t, InstanceId: id, ExpectedVersion: version})
+	})
+}
+
+func (c *InstanceClient) MountablePVCs(ctx context.Context, tenant, actor string, request *pb.ListMountablePVCsRequest) (*pb.ListMountablePVCsResponse, error) {
+	if request == nil || request.TenantId != tenant {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
+	return instanceCall(c, ctx, tenant, actor, func(ctx context.Context) (*pb.ListMountablePVCsResponse, error) {
+		return c.client.ListMountablePVCs(ctx, request)
+	})
+}
+func (c *InstanceClient) Configuration(ctx context.Context, tenant, actor, id string) (*pb.InstanceConfiguration, error) {
+	return instanceCall(c, ctx, tenant, actor, func(ctx context.Context) (*pb.InstanceConfiguration, error) {
+		return c.client.GetInstanceConfiguration(ctx, &pb.GetInstanceRequest{TenantId: tenant, InstanceId: id})
 	})
 }

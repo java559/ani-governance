@@ -1,4 +1,4 @@
-h1:yd5D7ieg870SZkArC5HK+o8e9XZyS47MDWK+ml6MVEY=
+h1:aR2N5R6ThHr8+y5aMtXwVYvuPSuwaki6+TVyEHRcliI=
 20260921134442_initial.sql h1:wcoowx/qa0ev483qqzyy2giZB06OLheXrMOnWzoyHQo=
 20260922190000_quota_expand.sql h1:O2egZip9fZi342945Yxx8knOMw5JKExhpIIfPcuT1W8=
 20260922190100_quota_constraints.sql h1:rlPy/NiWSfQWSZFQqlPvw0qM69zD3buJkuG+glRs7WY=
@@ -11,3 +11,4 @@ h1:yd5D7ieg870SZkArC5HK+o8e9XZyS47MDWK+ml6MVEY=
 20261003074738_cpu_modeldev_delivery.sql h1:nvvVxK4LOArCtapmgfFAenoBNLXdIWZuaBYyvERgR9Y=
 20261003152319_cpu_modeldev_stop.sql h1:ge4KGvRk7VKQbsrA/9uplEw5rd6+X+dK6/Gx5fd3eDY=
 20261010131938_access_key_idempotency.sql h1:d1eLc/HyZKkmWrdFcha/fZXKNZf7FTHuwpYYx1Y2CsQ=
+20261019090000_instance_contract_version.sql h1:CfUrsdKs6ZSV2GLeGL+k7IYQXiY3L2eMbhlDfeJwGAs=

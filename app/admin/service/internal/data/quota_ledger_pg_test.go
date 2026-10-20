@@ -11,7 +11,6 @@ import (
 	"context"
 	"database/sql"
 	"embed"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -733,16 +732,17 @@ func TestQuotaPostgresInstanceCPUCommands(t *testing.T) {
 	repo := newTestRepo(c)
 	tid, _ := seedTenantPlan(t, c, "cpu-command", 8)
 	input := occupyInput(c, tid, "7", uuid.NewString(), 1)
-	business := &res.CreateSpec{Name: "cpu", ImageId: "img_" + strings.Repeat("a", 32), ImageScope: "platform", PresetId: "20000000-0000-4000-8000-000000000001", InstanceKind: "container", ComputeType: "cpu", Scheduling: &res.SchedulingOptions{PodPlacement: res.SchedulingOptions_NONE.Enum()}, ClusterId: uuid.NewString(), Namespace: "tenant-cpu", ImageReference: "registry.invalid/cpu@sha256:" + strings.Repeat("a", 64), Cpu: "1", Memory: "1Gi", ServiceAccount: "workload", StorageClass: "workspace", WorkspaceSize: "1Gi", Shell: "/bin/bash", Uid: 1000, Gid: 1000}
+	business := &res.CreateSpec{InstanceContractVersion: 2, WorkspaceMountPath: "/workspace", Name: "cpu", ImageId: "img_" + strings.Repeat("a", 32), ImageScope: "platform", PresetId: "20000000-0000-4000-8000-000000000001", InstanceKind: "container", ComputeType: "cpu", Scheduling: &res.SchedulingOptions{PodPlacement: res.SchedulingOptions_NONE.Enum()}, ClusterId: uuid.NewString(), Namespace: "tenant-cpu", ImageReference: "registry.invalid/cpu@sha256:" + strings.Repeat("a", 64), Cpu: "1", Memory: "1Gi", ServiceAccount: "workload", StorageClass: "workspace", WorkspaceSize: "1Gi", Shell: "/bin/bash", Uid: 1000, Gid: 1000}
 
 	raw, e := res.CanonicalBusinessPayload(business)
 	require.NoError(t, e)
 	digest, e := res.BusinessPayloadDigest(business)
 	require.NoError(t, e)
-	frozen := InstanceCPUCanonical{Schema: InstanceCPUCanonicalSchema, BusinessPayload: raw, BusinessPayloadDigest: digest}
-	canonical, e := json.Marshal(frozen)
+	frozen := InstanceCPUCanonical{Schema: InstanceCPUCanonicalSchema, InstanceContractVersion: 2, BusinessPayload: raw, BusinessPayloadDigest: digest}
+	canonical, e := MarshalInstanceCPUCanonical(&frozen)
 	require.NoError(t, e)
 	input.OwnerService, input.Action, input.CanonicalRequest, input.Items = instanceCPUOwner, instanceCPUCreateAction, string(canonical), nil
+	input.InstanceContractVersion = CurrentInstanceContractVersion
 	first, e := repo.Occupy(context.Background(), input)
 	require.NoError(t, e)
 	require.Empty(t, first.ChargeIDs)
@@ -770,7 +770,7 @@ func TestQuotaPostgresInstanceCPUCommands(t *testing.T) {
 	require.NoError(t, e)
 	require.True(t, acked)
 	frozen.DeleteExpectedVersion = 4
-	deletionJSON, e := json.Marshal(frozen)
+	deletionJSON, e := MarshalInstanceCPUCanonical(&frozen)
 	require.NoError(t, e)
 	deletion := &QuotaDeleteInput{TenantID: tid, ActorType: input.ActorType, ActorID: input.ActorID, OwnerService: instanceCPUOwner, Action: instanceCPUDeleteAction, IdempotencyKey: uuid.NewString(), RequestHash: "cpu-delete-v4", CanonicalRequest: string(deletionJSON), ResourceID: first.ResourceID}
 	deleted, e := repo.CreateDeleteOperation(context.Background(), deletion)
