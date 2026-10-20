@@ -24,6 +24,14 @@ type InstanceMonitoringClient interface {
 
 var metricNamespace = regexp.MustCompile(`^[a-z0-9]([-a-z0-9]*[a-z0-9])?$`)
 
+// metricCatalog 是实例指标的完整目录：code → 单位。白名单与单位映射共用。
+var metricCatalog = map[string]string{
+	"cpu.usage_cores":                   "cores",
+	"memory.working_set_bytes":          "bytes",
+	"network.receive_bytes_per_second":  "bytes_per_second",
+	"network.transmit_bytes_per_second": "bytes_per_second",
+}
+
 func metricUUID(value string) bool {
 	id, err := uuid.Parse(value)
 	return err == nil && id != uuid.Nil && id.String() == value
@@ -35,12 +43,15 @@ func metricResponseInvalid() error {
 	return kratoserrors.New(502, "MONITORING_SOURCE_RESPONSE_INVALID", "invalid monitoring response")
 }
 func metricCodesValid(codes []string) bool {
-	if len(codes) < 1 || len(codes) > 2 {
+	if len(codes) < 1 || len(codes) > 4 {
 		return false
 	}
 	seen := map[string]bool{}
 	for _, code := range codes {
-		if seen[code] || (code != "cpu.usage_cores" && code != "memory.working_set_bytes") {
+		if seen[code] {
+			return false
+		}
+		if _, ok := metricCatalog[code]; !ok {
 			return false
 		}
 		seen[code] = true
@@ -118,7 +129,7 @@ func (s *InstanceService) GetInstanceLatestMetrics(ctx context.Context, r *view.
 	if err != nil {
 		return nil, err
 	}
-	codes := []string{"cpu.usage_cores", "memory.working_set_bytes"}
+	codes := []string{"cpu.usage_cores", "memory.working_set_bytes", "network.receive_bytes_per_second", "network.transmit_bytes_per_second"}
 	call, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()
 	reply, err := s.monitoring.QueryLatest(call, t.TenantId, actor, &monitoring.QueryLatestRequest{Target: t, MetricCodes: codes})
@@ -141,9 +152,9 @@ func metricSeries(in []*monitoring.MetricSeries, codes []string, start time.Time
 	}
 	out := make([]*view.InstanceMetricSeries, 0, len(in))
 	for i, s := range in {
-		unit := "cores"
-		if codes[i] == "memory.working_set_bytes" {
-			unit = "bytes"
+		unit, ok := metricCatalog[codes[i]]
+		if !ok {
+			return nil, metricResponseInvalid()
 		}
 		if s == nil || s.MetricCode != codes[i] || s.Unit != unit || len(s.Points) != count {
 			return nil, metricResponseInvalid()

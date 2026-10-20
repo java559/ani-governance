@@ -67,6 +67,14 @@ type metricsPeer struct {
 	failure error
 }
 
+// metricTestUnits 与 service.metricCatalog 的单位映射保持一致（测试侧独立维护）。
+var metricTestUnits = map[string]string{
+	"cpu.usage_cores":                   "cores",
+	"memory.working_set_bytes":          "bytes",
+	"network.receive_bytes_per_second":  "bytes_per_second",
+	"network.transmit_bytes_per_second": "bytes_per_second",
+}
+
 func (p *metricsPeer) QueryRange(ctx context.Context, tenant, actor string, r *monitoring.QueryRangeRequest) (*monitoring.QueryRangeResponse, error) {
 	p.calls++
 	p.step = r.StepSeconds
@@ -80,11 +88,15 @@ func (p *metricsPeer) QueryRange(ctx context.Context, tenant, actor string, r *m
 		return nil, p.failure
 	}
 	zero, v := 0.0, 0.75
-	return &monitoring.QueryRangeResponse{Start: r.Start, End: r.End, StepSeconds: r.StepSeconds, Series: []*monitoring.MetricSeries{{MetricCode: r.MetricCodes[0], Unit: "cores", Status: monitoring.SeriesStatus_SERIES_STATUS_PARTIAL, Points: []*monitoring.MetricPoint{{Timestamp: r.Start, Value: &zero}, {Timestamp: timestamppb.New(r.Start.AsTime().Add(time.Duration(r.StepSeconds) * time.Second)), GapReason: monitoring.GapReason_GAP_REASON_NO_DATA}, {Timestamp: r.End, Value: &v}}}}}, nil
+	series := make([]*monitoring.MetricSeries, 0, len(r.MetricCodes))
+	for _, code := range r.MetricCodes {
+		series = append(series, &monitoring.MetricSeries{MetricCode: code, Unit: metricTestUnits[code], Status: monitoring.SeriesStatus_SERIES_STATUS_PARTIAL, Points: []*monitoring.MetricPoint{{Timestamp: r.Start, Value: &zero}, {Timestamp: timestamppb.New(r.Start.AsTime().Add(time.Duration(r.StepSeconds) * time.Second)), GapReason: monitoring.GapReason_GAP_REASON_NO_DATA}, {Timestamp: r.End, Value: &v}}})
+	}
+	return &monitoring.QueryRangeResponse{Start: r.Start, End: r.End, StepSeconds: r.StepSeconds, Series: series}, nil
 }
 func (p *metricsPeer) QueryLatest(ctx context.Context, tenant, actor string, r *monitoring.QueryLatestRequest) (*monitoring.QueryLatestResponse, error) {
 	p.calls++
-	if strings.Join(r.MetricCodes, ",") != "cpu.usage_cores,memory.working_set_bytes" {
+	if strings.Join(r.MetricCodes, ",") != "cpu.usage_cores,memory.working_set_bytes,network.receive_bytes_per_second,network.transmit_bytes_per_second" {
 		panic("latest order")
 	}
 	if p.failure != nil {
@@ -92,7 +104,17 @@ func (p *metricsPeer) QueryLatest(ctx context.Context, tenant, actor string, r *
 	}
 	now := timestamppb.New(time.Now().Truncate(time.Second))
 	zero := 0.0
-	return &monitoring.QueryLatestResponse{EvaluatedAt: now, Series: []*monitoring.MetricSeries{{MetricCode: r.MetricCodes[0], Unit: "cores", Status: monitoring.SeriesStatus_SERIES_STATUS_OK, Points: []*monitoring.MetricPoint{{Timestamp: now, Value: &zero}}}, {MetricCode: r.MetricCodes[1], Unit: "bytes", Status: monitoring.SeriesStatus_SERIES_STATUS_NO_DATA, Points: []*monitoring.MetricPoint{{Timestamp: now, GapReason: monitoring.GapReason_GAP_REASON_NO_DATA}}}}}, nil
+	series := make([]*monitoring.MetricSeries, 0, len(r.MetricCodes))
+	for i, code := range r.MetricCodes {
+		points := []*monitoring.MetricPoint{{Timestamp: now, GapReason: monitoring.GapReason_GAP_REASON_NO_DATA}}
+		status := monitoring.SeriesStatus_SERIES_STATUS_NO_DATA
+		if i == 0 {
+			points = []*monitoring.MetricPoint{{Timestamp: now, Value: &zero}}
+			status = monitoring.SeriesStatus_SERIES_STATUS_OK
+		}
+		series = append(series, &monitoring.MetricSeries{MetricCode: code, Unit: metricTestUnits[code], Status: status, Points: points})
+	}
+	return &monitoring.QueryLatestResponse{EvaluatedAt: now, Series: series}, nil
 }
 func metricsHTTP(t *testing.T, resource *metricsResource, peer *metricsPeer, authorization *metricsAuthorization, authenticated bool) *httptest.Server {
 	t.Helper()
@@ -159,6 +181,34 @@ func TestInstanceMetricsHTTPEncodingAndTrustedScope(t *testing.T) {
 	code, object = metricsRequest(t, srv, "GET", "latest", "")
 	if code != 200 || object["data"].(map[string]any)["evaluated_at"] == nil {
 		t.Fatalf("latest %d %+v", code, object)
+	}
+}
+func TestInstanceMetricsFourCodesAcceptedAndFiveRejected(t *testing.T) {
+	r, p, a := &metricsResource{}, &metricsPeer{}, &metricsAuthorization{}
+	srv := metricsHTTP(t, r, p, a, true)
+	four := `{"data":{"metric_codes":["cpu.usage_cores","memory.working_set_bytes","network.receive_bytes_per_second","network.transmit_bytes_per_second"],"start":"2026-10-01T08:00:00+08:00","end":"2026-10-01T08:02:00+08:00"}}`
+	code, object := metricsRequest(t, srv, "POST", "query", four)
+	if code != 200 {
+		t.Fatalf("%d %+v", code, object)
+	}
+	series := object["data"].(map[string]any)["series"].([]any)
+	if len(series) != 4 {
+		t.Fatalf("series count %d", len(series))
+	}
+	wantUnits := []string{"cores", "bytes", "bytes_per_second", "bytes_per_second"}
+	wantCodes := []string{"cpu.usage_cores", "memory.working_set_bytes", "network.receive_bytes_per_second", "network.transmit_bytes_per_second"}
+	for i, s := range series {
+		item := s.(map[string]any)
+		if item["metric_code"] != wantCodes[i] || item["unit"] != wantUnits[i] {
+			t.Fatalf("series[%d]=%v want %s/%s", i, item, wantCodes[i], wantUnits[i])
+		}
+	}
+	five := `{"data":{"metric_codes":["cpu.usage_cores","memory.working_set_bytes","network.receive_bytes_per_second","network.transmit_bytes_per_second","cpu.usage_cores"],"start":"2026-10-01T08:00:00+08:00","end":"2026-10-01T08:02:00+08:00"}}`
+	r2, p2 := &metricsResource{}, &metricsPeer{}
+	srv2 := metricsHTTP(t, r2, p2, &metricsAuthorization{}, true)
+	code, _ = metricsRequest(t, srv2, "POST", "query", five)
+	if code != 400 || r2.calls != 0 || p2.calls != 0 {
+		t.Fatalf("five codes: %d calls=%d/%d", code, r2.calls, p2.calls)
 	}
 }
 func TestInstanceMetricsHTTPRejectsInputBeforeDependencies(t *testing.T) {
