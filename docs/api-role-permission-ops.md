@@ -1,7 +1,7 @@
 # API / 角色 / 权限 操作清单（ani-governance 控制面）
 
 面向集成方与运营：**如何通过 HTTP 接口管理 API 资源、编辑角色、给角色赋访问权限、更换用户角色**。
-相关接口已经存在；权限点 PUT 的关联更新仍有实现缺陷，见 [当前风险](#permission-update-mask-risk)。其他掩码语义和生效时延见各节，文中源码引用用于核对现状。
+相关接口已经存在；权限点 PUT 的关联更新缺陷已于 2026-10-21 修复（见 [关联更新语义](#permission-update-mask-risk)），其他掩码语义和生效时延见各节，文中源码引用用于核对现状。
 
 > 初始生成时间：2026-09-21。2026-10-11 按固定基线 `79469c6` 静态核对并修正文档；本次未执行 HTTP、数据库或部署复验。文中旧 `file:line` 可能漂移，以实际源码为准。
 
@@ -144,7 +144,9 @@ POST /api/v1/admin/permissions
 
 <a id="permission-update-mask-risk"></a>
 
-> ⚠️ **当前权限点 PUT 的关联更新存在实现缺陷，回传完整数组也不能保证保留绑定。** [PermissionService.Update](../app/admin/service/internal/service/permission_service.go) 给非 nil mask 追加 `updated_by`；[PermissionRepo.Update](../app/admin/service/internal/data/permission_repo.go) 从 mask 剔除 `api_ids/menu_ids`，没有先快照关联载荷；随后 [Repository.UpdateOne](../pkg/localdeps/go-crud/entgo/repository.go) 调用 [FilterByFieldMask](../pkg/localdeps/go-utils/fieldmaskutil/fieldmaskutil.go)，清空 mask 外数组，再无条件调用 `AssignApis/AssignMenus`。因此携带 `updateMask` 时，即使回传完整数组也会进入空数组替换路径；省略 mask 和关联数组也会清空绑定。这是当前静态源码结论，本次未运行复现，尚未修复。它不符合仓库要求的关联 mask 合同，不能作为推荐更新方式；修复和行为验证需另行实施，参照 [RoleRepo](../app/admin/service/internal/data/role_repo.go) 的关联快照与事务处理。
+> ✅ **权限点 PUT 的关联更新缺陷已修复**（2026-10-21，分支 `fix/permission-update-mask-relation-grants`）。历史结论：`PermissionRepo.Update` 从 mask 剔除 `api_ids/menu_ids` 时没有先快照关联载荷，随后 [Repository.UpdateOne](../pkg/localdeps/go-crud/entgo/repository.go) 调用 [FilterByFieldMask](../pkg/localdeps/go-utils/fieldmaskutil/fieldmaskutil.go) 清空 mask 外数组，再无条件调用 `AssignApis/AssignMenus`；而 `Assign*` 的语义是「空集＝删光」，于是携带非 nil `updateMask` 时会清空该权限点的全部菜单与接口授权（HTTP 仍返回 200）。
+> 现行为（与 RoleRepo/UserRepo 的快照模式一致）：**掩码含关联字段** → 整体替换为所提交集合（显式提交空数组＝合法清空）；**掩码不含关联字段** → 关联完全不动；**掩码为 nil** → 全量替换，与改前逐字一致。实现见 [`hasPath` 快照块](../app/admin/service/internal/data/permission_repo.go) + 两处条件 `Assign*`，回归测试 `TestPermissionRepoSqlite_UpdateKeepsRelationGrants`（4 子测试）。
+> 仍存的边界：`UpdateOne` 与两次 `Assign*` 各自独立事务，未满足 AGENTS 合同第 2 条的"主表与关联更新同一事务"（`role_repo`/`user_repo` 已满足）；`permission`/`user`/`role` 三处 nil mask 语义仍不统一。两者均为既有议题，未并入本次最小修复。
 > ⚠️ **分组改名/改 module 不触发 `ResetPolicies`**（`permission_group_service.go` 无该调用）——但策略生成链路**只读"角色→角色权限→API"，从不读 `permission_group.module`**（`authorizer_provider.go:59-119`），因此改分组 module 本就不影响授权、也无需刷新。
 > ⚠️ **权限点要真正放行请求**，其 `apiIds` 必须指向 `sys_apis` 中已存在的 `(path, method)`；未登记的接口无法授权，且租户侧 fail-closed。
 
@@ -200,7 +202,7 @@ PUT /api/v1/admin/users/42
 ## 6. 已知坑汇总（务必阅读）
 
 1. **API `status` 不可经接口改**（Create/Update builder 不写 status）——不能启停 API。边界：若在 `updateMask` 里显式写 `status` 而请求体不给值，go-crud 会把它置为 NULL（仍无法置 ON/OFF）。
-2. **权限点 PUT 的关联更新尚有实现缺陷**；携带 mask 时回传完整数组也不能保留绑定，见 §3 的静态调用链与未验证边界。
+2. **权限点 PUT 的关联更新缺陷已修复**（2026-10-21）：掩码含关联字段则整体替换、不含则关联不动，见 §3；事务与三处 nil mask 语义的遗留差异仍待单独立项。
 3. **改权限分组（module）不会、也不需要刷新策略**：`permission_group_service.go` 的 Update 不调 `ResetPolicies`，且策略生成链路只读"角色→角色权限→API"，**从不读 `permission_group.module`**（`authorizer_provider.go:59-119`）——不要把它当作"授权未生效"的原因。
 4. **创建角色即可赋权**（`POST /roles` 带 `data.permissions`），非仅 PUT。
 5. **`PUT /api/v1/admin/me` 可自改角色**，绕过 `UserService` 校验。
@@ -256,7 +258,7 @@ curl -s -X PUT $BASE/api/v1/admin/users/42 -H "$AUTH" -H 'Content-Type: applicat
 | `403` 平台侧改角色/权限 | 当前角色无 `sys:platform_admin` |
 | 改了权限但未生效 | 是否多副本未重启（策略仅本进程重建）？是否 Role 路径的 `ResetPolicies` 失败被吞（查日志）？ |
 | `400 role_ids is required` | `UserService.Update` 要求 ≥1 角色；补上合法角色 ID |
-| 权限点改完接口绑定没了 | 核对 §3 的关联更新缺陷；完整数组也可能被 mask 过滤。保留原关联快照并另行修复、验证，不能通过反复 PUT 试错恢复 |
+| 权限点改完接口绑定没了 | 该缺陷已于 2026-10-21 修复（§3）：掩码不含关联字段即不再动关联。若仍遇到，先确认部署版本，再核对 `sys_permissions` 无 `api_ids` 列、关联由 `sys_permission_apis`/`sys_permission_menus` 维护；已损坏的存量数据不会被本次修复回填，需重新勾选保存 |
 | 改用户角色后本人仍旧权限 | 令牌里角色未刷新；重新登录/刷新令牌 |
 
 ---

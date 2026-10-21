@@ -477,7 +477,7 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 | PERM-01 | `GET /api/v1/admin/permissions` | 权限点分页；租户调用者仅见自身角色可达的权限点，平台调用者见全部 |
 | PERM-02 | `GET /api/v1/admin/permissions/{id}` | 权限点详情；租户调用者对越权权限点返回 403 |
 | PERM-03 | `POST /api/v1/admin/permissions` | `data`（code/name/groupId/status）；写后 `ResetPolicies` 失败会向上返回错误 |
-| PERM-04 | `PUT /api/v1/admin/permissions/{id}` | `data`、`updateMask`；当前关联更新存在丢失风险，完整数组也不能规避 mask 过滤，见 [已知实现缺陷](api-role-permission-ops.md#permission-update-mask-risk) 和 MGMT-09 |
+| PERM-04 | `PUT /api/v1/admin/permissions/{id}` | `data`、`updateMask`；关联更新缺陷已于 2026-10-21 修复（掩码含关联字段则整体替换、不含则不动、nil 则全量替换），见 [关联更新语义](api-role-permission-ops.md#permission-update-mask-risk) 和 MGMT-09 |
 | PERM-05 | `DELETE /api/v1/admin/permissions/{id}` | 删除权限点；`sys:*` 受保护清单未在本路径强制（见 MGMT-10） |
 | PERM-06 | `POST /api/v1/admin/permissions/sync:perms` | 无请求体；先截断再重建非 `sys:*` 的权限组/权限点，破坏性同步，执行前需备份 |
 | PERMGROUP-01 | `GET /api/v1/admin/permission-groups` | 权限组分页；`query` 支持顶层 `exclude_subtree`（排除某分组自身及全部后代），详见 [PERMGROUP-SUBTREE-01](#permgroup-subtree-01) |
@@ -504,7 +504,7 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 | MGMT-06 | 用户名删除路由虽已注册，UserService.Delete 总是先按 `req.GetId()` 查目标，用户名路由未提供该 ID；平台管理应使用 ACCOUNT-05 | 源码缺口；别名 HTTP 验收 not_verified |
 | MGMT-07 | UserService.Update 无论 updateMask 是否涉及角色都校验非空 roleIds；创建普通用户的立即激活分支先提交用户，再创建密码凭证，后者失败不自动回滚已建用户 | 接入限制已确认；待指定修复，未修改 |
 | MGMT-08 | 在线会话 4 条路由中，自助两条 `my-sessions`、`my-sessions/revoke` 在首次种子里只授给 `sys:platform_admin`；`sys:tenant_manager` 没有任何 online-session 授权，菜单 `OnlineSessionManagement` 的 `authority` 也只有 `sys:platform_admin`。因此租户管理员（及一般自服务场景）无法查看/下线自己的会话 | 源码与种子已确认；租户管理员是否放行自助会话待用户指定，未修改 |
-| MGMT-09 | 仓储从 mask 移除关联字段后，通用更新原地过滤 DTO，再无条件替换 API / 菜单关联；HTTP PUT 的非 nil mask 经 Service 追加 updated_by，因此即使回传完整数组也会被清空，详见 [静态执行链](api-role-permission-ops.md#permission-update-mask-risk) | 2026-10-11 文档更正；此前“回传完整数组”建议无效。实现仍待修，未运行复现，不标已符合关联 mask 合同 |
+| MGMT-09 | 仓储从 mask 移除关联字段后，通用更新原地过滤 DTO，再无条件替换 API / 菜单关联；HTTP PUT 的非 nil mask 经 Service 追加 updated_by，因此即使回传完整数组也会被清空，详见 [静态执行链](api-role-permission-ops.md#permission-update-mask-risk) | **2026-10-21 已修复**：`PermissionRepo.Update` 在剔除关联路径前先快照关联载荷，并按 `hasPath` 条件调用 `AssignApis`/`AssignMenus`（掩码含关联字段才替换、不含则不动）。回归测试 `TestPermissionRepoSqlite_UpdateKeepsRelationGrants` 4 子测试通过，且修复前该测试 FAIL（已复现缺陷）。遗留：主表与关联非同事务、三处 nil mask 语义不统一，未并入本次 |
 | MGMT-10 | `constants.ProtectedPermissionCodes`（`sys:*` 共 7 个）在 `PermissionService.Delete` 路径未被强制校验，删除保护只落在角色层（`ROLE-05`） | 受保护权限点可被直接删除，导致鉴权与菜单静默失效；是否补删除保护待指定 |
 | MGMT-11 | `PUT /api/v1/admin/me`（`UserProfileService.UpdateUser`，`user_profile_service.go:81-96`）直接调 `userRepo.Update`，跳过 `UserService.Update` 的角色类型/租户校验与"至少一个角色"约束；而 `user_repo.go` 在掩码含 `role_ids` 时会应用 `roleIds` | 源码观察（**未运行验证**）：本人可借自助接口改动自身角色集合，形成自助提权面；是否收紧待用户指定 |
 | MGMT-12 | `tenant.admin_user_id` 是自由指针（`TenantRepo.AssignTenantAdmin`），无外键/级联或一致性校验；`UserService.Delete` 删除主管理员用户后**不清空**该指针 | 租户记录留下悬空主管理员引用，`List`/`Get` 的 `adminUserName` 静默为空；与 MGMT-01（移交缺失）是不同问题 |
@@ -758,7 +758,7 @@ const url = `${BASE_URL}/api/v1/admin/users?${params.toString()}`;
 | ACCOUNT-07 `POST /api/v1/admin/users/{user_id}/password` | 仍要求 AES+Base64，且 HTTP 路径模板与 API 目录不一致（MGMT-05）；建议本批先不开放重置密码按钮 |
 | ACCOUNT-04 顶层 password、AUTH-16 `POST /api/v1/admin/me/password` | 同样仍是旧 AES 协议；不能复用创建/登录明文提交，也不以普通 PUT 夹带密码绕过前述问题 |
 | ACCOUNT-08/09 用户名详情/删除别名 | 使用 ID 入口；用户名删除有实现缺口，平台同名账号存在跨租户歧义（MGMT-06） |
-| ROLE-03～05、PERM-*、PERMGROUP-* 自定义角色与权限写入 | 四类页面先选择已有角色。运营/只读权限矩阵待定；权限点 PUT 丢数组会清绑定，删除保护不完整（MGMT-09/10/18） |
+| ROLE-03～05、PERM-*、PERMGROUP-* 自定义角色与权限写入 | 四类页面先选择已有角色。运营/只读权限矩阵待定；删除保护不完整（MGMT-10/18）。权限点 PUT 清绑定一条（MGMT-09）已于 2026-10-21 修复，不再构成暂缓理由 |
 | TENANT-05 `DELETE /api/v1/admin/tenants/{id}` | 仅删除租户记录，不等于关联数据及下游资源清理；首批普通管理流程不开放 |
 | TENANT-09 `POST /api/v1/admin/tenants/{id}/cleanup` | 删除实现列出的 Governance 本地数据，保留租户并置 OFF；不清下游资源，code/name 仍占用，需单独设计操作流程 |
 | 主管理员移交 | 产品明确不提供，不调用通用更新改 adminUserId 代替移交 |
