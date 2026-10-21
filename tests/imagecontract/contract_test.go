@@ -40,7 +40,7 @@ func TestPublicImageSurface(t *testing.T) {
 }
 
 func TestImageModulePreservesExistingContract(t *testing.T) {
-	expected := map[string]int32{"MODULE_UNSPECIFIED": 0, "DASHBOARD": 1, "OPM": 2, "SYSTEM": 3, "DICT": 4, "TENANT": 5, "PERMISSION": 6, "LOG": 7, "INTERNAL_MESSAGE": 8, "TASK": 10, "MODEL": 11, "NETWORK": 12, "ACCELERATOR": 13, "IMAGE": 14, "INSTANCE": 16}
+	expected := map[string]int32{"MODULE_UNSPECIFIED": 0, "DASHBOARD": 1, "OPM": 2, "SYSTEM": 3, "DICT": 4, "TENANT": 5, "PERMISSION": 6, "LOG": 7, "INTERNAL_MESSAGE": 8, "TASK": 10, "MODEL": 11, "NETWORK": 12, "ACCELERATOR": 13, "IMAGE": 14, "INFERENCE": 15, "INSTANCE": 16}
 	if len(identity.Module_value) != len(expected) {
 		t.Fatal("unexpected module additions or removals")
 	}

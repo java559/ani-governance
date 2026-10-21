@@ -121,7 +121,7 @@ func TestQuotaDurableAckFields(t *testing.T) {
 }
 
 func TestGpuChargesCompleteAndOrderIndependent(t *testing.T) {
-	c := &GpuCanonical{QuotaItems: []GpuQuotaItem{{GpuSharedQuotaCode, 8192}, {"storage.bytes", 10}}}
+	c := &GpuCanonical{QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}, {QuotaCode: "storage.bytes", Units: 10}}}
 	valid := []QuotaChargeRef{{ChargeID: "storage", QuotaCode: "storage.bytes", ChargedUnits: 10}, {ChargeID: "gpu", QuotaCode: GpuSharedQuotaCode, ChargedUnits: 8192}}
 	if e := ValidateGpuCharges(c, valid); e != nil {
 		t.Fatal(e)

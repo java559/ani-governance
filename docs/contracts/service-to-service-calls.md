@@ -1,6 +1,6 @@
 # ANI 服务间调用规则
 
-当前 Governance 不提供 Inference 推理服务管理接口，也不装配其 API 模块或出站客户端；后续重新对接仍须遵循本规范。本文的 Inference 调用示例及明确标注的旧源码快照仅说明调用边界，不代表当前已接入。Model、Resource 与 ACC 的现行合同保持各自范围。
+Governance 当前通过受信 Inference API 客户端提供推理服务管理 BFF。Gov → Inference 使用 TLS 1.3 双向认证、精确 DNS SAN 和登记的 RPC；客户端重建租户与 actor metadata，不透传公网 Authorization 或自报 owner。Inference 的 GPU 命令还携带冻结业务摘要、执行/展示快照和操作幂等 ID，Gov 原始 quota_items 仍只保存在 Gov。Model、Resource 与 ACC 的现行合同保持各自范围。
 
 适用：Gov → svc、svc → Gov、svc → svc 的内部业务 RPC。本文是新接入及修改服务间调用时必须遵守的统一规范；存量差异须在明确范围的独立迁移中处理，见[当前差异与迁移边界](#current-differences)。规范入仓不表示当前运行实现已全部符合。本文不改变各服务的业务职责、已发布字段或历史验收结论。
 
@@ -250,9 +250,11 @@ TLS 校验与拦截器行为参照 [Go TLS 文档](https://pkg.go.dev/crypto/tls
 
 | 现状 | 按本文收敛 |
 |---|---|
-| Gov → Accelerator、Gov → 受管 Inference 使用客户端 URI SAN | 统一为已登记的唯一客户端 DNS SAN；双方同步修改校验、签发和合同，不长期双轨兼容 |
+| Gov → Accelerator 的历史版本及受管 Inference 使用客户端 URI SAN | 统一为已登记的唯一客户端 DNS SAN；双方同步修改校验、签发和合同，不长期双轨兼容 |
 | Network/Image、ModelDev 使用 Gov 客户端 DNS，但证书严格度和配置不同 | 对齐唯一客户端 DNS、字面服务器 DNS、方法允许清单和可信上下文规则 |
 | Inference 同时存在普通和受管业务 listener | 迁移必要 API、现有调用者和证书到同一个业务 mTLS listener，再删除普通入口；不只改 Gov 客户端就宣布完成 |
 | Gov 退额已有客户端 DNS → 固定 `ani-inference` owner 映射 | 保留显式映射和原账本 owner；按真实证书登记收敛配置，不开放任意 owner |
+
+本次 Gov/ACC 授权改造源码移除逐用户/逐租户静态 grant，直接复用 ACC provider.json 的受管连接，并将服务证书校验收敛为唯一 DNS SAN。它不改变角色/套餐由 Gov 管、资源归属由接收方核验的规则。现网 URI 证书和旧配置须配套迁移；源码与定向测试不代表已经部署。
 
 业务合同继续以 [GPU owner 指南](gpu-owner-integration-guide.md)、[AK/SK 合同](aksk-signature.md)等领域文档为准；本文对新接入和修改调用的传输、身份、授权和上下文规则有优先权。专项文档中的现有 URI SAN、listener 等实现记录应与迁移目标分开阅读。迁移需要独立的实现、证书配置和双方联调；**2026-10-10 制定规范的批次只将正文入仓，没有修改运行逻辑或宣称存量服务已符合新规。后续实现以各批次结果为准。**

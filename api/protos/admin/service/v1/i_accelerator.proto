@@ -5,8 +5,8 @@ import "catalog/service/v1/accelerator.proto";
 import "admin/service/v1/quota_types.proto";
 import "google/protobuf/empty.proto";
 
-// JWT platform user, current role permission and downstream exact actor/action/
-// cluster grant are all required. There is no implicit tenant-zero grant.
+// Governance requires a JWT platform user and current role permission.
+// Accelerator validates the service RPC and its provider-managed cluster scope.
 service AcceleratorAdminService {
   rpc ListClusters(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorClusters) { option (google.api.http) = {get:"/api/v1/admin/accelerator/clusters"}; }
   rpc RegisterCluster(catalog.service.v1.RegisterAcceleratorClusterRequest) returns (catalog.service.v1.AcceleratorCluster) { option (google.api.http) = {post:"/api/v1/admin/accelerator/clusters" body:"*"}; }
@@ -24,8 +24,8 @@ service AcceleratorAdminService {
   rpc AdminListBindings(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorAdminBindings) { option (google.api.http) = {get:"/api/v1/admin/accelerator/bindings"}; }
   rpc AdminGetCapacity(catalog.service.v1.AcceleratorVersionRequest) returns (catalog.service.v1.AcceleratorCapacity) { option (google.api.http) = {get:"/api/v1/admin/accelerator/capacity"}; }
 }
-// JWT tenant user, active tenant, ACCELERATOR plan module, current role
-// permission and downstream delegation grant are all required.
+// Governance requires a JWT tenant user, active tenant, ACCELERATOR plan module
+// and current role permission. Accelerator enforces trusted tenant isolation.
 service AcceleratorService {
   rpc ListProfiles(catalog.service.v1.AcceleratorTenantPageRequest) returns (catalog.service.v1.AcceleratorProfiles) { option (google.api.http) = {get:"/api/v1/accelerator/profiles"}; }
   rpc GetProfile(catalog.service.v1.AcceleratorTenantVersionRequest) returns (catalog.service.v1.AcceleratorProfile) { option (google.api.http) = {get:"/api/v1/accelerator/profiles/{profile_id}"}; }

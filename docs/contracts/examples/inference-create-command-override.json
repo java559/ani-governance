@@ -1,14 +1,13 @@
 {
   "data": {
-    "idempotency_key": "req-001",
+    "idempotency_key": "20000000-0000-4000-8000-000000000001",
     "name": "qwen-inference",
-    "model_version_id": "version-1",
+    "model_version_id": "30000000-0000-4000-8000-000000000001",
     "served_model_name": "qwen2.5-1.5b-instruct",
     "engine_image": "registry.example/vllm:latest",
     "engine_type": "vllm",
     "command": "exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096",
-    "cpu": "8",
-    "memory": "32Gi",
-    "replicas": 1
+    "replicas": 1,
+    "preset_id": "40000000-0000-4000-8000-000000000001"
   }
 }

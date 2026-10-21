@@ -160,7 +160,7 @@ func TestPlanModuleRepoSqlite_ListModulesByPlanId(t *testing.T) {
 
 	modulesA, err := repo.ListModulesByPlanId(ctx, planA.ID)
 	require.NoError(t, err)
-	require.Equal(t, map[identityV1.Module]bool{identityV1.Module_DASHBOARD: true, identityV1.Module_INSTANCE: true, identityV1.Module_MODEL: true, identityV1.Module_INFERENCE: true}, modulesA, "catalog entitlement must preserve existing plan bindings")
+	require.Equal(t, map[identityV1.Module]bool{identityV1.Module_DASHBOARD: true, identityV1.Module_INSTANCE: true, identityV1.Module_MODEL: true, identityV1.Module_INFERENCE: true}, modulesA, "active inference bindings must remain in the whitelist")
 	preserved, err := entClient.Client().PlanModule.Query().Where(planmodule.HasPlanWith(plan.IDEQ(planA.ID)), planmodule.ModuleEQ(planmodule.Module("INFERENCE"))).Exist(ctx)
 	require.NoError(t, err)
 	require.True(t, preserved, "retiring the route must retain historical plan bindings")

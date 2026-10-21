@@ -1,6 +1,6 @@
 // Package permcode 承载权限码规范（docs/contracts/permission-code.md）的运行时查表层。
 //
-// 架构决策（实施文档 §B3.3/§B4/§B8.3）：管理面 180 条与六域/Quota 94 条的期望码
+// 架构决策（实施文档 §B3.3/§B4/§B8.3）：管理面 190 条与各业务域/Quota 119 条的期望码
 // 已在生成期产出、经人工评审后固化进权威表；运行时只按 (method, path) 查表取码，
 // 不重新执行推导。查不到即"缺项"，报错停止。
 //
@@ -254,5 +254,5 @@ func SplitKey(k string) (method, path string) {
 // ManagementCount 返回管理面权威表条目数（供 dry-run 摘要与测试）。
 func ManagementCount() int { return len(managementOperations) }
 
-// CapabilityCount 返回六域/Quota 权威表条目数。
+// CapabilityCount 返回各业务域/Quota 权威表条目数。
 func CapabilityCount() int { return len(capabilityOperations) }

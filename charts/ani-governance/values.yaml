@@ -24,6 +24,10 @@ serviceAccount:
   create: true
   annotations: {}
   name: ""
+rbac:
+  # The server reads the registered Volcano scheduling configuration and
+  # validates scheduling options through the Kubernetes API.
+  create: true
 podAnnotations: {}
 podLabels: {}
 podSecurityContext:
@@ -103,6 +107,13 @@ bootstrap:
 # API 增量同步按 docs/deployment.md 显式预览、执行，不随升级自动授权。
 
 downstream:
+  inference:
+    enabled: false
+    address: ""
+    serverName: ""
+    caSecret: ""
+    caKey: ca.crt
+    clientCertificateSecret: governance-client-tls
   model:
     enabled: false
     address: ""

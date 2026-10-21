@@ -30,5 +30,5 @@
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestInstanceCurrentAuthorizationOriginalReplayAndOwnerRelease"},
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestGpuCurrentInstanceContractRejectsRetiredEnvelope"},
   {"Package":"go-wind-admin/app/admin/service/internal/service","Test":"TestInstanceConfigurationQueryAcceptsOnlyCurrentContract"},
-  {"Package":"go-wind-admin/app/admin/service/internal/server","Test":"TestNewRestServerOmitsDeferredInferenceManagement"}
+  {"Package":"go-wind-admin/app/admin/service/internal/server","Test":"TestNewRestServerRegistersInferenceManagement"}
 ]

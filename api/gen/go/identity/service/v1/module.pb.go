@@ -40,7 +40,7 @@ const (
 	Module_MODEL              Module = 11 // 模型目录
 	Module_ACCELERATOR        Module = 13 // GPU supply and tenant read views
 	Module_IMAGE              Module = 14 // Registered container images and restricted publishing
-	Module_INFERENCE          Module = 15 // Compute catalog entitlement only; inference management remains deferred.
+	Module_INFERENCE          Module = 15 // Inference service management
 	Module_INSTANCE           Module = 16 // GPU container instances, separate current action grants
 )
 

@@ -54,16 +54,6 @@ message ImportTask {
   google.protobuf.Timestamp completed_at = 11 [json_name = "completed_at"];
 }
 
-message CursorPage {
-  int32 limit = 1;
-  string cursor = 2;
-}
-
-message CursorPageMeta {
-  string next_cursor = 1 [json_name = "next_cursor"];
-  bool has_more = 2 [json_name = "has_more"];
-}
-
 message CreateModelData {
   string name = 1;
   string display_name = 2 [json_name = "display_name"];
@@ -80,14 +70,17 @@ message GetModelResponse { Model model = 1; }
 
 message ListModelsRequest {
   string status = 1;
-  CursorPage page = 2;
+  reserved 2;
   string keyword = 3;
   string source = 4;
   string capability = 5;
+  optional int32 page = 6;
+  optional int32 page_size = 7 [json_name = "pageSize"];
 }
 message ListModelsResponse {
-  repeated Model models = 1;
-  CursorPageMeta meta = 2;
+  reserved 1, 2;
+  repeated Model items = 3;
+  int64 total = 4;
 }
 
 message SearchExternalModelsRequest {
@@ -96,7 +89,9 @@ message SearchExternalModelsRequest {
   string owner = 3;
   string task = 4;
   string library = 5;
-  CursorPage page = 6;
+  reserved 6;
+  optional int32 page = 7;
+  optional int32 page_size = 8 [json_name = "pageSize"];
 }
 message ExternalModelCandidate {
   string source = 1;
@@ -110,8 +105,9 @@ message ExternalModelCandidate {
   google.protobuf.Timestamp updated_at = 9 [json_name = "updated_at"];
 }
 message SearchExternalModelsResponse {
-  repeated ExternalModelCandidate candidates = 1;
-  CursorPageMeta meta = 2;
+  reserved 1, 2;
+  repeated ExternalModelCandidate items = 3;
+  bool has_more = 5 [json_name = "hasMore"];
 }
 
 message DeleteModelRequest { string model_id = 1 [json_name = "model_id"]; }
@@ -181,11 +177,14 @@ message GetModelVersionResponse {
 
 message ListModelVersionsRequest {
   string model_id = 1 [json_name = "model_id"];
-  CursorPage page = 2;
+  reserved 2;
+  optional int32 page = 3;
+  optional int32 page_size = 4 [json_name = "pageSize"];
 }
 message ListModelVersionsResponse {
-  repeated ModelVersion versions = 1;
-  CursorPageMeta meta = 2;
+  reserved 1, 2;
+  repeated ModelVersion items = 3;
+  int64 total = 4;
 }
 
 message ImportModelData {
@@ -200,7 +199,54 @@ message ImportModelData {
 message ImportModelRequest { ImportModelData data = 1; }
 message ImportModelResponse { ImportTask task = 1; }
 
+// ImportModelBundleRequest creates the model, version and remote import task
+// in one idempotent Model-service operation. Tenant identity is resolved by
+// the Governance BFF and is intentionally absent from this public DTO.
+message ImportModelBundleModelData {
+  string name = 1;
+  string display_name = 2 [json_name = "display_name"];
+  string description = 3;
+  repeated string capabilities = 4;
+  string external_model_id = 5 [json_name = "external_model_id"];
+}
+
+message ImportModelBundleVersionData {
+  string version = 1;
+  string format = 2;
+  string engine_type = 3 [json_name = "engine_type"];
+  string engine_image = 4 [json_name = "engine_image"];
+  string startup_command = 5 [json_name = "startup_command"];
+}
+
+message ImportModelBundleSourceData {
+  string provider = 1;
+  string repo_id = 2 [json_name = "repo_id"];
+  string revision = 3;
+}
+
+message ImportModelBundleData {
+  string idempotency_key = 1 [json_name = "idempotency_key"];
+  ImportModelBundleModelData model = 2;
+  ImportModelBundleVersionData version = 3;
+  ImportModelBundleSourceData source = 4;
+}
+
+message ImportModelBundleRequest { ImportModelBundleData data = 1; }
+
+message ImportModelBundleResponse {
+  Model model = 1;
+  ModelVersion version = 2;
+  ImportTask task = 3;
+}
+
 message GetImportTaskRequest { string task_id = 1 [json_name = "task_id"]; }
 message GetImportTaskResponse { ImportTask task = 1; }
+message GetImportTaskLogsRequest { string task_id = 1 [json_name = "task_id"]; }
+message GetImportTaskLogsResponse {
+  string task_id = 1 [json_name = "task_id"];
+  string status = 2;
+  string logs = 3;
+  bool available = 4;
+}
 message RetryImportTaskRequest { string task_id = 1 [json_name = "task_id"]; }
 message RetryImportTaskResponse { ImportTask task = 1; }

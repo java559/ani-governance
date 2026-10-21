@@ -428,18 +428,33 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 		require.True(t, balance.Balanced)
 		require.Zero(t, balance.OccupiedUnits)
 	}
-	// Terminal acceptance reads only immutable references/hash and original receipts.
-	// An offline audit payload is deliberately not a runnable new-contract snapshot.
-	updated, e := c.DB().ExecContext(sys, "UPDATE sys_quota_operations SET canonical_request=$1 WHERE tenant_id=$2 AND operation_id=$3", `{"offline_audit":true}`, tenant.ID, first.OperationID)
-	require.NoError(t, e)
-	auditRows, e := updated.RowsAffected()
-	require.NoError(t, e)
-	require.EqualValues(t, 1, auditRows)
+	// Terminal replay keeps the original identity/charges without current
+	// resolution, while every stored command must still satisfy its codec.
+	terminalResourceCalls, terminalPlanCalls := resource.calls, plans.calls
 	require.NoError(t, c.Client().UserRole.UpdateOneID(membership.ID).SetStatus(userrole.StatusActive).Exec(sys))
 	terminal, e := acceptance.AcceptGpuCreate(requestCtx, key, nil, public)
 	require.NoError(t, e)
 	require.True(t, terminal.Replayed)
 	require.Equal(t, first.OperationID, terminal.OperationID)
 	require.Equal(t, first.ResourceID, terminal.ResourceID)
+	require.Equal(t, first.ChargeIDs, terminal.ChargeIDs)
+	originalCanonical := operation.CanonicalRequest
+	updated, e := c.DB().ExecContext(sys, "UPDATE sys_quota_operations SET canonical_request=$1 WHERE tenant_id=$2 AND operation_id=$3", `{"offline_audit":true}`, tenant.ID, first.OperationID)
+	require.NoError(t, e)
+	auditRows, e := updated.RowsAffected()
+	require.NoError(t, e)
+	require.EqualValues(t, 1, auditRows)
+	_, e = acceptance.AcceptGpuCreate(requestCtx, key, nil, public)
+	require.Error(t, e, "a terminal charge must not bypass original command validation")
+	_, e = c.DB().ExecContext(sys, "UPDATE sys_quota_operations SET canonical_request=$1 WHERE tenant_id=$2 AND operation_id=$3", originalCanonical, tenant.ID, first.OperationID)
+	require.NoError(t, e)
+	terminal, e = acceptance.AcceptGpuCreate(requestCtx, key, nil, public)
+	require.NoError(t, e)
+	require.True(t, terminal.Replayed)
+	require.Equal(t, first.OperationID, terminal.OperationID)
+	require.Equal(t, first.ResourceID, terminal.ResourceID)
+	require.Equal(t, first.ChargeIDs, terminal.ChargeIDs)
+	require.Equal(t, terminalResourceCalls, resource.calls, "terminal replay must not resolve current resources")
+	require.Equal(t, terminalPlanCalls, plans.calls, "terminal replay must not resolve another GPU plan")
 
 }

@@ -42,8 +42,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// JWT platform user, current role permission and downstream exact actor/action/
-// cluster grant are all required. There is no implicit tenant-zero grant.
+// Governance requires a JWT platform user and current role permission.
+// Accelerator validates the service RPC and its provider-managed cluster scope.
 type AcceleratorAdminServiceClient interface {
 	ListClusters(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorClusters, error)
 	RegisterCluster(ctx context.Context, in *v1.RegisterAcceleratorClusterRequest, opts ...grpc.CallOption) (*v1.AcceleratorCluster, error)
@@ -224,8 +224,8 @@ func (c *acceleratorAdminServiceClient) AdminGetCapacity(ctx context.Context, in
 // All implementations must embed UnimplementedAcceleratorAdminServiceServer
 // for forward compatibility.
 //
-// JWT platform user, current role permission and downstream exact actor/action/
-// cluster grant are all required. There is no implicit tenant-zero grant.
+// Governance requires a JWT platform user and current role permission.
+// Accelerator validates the service RPC and its provider-managed cluster scope.
 type AcceleratorAdminServiceServer interface {
 	ListClusters(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorClusters, error)
 	RegisterCluster(context.Context, *v1.RegisterAcceleratorClusterRequest) (*v1.AcceleratorCluster, error)
@@ -675,8 +675,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// JWT tenant user, active tenant, ACCELERATOR plan module, current role
-// permission and downstream delegation grant are all required.
+// Governance requires a JWT tenant user, active tenant, ACCELERATOR plan module
+// and current role permission. Accelerator enforces trusted tenant isolation.
 type AcceleratorServiceClient interface {
 	ListProfiles(ctx context.Context, in *v1.AcceleratorTenantPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfiles, error)
 	GetProfile(ctx context.Context, in *v1.AcceleratorTenantVersionRequest, opts ...grpc.CallOption) (*v1.AcceleratorProfile, error)
@@ -769,8 +769,8 @@ func (c *acceleratorServiceClient) ListBindings(ctx context.Context, in *v1.Acce
 // All implementations must embed UnimplementedAcceleratorServiceServer
 // for forward compatibility.
 //
-// JWT tenant user, active tenant, ACCELERATOR plan module, current role
-// permission and downstream delegation grant are all required.
+// Governance requires a JWT tenant user, active tenant, ACCELERATOR plan module
+// and current role permission. Accelerator enforces trusted tenant isolation.
 type AcceleratorServiceServer interface {
 	ListProfiles(context.Context, *v1.AcceleratorTenantPageRequest) (*v1.AcceleratorProfiles, error)
 	GetProfile(context.Context, *v1.AcceleratorTenantVersionRequest) (*v1.AcceleratorProfile, error)

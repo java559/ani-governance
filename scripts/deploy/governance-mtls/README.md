@@ -3,9 +3,9 @@
 Governance 为已接入的租户业务验证登录、租户、套餐和接口权限，
 再用自己的服务身份调用对应领域服务。本目录是现有 Network DNS 客户端身份的
 证书申请与部署挂载参考，接入步骤见 [业务服务接入指南](../../../docs/service-integration.md)。
-其他当前调用链的身份与证书要求以各自合同为准；GPU 链的 URI/DNS 差异见
-[GPU owner 接入指南](../../../docs/contracts/gpu-owner-integration-guide.md#4-删除与完整释放)，
-不能把此 DNS 示例直接用于 Gov → Accelerator。Gov 的 Inference 管理对接本期延期，
+其他当前调用链的身份与证书要求以各自合同为准。Gov → Accelerator 同样要求唯一 DNS
+客户端身份 `ani-governance`；CA、服务器 DNS、挂载与旧 URI 证书的切换须按
+[业务服务接入指南](../../../docs/service-integration.md#current-client-contracts)配套准备，不直接套用 Network 部署补丁。Gov 的 Inference 管理对接本期延期，
 当前不部署其客户端身份；后续重新对接时单独核对身份合同。
 
 > **Model 已于 2026-09-21 暂摘**：`ANI_MODEL_*` 环境变量与 `model-trust` 卷已从

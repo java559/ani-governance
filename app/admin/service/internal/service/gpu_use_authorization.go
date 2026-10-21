@@ -38,9 +38,10 @@ func authorizeGpuBusiness(ctx context.Context, p *auth.Principal, usage compute.
 }
 
 // TRAINING shares this rule for ordinary training and fine-tuning. Only the
-// container adapter is wired; the helper does not register another consumer.
+// container and Inference adapters are wired; purpose support alone never
+// registers or authorizes an owner.
 func gpuUsePurpose(usage compute.Usage) bool {
-	return usage == compute.Usage_CONTAINER_INSTANCE || usage == compute.Usage_TRAINING
+	return usage == compute.Usage_CONTAINER_INSTANCE || usage == compute.Usage_TRAINING || usage == compute.Usage_INFERENCE
 }
 
 func gpuUsePrincipalMatches(ctx context.Context, p *auth.Principal) bool {

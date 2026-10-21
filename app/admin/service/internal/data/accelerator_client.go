@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/asn1"
 	"fmt"
 	"os"
 	"strings"
@@ -13,13 +14,12 @@ import (
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-const GovernanceAcceleratorURI = "spiffe://ani.internal/service/ani-governance"
+const GovernanceAcceleratorDNS = "ani-governance"
 
 type AcceleratorClientConfig struct {
 	Address, ServerName, CAFile, CertFile, KeyFile string
@@ -48,7 +48,7 @@ func AcceleratorConfigFromEnv() (AcceleratorClientConfig, error) {
 }
 
 func NewAcceleratorClient(c AcceleratorClientConfig) (*AcceleratorClient, func(), error) {
-	if c.Address == "" || c.ServerName == "" || c.Timeout <= 0 {
+	if c.Address == "" || strings.TrimSpace(c.Address) != c.Address || c.ServerName == "" || strings.ContainsAny(c.ServerName, "*:/\\ \t\r\n") || c.Timeout <= 0 {
 		return nil, nil, fmt.Errorf("accelerator address, exact server DNS name and positive timeout required")
 	}
 	pem, err := os.ReadFile(c.CAFile)
@@ -67,8 +67,8 @@ func NewAcceleratorClient(c AcceleratorClientConfig) (*AcceleratorClient, func()
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(leaf.URIs) != 1 || leaf.URIs[0].String() != GovernanceAcceleratorURI {
-		return nil, nil, fmt.Errorf("accelerator client certificate requires unique exact Governance URI SAN")
+	if !acceleratorGovernanceCertificate(leaf) {
+		return nil, nil, fmt.Errorf("accelerator client certificate requires unique exact Governance DNS SAN")
 	}
 	var conn *grpc.ClientConn
 	interceptor := func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoke grpc.UnaryInvoker, opts ...grpc.CallOption) error {
@@ -78,13 +78,14 @@ func NewAcceleratorClient(c AcceleratorClientConfig) (*AcceleratorClient, func()
 		}
 		ctx, cancel := context.WithTimeout(metadata.NewOutgoingContext(ctx, md), c.Timeout)
 		defer cancel()
-		err = invoke(ctx, method, req, reply, cc, opts...)
-		if status.Code(err) == codes.DeadlineExceeded && cc.GetState() != connectivity.Ready {
-			return status.Error(codes.Unavailable, "accelerator transport unavailable")
-		}
-		return err
+		return invoke(ctx, method, req, reply, cc, opts...)
 	}
-	conn, err = grpc.NewClient(c.Address, grpc.WithDisableServiceConfig(), grpc.WithUnaryInterceptor(interceptor), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS13, RootCAs: roots, Certificates: []tls.Certificate{cert}, ServerName: c.ServerName})))
+	conn, err = grpc.NewClient(c.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithUnaryInterceptor(interceptor), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS13, RootCAs: roots, Certificates: []tls.Certificate{cert}, ServerName: c.ServerName, VerifyConnection: func(state tls.ConnectionState) error {
+		if len(state.VerifiedChains) == 0 || len(state.PeerCertificates) == 0 || !hasExactDNSName(state.PeerCertificates[0], c.ServerName) {
+			return fmt.Errorf("accelerator server exact DNS SAN mismatch")
+		}
+		return nil
+	}})))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -101,11 +102,11 @@ func acceleratorMetadata(method string, request any) (metadata.MD, error) {
 	invalid := func() (metadata.MD, error) {
 		return nil, status.Error(codes.PermissionDenied, "invalid accelerator delegation")
 	}
-	parts := strings.Split(method, "/")
-	if len(parts) != 3 {
+	kind := acceleratorMethodKind(method)
+	if kind == "" {
 		return invalid()
 	}
-	action := parts[2]
+	action := method[strings.LastIndexByte(method, '/')+1:]
 	if method == acc.AcceleratorUsageService_SyncGpuUsage_FullMethodName {
 		r, ok := request.(*acc.SyncGpuUsageRequest)
 		if !ok || r == nil || r.RequestId == "" || r.Projection == nil {
@@ -117,7 +118,7 @@ func acceleratorMetadata(method string, request any) (metadata.MD, error) {
 	var tenant, requestID string
 	switch r := request.(type) {
 	case interface{ GetMutation() *acc.AdminMutation }:
-		if !strings.HasPrefix(method, "/accelerator.v1.AcceleratorAdminService/") {
+		if kind != "admin" {
 			return invalid()
 		}
 		m := r.GetMutation()
@@ -127,7 +128,7 @@ func acceleratorMetadata(method string, request any) (metadata.MD, error) {
 		actor = m.Context.Actor
 		requestID = m.Context.RequestId
 	case interface{ GetContext() *acc.AdminRead }:
-		if !strings.HasPrefix(method, "/accelerator.v1.AcceleratorAdminService/") {
+		if kind != "admin" {
 			return invalid()
 		}
 		a := r.GetContext()
@@ -137,7 +138,7 @@ func acceleratorMetadata(method string, request any) (metadata.MD, error) {
 		actor = a.Actor
 		requestID = a.RequestId
 	case interface{ GetContext() *acc.TenantContext }:
-		if !strings.HasPrefix(method, "/accelerator.v1.AcceleratorCatalogService/") && !strings.HasPrefix(method, "/accelerator.v1.AcceleratorUsageService/") {
+		if kind != "tenant" {
 			return invalid()
 		}
 		t := r.GetContext()
@@ -162,4 +163,57 @@ func acceleratorMetadata(method string, request any) (metadata.MD, error) {
 		md.Set("x-ani-tenant-id", tenant)
 	}
 	return md, nil
+}
+
+// The trusted client only exposes registered Governance calls. A matching
+// service prefix or short method name never grants access to another RPC.
+func acceleratorMethodKind(method string) string {
+	switch method {
+	case acc.AcceleratorAdminService_RegisterCluster_FullMethodName,
+		acc.AcceleratorAdminService_ListClusters_FullMethodName,
+		acc.AcceleratorAdminService_CreatePool_FullMethodName,
+		acc.AcceleratorAdminService_ListPools_FullMethodName,
+		acc.AcceleratorAdminService_AdoptSupplyGroup_FullMethodName,
+		acc.AcceleratorAdminService_ListSupplyGroups_FullMethodName,
+		acc.AcceleratorAdminService_SetAdmission_FullMethodName,
+		acc.AcceleratorAdminService_CreateProfile_FullMethodName,
+		acc.AcceleratorAdminService_PreviewProfile_FullMethodName,
+		acc.AcceleratorAdminService_SetProfileState_FullMethodName,
+		acc.AcceleratorAdminService_DeleteProfile_FullMethodName,
+		acc.AcceleratorAdminService_AdminListProfiles_FullMethodName,
+		acc.AcceleratorAdminService_AdminListBindings_FullMethodName,
+		acc.AcceleratorAdminService_ListDevices_FullMethodName,
+		acc.AcceleratorAdminService_AdminGetCapacity_FullMethodName:
+		return "admin"
+	case acc.AcceleratorCatalogService_ListProfiles_FullMethodName,
+		acc.AcceleratorCatalogService_GetProfile_FullMethodName,
+		acc.AcceleratorCatalogService_ResolveGpuRequest_FullMethodName,
+		acc.AcceleratorCatalogService_GetCapacity_FullMethodName,
+		acc.AcceleratorCatalogService_CheckGpuFit_FullMethodName,
+		acc.AcceleratorUsageService_GetGpuUsage_FullMethodName,
+		acc.AcceleratorUsageService_ListGpuUsages_FullMethodName,
+		acc.AcceleratorUsageService_ListBindings_FullMethodName:
+		return "tenant"
+	case acc.AcceleratorUsageService_SyncGpuUsage_FullMethodName:
+		return "fact"
+	default:
+		return ""
+	}
+}
+
+// Inspect every GeneralName, including SAN types crypto/x509 does not expose.
+// A valid Governance identity contains exactly one DNS name and no other SAN.
+func acceleratorGovernanceCertificate(cert *x509.Certificate) bool {
+	if !governanceClientCertificate(cert) {
+		return false
+	}
+	for _, extension := range cert.Extensions {
+		if !extension.Id.Equal(asn1.ObjectIdentifier{2, 5, 29, 17}) {
+			continue
+		}
+		var names []asn1.RawValue
+		rest, err := asn1.Unmarshal(extension.Value, &names)
+		return err == nil && len(rest) == 0 && len(names) == 1 && names[0].Class == asn1.ClassContextSpecific && names[0].Tag == 2 && !names[0].IsCompound && string(names[0].Bytes) == GovernanceAcceleratorDNS
+	}
+	return false
 }

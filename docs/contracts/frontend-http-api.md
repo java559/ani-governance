@@ -2,7 +2,22 @@
 
 本规范定义经 Gov 向前端提供的 HTTP JSON 接口的请求、响应和分页规则。新增和修改接口遵循本规范；存量接口按明确范围迁移，状态在[接口集成登记](../interface-integration-register.md)维护。VPC 已实现下述页码协议，可作为其他服务的参考，不代表所有存量接口已经统一。
 
-当前不提供 `/api/v1/inference/...` 推理服务管理接口，包括普通及 GPU 推理的创建、列表/详情、操作查询、更新、启停/重启和删除。前端不得调用或展示这些管理能力；后续重新对接时另行发布接口合同。Model 管理和 Resource CPU/GPU 实例接口保持各自合同，推理数据面不属于此次管理接口范围。
+Governance BFF 当前提供 `/api/v1/inference/...` 推理服务管理接口，包括普通及 GPU 推理的创建、列表/详情、操作查询、更新、启停/重启和删除。业务管理请求直接访问 Governance；Higress 仅承载 OpenAI 兼容推理数据面（例如 `/v1/completions`），不得把这些 `/api/v1/...` 路由加入 Higress。Inference BFF 的列表请求使用 `page`/`pageSize`，响应使用 `items`/`total`；`total` 在 JSON 中是十进制字符串。
+
+## 推理服务管理接口
+
+当前注册的管理路由如下；写入请求仍遵循本规范的 `data` 请求体约定：
+
+- `POST /api/v1/inference/services`：创建服务。
+- `GET /api/v1/inference/services`：列表，可选 `status`、`capability`，分页使用 `page`/`pageSize`。
+- `GET /api/v1/inference/services/{resource_id}`：详情。
+- `POST /api/v1/inference/services/{data.resource_id}:update`：部分更新。
+- `POST /api/v1/inference/services/{data.resource_id}:delete`：删除。
+- `POST /api/v1/inference/services/{data.resource_id}:start`、`:stop`、`:restart`：生命周期操作。
+- `GET /api/v1/inference/operations/{operation_id}`：操作详情。
+- `GET /api/v1/inference/services/{resource_id}/operations`：服务操作列表，分页使用 `page`/`pageSize`。
+
+列表筛选在分页前执行；服务状态、能力和发布状态由 Governance 根据 Inference 的受信读结果映射，不能由前端把旧的 `running` 值直接推断为可调用。详情和列表均由 Governance BFF 鉴权并按租户隔离。
 
 ## 1 请求约定
 

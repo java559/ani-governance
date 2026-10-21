@@ -202,12 +202,29 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// 配额账本与持久化转发（QUOTA-GPU-LOCAL-01）
 	quotaLedgerRepo := data.NewQuotaLedgerRepo(ctx, entClient)
 	quotaRegistry := service.NewQuotaAdapterRegistry()
+	inferenceConfig, err := data.InferenceConfigFromEnv()
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	var inferenceClient service.InferenceOwnerClient
+	if inferenceConfig.Address != "" {
+		client, closeInference, err := data.NewInferenceClient(inferenceConfig)
+		if err != nil {
+			rollback()
+			return nil, nil, err
+		}
+		cleanups = append(cleanups, closeInference)
+		inferenceClient = client
+	}
+
 	instanceOwner, computeOwner, closeResource, err := data.NewResourceClientsFromEnv()
 	if err != nil {
 		rollback()
 		return nil, nil, err
 	}
 	cleanups = append(cleanups, closeResource)
+	inferenceBinding := service.NewInferenceComputeBinding(inferenceClient, data.NewInferenceAuthorizationRepo(entClient), modelClient, computeOwner)
 	observabilityClient, closeObservability, err := data.NewObservabilityClientFromEnv()
 	if err != nil {
 		rollback()
@@ -227,6 +244,12 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	instanceBinding := service.NewInstanceGpuBinding(instanceClient, data.NewInstanceAuthorizationRepo(entClient), os.Getenv("ANI_INSTANCE_CLUSTER_ID"), instanceScheduling)
 	if instanceClient != nil && data.InstanceModuleRegistered() {
 		if err = quotaRegistry.Register(instanceBinding); err != nil {
+			rollback()
+			return nil, nil, err
+		}
+	}
+	if inferenceClient != nil && data.InferenceModuleRegistered() {
+		if err = quotaRegistry.Register(inferenceBinding); err != nil {
 			rollback()
 			return nil, nil, err
 		}
@@ -355,6 +378,12 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	if acceleratorClient != nil {
 		gpuPlans = acceleratorClient.Catalog
 	}
+	inferenceAcceptance, err := service.NewGpuAcceptance(quotaLedgerRepo, quotaRegistry, tenantRepo, gpuPlans, inferenceBinding, quotaWorker)
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	inferenceService := service.NewInferenceServiceWithOwnerAndModel(inferenceAcceptance, inferenceClient, tenantRepo, modelClient)
 	modelService := service.NewModelService(modelClient, tenantRepo)
 	instanceAcceptance, err := service.NewGpuAcceptance(quotaLedgerRepo, quotaRegistry, tenantRepo, gpuPlans, instanceBinding, quotaWorker)
 	if err != nil {
@@ -425,6 +454,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		acceleratorService,
 		imageService,
 		modeldevService,
+		inferenceService,
 		modelService,
 		computeService,
 		instanceService,

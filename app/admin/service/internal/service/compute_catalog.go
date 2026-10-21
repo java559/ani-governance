@@ -12,8 +12,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/permcode"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"strconv"
 )
@@ -84,7 +82,7 @@ func (s *ComputePresetService) ListPresets(ctx context.Context, r *computeview.L
 		profileStates = states
 		if err != nil {
 			catalogStatus, reason = "UNAVAILABLE", "GPU_CATALOG_UNAVAILABLE"
-			if errors.Is(err, data.ErrActionAuthorizationDenied) || codes.PermissionDenied == status.Code(err) || codes.Unauthenticated == status.Code(err) {
+			if errors.Is(err, data.ErrActionAuthorizationDenied) {
 				catalogStatus, reason = "NO_PERMISSION", "GPU_CATALOG_NO_PERMISSION"
 			}
 		} else {

@@ -4,13 +4,17 @@ package service
 
 import (
 	"context"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	view "go-wind-admin/api/gen/go/compute/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/permission"
+	"go-wind-admin/app/admin/service/internal/data/ent/permissionapi"
 	"go-wind-admin/app/admin/service/internal/data/ent/planmodule"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
 	"go-wind-admin/app/admin/service/internal/data/ent/rolepermission"
@@ -20,7 +24,6 @@ import (
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/permcode"
-	"testing"
 )
 
 // Real Service + current RR authorization + persistent Ent state; only Resource
@@ -40,8 +43,16 @@ func TestComputeCatalogCurrentUsageAuthorizationPostgres(t *testing.T) {
 	require.NoError(t, err)
 	membership, err := c.Client().UserRole.Create().SetTenantID(tenant.ID).SetUserID(member.ID).SetRoleID(r.ID).SetStatus(userrole.StatusActive).Save(sys)
 	require.NoError(t, err)
-	route, err := c.Client().Api.Create().SetModule("ComputePresetService").SetOperation("ComputePresetService_ListPresets").SetPath(data.ComputeCatalogPath).SetMethod("GET").SetScope(api.ScopeAdmin).SetBusinessModule(api.BusinessModuleSystem).SetStatus(api.StatusOn).Save(sys)
+	// API/permission catalogs are global and survive tenant fixture resets.
+	route, err := c.Client().Api.Query().Where(api.ModuleEQ("ComputePresetService"), api.PathEQ(data.ComputeCatalogPath), api.MethodEQ("GET"), api.ScopeEQ(api.ScopeAdmin)).Only(sys)
+	if ent.IsNotFound(err) {
+		route, err = c.Client().Api.Create().SetModule("ComputePresetService").SetOperation("ComputePresetService_ListPresets").SetPath(data.ComputeCatalogPath).SetMethod("GET").SetScope(api.ScopeAdmin).SetBusinessModule(api.BusinessModuleSystem).SetStatus(api.StatusOn).Save(sys)
+	}
 	require.NoError(t, err)
+	require.NotNil(t, route.BusinessModule)
+	require.Equal(t, api.BusinessModuleSystem, *route.BusinessModule)
+	require.NotNil(t, route.Status)
+	require.Equal(t, api.StatusOn, *route.Status)
 	gate := data.NewComputeCatalogAuthorizationRepo(c)
 	checker := data.NewTenantAccessCheckerImpl(testutil.NewBootstrapContext(nil), c).(auth.TenantRequestAccessChecker)
 	usages := []string{"CONTAINER_INSTANCE", "TRAINING", "INFERENCE"}
@@ -58,9 +69,18 @@ func TestComputeCatalogCurrentUsageAuthorizationPostgres(t *testing.T) {
 		t.Run(usage, func(t *testing.T) {
 			module, code, _ := permcode.ComputeCatalogGrant(usage)
 			entitlementID := entitlements[usage]
-			grant, err := c.Client().Permission.Create().SetName(code).SetCode(code).SetStatus(permission.StatusOn).Save(sys)
+			grant, err := c.Client().Permission.Query().Where(permission.CodeEQ(code)).Only(sys)
+			if ent.IsNotFound(err) {
+				grant, err = c.Client().Permission.Create().SetName(code).SetCode(code).SetStatus(permission.StatusOn).Save(sys)
+			}
 			require.NoError(t, err)
-			require.NoError(t, c.Client().PermissionApi.Create().SetPermissionID(grant.ID).SetAPIID(route.ID).Exec(sys))
+			require.NotNil(t, grant.Status)
+			require.Equal(t, permission.StatusOn, *grant.Status)
+			linked, err := c.Client().PermissionApi.Query().Where(permissionapi.PermissionIDEQ(grant.ID), permissionapi.APIIDEQ(route.ID)).Exist(sys)
+			require.NoError(t, err)
+			if !linked {
+				require.NoError(t, c.Client().PermissionApi.Create().SetPermissionID(grant.ID).SetAPIID(route.ID).Exec(sys))
+			}
 			relation, err := c.Client().RolePermission.Create().SetTenantID(tenant.ID).SetRoleID(r.ID).SetPermissionID(grant.ID).SetStatus(rolepermission.StatusOn).SetEffect(rolepermission.EffectAllow).Save(sys)
 			require.NoError(t, err)
 			require.NoError(t, gate.AuthorizeComputeCatalog(sys, tenant.ID, member.ID, usage))

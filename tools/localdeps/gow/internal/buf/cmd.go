@@ -197,6 +197,7 @@ var activeGenConfigs = []string{
 	"buf.aksk.gen.yaml",
 	"buf.bootstrap.conf.gen.yaml",
 	"buf.gen.yaml",
+	"buf.inference.gen.yaml",
 	"buf.modeldev.gen.yaml",
 	"buf.network.gen.yaml",
 	"buf.pagination.gen.yaml",

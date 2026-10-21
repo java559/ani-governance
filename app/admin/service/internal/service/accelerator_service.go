@@ -133,10 +133,11 @@ func mapAcceleratorError(err error) error {
 	switch code {
 	case codes.InvalidArgument:
 		httpCode = 400
-	case codes.Unauthenticated:
-		httpCode = 401
-	case codes.PermissionDenied:
-		httpCode = 403
+	case codes.Unauthenticated, codes.PermissionDenied:
+		// User permissions were already checked by Governance. A rejected
+		// trusted service call is a dependency failure, not a user grant.
+		httpCode = 503
+		reason = "ACCELERATOR_SERVICE_ACCESS_DENIED"
 	case codes.NotFound:
 		httpCode = 404
 	case codes.AlreadyExists, codes.Aborted:

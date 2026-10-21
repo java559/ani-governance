@@ -10,7 +10,7 @@
 
 ## 1 范围和两类 code
 
-覆盖 Network 租户、Network 平台、Image、Accelerator、Instance 和 Model 的现行接口，以及前缀迁移涉及的管理接口。Inference 管理接口本期整体下线，相关路由已从现行能力映射撤下，后续重新对接另行登记。Quota 使用独立业务域；ModelDev 等其他业务接口遵循本规范的映射要求，不能因为原地址为 `/admin/v1` 就按普通管理 CRUD 处理。
+覆盖 Network 租户、Network 平台、Image、Accelerator、Instance 和 Model 的现行接口，以及前缀迁移涉及的管理接口。Inference 管理接口现由 Governance BFF 提供，相关路由和 `INFERENCE=15` 模块已登记在现行能力映射中；权限仍需显式同步和授权。Quota 使用独立业务域；ModelDev 等其他业务接口遵循本规范的映射要求，不能因为原地址为 `/admin/v1` 就按普通管理 CRUD 处理。
 
 | 名称 | 载体 | 含义 |
 | --- | --- | --- |
@@ -76,7 +76,7 @@
 
 只有被明确登记为普通管理 CRUD 的接口才允许推导。推导结果仍需与规范期望码核对后才能写入目录。以下接口不能走未知项回退：
 
-- 六个接口面的业务资源及其命令。
+- 各接口面的业务资源及其命令。
 - ModelDev 等涉及真实业务生命周期的接口。
 - 管理面的 sync、restart、start、stop、control、reset 等特殊动作。
 - 独立认证的公开/会话接口，以及 SSE 等特殊传输入口。
@@ -115,9 +115,9 @@
 
 代码中的 operation policy、注册 SQL 和规范附录必须一致。现有表能够承担对应业务域的权威定义时直接复用；其他输入从该定义生成或进行一致性检查，避免再维护多份独立手写清单。附录与本规范已一并采纳为权威期望值；即便已采纳，落地仍须走已审查的对齐步骤，冲突或不一致时停止并报错，不得自动覆盖现存数据。
 
-### 六个接口面和 Quota 的完整显式目录
+### 各接口面和 Quota 的完整显式目录
 
-同目录 [业务能力映射附录](permission-code-capability-map.tsv) 逐条记录现行明确注册码，并列出目标路径、业务域、主体范围、业务模块、来源和 SHA。原始来源 SHA 保留各行编制依据；当前附录已撤下 Inference 管理行，Model 来源改为独立的 Model 登记脚本。计数为：
+同目录 [业务能力映射附录](permission-code-capability-map.tsv) 逐条记录现行明确注册码，并列出目标路径、业务域、主体范围、业务模块、来源和 SHA。原始来源 SHA 保留各行编制依据；Model 与 Inference 来源分别由各自登记脚本维护。计数为：
 
 | 接口面 | 条目 | 规范码来源 | 目标要求 |
 | --- | --- | --- | --- |
@@ -127,10 +127,11 @@
 | Accelerator 平台/租户 | 22 | register-accelerator-permissions.sql | 明确平台与租户读取及各个命令，不能合成 accelerator:view/create |
 | Quota 自助 | 1 | 同一 Accelerator 注册脚本 | 保持 quota:account:self-read；business_module 为 TENANT |
 | Instance | 9 | register-instance-permissions.sql | list/read、operation/preset读取、create/start/stop/delete/exec分别登记 |
-| Model | 14 | register-model-permissions.sql | 保持 model:service:read/manage，不恢复推理管理入口 |
-| 合计 | 109 | 现行能力映射附录 | 所有条目均须被实际聚合入口接入并通过校验 |
+| Model | 14 | register-model-permissions.sql | 保持 model:service:read/manage |
+| Inference | 10 | register-inference-permissions.sql | 推理管理由 Governance BFF 提供，Higress 不承载 `/api/v1/...` |
+| 合计 | 119 | 现行能力映射附录 | 所有条目均须被实际聚合入口接入并通过校验 |
 
-这 109 条对应 96 个不同权限码。`network:snat:get` 有意用于 VPC SNAT 与 SNAT binding 两种读取，Model 读取和管理分别聚合多个接口，附录已记录这些能力。其他方法/目标路径均唯一。这是接口面的现有显式能力清单，不是数据库现状快照，也不包含全部管理或其他业务接口。未实现的覆盖接入属于本规范落地缺项，不能同时声明“全域收敛完成”并把相应接口面延期。
+这 119 条对应 103 个不同权限码。`network:snat:get` 有意用于 VPC SNAT 与 SNAT binding 两种读取，Model 与 Inference 的读取和管理分别聚合多个接口，附录已记录这些能力。其他方法/目标路径均唯一。这是接口面的现有显式能力清单，不是数据库现状快照，也不包含全部管理或其他业务接口。未实现的覆盖接入属于本规范落地缺项，不能同时声明“全域收敛完成”并把相应接口面延期。
 
 主体范围字段用于描述已有平台/租户/本人约束，不能通过码字符串或 URL 前缀自动赋予平台身份、跨租户范围或套餐许可。BOSS/Console 可以共用 path，仍按可信主体和现有授权边界检查。
 

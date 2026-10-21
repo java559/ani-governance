@@ -35,12 +35,16 @@ func TestAcceleratorPublicViewsAreStructurallyRedacted(t *testing.T) {
 }
 
 func TestAcceleratorErrorMappingKeepsReasonAndDropsRawContent(t *testing.T) {
-	for code, want := range map[codes.Code]int32{codes.Unauthenticated: 401, codes.PermissionDenied: 403, codes.NotFound: 404, codes.InvalidArgument: 400, codes.AlreadyExists: 409, codes.Aborted: 409, codes.FailedPrecondition: 412, codes.Unavailable: 503, codes.DeadlineExceeded: 504, codes.Internal: 503, codes.Unknown: 503} {
+	for code, want := range map[codes.Code]int32{codes.Unauthenticated: 503, codes.PermissionDenied: 503, codes.NotFound: 404, codes.InvalidArgument: 400, codes.AlreadyExists: 409, codes.Aborted: 409, codes.FailedPrecondition: 412, codes.Unavailable: 503, codes.DeadlineExceeded: 504, codes.Internal: 503, codes.Unknown: 503} {
 		st, e := status.New(code, "secret-dsn provider-raw token").WithDetails(&errdetails.ErrorInfo{Reason: "SOURCE_UNKNOWN", Domain: "accelerator"})
 		require.NoError(t, e)
 		mapped := errors.FromError(mapAcceleratorError(st.Err()))
 		require.Equal(t, want, mapped.Code)
-		require.Equal(t, "SOURCE_UNKNOWN", mapped.Reason)
+		if code == codes.Unauthenticated || code == codes.PermissionDenied {
+			require.Equal(t, "ACCELERATOR_SERVICE_ACCESS_DENIED", mapped.Reason)
+		} else {
+			require.Equal(t, "SOURCE_UNKNOWN", mapped.Reason)
+		}
 		require.NotContains(t, mapped.Message, "secret")
 	}
 	st, e := status.New(codes.Internal, "raw").WithDetails(&errdetails.ErrorInfo{Reason: "postgres://secret"})

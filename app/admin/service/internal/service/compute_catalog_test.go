@@ -210,8 +210,8 @@ func TestComputeCatalogFaultsPreserveSafeCPUPage(t *testing.T) {
 		status          string
 		catalogCalls    int
 	}{
-		{name: "catalog denied", rpcErr: status.Error(codes.PermissionDenied, "private ACC tenant message"), status: "NO_PERMISSION", catalogCalls: 1},
-		{name: "catalog unauthenticated", rpcErr: status.Error(codes.Unauthenticated, "private service identity"), status: "NO_PERMISSION", catalogCalls: 1},
+		{name: "catalog denied", rpcErr: status.Error(codes.PermissionDenied, "private ACC tenant message"), status: "UNAVAILABLE", catalogCalls: 1},
+		{name: "catalog unauthenticated", rpcErr: status.Error(codes.Unauthenticated, "private service identity"), status: "UNAVAILABLE", catalogCalls: 1},
 		{name: "catalog timeout", rpcErr: status.Error(codes.DeadlineExceeded, "10.0.0.1 credential"), status: "UNAVAILABLE", catalogCalls: 1},
 		{name: "gate denied", gateErr: data.ErrActionAuthorizationDenied, status: "NO_PERMISSION"},
 		{name: "gate unavailable", gateErr: data.ErrActionAuthorizationUnavailable, status: "UNAVAILABLE"},

@@ -4,7 +4,9 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
 	_ "embed"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +19,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
+	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
+	protocol "github.com/zhangzhe-ctrl/ani-accelerator-service/pkg/gpuprotocol"
+	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
+	"go-wind-admin/app/admin/service/internal/commandcontract"
 	conf "go-wind-admin/pkg/localdeps/kratos-bootstrap/api/gen/go/conf/v1"
 	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
@@ -119,24 +125,43 @@ func gpuLedgerInput(t *testing.T, c *ent.Client, tid, pid uint32) *QuotaOccupyIn
 		require.NoError(t, c.PlanQuota.Create().SetPlanID(pid).SetQuotaCode(code).SetQuotaValue(100).Exec(ctx))
 	}
 	in := occupyInputForResourceTenant(tid, c.Tenant.GetX(ctx, tid).ResourceTenantID, "actor", uuid.NewString(), 2)
-	in.OwnerService = "ani-resource-service"
-	in.Action = "GPU_CREATE"
+
+	// This fixture exercises the current registered instance codec, including the
+	// mixed immutable vector. A schema marker without its business snapshot is
+	// deliberately not a valid managed command.
+	in.OwnerService = commandcontract.InstanceOwner
+	in.Action = commandcontract.InstanceCreateAction
+	in.InstanceContractVersion = CurrentInstanceContractVersion
 	in.Items = []QuotaOccupyItem{{"gpu.physical.count", 2}, {"storage.bytes", 10}}
-	blob, e := json.Marshal(map[string]any{"schema_version": 3, "quota_items": in.Items})
+	business := cpuConfigurationBusiness()
+	business.ComputeType = "gpu"
+	request := &acc.GpuRequest{ClusterId: business.ClusterId, PoolId: uuid.NewString(), ProfileId: uuid.NewString(), ProfileVersion: 1, Replicas: 1, DevicesPerReplica: 2, ContainerName: "workspace"}
+	execution := &acc.GpuExecution{SchedulerName: "volcano", QueueName: "gpu", RuntimeClassName: "nvidia", NodeSelector: map[string]string{"accelerator.ani.io/supply-group": uuid.NewString(), "accelerator.ani.io/model-key": "nvidia-tesla-t4", "accelerator.ani.io/baseline-id": uuid.NewString()}, PodAnnotations: map[string]string{"volcano.sh/vgpu-mode": "hami-core"}, Resources: map[string]string{"volcano.sh/vgpu-number": "2", "volcano.sh/vgpu-memory": "15360", "volcano.sh/vgpu-cores": "100"}}
+	var e error
+	execution.ExecutionDigest, e = protocol.GpuExecutionDigest(execution)
+	require.NoError(t, e)
+	business.GpuExecution = execution
+	business.GpuDisplay = &acc.GpuDisplay{ProfileId: request.ProfileId, ProfileVersion: request.ProfileVersion, ProfileName: "ledger whole GPU", Mode: acc.SupplyMode_WHOLE_EXCLUSIVE, ModelKey: "nvidia-tesla-t4"}
+	payload, e := res.CanonicalBusinessPayloadVersion(business, CurrentInstanceContractVersion)
+	require.NoError(t, e)
+	digest := sha256.Sum256(payload)
+	canonical := commandcontract.GpuCanonical{SchemaVersion: 3, InstanceContractVersion: CurrentInstanceContractVersion, GpuRequest: request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(digest[:]), MeteringVersion: commandcontract.GpuMeteringVersion, QuotaItems: []commandcontract.GpuQuotaItem{{QuotaCode: "gpu.physical.count", Units: 2}, {QuotaCode: "storage.bytes", Units: 10}}}
+	blob, e := commandcontract.CanonicalJSON(canonical)
+	require.NoError(t, e)
+	_, e = commandcontract.DecodeGpuCanonical(blob)
 	require.NoError(t, e)
 	in.CanonicalRequest = string(blob)
 	return in
 }
 func gpuDelete(t *testing.T, in *QuotaOccupyInput) *QuotaDeleteInput {
 	t.Helper()
-	var snapshot map[string]json.RawMessage
-	require.NoError(t, json.Unmarshal([]byte(in.CanonicalRequest), &snapshot))
-	// Resource DELETE freezes the observed version alongside the unchanged
-	// original CREATE snapshot, including for a local unsent cancellation.
-	snapshot["delete_expected_version"] = json.RawMessage("1")
-	canonical, err := json.Marshal(snapshot)
+	snapshot, err := commandcontract.DecodeGpuCanonical([]byte(in.CanonicalRequest))
 	require.NoError(t, err)
-	return &QuotaDeleteInput{TenantID: in.TenantID, ActorType: in.ActorType, ActorID: in.ActorID, OwnerService: in.OwnerService, Action: "GPU_DELETE", IdempotencyKey: uuid.NewString(), RequestHash: "delete-" + in.ResourceID + "-v1", ResourceID: in.ResourceID, CanonicalRequest: string(canonical)}
+	// Resource DELETE adds only its observed version to the same typed canonical.
+	snapshot.DeleteExpectedVersion = 1
+	canonical, err := commandcontract.CanonicalJSON(snapshot)
+	require.NoError(t, err)
+	return &QuotaDeleteInput{TenantID: in.TenantID, ActorType: in.ActorType, ActorID: in.ActorID, OwnerService: in.OwnerService, Action: commandcontract.InstanceDeleteAction, IdempotencyKey: uuid.NewString(), RequestHash: "delete-" + in.ResourceID + "-v1", ResourceID: in.ResourceID, CanonicalRequest: string(canonical)}
 }
 func gpuProjectionPayload(in *QuotaOccupyInput, id string, rev int64, hash string) string {
 	b, _ := json.Marshal(map[string]any{"ref": map[string]string{"tenant_id": in.ResourceTenantID, "owner_service": in.OwnerService, "resource_id": in.ResourceID, "create_operation_id": id}, "revision": rev, "state": rev, "payload_digest": hash})
@@ -257,13 +282,16 @@ func TestQuotaGpuDeleteReleaseAndProjectionRecovery(t *testing.T) {
 	storage.ResourceID = uuid.NewString()
 	storage.RequestHash = "separate-storage"
 	storage.CanonicalRequest = `{"resource":"storage"}`
+	storage.OwnerService = "ani-storage-service"
+	storage.Action = "STORAGE_CREATE"
+	storage.InstanceContractVersion = 0
 	storage.Items = []QuotaOccupyItem{{"storage.bytes", 10}}
 	storageOp, e := r.Occupy(ctx, &storage)
 	require.NoError(t, e)
 	storageCharges, e := r.GetChargesForOperation(ctx, tid, storageOp.OperationID)
 	require.NoError(t, e)
 	require.Len(t, storageCharges, 1)
-	out, e := r.Release(ctx, &QuotaReleaseInput{OwnerService: in.OwnerService, OperationID: storageOp.OperationID, ReleaseEventID: uuid.NewString(), Reason: "RESOURCE_RELEASED", PayloadHash: "nongpu-partial", PayloadJSON: `{"fixture":"independent-storage"}`, Items: []QuotaReleaseItemInput{{storageCharges[0].ChargeID, "storage.bytes", 3}}})
+	out, e := r.Release(ctx, &QuotaReleaseInput{OwnerService: storage.OwnerService, OperationID: storageOp.OperationID, ReleaseEventID: uuid.NewString(), Reason: "RESOURCE_RELEASED", PayloadHash: "nongpu-partial", PayloadJSON: `{"fixture":"independent-storage"}`, Items: []QuotaReleaseItemInput{{storageCharges[0].ChargeID, "storage.bytes", 3}}})
 	require.NoError(t, e)
 	require.EqualValues(t, 3, out[0].AppliedDelta)
 

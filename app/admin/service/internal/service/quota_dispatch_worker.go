@@ -10,6 +10,7 @@ import (
 	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 
+	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"go-wind-admin/app/admin/service/internal/data"
 )
 
@@ -175,7 +176,7 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 		createID = op.CreateOperationID
 	}
 	original, readErr := w.ledger.GetChargesForOperation(ctx, op.TenantID, createID)
-	if readErr != nil || (len(original) == 0 && !data.AllowsInstanceCPUCommand(op.OwnerService, op.Action, op.CanonicalRequest)) {
+	if readErr != nil {
 		w.deferInvalidCommand(ctx, op, "ORIGINAL_CHARGES_UNAVAILABLE")
 		return
 	}
@@ -201,10 +202,9 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 		CreateOperationID: op.CreateOperationID,
 		Charges:           charges,
 	}
-	if isGpuCanonical(cmd.CanonicalRequest) {
-		frozen, err := DecodeGpuCanonical(cmd.CanonicalRequest)
-		if err != nil || ValidateGpuCharges(frozen, cmd.Charges) != nil || op.OwnerService != InstanceOwner {
-			w.deferInvalidCommand(ctx, op, "ORIGINAL_GPU_COMMAND_INVALID")
+	if commandcontract.ManagedOwner(op.OwnerService) {
+		if _, err := validateDispatchCommand(op.OwnerService, cmd); err != nil {
+			w.deferInvalidCommand(ctx, op, "ORIGINAL_COMMAND_INVALID")
 			return
 		}
 	}

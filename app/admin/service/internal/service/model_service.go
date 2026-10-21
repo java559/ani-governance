@@ -29,7 +29,9 @@ type ModelOwnerClient interface {
 	DeleteModelVersion(context.Context, string, string, *modelv1.DeleteModelVersionRequest) (*modelv1.DeleteModelVersionResponse, error)
 	GetUploadURL(context.Context, string, string, *modelv1.GetUploadURLRequest) (*modelv1.GetUploadURLResponse, error)
 	ImportModel(context.Context, string, string, *modelv1.ImportModelRequest) (*modelv1.ImportTask, error)
+	ImportModelBundle(context.Context, string, string, *modelv1.ImportModelBundleRequest) (*modelv1.ImportModelBundleResponse, error)
 	GetImportTask(context.Context, string, string, *modelv1.GetImportTaskRequest) (*modelv1.GetImportTaskResponse, error)
+	GetImportTaskLogs(context.Context, string, string, *modelv1.GetImportTaskLogsRequest) (*modelv1.GetImportTaskLogsResponse, error)
 	RetryImportTask(context.Context, string, string, *modelv1.RetryImportTaskRequest) (*modelv1.RetryImportTaskResponse, error)
 	GetModelDownloadURL(context.Context, string, string, *modelv1.GetModelDownloadURLRequest) (*modelv1.GetModelDownloadURLResponse, error)
 }
@@ -111,26 +113,19 @@ func (s *ModelService) ListModels(ctx context.Context, in *catalogv1.ListModelsR
 	if err != nil {
 		return nil, err
 	}
-	var page *modelv1.CursorPageRequest
-	if in.Page != nil {
-		page = &modelv1.CursorPageRequest{Limit: in.Page.Limit, Cursor: in.Page.Cursor}
-	}
-	models, err := s.client.ListModels(ctx, tenant, actor, &modelv1.ListModelsRequest{Status: in.Status, Page: page, Keyword: in.Keyword, Source: in.Source, Capability: in.Capability})
+	models, err := s.client.ListModels(ctx, tenant, actor, &modelv1.ListModelsRequest{Status: in.Status, Page: in.Page, PageSize: in.PageSize, Keyword: in.Keyword, Source: in.Source, Capability: in.Capability})
 	if err != nil {
 		return nil, mapModelError(err)
 	}
-	if models == nil || len(models.Models) > 100 {
+	if models == nil || len(models.Items) > 100 {
 		return nil, modelInvalidReply()
 	}
-	out := &catalogv1.ListModelsResponse{Models: make([]*catalogv1.Model, 0, len(models.Models))}
-	for _, item := range models.Models {
+	out := &catalogv1.ListModelsResponse{Items: make([]*catalogv1.Model, 0, len(models.Items)), Total: models.Total}
+	for _, item := range models.Items {
 		if err := validateModelReply(item, tenant, ""); err != nil {
 			return nil, err
 		}
-		out.Models = append(out.Models, wireModel(item))
-	}
-	if models.Meta != nil {
-		out.Meta = &catalogv1.CursorPageMeta{NextCursor: models.Meta.NextCursor, HasMore: models.Meta.HasMore}
+		out.Items = append(out.Items, wireModel(item))
 	}
 	return out, nil
 }
@@ -143,32 +138,25 @@ func (s *ModelService) SearchExternalModels(ctx context.Context, in *catalogv1.S
 	if err != nil {
 		return nil, err
 	}
-	var page *modelv1.CursorPageRequest
-	if in.Page != nil {
-		page = &modelv1.CursorPageRequest{Limit: in.Page.Limit, Cursor: in.Page.Cursor}
-	}
 	reply, err := s.client.SearchExternalModels(ctx, tenant, actor, &modelv1.SearchExternalModelsRequest{
-		Source: in.Source, Keyword: in.Keyword, Owner: in.Owner, Task: in.Task, Library: in.Library, Page: page,
+		Source: in.Source, Keyword: in.Keyword, Owner: in.Owner, Task: in.Task, Library: in.Library, Page: in.Page, PageSize: in.PageSize,
 	})
 	if err != nil {
 		return nil, mapModelError(err)
 	}
-	if reply == nil || len(reply.Candidates) > 50 {
+	if reply == nil || len(reply.Items) > 50 {
 		return nil, modelInvalidReply()
 	}
-	out := &catalogv1.SearchExternalModelsResponse{Candidates: make([]*catalogv1.ExternalModelCandidate, 0, len(reply.Candidates))}
-	for _, candidate := range reply.Candidates {
+	out := &catalogv1.SearchExternalModelsResponse{Items: make([]*catalogv1.ExternalModelCandidate, 0, len(reply.Items)), HasMore: reply.HasMore}
+	for _, candidate := range reply.Items {
 		if candidate == nil || strings.TrimSpace(candidate.Source) == "" || strings.TrimSpace(candidate.RepoId) == "" || strings.TrimSpace(candidate.Name) == "" || strings.TrimSpace(candidate.Revision) == "" {
 			return nil, modelInvalidReply()
 		}
-		out.Candidates = append(out.Candidates, &catalogv1.ExternalModelCandidate{
+		out.Items = append(out.Items, &catalogv1.ExternalModelCandidate{
 			Source: candidate.Source, RepoId: candidate.RepoId, Name: candidate.Name, DisplayName: candidate.DisplayName,
 			Description: candidate.Description, Revision: candidate.Revision, SizeBytes: candidate.SizeBytes,
 			Tags: append([]string(nil), candidate.Tags...), UpdatedAt: candidate.UpdatedAt,
 		})
-	}
-	if reply.Meta != nil {
-		out.Meta = &catalogv1.CursorPageMeta{NextCursor: reply.Meta.NextCursor, HasMore: reply.Meta.HasMore}
 	}
 	return out, nil
 }
@@ -244,26 +232,19 @@ func (s *ModelService) ListModelVersions(ctx context.Context, in *catalogv1.List
 	if err != nil {
 		return nil, err
 	}
-	var page *modelv1.CursorPageRequest
-	if in.Page != nil {
-		page = &modelv1.CursorPageRequest{Limit: in.Page.Limit, Cursor: in.Page.Cursor}
-	}
-	reply, err := s.client.ListModelVersions(ctx, tenant, actor, &modelv1.ListModelVersionsRequest{ModelId: in.ModelId, Page: page})
+	reply, err := s.client.ListModelVersions(ctx, tenant, actor, &modelv1.ListModelVersionsRequest{ModelId: in.ModelId, Page: in.Page, PageSize: in.PageSize})
 	if err != nil {
 		return nil, mapModelError(err)
 	}
-	if reply == nil || len(reply.Versions) > 100 {
+	if reply == nil || len(reply.Items) > 100 {
 		return nil, modelInvalidReply()
 	}
-	out := &catalogv1.ListModelVersionsResponse{Versions: make([]*catalogv1.ModelVersion, 0, len(reply.Versions))}
-	for _, version := range reply.Versions {
+	out := &catalogv1.ListModelVersionsResponse{Items: make([]*catalogv1.ModelVersion, 0, len(reply.Items)), Total: reply.Total}
+	for _, version := range reply.Items {
 		if err := validateModelVersionReply(version); err != nil {
 			return nil, err
 		}
-		out.Versions = append(out.Versions, wireModelVersion(version))
-	}
-	if reply.Meta != nil {
-		out.Meta = &catalogv1.CursorPageMeta{NextCursor: reply.Meta.NextCursor, HasMore: reply.Meta.HasMore}
+		out.Items = append(out.Items, wireModelVersion(version))
 	}
 	return out, nil
 }
@@ -326,6 +307,40 @@ func (s *ModelService) ImportModel(ctx context.Context, in *catalogv1.ImportMode
 	return &catalogv1.ImportModelResponse{Task: wireImportTask(task)}, nil
 }
 
+func (s *ModelService) ImportModelBundle(ctx context.Context, in *catalogv1.ImportModelBundleRequest) (*catalogv1.ImportModelBundleResponse, error) {
+	if in == nil || in.Data == nil {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT_BUNDLE", "data is required")
+	}
+	d := in.Data
+	if strings.TrimSpace(d.IdempotencyKey) == "" || d.Model == nil || strings.TrimSpace(d.Model.Name) == "" || len(d.Model.Capabilities) == 0 || d.Version == nil || strings.TrimSpace(d.Version.Version) == "" || strings.TrimSpace(d.Version.Format) == "" || strings.TrimSpace(d.Version.EngineType) == "" || strings.TrimSpace(d.Version.EngineImage) == "" || strings.TrimSpace(d.Version.StartupCommand) == "" || d.Source == nil || strings.TrimSpace(d.Source.Provider) == "" || strings.TrimSpace(d.Source.RepoId) == "" || strings.TrimSpace(d.Source.Revision) == "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT_BUNDLE", "idempotency_key, model, version, source and complete runtime input are required")
+	}
+	tenant, actor, err := s.trustedModelOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	v, src := d.Version, d.Source
+	reply, err := s.client.ImportModelBundle(ctx, tenant, actor, &modelv1.ImportModelBundleRequest{
+		IdempotencyKey: d.IdempotencyKey,
+		Model: &modelv1.ImportModelBundleModelData{
+			Name: d.Model.Name, DisplayName: d.Model.DisplayName, Description: d.Model.Description,
+			Capabilities: append([]string(nil), d.Model.Capabilities...), ExternalModelId: d.Model.ExternalModelId,
+		},
+		Version: &modelv1.ImportModelBundleVersionData{
+			Version: v.Version, Format: v.Format, EngineType: v.EngineType,
+			EngineImage: v.EngineImage, StartupCommand: v.StartupCommand,
+		},
+		Source: &modelv1.ImportModelBundleSourceData{Provider: src.Provider, RepoId: src.RepoId, Revision: src.Revision},
+	})
+	if err != nil {
+		return nil, mapModelError(err)
+	}
+	if reply == nil || validateModelReply(reply.Model, tenant, "") != nil || validateModelVersionReply(reply.Version) != nil || validateImportTask(reply.Task) != nil {
+		return nil, modelInvalidReply()
+	}
+	return &catalogv1.ImportModelBundleResponse{Model: wireModel(reply.Model), Version: wireModelVersion(reply.Version), Task: wireImportTask(reply.Task)}, nil
+}
+
 func (s *ModelService) GetImportTask(ctx context.Context, in *catalogv1.GetImportTaskRequest) (*catalogv1.GetImportTaskResponse, error) {
 	if in == nil || strings.TrimSpace(in.TaskId) == "" {
 		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT", "task_id is required")
@@ -342,6 +357,24 @@ func (s *ModelService) GetImportTask(ctx context.Context, in *catalogv1.GetImpor
 		return nil, modelInvalidReply()
 	}
 	return &catalogv1.GetImportTaskResponse{Task: wireImportTask(reply.Task)}, nil
+}
+
+func (s *ModelService) GetImportTaskLogs(ctx context.Context, in *catalogv1.GetImportTaskLogsRequest) (*catalogv1.GetImportTaskLogsResponse, error) {
+	if in == nil || strings.TrimSpace(in.TaskId) == "" {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT", "task_id is required")
+	}
+	tenant, actor, err := s.trustedModelOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := s.client.GetImportTaskLogs(ctx, tenant, actor, &modelv1.GetImportTaskLogsRequest{TaskId: in.TaskId})
+	if err != nil {
+		return nil, mapImportTaskLogsError(err)
+	}
+	if reply == nil || strings.TrimSpace(reply.TaskId) == "" || reply.TaskId != in.TaskId {
+		return nil, modelInvalidReply()
+	}
+	return &catalogv1.GetImportTaskLogsResponse{TaskId: reply.TaskId, Status: reply.Status, Logs: reply.Logs, Available: reply.Available}, nil
 }
 
 func (s *ModelService) RetryImportTask(ctx context.Context, in *catalogv1.RetryImportTaskRequest) (*catalogv1.RetryImportTaskResponse, error) {
@@ -427,6 +460,14 @@ func mapModelError(err error) error {
 	default:
 		return kratoserrors.ServiceUnavailable("MODEL_UNAVAILABLE", "Model service unavailable")
 	}
+}
+
+func mapImportTaskLogsError(err error) error {
+	modelErr := kratoserrors.FromError(err)
+	if modelErr != nil && modelErr.Code == 409 && modelErr.Reason == "IMPORT_LOGS_UNAVAILABLE" {
+		return kratoserrors.Conflict("IMPORT_LOGS_UNAVAILABLE", "import task logs are no longer available")
+	}
+	return mapModelError(err)
 }
 
 func wireModel(model *modelv1.Model) *catalogv1.Model {

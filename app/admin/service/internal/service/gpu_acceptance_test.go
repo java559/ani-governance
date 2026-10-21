@@ -63,12 +63,12 @@ func TestGpuCapabilityRequiresSameOwnerActions(t *testing.T) {
 	}
 }
 
-func TestGpuCapabilityRejectsDeferredOwner(t *testing.T) {
+func TestGpuCapabilityEnablesInferenceOwner(t *testing.T) {
 	r := NewQuotaAdapterRegistry()
 	if err := r.Register(capabilityTestBinding{owner: "ani-inference", actions: []string{"CAPABILITY_TEST_CREATE", "CAPABILITY_TEST_DELETE"}}); err != nil {
 		t.Fatal(err)
 	}
-	if r.GPUExecutionEnabled("ani-inference") || r.EnforcesQuota(GpuSharedQuotaCode) || r.EnforcesQuota(GpuPhysicalQuotaCode) {
-		t.Fatal("a deferred owner cannot enable GPU admission")
+	if !r.GPUExecutionEnabled("ani-inference") || !r.EnforcesQuota(GpuSharedQuotaCode) || r.EnforcesQuota(GpuPhysicalQuotaCode) {
+		t.Fatal("inference owner GPU admission was not enabled")
 	}
 }

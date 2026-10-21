@@ -6,8 +6,32 @@
 
 公共 PostgreSQL 和独立 Redis 不在这个 Chart 内创建，分别使用新集群的
 `ani-infra/postgres` 与 `ani-infra/redis`。KServe、LWS、Higress、Model Service、Inference Service
-和 GPU 服务由各自的平台/服务 Chart 管理。本 Chart 通过 TLS 客户端证书调用已启用的 Model 和 Accelerator，
+和 GPU 服务由各自的平台/服务 Chart 管理。本 Chart 通过 TLS 客户端证书调用已启用的 Model、Inference 和 Accelerator，
 不会把它们的 Deployment 复制进 Gov Chart。
+
+## 调度配置权限
+
+`rbac.create` 默认 `true`；旧 release values 没有该项时，升级也采用此默认值。
+显式设为 `false` 则不创建以下 Role/Binding，由部署方自行提供对应权限。
+此开关独立于 `downstream.inference.enabled`，不能通过关闭 Inference 隐藏实例调度权限。
+
+- ClusterRole 只允许 `get` PriorityClass 与 Volcano PodGroup。
+- 只有 `lookup` 确认 `volcano-system` Namespace 已存在时，才在其中创建 Role/Binding，
+  只允许 `get/update` 名为 `ani-volcano-scheduler-configmap` 的 ConfigMap，不授予 create、list、watch 或 delete。
+- Chart 不创建 `volcano-system`。离线 `helm template` 或命名空间尚不存在时不会输出这个
+  Role/Binding；后续准备好命名空间再升级 Chart，重新渲染后才会补上它们。
+- Server Deployment 挂载 ServiceAccount token 供调度配置和能力检查使用；迁移和初始化
+  Job 均显式保持 `automountServiceAccountToken: false`。
+
+可显式运行真实 Helm 渲染检查（Helm 必须已安装在指定路径）：
+
+```bash
+ANI_CHART_HELM=/absolute/path/to/helm \
+  python3 scripts/tests/test_governance_chart.py -v
+```
+
+该检查仅使用本地回环只读 discovery/Namespace 替身，不连接现有 kubeconfig 或集群，
+不部署资源。设置 `ANI_CHART_BASELINE` 为固定旧版本 Chart 目录时，还会核对具体渲染差异。
 
 ## 部署前准备
 
@@ -203,7 +227,23 @@ Accelerator 的存量客户端仍使用独立 URI 身份，启用时应通过
 
 Gov 的 Model BFF 负责模型、模型版本、ModelScope 导入任务和任务查询。请求中的 tenant/actor 不会透传为权限依据，而是从 Gov 登录主体解析后由 mTLS 服务间调用重新注入。
 
-本期不提供普通或 GPU Inference 管理接口，也不保留 `downstream.inference` 开关、环境变量或证书挂载；后续重新对接另行发布配置。Model 和 Accelerator 配置保持各自合同。
+启用 Inference 管理接口时，必须显式配置 `downstream.inference`：
+
+```yaml
+downstream:
+  inference:
+    enabled: true
+    address: ani-inference-grpc.ani-system.svc.cluster.local:19090
+    serverName: ani-inference.ani.internal
+    caSecret: ani-inference-server-tls
+    clientCertificateSecret: governance-client-tls
+certificate:
+  enabled: true
+```
+
+这会挂载 Governance 的客户端证书和 Inference 服务端 CA，并注入
+`ANI_INFERENCE_ADDR`、`ANI_INFERENCE_SERVER_NAME` 及证书路径；未启用时，Inference
+管理请求会返回适配器不可用。Model 和 Accelerator 配置保持各自合同。
 
 ## 认证来源与 Cookie 环境要求
 

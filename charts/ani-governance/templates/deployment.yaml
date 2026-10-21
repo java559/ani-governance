@@ -23,7 +23,9 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ include "ani-governance.serviceAccountName" . }}
-      automountServiceAccountToken: false
+      # The server uses in-cluster credentials for scheduling configuration
+      # and capability checks. Bootstrap Jobs remain token-free.
+      automountServiceAccountToken: true
       terminationGracePeriodSeconds: 30
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -70,6 +72,18 @@ spec:
               value: /service-identity/model/tls.crt
             - name: ANI_MODEL_KEY
               value: /service-identity/model/tls.key
+            {{- end }}
+            {{- if .Values.downstream.inference.enabled }}
+            - name: ANI_INFERENCE_ADDR
+              value: {{ required "downstream.inference.address is required" .Values.downstream.inference.address | quote }}
+            - name: ANI_INFERENCE_SERVER_NAME
+              value: {{ required "downstream.inference.serverName is required" .Values.downstream.inference.serverName | quote }}
+            - name: ANI_INFERENCE_CA_FILE
+              value: /service-identity/inference/ca.crt
+            - name: ANI_INFERENCE_CERT_FILE
+              value: /service-identity/inference/tls.crt
+            - name: ANI_INFERENCE_KEY_FILE
+              value: /service-identity/inference/tls.key
             {{- end }}
             {{- if .Values.downstream.accelerator.enabled }}
             - name: ANI_ACCELERATOR_ADDR
@@ -121,6 +135,11 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            {{- if .Values.downstream.inference.enabled }}
+            - name: inference-identity
+              mountPath: /service-identity/inference
+              readOnly: true
+            {{- end }}
             {{- if .Values.downstream.model.enabled }}
             - name: model-identity
               mountPath: /service-identity/model
@@ -152,6 +171,24 @@ spec:
             defaultMode: 0440
         - name: tmp
           emptyDir: {}
+        {{- if .Values.downstream.inference.enabled }}
+        - name: inference-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret:
+                  name: {{ required "downstream.inference.clientCertificateSecret is required" .Values.downstream.inference.clientCertificateSecret }}
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - secret:
+                  name: {{ required "downstream.inference.caSecret is required" .Values.downstream.inference.caSecret }}
+                  items:
+                    - key: {{ .Values.downstream.inference.caKey }}
+                      path: ca.crt
+        {{- end }}
         {{- if .Values.downstream.model.enabled }}
         - name: model-identity
           projected:

@@ -18,6 +18,7 @@ var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"PlatformNetworkService":  identityV1.Module_NETWORK,
 	"NetworkService":          identityV1.Module_NETWORK,
 	"ModelService":            identityV1.Module_MODEL,
+	"InferenceService":        identityV1.Module_INFERENCE,
 	"ModelDevService":         identityV1.Module_MODEL,
 	"AdminPortalService":      identityV1.Module_DASHBOARD,
 	"DashboardService":        identityV1.Module_DASHBOARD,

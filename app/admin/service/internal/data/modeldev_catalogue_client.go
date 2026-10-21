@@ -24,7 +24,7 @@ func (c *ModelDevClient) ListPresets(ctx context.Context, scope ModelDevResolveS
 	}
 	seen := map[string]bool{}
 	for _, preset := range out.Presets {
-		if preset == nil || !modelDevCanonicalUUID(preset.PresetId) || seen[preset.PresetId] || preset.Name == "" || len(preset.Name) > 256 || strings.ContainsAny(preset.Name, "\r\n\t") || preset.Kind != trainingv1.ExecutionKind_EXECUTION_KIND_GENERAL_TRAINING || len(preset.ImageVersionIds) > 32 || len(preset.ParameterRules) > 32 {
+		if preset == nil || !modelDevCanonicalUUID(preset.PresetId) || seen[preset.PresetId] || preset.Name == "" || len(preset.Name) > 256 || strings.ContainsAny(preset.Name, "\r\n\t") || !modelDevSupportedExecutionKind(preset.Kind) || len(preset.ImageVersionIds) > 32 || len(preset.ParameterRules) > 32 {
 			return nil, modelDevQueryUnavailable()
 		}
 		seen[preset.PresetId] = true
@@ -90,5 +90,20 @@ func (c *ModelDevClient) ListInputVersions(ctx context.Context, scope ModelDevRe
 }
 
 func modelDevValidInput(in *modeldevv1.InputVersionView) bool {
-	return in != nil && modelDevCanonicalUUID(in.InputVersionId) && in.State != modeldevv1.InputState_INPUT_STATE_UNSPECIFIED && in.Format == "CSV" && in.SizeBytes > 0 && in.SizeBytes <= 32<<20 && modelDevDigest(in.Sha256) && modelDevValidTimestamp(in.CreatedAt) && (in.State != modeldevv1.InputState_INPUT_STATE_READY || (in.RowCount == 1024 && in.FeatureCount == 16))
+	if in == nil || !modelDevCanonicalUUID(in.InputVersionId) || in.State == modeldevv1.InputState_INPUT_STATE_UNSPECIFIED || in.SizeBytes <= 0 || in.SizeBytes > 32<<20 || !modelDevDigest(in.Sha256) || !modelDevValidTimestamp(in.CreatedAt) {
+		return false
+	}
+	if in.State != modeldevv1.InputState_INPUT_STATE_READY {
+		return true
+	}
+	// READY inputs carry a fixed verified shape per format: the CPU baseline
+	// is CSV 1024x16 and the managed finetuning import is JSON Alpaca 64x0.
+	switch in.Format {
+	case "CSV":
+		return in.RowCount == 1024 && in.FeatureCount == 16
+	case "JSON":
+		return in.RowCount == 64 && in.FeatureCount == 0
+	default:
+		return false
+	}
 }

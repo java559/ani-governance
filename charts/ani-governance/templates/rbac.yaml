@@ -1,0 +1,62 @@
+{{- $rbac := .Values.rbac | default (dict "create" true) }}
+{{- if $rbac.create }}
+{{- if lookup "v1" "Namespace" "" "volcano-system" }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "ani-governance.fullname" . }}-scheduler-config
+  namespace: volcano-system
+  labels:
+    {{- include "ani-governance.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["ani-volcano-scheduler-configmap"]
+    verbs: ["get", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "ani-governance.fullname" . }}-scheduler-config
+  namespace: volcano-system
+  labels:
+    {{- include "ani-governance.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ani-governance.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "ani-governance.fullname" . }}-scheduler-config
+---
+{{- end }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "ani-governance.fullname" . }}-scheduler-options
+  labels:
+    {{- include "ani-governance.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["scheduling.k8s.io"]
+    resources: ["priorityclasses"]
+    verbs: ["get"]
+  - apiGroups: ["scheduling.volcano.sh"]
+    resources: ["podgroups"]
+    verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "ani-governance.fullname" . }}-scheduler-options
+  labels:
+    {{- include "ani-governance.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "ani-governance.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "ani-governance.fullname" . }}-scheduler-options
+{{- end }}

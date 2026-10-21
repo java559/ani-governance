@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/asn1"
 	"encoding/pem"
 	"math/big"
 	"net"
@@ -58,7 +59,7 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 	if e = os.WriteFile(caPath, caPEM, 0600); e != nil {
 		t.Fatal(e)
 	}
-	issue := func(name, uri string, server bool) (string, string, tls.Certificate) {
+	issue := func(name string, dns []string, uri string, server bool) (string, string, tls.Certificate) {
 		t.Helper()
 		pub, key, e := ed25519.GenerateKey(rand.Reader)
 		if e != nil {
@@ -69,6 +70,21 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 			t.Fatal(e)
 		}
 		leaf := &x509.Certificate{SerialNumber: serial, NotBefore: ca.NotBefore, NotAfter: ca.NotAfter, KeyUsage: x509.KeyUsageDigitalSignature, ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}}
+		leaf.DNSNames = dns
+		if name == "client-ip" {
+			leaf.IPAddresses = []net.IP{net.ParseIP("127.0.0.1")}
+		}
+		if name == "client-email" {
+			leaf.EmailAddresses = []string{"service@example.test"}
+		}
+
+		if name == "client-other-san" {
+			raw, err := asn1.Marshal([]asn1.RawValue{{Class: asn1.ClassContextSpecific, Tag: 2, Bytes: []byte(GovernanceAcceleratorDNS)}, {Class: asn1.ClassContextSpecific, Tag: 8, Bytes: []byte{42, 3}}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			leaf.ExtraExtensions = []pkix.Extension{{Id: asn1.ObjectIdentifier{2, 5, 29, 17}, Value: raw}}
+		}
 		if uri != "" {
 			u, e := url.Parse(uri)
 			if e != nil {
@@ -77,7 +93,6 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 			leaf.URIs = []*url.URL{u}
 		}
 		if server {
-			leaf.DNSNames = []string{"accelerator.test"}
 			leaf.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
 		}
 		der, e := x509.CreateCertificate(rand.Reader, leaf, ca, pub, caKey)
@@ -101,8 +116,8 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 		}
 		return cp, kp, pair
 	}
-	_, _, serverCert := issue("server", "", true)
-	cp, kp, _ := issue("governance", GovernanceAcceleratorURI, false)
+	_, _, serverCert := issue("server", []string{"accelerator.test"}, "", true)
+	cp, kp, _ := issue("governance", []string{GovernanceAcceleratorDNS}, "", false)
 	roots := x509.NewCertPool()
 	roots.AppendCertsFromPEM(caPEM)
 	listener, e := net.Listen("tcp", "127.0.0.1:0")
@@ -155,14 +170,28 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 			t.Fatalf("sync received delegated %s", key)
 		}
 	}
-	for _, uri := range []string{"", GovernanceAcceleratorURI + "-other", "spiffe://ani.internal/service/ani-inference"} {
-		badCert, badKey, _ := issue(uuid.NewString(), uri, false)
+	for _, identity := range []struct {
+		name string
+		dns  []string
+		uri  string
+	}{
+		{name: "missing"},
+		{name: "wrong-dns", dns: []string{"ani-inference-service"}},
+		{name: "multiple-dns", dns: []string{GovernanceAcceleratorDNS, "other.test"}},
+		{name: "wildcard", dns: []string{"*.ani-governance"}},
+		{name: "legacy-uri", uri: "spiffe://ani.internal/service/ani-governance"},
+		{name: "mixed-san", dns: []string{GovernanceAcceleratorDNS}, uri: "spiffe://ani.internal/service/ani-governance"},
+		{name: "client-ip", dns: []string{GovernanceAcceleratorDNS}},
+		{name: "client-email", dns: []string{GovernanceAcceleratorDNS}},
+		{name: "client-other-san", dns: []string{GovernanceAcceleratorDNS}},
+	} {
+		badCert, badKey, _ := issue(identity.name, identity.dns, identity.uri, false)
 		bad := cfg
 		bad.CertFile = badCert
 		bad.KeyFile = badKey
 		if c, done, e := NewAcceleratorClient(bad); e == nil {
 			done()
-			t.Fatalf("accepted wrong client URI %q: %v", uri, c)
+			t.Fatalf("accepted wrong client identity %q: %v", identity.name, c)
 		}
 	}
 	wrongServer := cfg
@@ -175,12 +204,28 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 	if _, e = bad.Catalog.ListProfiles(context.Background(), &acc.ListProfilesRequest{Context: tc}); e == nil {
 		t.Fatal("accepted wrong server DNS identity")
 	}
+
+	_, _, wildcardServerCert := issue("wildcard-server", []string{"*.test"}, "", true)
+	wildcardListener, e := net.Listen("tcp", "127.0.0.1:0")
+	requireNoAcceleratorError(t, e)
+	wildcardServer := grpc.NewServer(grpc.Creds(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{wildcardServerCert}, ClientCAs: roots, ClientAuth: tls.RequireAndVerifyClientCert})))
+	acc.RegisterAcceleratorCatalogServiceServer(wildcardServer, impl)
+	go wildcardServer.Serve(wildcardListener)
+	t.Cleanup(wildcardServer.Stop)
+	wildcardCfg := cfg
+	wildcardCfg.Address = wildcardListener.Addr().String()
+	wildcardClient, closeWildcard, e := NewAcceleratorClient(wildcardCfg)
+	requireNoAcceleratorError(t, e)
+	t.Cleanup(closeWildcard)
+	if _, e = wildcardClient.Catalog.ListProfiles(context.Background(), &acc.ListProfilesRequest{Context: tc}); e == nil {
+		t.Fatal("accepted wildcard server identity")
+	}
 	missingCert := cfg
 	missingCert.CertFile = filepath.Join(dir, "missing-client.pem")
 	if _, _, e = NewAcceleratorClient(missingCert); e == nil {
 		t.Fatal("accepted missing client certificate")
 	}
-	untrustedCA, _, _ := issue("untrusted-root", "", false)
+	untrustedCA, _, _ := issue("untrusted-root", nil, "", false)
 	wrongCA := cfg
 	wrongCA.CAFile = untrustedCA
 	untrusted, doneUntrusted, e := NewAcceleratorClient(wrongCA)
@@ -210,5 +255,32 @@ func TestAcceleratorDelegationRejectsInvalidTenantAndOwnerRPC(t *testing.T) {
 	}
 	if _, e := acceleratorMetadata(acc.AcceleratorAdminService_ListClusters_FullMethodName, &acc.ListClustersRequest{Context: &acc.AdminRead{RequestId: "id", Actor: &acc.Actor{Type: "api_key", Id: "1"}}}); e == nil {
 		t.Fatal("admitted access-key actor")
+	}
+}
+
+func TestAcceleratorDelegationRequiresRegisteredFullMethod(t *testing.T) {
+	request := &acc.ListProfilesRequest{Context: &acc.TenantContext{RequestId: "request", TenantId: uuid.NewString(), Actor: &acc.Actor{Type: "user", Id: "new-user"}}}
+	for _, method := range []string{
+		"/accelerator.v1.AcceleratorCatalogService/UnregisteredMethod",
+		"/accelerator.v1.UnregisteredService/ListProfiles",
+		"/accelerator.v1.AcceleratorUsageService/ListProfiles",
+		"/accelerator.v1.AcceleratorCatalogService/ObserveRelease",
+	} {
+		if _, err := acceleratorMetadata(method, request); err == nil {
+			t.Fatalf("unregistered RPC allowed: %s", method)
+		}
+	}
+	if _, err := acceleratorMetadata(acc.AcceleratorCatalogService_ListProfiles_FullMethodName, request); err != nil {
+		t.Fatal(err)
+	}
+	admin := &acc.ListClustersRequest{Context: &acc.AdminRead{RequestId: "request", Actor: &acc.Actor{Type: "user", Id: "new-admin"}}}
+	if _, err := acceleratorMetadata(acc.AcceleratorAdminService_ListClusters_FullMethodName, admin); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := acceleratorMetadata(acc.AcceleratorCatalogService_ListProfiles_FullMethodName, admin); err == nil {
+		t.Fatal("admin request admitted as tenant request")
+	}
+	if _, err := acceleratorMetadata(acc.AcceleratorAdminService_ListClusters_FullMethodName, request); err == nil {
+		t.Fatal("tenant request admitted as admin request")
 	}
 }

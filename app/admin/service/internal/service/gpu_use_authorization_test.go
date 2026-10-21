@@ -27,7 +27,7 @@ func (p *gpuUseEligibilityProbe) AuthorizeGpuUse(_ context.Context, tenant, user
 func TestGpuUseCombinesCurrentBusinessGrantAndIndependentEligibility(t *testing.T) {
 	p := &auth.Principal{Type: auth.SubjectUser, ID: 7, TenantID: 11}
 	ctx := auth.NewPrincipalContext(context.Background(), p)
-	for _, usage := range []compute.Usage{compute.Usage_CONTAINER_INSTANCE, compute.Usage_TRAINING} {
+	for _, usage := range []compute.Usage{compute.Usage_CONTAINER_INSTANCE, compute.Usage_TRAINING, compute.Usage_INFERENCE} {
 		t.Run(usage.String(), func(t *testing.T) {
 			businessCalls := 0
 			grant, err := authorizeGpuBusiness(ctx, p, usage, "current-business-action", func() error {
@@ -53,7 +53,7 @@ func TestGpuUseCombinesCurrentBusinessGrantAndIndependentEligibility(t *testing.
 	eligibility := new(gpuUseEligibilityProbe)
 	require.Error(t, authorizeNewGpuUse(ctx, grant, eligibility))
 	require.Zero(t, eligibility.calls, "eligibility cannot substitute for a business grant")
-	for _, usage := range []compute.Usage{compute.Usage_USAGE_UNSPECIFIED, compute.Usage_INFERENCE, compute.Usage(999)} {
+	for _, usage := range []compute.Usage{compute.Usage_USAGE_UNSPECIFIED, compute.Usage(999)} {
 		_, err = authorizeGpuBusiness(ctx, p, usage, "deferred-consumer", func() error {
 			t.Fatal("unsupported consumer must not authorize")
 			return nil

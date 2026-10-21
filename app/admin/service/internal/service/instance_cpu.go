@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/google/uuid"
 	commandv1 "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/command/v1"
 	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	quota "go-wind-admin/api/gen/go/quota/service/v1"
@@ -13,29 +12,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/pkg/middleware/auth"
 )
-
-func (s *GpuAcceptance) acceptInstanceCPUCreate(ctx context.Context, p *auth.Principal, tenant, actorID, key, requestHash string, business *res.CreateSpec, raw []byte) (*data.QuotaOccupyResult, error) {
-	if _, ok := s.binding.(*InstanceGpuBinding); !ok || business.GpuSelection != nil || business.InstanceKind != "container" || business.ComputeType != "cpu" {
-		return nil, quota.ErrorInvalidQuotaRequest("%s", "invalid CPU instance resolution")
-	}
-	digest, e := res.BusinessPayloadDigest(business)
-	if e != nil {
-		return nil, e
-	}
-	c := data.InstanceCPUCanonical{Schema: data.InstanceCPUCanonicalSchema, InstanceContractVersion: data.CurrentInstanceContractVersion, BusinessPayload: raw, BusinessPayloadDigest: digest}
-	canonical, e := data.MarshalInstanceCPUCanonical(&c)
-	if e != nil {
-		return nil, e
-	}
-	if _, e = data.DecodeInstanceCPUCanonical(canonical); e != nil {
-		return nil, e
-	}
-	result, e := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: uuid.NewString(), ActorType: string(p.Type), ActorID: actorID, OwnerService: InstanceOwner, Action: InstanceCreateAction, IdempotencyKey: key, RequestHash: requestHash, CanonicalRequest: string(canonical), InstanceContractVersion: data.CurrentInstanceContractVersion})
-	if e == nil && s.worker != nil {
-		s.worker.Notify()
-	}
-	return result, e
-}
 
 func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Principal, key, resource string, version int64, original *ent.QuotaOperation) (*commandv1.GpuDeleteAcceptance, error) {
 	b, ok := s.binding.(*InstanceGpuBinding)

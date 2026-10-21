@@ -50,6 +50,11 @@ func (c *ModelDevClient) ManagedOperation(ctx context.Context, scope ModelDevRes
 			return nil, modelDevQueryUnavailable()
 		}
 		method = modeldevv1.ModelDevManagementService_ImportCSV_FullMethodName
+	case *modeldevv1.ImportFinetuningDatasetRequest:
+		if !modelDevCanonicalUUID(request.InputVersionId) || !modelDevCanonicalUUID(request.ReleaseId) || !modelDevDigest(request.ReleaseDigest) || request.Object == nil || !modelDevValidTimestamp(request.RequestedAt) || request.Format != "JSON" {
+			return nil, modelDevQueryUnavailable()
+		}
+		method = modeldevv1.ModelDevManagementService_ImportFinetuningDataset_FullMethodName
 	case *modeldevv1.InspectExecutionRequest:
 		method = modeldevv1.ModelDevOperationsService_InspectExecution_FullMethodName
 		execution = request.ExecutionId
@@ -80,11 +85,18 @@ func (c *ModelDevClient) ManagedOperation(ctx context.Context, scope ModelDevRes
 		return nil, err
 	}
 	defer cancel()
-	if request, ok := in.(*modeldevv1.ImportCSVRequest); ok {
+	var importIdentity string
+	switch request := in.(type) {
+	case *modeldevv1.ImportCSVRequest:
+		importIdentity = "ani:modeldev:csv-import:v1\x00" + scope.ResourceTenantID + "\x00" + scope.Actor + "\x00" + request.InputVersionId
+	case *modeldevv1.ImportFinetuningDatasetRequest:
+		importIdentity = "ani:modeldev:finetuning-import:v1\x00" + scope.ResourceTenantID + "\x00" + scope.Actor + "\x00" + request.InputVersionId
+	}
+	if importIdentity != "" {
 		// ModelDev freezes this identity with the input. A fresh CLI/client must
 		// replay the same operation; changed immutable body still conflicts at
 		// ModelDev. Scope was validated above and current grants remain required.
-		id := uuid.NewSHA1(uuid.NameSpaceURL, []byte("ani:modeldev:csv-import:v1\x00"+scope.ResourceTenantID+"\x00"+scope.Actor+"\x00"+request.InputVersionId))
+		id := uuid.NewSHA1(uuid.NameSpaceURL, []byte(importIdentity))
 		delegation, _ := metadata.FromOutgoingContext(call)
 		delegation.Set("x-ani-request-id", id.String())
 		call = metadata.NewOutgoingContext(call, delegation)
@@ -102,6 +114,13 @@ func (c *ModelDevClient) ManagedOperation(ctx context.Context, scope ModelDevRes
 		out = response
 	case *modeldevv1.ImportCSVRequest:
 		response, e := management.ImportCSV(call, request, grpc.WaitForReady(true))
+		err = e
+		if e == nil && (response == nil || !modelDevValidInput(response.InputVersion) || response.InputVersion.InputVersionId != request.InputVersionId) {
+			return nil, modelDevQueryUnavailable()
+		}
+		out = response
+	case *modeldevv1.ImportFinetuningDatasetRequest:
+		response, e := management.ImportFinetuningDataset(call, request, grpc.WaitForReady(true))
 		err = e
 		if e == nil && (response == nil || !modelDevValidInput(response.InputVersion) || response.InputVersion.InputVersionId != request.InputVersionId) {
 			return nil, modelDevQueryUnavailable()

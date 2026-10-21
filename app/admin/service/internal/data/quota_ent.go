@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
+	"go-wind-admin/app/admin/service/internal/commandcontract"
+	"strconv"
 	"time"
 
 	entsql "entgo.io/ent/dialect/sql"
@@ -186,7 +188,10 @@ func scanGpuCreatePage(ctx context.Context, tx *ent.Tx, afterID int64, limit int
 		s.Where(entsql.GT(s.C(quotaoperation.FieldID), afterID))
 		// The schema marker selects only accepted new-contract commands. Terminal
 		// audit records from the cutover are never parsed as running payloads.
-		s.Where(entsql.ExprP(s.C(quotaoperation.FieldCanonicalRequest) + "::jsonb->>'schema_version' = '3'"))
+		s.Where(entsql.P(func(b *entsql.Builder) {
+			column := s.C(quotaoperation.FieldCanonicalRequest)
+			b.WriteString("(" + column + "::jsonb->>'schema_version' = '3' OR (" + column + "::jsonb->>'schema' = ").Arg(commandcontract.InferenceSchema).WriteString(" AND " + column + "::jsonb->>'resource_class' = ").Arg(strconv.FormatInt(int64(commandcontract.InferenceGPUClass), 10)).WriteString("))")
+		}))
 
 	}).Order(ent.Asc(quotaoperation.FieldID)).Limit(limit).All(ctx)
 }

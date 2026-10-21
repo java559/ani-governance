@@ -3,7 +3,7 @@
 > 面向前端同学。本文描述普通租户在 **Governance BFF** 上完成 CPU 训练「选择数据 → 发起训练 → 观察状态 → 停止 → 下载模型」的完整 HTTP 合同。
 >
 > 权威来源：`api/protos/admin/service/v1/i_modeldev.proto`、`api/protos/modeldev/service/v1/execution.proto`，以及运行服务自带的 OpenAPI（`/swagger` 或 `assets/openapi.yaml` 的 `ModelDevService` 段）。状态与产物枚举值（`compute_state`/`delivery_state`/`close_state`/`resource_state`/`current_step`/`role`）实际来自 ModelDev 服务 `ani-modeldev-service` 的 `api/ani/modeldev/v1/modeldev.proto` 与 `api/ani/training/v1/training.proto`（Governance 仅去掉枚举前缀透传）。
-> 更新日期：2026-10-12。字段以本文与 OpenAPI 为准。
+> 更新日期：2026-10-19（微调 `FINETUNING` 字段纳入契约，见 §12.1；路由前缀变更见 §12）。字段以本文与 OpenAPI 为准。
 
 ***
 
@@ -11,7 +11,7 @@
 
 | 项        | 约定                                                                                                                                              |
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **入口**   | 一律走 Governance BFF：`https://<governance-host>/admin/v1/modeldev/*`。**禁止**直连 ModelDev 的 `:9000`（命令口）、`:9001`（受管 Step 口），那是内部 mTLS 端口，前端不可达也不被允许。 |
+| **入口**   | 一律走 Governance BFF：`https://<governance-host>/api/v1/modeldev/*`。**禁止**直连 ModelDev 的 `:9000`（命令口）、`:9001`（受管 Step 口），那是内部 mTLS 端口，前端不可达也不被允许。 |
 | **认证**   | 所有请求携带 `Authorization: Bearer <access-token>`，复用已有登录 / 刷新链路。                                                                                    |
 | **协议**   | REST + JSON。请求体字段名统一 **`lower_snake_case`**（不是 camelCase）。                                                                                      |
 | **状态更新** | **没有 SSE / WebSocket 推送**，状态变化必须靠**轮询** `GET .../executions/{id}`。                                                                              |
@@ -24,18 +24,20 @@
 
 | 用途           | 方法   | 路径                                                       |
 | ------------ | ---- | -------------------------------------------------------- |
-| 训练预设（下拉框）    | GET  | `/admin/v1/modeldev/presets`                             |
-| 输入数据集列表（下拉框） | GET  | `/admin/v1/modeldev/input-versions`                      |
-| 输入数据集详情      | GET  | `/admin/v1/modeldev/input-versions/{input_version_id}`   |
-| 提交训练         | POST | `/admin/v1/modeldev/executions`                          |
-| 执行列表         | GET  | `/admin/v1/modeldev/executions`                          |
-| 执行详情（轮询）     | GET  | `/admin/v1/modeldev/executions/{execution_id}`           |
-| 训练日志         | GET  | `/admin/v1/modeldev/executions/{execution_id}/logs`      |
-| 停止训练         | POST | `/admin/v1/modeldev/executions/{execution_id}:stop`      |
-| 产物列表         | GET  | `/admin/v1/modeldev/executions/{execution_id}/artifacts` |
-| 取产物短期下载地址    | GET  | `/admin/v1/modeldev/artifacts/{artifact_id}/content`     |
+| 训练预设（下拉框）    | GET  | `/api/v1/modeldev/presets`                             |
+| 输入数据集列表（下拉框） | GET  | `/api/v1/modeldev/input-versions`                      |
+| 输入数据集详情      | GET  | `/api/v1/modeldev/input-versions/{input_version_id}`   |
+| 提交训练         | POST | `/api/v1/modeldev/executions`                          |
+| 执行列表         | GET  | `/api/v1/modeldev/executions`                          |
+| 执行详情（轮询）     | GET  | `/api/v1/modeldev/executions/{execution_id}`           |
+| 训练日志         | GET  | `/api/v1/modeldev/executions/{execution_id}/logs`      |
+| 停止训练         | POST | `/api/v1/modeldev/executions/{execution_id}:stop`      |
+| 产物列表         | GET  | `/api/v1/modeldev/executions/{execution_id}/artifacts` |
+| 取产物短期下载地址    | GET  | `/api/v1/modeldev/artifacts/{artifact_id}/content`     |
 
 ID 规则：`execution_id`、`preset_id`、`input_version_id`、`artifact_id` 均为**标准 36 字符小写 UUID**（不接受大写、compact、URN 等别名）。
+
+> 上表是 BFF 的**接口全集**。**没有**"可选基模列表"这类 `models` 端点——这是有意的：微调的 `base_model_version_id` 本期不通过接口下发（见 §4.3）。前端不必寻找或猜测该类路径。
 
 ### 分页约定
 
@@ -69,7 +71,7 @@ ModelDev 的查询、创建与停止都**要求租户具备** **`ALL`** **数据
 
 ## 4. 接口详解
 
-### 4.1 训练预设 `GET /admin/v1/modeldev/presets`
+### 4.1 训练预设 `GET /api/v1/modeldev/presets`
 
 Query：`page`、`pageSize`。
 
@@ -110,7 +112,7 @@ Query：`page`、`pageSize`。
 - **`minimum`** **/** **`maximum`** **/** **`default_value`** **可能为** **`null`**（实测环境里 `minimum` 常为 `null`，仅部分参数有 `maximum`）；渲染表单前必须判空，不能假定一定有值。
 - **`new_submissions_enabled=false`** **时该预设不可发起新训练**；`active_release_id` 为空表示当前没有启用绑定，不能提交。
 
-### 4.2 输入数据集 `GET /admin/v1/modeldev/input-versions`
+### 4.2 输入数据集 `GET /api/v1/modeldev/input-versions`
 
 Query：`page`、`pageSize`、`state`（可选）。
 
@@ -137,9 +139,9 @@ Query：`page`、`pageSize`、`state`（可选）。
 }
 ```
 
-`size_bytes` 是 int64，JSON 中是字符串。详情接口 `GET /admin/v1/modeldev/input-versions/{id}` 直接返回单个 `InputVersionView` 对象（无外层包装）。
+`size_bytes` 是 int64，JSON 中是字符串。详情接口 `GET /api/v1/modeldev/input-versions/{id}` 直接返回单个 `InputVersionView` 对象（无外层包装）。
 
-### 4.3 提交训练 `POST /admin/v1/modeldev/executions`
+### 4.3 提交训练 `POST /api/v1/modeldev/executions`
 
 **请求头**：
 
@@ -149,6 +151,8 @@ Content-Type: application/json
 ```
 
 请求体（严格 JSON，字段名 `lower_snake_case`）：
+
+通用训练（`kind=GENERAL_TRAINING`）：
 
 ```json
 {
@@ -163,25 +167,57 @@ Content-Type: application/json
 }
 ```
 
+微调（`kind=FINETUNING`，LoRA SFT）：
+
+```json
+{
+  "name": "cpu-ft-demo",
+  "kind": "FINETUNING",
+  "preset_id": "<finetuning-preset-uuid>",
+  "dataset_version_id": "<ready-json-input-version-uuid>",
+  "idempotency_key": "ft-demo-001",
+  "base_model_version_id": "<base-model-version-uuid>",
+  "finetuning": {"learning_rate": "0.0002", "max_steps": 8},
+  "new_model_name": "merged-adapter-demo"
+}
+```
+
 字段说明：
 
-| 字段                    | 必填 | 说明                                                  |
-| --------------------- | -- | --------------------------------------------------- |
-| `name`                | 是  | 展示名                                                 |
-| `kind`                | 是  | **当前只支持** **`GENERAL_TRAINING`**；取值应取自 `preset.kind`，勿硬编码（见 §10） |
-| `preset_id`           | 是  | 来自 presets                                          |
-| `dataset_version_id`  | 是  | 必须是 READY 的 input version                           |
-| `idempotency_key`     | 是  | 幂等键，见下方规则                                           |
-| `image_version_id`    | 否  | 只能填所选 Release 登记的镜像版本                               |
-| `general_parameters`  | 否  | 参数数组，值一律是**字符串**                                    |
-| `source_execution_id` | —  | **当前必须省略**，填写会返回 `403 SOURCE_EXECUTION_UNAVAILABLE` |
+| 字段                        | 必填 | 说明                                                                 |
+| ------------------------- | -- | ------------------------------------------------------------------ |
+| `name`                    | 是  | 展示名                                                                |
+| `kind`                    | 是  | `GENERAL_TRAINING` 或 `FINETUNING`；取值应取自 `preset.kind`，勿硬编码（见 §10） |
+| `preset_id`               | 是  | 来自 presets                                                         |
+| `dataset_version_id`      | 是  | 必须是 READY 的 input version；微调须为 `format=JSON` 的 Alpaca 数据集           |
+| `idempotency_key`         | 是  | 幂等键，见下方规则                                                          |
+| `image_version_id`        | 否  | 只能填所选 Release 登记的镜像版本（**仅通用训练**）                                     |
+| `general_parameters`      | 否  | 参数数组，值一律是**字符串**（**仅通用训练**）                                         |
+| `source_execution_id`     | —  | **当前必须省略**，填写会返回 `403 SOURCE_EXECUTION_UNAVAILABLE`                |
+| `base_model_version_id`   | 微调必填 | 微调基模版本 UUID（**仅 `FINETUNING`**）；**当前无列表接口**，见下方说明            |
+| `finetuning`              | 微调必填 | 微调参数对象（**仅 `FINETUNING`**），见下                                      |
+| `target_model_id`         | 二选一  | 登记到已存在的模型（**仅 `FINETUNING`**），与 `new_model_name` 互斥               |
+| `new_model_name`          | 二选一  | 登记为新模型名（**仅 `FINETUNING`**），与 `target_model_id` 互斥                |
+
+**两种能力不共用字段**：微调请求**不得**出现 `image_version_id` / `general_parameters` / `source_execution_id`；通用训练请求**不得**出现 `base_model_version_id` / `finetuning` / `target_model_id` / `new_model_name`。混填会被拒绝（`400`）。
+
+**`finetuning` 参数**（键可省略，省略即取 Release 默认值；**两个键的 JSON 类型不同**，见下表）：
+
+| 键               | 类型      | 说明                             |
+| --------------- | ------- | ------------------------------ |
+| `learning_rate` | DECIMAL | 十进制字符串，如 `"0.0002"`            |
+| `max_steps`     | INTEGER | **必须传 JSON 数字**（如 `8`），不是字符串 |
+
+> 微调参数的可用集合与边界由预设的 `parameter_rules` 声明（见 §4.1），前端应按其动态渲染；本节列出的键是当前 Release 已注册的集合。
+
+> **`base_model_version_id` 的来源（当前不提供）**：本期**不提供**"可选基模列表"接口，BFF 无 `models` 类端点（接口全集见 §2）。前端**不要**为此设计下拉选择或自行调用其它服务的模型接口。该值在本期由后端/运维侧以固定值提供（例如随预设一并下发，或前端留空由后端补齐）；等 Model 侧对接完成后才会补上独立的基模查询接口。**不要**在前端硬编码具体 UUID。
 
 **幂等键规则（重点）**：
 
 - 请求超时或响应丢失时，**必须用同一** **`idempotency_key`** **+ 完全相同的意图重试**，系统会返回原执行（`replayed=true`）。
 - **同一 key 改参数会返回** **`409`**；只有确实要再训一次时才换新 key。
 - `general_parameters` 的**省略 ≠ 显式** **`[]`**，二者是不同意图；`null` 被拒绝。
-- `learning_rate` 取值：十进制字符串，范围 `(0, 0.1]`，默认 `0.01`。epochs/batch\_size 固定，不可传。
+- **通用训练**的 `learning_rate` 取值：十进制字符串，范围 `(0, 0.1]`，默认 `0.01`（`epochs`/`batch_size` 固定，不可传）。**微调**参数是另一套：`learning_rate` 为十进制字符串，契约范围 `(0, 1]`；`max_steps` 为整数，契约范围 `[1, 200]`。微调的**默认值与已批准的取值组合由所选 Release 声明**（见 §4.1 `parameter_rules`），不要写死。
 
 响应 `202 Accepted`：
 
@@ -212,7 +248,7 @@ Content-Type: application/json
 | `NO_COMPATIBLE_RELEASE` | 所选预设当前没有启用的 Release 绑定                       |
 | `SUBMISSIONS_PAUSED`    | 该预设已暂停接受新提交（`new_submissions_enabled=false`） |
 
-### 4.4 执行详情 `GET /admin/v1/modeldev/executions/{execution_id}`
+### 4.4 执行详情 `GET /api/v1/modeldev/executions/{execution_id}`
 
 响应**直接返回** **`ExecutionView`** **对象**（无外层包装）：
 
@@ -243,7 +279,7 @@ Content-Type: application/json
 
 `current_step` 取值为大写枚举名（不是连字符小写），可能为 `UNSPECIFIED`（尚无运行事实）、`PREPARE`、`TRAIN_WAIT`、`PUBLISH`、`CLOSE`。
 
-### 4.5 训练日志 `GET /admin/v1/modeldev/executions/{execution_id}/logs`
+### 4.5 训练日志 `GET /api/v1/modeldev/executions/{execution_id}/logs`
 
 Query（都可选）：`tail_lines`（默认 200，上限 **1000**）、`max_bytes`（默认 16384，上限 **65536**）。
 
@@ -263,12 +299,12 @@ Query（都可选）：`tail_lines`（默认 200，上限 **1000**）、`max_byt
 - **训练 Pod 回收后（执行已** **`CLOSED`、Pod 不再存在）本接口返回** **`503 MODELDEV_QUERY_UNAVAILABLE`**（实测已验证）。前端须对 503 容错：仅在执行进行中（`close_state != CLOSED`）展示“实时日志”，已关闭的历史执行应显示“日志已不可用”，不要当作接口故障永久重试。
 - 写入 query 的 `Pod`、`namespace`、`log_id` 等选择器会被拒绝（400）。
 
-### 4.6 停止训练 `POST /admin/v1/modeldev/executions/{execution_id}:stop`
+### 4.6 停止训练 `POST /api/v1/modeldev/executions/{execution_id}:stop`
 
 **Body 必须为空**（不接受任何请求体或 query）。
 
 ```http
-POST /admin/v1/modeldev/executions/{id}:stop
+POST /api/v1/modeldev/executions/{id}:stop
 Authorization: Bearer <access-token>
 ```
 
@@ -286,7 +322,7 @@ Authorization: Bearer <access-token>
 
 > **`202`** **只代表停止意图已受理，不代表已经停止。** 前端需继续轮询详情，直到 `close_state` 变为 `CLOSED`。重复点击停止是幂等的（`replayed=true`，代次不变）。
 
-### 4.7 产物列表 `GET /admin/v1/modeldev/executions/{execution_id}/artifacts`
+### 4.7 产物列表 `GET /api/v1/modeldev/executions/{execution_id}/artifacts`
 
 Query：`page`、`pageSize`。先等 `delivery_state=PUBLISHED` 再拉取才有内容。
 
@@ -319,7 +355,7 @@ Query：`page`、`pageSize`。先等 `delivery_state=PUBLISHED` 再拉取才有�
 | `metrics.jsonl`     | `METRICS`      |
 | `summary.json`      | `SUMMARY`      |
 
-### 4.8 取下载地址 `GET /admin/v1/modeldev/artifacts/{artifact_id}/content`
+### 4.8 取下载地址 `GET /api/v1/modeldev/artifacts/{artifact_id}/content`
 
 响应：
 
@@ -425,26 +461,39 @@ Query：`page`、`pageSize`。先等 `delivery_state=PUBLISHED` 再拉取才有�
 | **删除 / 归档历史执行**           | 普通用户无此接口（清理是管理员受管操作）。                              |
 | **训练完成站内消息通知**            | 当前无面向用户的完成通知闭环。                                    |
 | **游标续页（`next_cursor`）**   | 无。分页只有 `page` / `pageSize`（见 §2）；`total` 已返回。 |
-| **GPU / 分布式 / 微调 / 推理服务** | 均不在当前范围，仅 CPU 固定训练方案。                              |
+| **GPU / 分布式 / 推理服务**      | 均不在当前范围，仅 CPU 方案。                                   |
+| **微调的真实模型登记**             | **暂缓**。微调产物会正常产出并以 `delivery_state=PUBLISHED` 交付，但登记进 Model 服务置 READY 仍待 Model 侧对接，属已知缺口。前端**不应把该情形渲染成业务失败**（见 §10）。 |
+| **微调数据集上传**               | 与通用训练一致：**无**用户上传接口，管理员经 CLI 导入（见 §10）。          |
+| **微调基模选择（选模型仓库里的模型）**    | **本期不提供**。无"可选基模列表"接口，前端不做基模下拉；`base_model_version_id` 由后端/运维侧固定提供（见 §4.3）。等 Model 侧对接完成后才补该接口。 |
+| **微调期间查看基模详情/下载基模**       | 同上，**无**。前端不要调用其它服务的模型接口。                          |
 
 ***
 
-## 10. 面向后续能力（微调等）的扩展约定
+## 10. 微调（LoRA SFT）已接入：kind 与参数均数据驱动
 
-> 本节不是当前能力，而是**给前端的实现约束**：后续将新增「模型微调（LoRA SFT）」等能力，其设计已明确**受理入口、查询视图、步骤协议、状态机均不变**，只通过预设（preset）切换能力与参数。若前端按下述约定实现，微调上线时**几乎零改动**；若把当前值写死，则需返工。
+> **更新（2026-10-19）**：微调（`kind=FINETUNING`）已复用本节所列**同一套接口**接入 BFF，受理入口、查询视图、步骤协议、错误码与状态机**完全不变**，仅由预设切换能力与参数。前端若按下述约定实现，微调**无需改动**；把当前值写死则需返工。
 
 **必须遵守的两条**
 
-1. **`kind` 不要写死**：不要在前端硬编码 `"GENERAL_TRAINING"`。提交训练与渲染预设时，`kind` 一律**取自 `GET /presets` 返回的 `preset.kind`**，原样回填到 `POST /executions` 的 `kind`。后续会新增 `MODEL_FINETUNING` 等取值。
-2. **参数表单按 `parameter_rules` 动态渲染**：不要写死 `epochs`/`batch_size`/`learning_rate` 三个输入框。表单字段应由 §4.1 的 `parameter_rules` 生成（`type`/`required`/`default_value`/`minimum`/`maximum`/`allowed_values`，均可能为 `null`）。后续微调会换成另一组参数（如 `lora_rank`/`lora_alpha`/`max_steps`/`cutoff_len`），集合由预设声明，前端无需改代码。
+1. **`kind` 不要写死**：不要在前端硬编码 `"GENERAL_TRAINING"`。提交训练与渲染预设时，`kind` 一律**取自 `GET /presets` 返回的 `preset.kind`**，原样回填到 `POST /executions` 的 `kind`。微调的取值是 **`FINETUNING`**（注意：不是 `MODEL_FINETUNING`；枚举来自 ModelDev 的 `ani.training.v1.ExecutionKind`，BFF 仅去掉 `EXECUTION_KIND_` 前缀透传）。
+2. **参数表单按 `parameter_rules` 动态渲染**：不要写死 `epochs`/`batch_size`/`learning_rate` 三个输入框。表单字段应由 §4.1 的 `parameter_rules` 生成（`type`/`required`/`default_value`/`minimum`/`maximum`/`allowed_values`，均可能为 `null`）。微调当前的可输入参数是 **`learning_rate`（DECIMAL）与 `max_steps`（INTEGER）**，集合由预设声明，前端无需改代码。
+
+**微调提交体的确切字段**：微调在 `POST /executions` 上额外使用 `base_model_version_id`、`finetuning`、`target_model_id` / `new_model_name`（后者二选一），且**不与通用训练字段混用**。完整结构、示例与互斥规则见 **§4.3**；`openapi.yaml` 的 `CreateExecutionRequest` 已包含这些字段，前端可直接据此生成类型。
 
 **建议**
 
-- **数据集格式只展示、不写死选择逻辑**：当前为 CSV，后续可能为 JSONL（`format` 字段会体现）；下拉仍来自 `GET /input-versions?state=READY`。
-- **产物按 `filename`/`role` 展示，不写死四个文件名**：当前为 `model.pt` 等 4 个（见 §4.7），后续微调会产出 LoRA adapter 类文件，前端按后端返回渲染即可。
+- **数据集格式只展示、不写死选择逻辑**：通用训练为 `CSV`，微调为 `JSON`（Alpaca schema），`format` 字段会体现；下拉仍来自 `GET /input-versions?state=READY`。
+- **产物按 `filename`/`role` 展示，不写死文件名**：通用训练产出 `model.pt` 等 4 个（见 §4.7）；微调会产出 `HF_MODEL`（合并后的 HF 模型，在 tar 内）及 `LORA_ADAPTER`/`METRICS`/`SUMMARY`/`EXPORT_REPORT`/`VERIFY_REPORT`/`SOURCE_METADATA` 等角色，前端按后端返回渲染即可。
 - **过滤/降级以字段驱动**：预设能否提交看 `new_submissions_enabled` 与 `active_release_id`（§4.1），不要按 `kind` 硬编码可用性。
 
 **保持不变（前端可按现状实现）**：全部接口路径与请求/响应结构、四轴状态机（§5）、幂等与错误码（§4.3、§6）、轮询交互（§7）。
+
+> **当前边界**：微调有两处已知缺口，前端按此实现即可，**无需等待**。
+>
+> 1. **基模不通过接口下发**：无"可选基模列表"接口，`base_model_version_id` 由后端/运维侧固定提供，前端不做基模下拉、不硬编码 UUID（见 §4.3、§9）。
+> 2. **真实模型登记暂缓**：产物会正常产出并以 `PUBLISHED` 交付，但登记进 Model 服务置 READY 仍待 Model 侧对接。前端**不应把该情形展示为业务失败**，按 `delivery_state=PUBLISHED` 与 `close_state=CLOSED` 正常渲染产物即可。
+>
+> 此外微调的输入数据集导入入口为管理员 CLI（`admin modeldev-import-finetuning-dataset`），与 CSV 一致，普通用户无上传接口（见 §9）。
 
 ***
 
@@ -455,4 +504,32 @@ Query：`page`、`pageSize`。先等 `delivery_state=PUBLISHED` 再拉取才有�
 - ❌ 缓存或记录 `download_url`。
 - ❌ 在 body/query 传 `tenant_id`、`namespace`、对象存储 key、Pod 名。
 - ❌ 期望推送，或高频轮询日志接口。
-- ❌ 用 camelCase 字段名（本模块统一 `lower_snake_case`）。
+- ❌ 在**请求体**里用 camelCase 字段名（body 统一 `lower_snake_case`）。注意**分页 query 例外**：列表接口用 `page` + `pageSize`（见 §2）。
+- ❌ 列表接口沿用旧的 `limit` / `cursor` 参数（已退役，传了直接 400）。
+- ❌ 为微调寻找/猜测"基模列表"接口——本期**没有**该类端点，`base_model_version_id` 不通过接口下发（见 §4.3）。
+- ❌ 前端硬编码 `base_model_version_id` 的具体 UUID。
+
+***
+
+## 12. 变更说明（2026-10-15）
+
+| 变更 | 旧 | 新 | 依据 |
+| ---- | -- | -- | ---- |
+| **路由前缀** | `/admin/v1/modeldev/*` | `/api/v1/modeldev/*` | `sql/data/20261013_api_prefix_rename.sql`（modeldev 业务域统一迁到 `/api/v1/modeldev/*`）、`app/admin/service/internal/server/modeldev_http.go`（`server.Route("/").POST("/api/v1/modeldev/executions", ...)`），以及同一提交的 `assets/openapi.yaml`。 |
+| **列表总数** | 文档称“列表只返回游标，无总数” | 列表**已返回** `total`（uint64，JSON 为十进制字符串） | `ListPresetsResponse` / `ListInputVersionsResponse` / `ListExecutionsResponse` / `ListExecutionArtifactsResponse` 均含 `total` 字段，见 §2 分页约定。 |
+
+以上仅涉及**路径字面量与一处过时说明**；请求/响应结构、四轴状态机、幂等与错误码、轮询交互**均未变化**。前端若已按旧前缀联调，需同步替换路径前缀。
+
+### 12.1 变更（2026-10-19）：微调（LoRA SFT）纳入契约
+
+本轮把微调能力补齐到 BFF 契约层，**不新增/不删除任何接口路径**，只扩充提交体字段与描述。
+
+| 变更 | 旧 | 新 | 依据 |
+| ---- | -- | -- | ---- |
+| **`kind` 描述** | 只提 `GENERAL_TRAINING` | **`GENERAL_TRAINING` 或 `FINETUNING`，取值必须来自预设的 `kind`，不得硬编码** | `api/protos/modeldev/service/v1/execution.proto` 的 `kind` 字段注释，以及预设列表返回的 `kind`（见 §4.1）。 |
+| **提交体新增 4 个微调字段** | 无 | `base_model_version_id`、`finetuning`、`target_model_id`、`new_model_name` | 同文件 `CreateExecutionRequest`；字段语义见 §4.3。 |
+| **新增消息 `FinetuningParameters`** | 无 | `learning_rate`（string）、`max_steps`（int64） | 同文件；取值与类型见 §4.3 参数表。 |
+| **OpenAPI 同步** | — | `assets/openapi.yaml` 已回写上述字段 | 生成链产物。 |
+| **基模来源标注** | 文档未说明 | `base_model_version_id` **本期无接口下发**，来源为后端/运维固定值；前端不设计下拉、不硬编码 UUID | 见 §4.3 blockquote、§9、§10「当前边界」、§11。 |
+
+> 说明：微调字段为**可选**。仅当预设 `kind=FINETUNING` 时才需要携带；`GENERAL_TRAINING` 沿用原字段集（两能力**不共享**微调专属字段）。已有按 `GENERAL_TRAINING` 联调的前端**无需改动**。

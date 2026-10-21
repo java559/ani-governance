@@ -156,6 +156,8 @@ func runModelDevManagement(ctx context.Context, command string, args []string, s
 		message = &modeldevv1.ImportReleaseRequest{}
 	case "modeldev-import-csv":
 		message = &modeldevv1.ImportCSVRequest{}
+	case "modeldev-import-finetuning-dataset":
+		message = &modeldevv1.ImportFinetuningDatasetRequest{}
 	case "modeldev-inspect":
 		message = &modeldevv1.InspectExecutionRequest{}
 	case "modeldev-reconcile":

@@ -44,7 +44,7 @@ func runAdmin(ctx context.Context, args []string, stdout io.Writer) error {
 		return runModelDevPause(ctx, args[1:], stdout)
 	}
 	switch command {
-	case "modeldev-enable", "modeldev-import-release", "modeldev-import-csv", "modeldev-inspect", "modeldev-reconcile", "modeldev-cleanup-plan", "modeldev-cleanup-apply":
+	case "modeldev-enable", "modeldev-import-release", "modeldev-import-csv", "modeldev-import-finetuning-dataset", "modeldev-inspect", "modeldev-reconcile", "modeldev-cleanup-plan", "modeldev-cleanup-apply":
 		return runModelDevManagement(ctx, command, args[1:], stdout)
 	}
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)

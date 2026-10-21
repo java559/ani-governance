@@ -53,9 +53,15 @@ func (c *ModelDevClient) GetExecution(ctx context.Context, scope ModelDevResolve
 func modelDevValidExecution(in *modeldevv1.ExecutionView) bool {
 	return in != nil && in.Identity != nil && modelDevCanonicalUUID(in.Identity.ExecutionId) &&
 		modelDevCanonicalUUID(in.Identity.OperationId) && modelDevDigest(in.Identity.ExecutionSpecHash) && in.States != nil &&
-		in.Kind == trainingv1.ExecutionKind_EXECUTION_KIND_GENERAL_TRAINING &&
+		modelDevSupportedExecutionKind(in.Kind) &&
 		modelDevValidTimestamp(in.AcceptedAt) && modelDevValidTimestamp(in.DeadlineAt) && modelDevValidTimestamp(in.ObservedAt) &&
 		in.States.ComputeState != 0 && in.States.DeliveryState != 0 && in.States.CloseState != 0 && in.States.ResourceState != 0
+}
+
+// The BFF passes through the shared execution contract unchanged; only the two
+// published CPU kinds are accepted so an unknown enum cannot widen the surface.
+func modelDevSupportedExecutionKind(kind trainingv1.ExecutionKind) bool {
+	return kind == trainingv1.ExecutionKind_EXECUTION_KIND_GENERAL_TRAINING || kind == trainingv1.ExecutionKind_EXECUTION_KIND_FINETUNING
 }
 
 func (c *ModelDevClient) ListExecutionArtifacts(ctx context.Context, scope ModelDevResolveScope, id string, page, pageSize uint32) (*modeldevv1.ListExecutionArtifactsResponse, error) {

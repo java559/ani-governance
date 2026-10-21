@@ -11,7 +11,7 @@ import (
 	kerrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
-	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
+	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
@@ -178,13 +178,8 @@ func deriveGpuProjection(op *ent.QuotaOperation, charges []*ent.QuotaCharge, has
 	if op == nil || op.TenantID == nil || *op.TenantID == 0 || op.CreateOperationID != nil || op.CreatedAt == nil || !supportedGpuOwner(op.OwnerService) {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU projection source")
 	}
-	c, err := DecodeGpuCanonical([]byte(op.CanonicalRequest))
-	if err != nil {
-		return nil, err
-	}
 	refs := make([]QuotaChargeRef, 0, len(charges))
-	gpuEnded := true
-	allEnded := true
+	gpuEnded, allEnded := true, true
 	for _, q := range charges {
 		if q == nil || q.TenantID == nil || *q.TenantID != *op.TenantID || q.OperationID != op.OperationID || q.ReleasedUnits < 0 || q.ReleasedUnits > q.OriginalUnits {
 			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid original GPU accounting")
@@ -197,15 +192,15 @@ func deriveGpuProjection(op *ent.QuotaOperation, charges []*ent.QuotaCharge, has
 			}
 		}
 	}
-	if err = ValidateGpuCharges(c, refs); err != nil {
-		return nil, err
-	}
-	business, err := res.DecodeBusinessPayload(c.BusinessPayload)
+	facts, err := validateDispatchCommand(op.OwnerService, &QuotaDispatchCommand{OperationID: op.OperationID, ResourceID: op.ResourceID, ResourceTenantID: op.ResourceTenantID, Actor: QuotaActor{Type: op.ActorType, ID: op.ActorID}, Action: op.Action, CanonicalRequest: []byte(op.CanonicalRequest), Charges: refs})
 	if err != nil {
 		return nil, err
 	}
-	g, d := business.GpuExecution, business.GpuDisplay
-	p := &acc.GpuUsageProjection{Ref: &acc.GpuUsageRef{TenantId: op.ResourceTenantID, OwnerService: op.OwnerService, ResourceId: op.ResourceID, CreateOperationId: op.OperationID}, Revision: 1, State: acc.UsageState_DECLARED, ProfileId: d.ProfileId, ProfileVersion: d.ProfileVersion, GroupId: g.NodeSelector["accelerator.ani.io/supply-group"], BaselineId: g.NodeSelector["accelerator.ani.io/baseline-id"], ClusterId: business.ClusterId, ContainerName: c.GpuRequest.ContainerName, ExecutionDigest: g.ExecutionDigest, SourceOperationCreatedAt: op.CreatedAt.UTC().Format(time.RFC3339Nano)}
+	if facts.CPU || facts.GpuRequest == nil || facts.Execution == nil || facts.Display == nil {
+		return nil, commandcontract.Invalid("CPU command has no GPU projection")
+	}
+	g, d, clusterID := facts.Execution, facts.Display, facts.GpuRequest.ClusterId
+	p := &acc.GpuUsageProjection{Ref: &acc.GpuUsageRef{TenantId: op.ResourceTenantID, OwnerService: op.OwnerService, ResourceId: op.ResourceID, CreateOperationId: op.OperationID}, Revision: 1, State: acc.UsageState_DECLARED, ProfileId: d.ProfileId, ProfileVersion: d.ProfileVersion, GroupId: g.NodeSelector["accelerator.ani.io/supply-group"], BaselineId: g.NodeSelector["accelerator.ani.io/baseline-id"], ClusterId: clusterID, ContainerName: facts.GpuRequest.ContainerName, ExecutionDigest: g.ExecutionDigest, SourceOperationCreatedAt: op.CreatedAt.UTC().Format(time.RFC3339Nano)}
 	suffix := "accepted"
 	if op.DispatchState == quotaoperation.DispatchStateCanceledUnsent {
 		if op.AttemptCount != 0 || !allEnded {

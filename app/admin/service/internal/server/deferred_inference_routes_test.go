@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewRestServerOmitsDeferredInferenceManagement(t *testing.T) {
+func TestNewRestServerRegistersInferenceManagement(t *testing.T) {
 	srv := newRestServerWithSwagger(t, false)
 	for _, route := range []struct{ method, path string }{
 		{http.MethodGet, "/api/v1/inference/services"},
@@ -28,7 +28,7 @@ func TestNewRestServerOmitsDeferredInferenceManagement(t *testing.T) {
 			request := httptest.NewRequest(route.method, route.path, strings.NewReader(`{"data":{}}`))
 			request.Header.Set("Content-Type", "application/json")
 			srv.ServeHTTP(response, request)
-			require.Equal(t, http.StatusNotFound, response.Code, "retired management routes must be absent from the real server")
+			require.NotEqual(t, http.StatusNotFound, response.Code, "inference management route must be registered on Governance")
 		})
 	}
 

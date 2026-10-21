@@ -7542,6 +7542,238 @@ paths:
                 - AccessKeyAuth: []
                   SignatureAuth: []
                   SignatureTime: []
+    /api/v1/inference/operations/{operation_id}:
+        get:
+            tags:
+                - InferenceService
+            operationId: InferenceService_GetInferenceOperation
+            parameters:
+                - name: operation_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Operation'
+    /api/v1/inference/services:
+        get:
+            tags:
+                - InferenceService
+            operationId: InferenceService_ListInference
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: capability
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListInferenceResponse'
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_CreateInference
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateInferenceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{data.resource_id}:delete:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_DeleteInference
+            parameters:
+                - name: data.resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteInferenceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{data.resource_id}:restart:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_RestartInference
+            parameters:
+                - name: data.resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{data.resource_id}:start:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_StartInference
+            parameters:
+                - name: data.resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{data.resource_id}:stop:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_StopInference
+            parameters:
+                - name: data.resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{data.resource_id}:update:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_UpdateInference
+            parameters:
+                - name: data.resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateInferenceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{resource_id}:
+        get:
+            tags:
+                - InferenceService
+            operationId: InferenceService_GetInference
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceView'
+    /api/v1/inference/services/{resource_id}/operations:
+        get:
+            tags:
+                - InferenceService
+            operationId: InferenceService_ListInferenceOperations
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListInferenceOperationsResponse'
     /api/v1/instance-operations/{operation_id}:
         get:
             tags:
@@ -8180,15 +8412,6 @@ paths:
                   in: query
                   schema:
                     type: string
-                - name: page.limit
-                  in: query
-                  schema:
-                    type: integer
-                    format: int32
-                - name: page.cursor
-                  in: query
-                  schema:
-                    type: string
                 - name: keyword
                   in: query
                   schema:
@@ -8201,6 +8424,16 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK
@@ -8243,6 +8476,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GetImportTaskResponse'
+    /api/v1/models/import-tasks/{task_id}/logs:
+        get:
+            tags:
+                - ModelService
+            operationId: ModelService_GetImportTaskLogs
+            parameters:
+                - name: task_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetImportTaskLogsResponse'
     /api/v1/models/import-tasks/{task_id}:retry:
         post:
             tags:
@@ -8334,15 +8585,16 @@ paths:
                   required: true
                   schema:
                     type: string
-                - name: page.limit
+                - name: page
                   in: query
                   schema:
                     type: integer
                     format: int32
-                - name: page.cursor
+                - name: pageSize
                   in: query
                   schema:
-                    type: string
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK
@@ -8368,6 +8620,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ImportModelResponse'
+    /api/v1/models:import-bundle:
+        post:
+            tags:
+                - ModelService
+            operationId: ModelService_ImportModelBundle
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ImportModelBundleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ImportModelBundleResponse'
     /api/v1/models:search:
         get:
             tags:
@@ -8394,15 +8664,16 @@ paths:
                   in: query
                   schema:
                     type: string
-                - name: page.limit
+                - name: page
                   in: query
                   schema:
                     type: integer
                     format: int32
-                - name: page.cursor
+                - name: pageSize
                   in: query
                   schema:
-                    type: string
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK
@@ -10638,7 +10909,7 @@ components:
                     type: string
                 kind:
                     type: string
-                    description: CPU-P01 supports GENERAL_TRAINING only
+                    description: GENERAL_TRAINING or FINETUNING. Take the value from the preset's kind; never hardcode it.
                 preset_id:
                     type: string
                 dataset_version_id:
@@ -10651,10 +10922,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/GeneralParameter'
-                    description: Optional registered parameters; omitted and [] are distinct intents. Null is rejected.
+                    description: Optional registered parameters; omitted and [] are distinct intents. Null is rejected. GENERAL_TRAINING only.
                 source_execution_id:
                     type: string
                     description: Reserved optional association. Currently rejected with 403 SOURCE_EXECUTION_UNAVAILABLE until source execution access can be verified. Omit this field.
+                base_model_version_id:
+                    type: string
+                    description: 'Required for FINETUNING: immutable base model version ID the adapter is trained against.'
+                finetuning:
+                    $ref: '#/components/schemas/FinetuningParameters'
+                target_model_id:
+                    type: string
+                    description: 'FINETUNING only: existing model to register the merged result under. Mutually exclusive with new_model_name.'
+                new_model_name:
+                    type: string
+                    description: 'FINETUNING only: name for a newly created model for the merged result. Mutually exclusive with target_model_id.'
             description: |-
                 CPU-P01 public intent. Shared canonicalization and immutable execution
                  contracts are maintained by ani-modeldev-service/contract/cpup01.
@@ -10681,6 +10963,54 @@ components:
             description: |-
                 Returned only after Governance has durably accepted the frozen intent.
                  Acceptance does not establish a KFP Run or successful training.
+        CreateInferenceData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                name:
+                    type: string
+                model_version_id:
+                    type: string
+                served_model_name:
+                    type: string
+                engine_image:
+                    type: string
+                engine_type:
+                    type: string
+                command:
+                    type: string
+                cpu:
+                    type: string
+                memory:
+                    type: string
+                replicas:
+                    type: integer
+                    format: int32
+                gpu:
+                    $ref: '#/components/schemas/GpuSelection'
+                runtime_mode:
+                    enum:
+                        - RUNTIME_MODE_UNSPECIFIED
+                        - RUNTIME_MODE_DEPLOYMENT
+                        - RUNTIME_MODE_LEADER_WORKER_SET
+                    type: string
+                    format: enum
+                worker_replicas:
+                    type: integer
+                    format: int32
+                preset_id:
+                    type: string
+                    description: Required for new managed creates. Legacy resource fields remain reserved input and are rejected.
+        CreateInferenceRequest:
+            example: {"data": {"idempotency_key": "20000000-0000-4000-8000-000000000001", "name": "qwen-inference", "model_version_id": "30000000-0000-4000-8000-000000000001", "served_model_name": "qwen2.5-1.5b-instruct", "engine_image": "registry.example/vllm:latest", "engine_type": "vllm", "command": "exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096", "replicas": 1, "preset_id": "40000000-0000-4000-8000-000000000001"}}
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateInferenceData'
+            description: |-
+                Public user intent. Trusted attachments, charges, identity and destination
+                 are assembled by Governance and have no representation in this DTO.
         CreateInstanceData:
             type: object
             properties:
@@ -11117,13 +11447,6 @@ components:
                     type: string
                     description: 绑定当前逻辑会话的 CSRF 证明，写请求时放入 X-CSRF-Token 头；不含身份授权
             description: 获取 CSRF 证明 - 回应
-        CursorPageMeta:
-            type: object
-            properties:
-                next_cursor:
-                    type: string
-                has_more:
-                    type: boolean
         DashboardOverviewResponse:
             type: object
             properties:
@@ -11319,6 +11642,20 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
+        DeleteInferenceData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                resource_id:
+                    type: string
+                expected_generation:
+                    type: string
+        DeleteInferenceRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/DeleteInferenceData'
         DeleteIntranetAddressPoolResponse:
             type: object
             properties:
@@ -11963,6 +12300,19 @@ components:
                 updated_at:
                     type: string
                     format: date-time
+        FinetuningParameters:
+            type: object
+            properties:
+                learning_rate:
+                    type: string
+                max_steps:
+                    type: integer
+                    description: 'Required for FINETUNING: step budget as a JSON number (e.g. 8), never a string. Program range [1, 200]; approved combinations come from the Release rules.'
+                    format: int64
+            description: |-
+                Registered LoRA SFT parameters. learning_rate is a decimal string and
+                 max_steps is an integer; program bounds and approved combinations are
+                 resolved against the Release.
         ForceLogoutSessionRequest:
             type: object
             properties:
@@ -12050,6 +12400,17 @@ components:
             properties:
                 space:
                     $ref: '#/components/schemas/ImageSpace'
+        GetImportTaskLogsResponse:
+            type: object
+            properties:
+                task_id:
+                    type: string
+                status:
+                    type: string
+                logs:
+                    type: string
+                available:
+                    type: boolean
         GetImportTaskResponse:
             type: object
             properties:
@@ -12273,6 +12634,17 @@ components:
                     type: string
                 units:
                     type: string
+        GpuSelection:
+            type: object
+            properties:
+                cluster_id:
+                    type: string
+                pool_id:
+                    type: string
+                profile_id:
+                    type: string
+                profile_version:
+                    type: string
         GpuSummary:
             type: object
             properties:
@@ -12429,6 +12801,72 @@ components:
                 updatedAt:
                     type: string
                     format: date-time
+        ImportModelBundleData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                model:
+                    $ref: '#/components/schemas/ImportModelBundleModelData'
+                version:
+                    $ref: '#/components/schemas/ImportModelBundleVersionData'
+                source:
+                    $ref: '#/components/schemas/ImportModelBundleSourceData'
+        ImportModelBundleModelData:
+            type: object
+            properties:
+                name:
+                    type: string
+                display_name:
+                    type: string
+                description:
+                    type: string
+                capabilities:
+                    type: array
+                    items:
+                        type: string
+                external_model_id:
+                    type: string
+            description: |-
+                ImportModelBundleRequest creates the model, version and remote import task
+                 in one idempotent Model-service operation. Tenant identity is resolved by
+                 the Governance BFF and is intentionally absent from this public DTO.
+        ImportModelBundleRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ImportModelBundleData'
+        ImportModelBundleResponse:
+            type: object
+            properties:
+                model:
+                    $ref: '#/components/schemas/Model'
+                version:
+                    $ref: '#/components/schemas/ModelVersion'
+                task:
+                    $ref: '#/components/schemas/ImportTask'
+        ImportModelBundleSourceData:
+            type: object
+            properties:
+                provider:
+                    type: string
+                repo_id:
+                    type: string
+                revision:
+                    type: string
+        ImportModelBundleVersionData:
+            type: object
+            properties:
+                version:
+                    type: string
+                format:
+                    type: string
+                engine_type:
+                    type: string
+                engine_image:
+                    type: string
+                startup_command:
+                    type: string
         ImportModelData:
             type: object
             properties:
@@ -12485,6 +12923,99 @@ components:
                 completed_at:
                     type: string
                     format: date-time
+        InferenceAcceptance:
+            type: object
+            properties:
+                operation_id:
+                    type: string
+                resource_id:
+                    type: string
+                replayed:
+                    type: boolean
+                result:
+                    type: string
+                    description: Durable Governance admission; this is not model readiness.
+                dispatch_operation_id:
+                    type: string
+        InferenceServiceCommandData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                resource_id:
+                    type: string
+                expected_generation:
+                    type: string
+        InferenceServiceCommandRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/InferenceServiceCommandData'
+        InferenceView:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                desired_state:
+                    type: string
+                generation:
+                    type: string
+                model_version_id:
+                    type: string
+                served_model_name:
+                    type: string
+                phase:
+                    type: string
+                health:
+                    type: string
+                observed_at:
+                    type: string
+                    format: date-time
+                engine_image:
+                    type: string
+                engine_type:
+                    type: string
+                command:
+                    type: string
+                cpu:
+                    type: string
+                memory:
+                    type: string
+                replicas:
+                    type: integer
+                    format: int32
+                runtime_mode:
+                    enum:
+                        - RUNTIME_MODE_UNSPECIFIED
+                        - RUNTIME_MODE_DEPLOYMENT
+                        - RUNTIME_MODE_LEADER_WORKER_SET
+                    type: string
+                    format: enum
+                worker_replicas:
+                    type: integer
+                    format: int32
+                gpu:
+                    $ref: '#/components/schemas/GpuSelection'
+                publication_phase:
+                    type: string
+                applied_generation:
+                    type: string
+                preset_id:
+                    type: string
+                preset_code:
+                    type: string
+                cpu_millis:
+                    type: string
+                memory_mib:
+                    type: string
+                selection_digest:
+                    type: string
+            description: |-
+                InferenceView is the Governance-owned read projection for UI consumers.
+                 It intentionally keeps the business-facing flat fields while hiding
+                 Inference's resource, runtime, engine, artifact and admission internals.
         InfoEntry:
             type: object
             properties:
@@ -13264,6 +13795,24 @@ components:
                     type: string
                 total:
                     type: string
+        ListInferenceOperationsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Operation'
+                total:
+                    type: string
+        ListInferenceResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/InferenceView'
+                total:
+                    type: string
         ListInputVersionsResponse:
             type: object
             properties:
@@ -13367,21 +13916,21 @@ components:
         ListModelVersionsResponse:
             type: object
             properties:
-                versions:
+                items:
                     type: array
                     items:
                         $ref: '#/components/schemas/ModelVersion'
-                meta:
-                    $ref: '#/components/schemas/CursorPageMeta'
+                total:
+                    type: string
         ListModelsResponse:
             type: object
             properties:
-                models:
+                items:
                     type: array
                     items:
                         $ref: '#/components/schemas/Model'
-                meta:
-                    $ref: '#/components/schemas/CursorPageMeta'
+                total:
+                    type: string
         ListMountablePVCsResponse:
             type: object
             properties:
@@ -16768,12 +17317,12 @@ components:
         SearchExternalModelsResponse:
             type: object
             properties:
-                candidates:
+                items:
                     type: array
                     items:
                         $ref: '#/components/schemas/ExternalModelCandidate'
-                meta:
-                    $ref: '#/components/schemas/CursorPageMeta'
+                hasMore:
+                    type: boolean
         SecurityRequirement:
             type: object
             properties:
@@ -17583,6 +18132,56 @@ components:
             properties:
                 image:
                     $ref: '#/components/schemas/ImageRegistration'
+        UpdateInferenceData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                resource_id:
+                    type: string
+                expected_generation:
+                    type: string
+                update_mask:
+                    type: string
+                    format: field-mask
+                model_version_id:
+                    type: string
+                served_model_name:
+                    type: string
+                engine_image:
+                    type: string
+                engine_type:
+                    type: string
+                command:
+                    type: string
+                cpu:
+                    type: string
+                memory:
+                    type: string
+                replicas:
+                    type: integer
+                    format: int32
+                gpu:
+                    $ref: '#/components/schemas/GpuSelection'
+                runtime_mode:
+                    enum:
+                        - RUNTIME_MODE_UNSPECIFIED
+                        - RUNTIME_MODE_DEPLOYMENT
+                        - RUNTIME_MODE_LEADER_WORKER_SET
+                    type: string
+                    format: enum
+                worker_replicas:
+                    type: integer
+                    format: int32
+        UpdateInferenceRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/UpdateInferenceData'
+            description: |-
+                UpdateInferenceRequest is the tenant-facing partial update. Fields named by
+                 update_mask are forwarded as supplied; Governance never derives or edits an
+                 engine command.
         UpdateInstanceSchedulingSettingsRequest:
             type: object
             properties:
@@ -18300,12 +18899,12 @@ security:
 tags:
     - name: AcceleratorAdminService
       description: |-
-        JWT platform user, current role permission and downstream exact actor/action/
-         cluster grant are all required. There is no implicit tenant-zero grant.
+        Governance requires a JWT platform user and current role permission.
+         Accelerator validates the service RPC and its provider-managed cluster scope.
     - name: AcceleratorService
       description: |-
-        JWT tenant user, active tenant, ACCELERATOR plan module, current role
-         permission and downstream delegation grant are all required.
+        Governance requires a JWT tenant user, active tenant, ACCELERATOR plan module
+         and current role permission. Accelerator enforces trusted tenant isolation.
     - name: AccessKeyService
       description: OpenAPI 访问凭证（AK/SK）管理 — BFF
     - name: AdminPortalService
@@ -18333,6 +18932,12 @@ tags:
     - name: DictTypeService
       description: 数据字典分类管理服务
     - name: ImageService
+    - name: InferenceService
+      description: |-
+        Requires trusted tenant-user Principal, active tenant and the separately
+         registered INFERENCE module/action/role/plan grants. Accelerator read grants
+         cannot admit inference commands. CREATE requires preset_id; only model,
+         served name and whole engine patches may be updated. CRUD retains data.
     - name: InstanceService
     - name: InternalMessageCategoryService
       description: 站内信消息分类管理服务
