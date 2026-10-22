@@ -101,17 +101,18 @@ func (c *TenantAccessCheckerImpl) checkTenantAccess(ctx context.Context, tenantI
 
 	// 3. 套餐模块白名单
 	bizModule := identityV1.Module_MODULE_UNSPECIFIED
-	a, aerr := c.entClient.Api.Query().
-		Where(api.PathEQ(path), api.MethodEQ(method)).
-		Only(sysCtx)
-	if aerr == nil && a != nil {
-		if a.BusinessModule != nil {
-			bizModule = mapApiBusinessModuleToProto(*a.BusinessModule)
-		}
-	} else {
+	a, aerr := c.findAPIByTemplate(sysCtx, method, path)
+	if aerr != nil {
+		c.log.Errorf(ctx, "tenant access check: api lookup failed for %s %s: %v", method, path, aerr)
+		return adminV1.ErrorForbidden("access denied")
+	}
+	if a == nil {
 		// 找不到对应 API 记录，无法判定模块。fail-closed 拒绝。
 		c.log.Errorf(ctx, "tenant access check: api not found for %s %s", method, path)
 		return adminV1.ErrorForbidden("access denied")
+	}
+	if a.BusinessModule != nil {
+		bizModule = mapApiBusinessModuleToProto(*a.BusinessModule)
 	}
 
 	if path == ComputeCatalogPath {
@@ -155,8 +156,44 @@ func (c *TenantAccessCheckerImpl) checkTenantAccess(ctx context.Context, tenantI
 	return nil
 }
 
-// isSelfScopedRoute 报告 (method, path) 是否为自助类路由（scope_kind = self / tenant-self）。
+// findAPIByTemplate 按 (method, path) 查 API 目录，路径参数名不一致时按归一化回退匹配。
 //
+// 目录路径由 OpenAPI 生成（驼峰参数名，如 {userId}），请求 path 是运行时路由模板
+// （proto 蛇形，如 {user_id}）。精确查询失败后，在同方法候选里做参数段归一化比较；
+// 归一化命中多条时无法判定业务模块，按未命中处理（fail-closed）。
+func (c *TenantAccessCheckerImpl) findAPIByTemplate(ctx context.Context, method, path string) (*ent.Api, error) {
+	a, err := c.entClient.Api.Query().
+		Where(api.PathEQ(path), api.MethodEQ(method)).
+		Only(ctx)
+	if err == nil && a != nil {
+		return a, nil
+	}
+	if err != nil && !ent.IsNotFound(err) {
+		return nil, err
+	}
+
+	target := permcode.NormalizePath(path)
+	candidates, lerr := c.entClient.Api.Query().
+		Where(api.MethodEQ(method)).
+		All(ctx)
+	if lerr != nil {
+		return nil, lerr
+	}
+
+	var match *ent.Api
+	for _, candidate := range candidates {
+		if candidate == nil || candidate.Path == nil || permcode.NormalizePath(*candidate.Path) != target {
+			continue
+		}
+		if match != nil {
+			return nil, nil
+		}
+		match = candidate
+	}
+	return match, nil
+}
+
+// isSelfScopedRoute 报告 (method, path) 是否为自助类路由（scope_kind = self / tenant-self）。
 // 判据取自权限码权威表（pkg/permcode），该表由生成期固化、覆盖全部已登记路由；
 // 未命中权威表时返回 false（fail-closed，保持原有模块白名单判定）。
 // 权威表不含 scope_kind 的数据库列，故只能在代码侧查表，不能读 sys_apis。

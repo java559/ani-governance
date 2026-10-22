@@ -14,6 +14,7 @@ import (
 	"go-wind-admin/pkg/authorizer"
 	"go-wind-admin/pkg/constants"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"go-wind-admin/pkg/permcode"
 )
 
 // AuthorizerProvider 权限数据提供者
@@ -97,7 +98,9 @@ func (p *AuthorizerProvider) ProvidePolicies(_ context.Context) (authorizer.Perm
 
 			var data = authorizer.PermissionData{
 				Domain: strconv.FormatUint(uint64(role.GetTenantId()), 10),
-				Path:   api.GetPath(),
+				// 目录路径可能来自 OpenAPI（驼峰参数名），运行时模板来自 proto（蛇形）；
+				// 策略侧与请求侧都按参数段归一化，避免同一路由因参数名不同而匹配失败。
+				Path:   permcode.NormalizePath(api.GetPath()),
 				Method: api.GetMethod(),
 			}
 			authorizerDataArray = append(authorizerDataArray, data)

@@ -11,6 +11,7 @@ import (
 	"go-wind-admin/pkg/localdeps/go-utils/trans"
 	authzEngine "go-wind-admin/pkg/localdeps/kratos-authz/engine"
 	authz "go-wind-admin/pkg/localdeps/kratos-authz/middleware"
+	"go-wind-admin/pkg/permcode"
 
 	authenticationV1 "go-wind-admin/api/gen/go/authentication/service/v1"
 )
@@ -26,7 +27,9 @@ func processAuthz(
 	var htr *http.Transport
 	var ok bool
 	if htr, ok = tr.(*http.Transport); ok {
-		path = authzEngine.Resource(htr.PathTemplate())
+		// 路由模板来自 proto（蛇形参数名），策略路径来自 API 目录（OpenAPI 驼峰参数名）。
+		// 两侧统一按参数段归一化后再比较，避免 {user_id} 与 {userId} 被判定为不同资源。
+		path = authzEngine.Resource(permcode.NormalizePath(htr.PathTemplate()))
 		action = authzEngine.Action(htr.Request().Method)
 	}
 

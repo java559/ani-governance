@@ -109,6 +109,15 @@ func nkey(method, path string) string {
 	return strings.ToUpper(strings.TrimSpace(method)) + " " + normalizePath(strings.TrimSpace(path))
 }
 
+// NormalizePath 对外暴露参数段归一化：把路径模板中的 {任意参数名} 统一为 {}。
+//
+// 授权策略与租户闸门也用同一规则比较"目录登记路径"（OpenAPI 产出的驼峰参数名，
+// 如 {userId}）与"运行时路由模板"（proto 蛇形，如 {user_id}）；不归一化时两者
+// 按字面比较不相等，会导致已授权的接口被 403 拒绝。
+func NormalizePath(path string) string {
+	return normalizePath(strings.TrimSpace(path))
+}
+
 // 归一化索引：normalized key -> expectation。若同一 normalized key 命中多个不同码，
 // 标记为冲突（在 init 时记录）。
 var (

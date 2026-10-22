@@ -5,6 +5,28 @@ import (
 	"testing"
 )
 
+// TestNormalizePath 路径参数段名不同但结构相同的模板必须归一为同一字符串。
+func TestNormalizePath(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{"/api/v1/admin/users/{user_id}/password", "/api/v1/admin/users/{}/password"},
+		{"/api/v1/admin/users/{userId}/password", "/api/v1/admin/users/{}/password"},
+		{"/api/v1/admin/mfa/{credentialId}", "/api/v1/admin/mfa/{}"},
+		{"/api/v1/admin/mfa/{credential_id}", "/api/v1/admin/mfa/{}"},
+		{"/api/v1/inference/services/{data.resource_id}:start", "/api/v1/inference/services/{}:start"},
+		{"/api/v1/inference/services/{resource_id}:start", "/api/v1/inference/services/{}:start"},
+		{"/api/v1/admin/users", "/api/v1/admin/users"},
+		{"  /api/v1/admin/roles/{id}  ", "/api/v1/admin/roles/{}"},
+	}
+	for _, tc := range cases {
+		if got := NormalizePath(tc.in); got != tc.want {
+			t.Errorf("NormalizePath(%q) = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
 // TestResolveAuthoritativeCodes 核对两张权威表的代表性命中与取码来源。
 func TestResolveAuthoritativeCodes(t *testing.T) {
 	cases := []struct {
