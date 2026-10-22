@@ -373,7 +373,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		acceleratorClient = client
 	}
 	gpuBffLedger := service.NewGpuBffLedgerBridge(quotaLedgerRepo, quotaAdminRepo)
-	acceleratorService := service.NewAcceleratorService(acceleratorClient, tenantRepo, gpuBffLedger, gpuBffLedger, quotaAdminRepo, quotaRegistry)
+	acceleratorService := service.NewAcceleratorService(acceleratorClient, tenantRepo, gpuBffLedger, gpuBffLedger, quotaAdminRepo, quotaRegistry, authz.Engine())
 	var gpuPlans service.GpuPlanResolver
 	if acceleratorClient != nil {
 		gpuPlans = acceleratorClient.Catalog

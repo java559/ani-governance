@@ -10,26 +10,26 @@ import "gnostic/openapi/v3/annotations.proto";
 // are assembled by Governance and have no representation in this DTO.
 message CreateInferenceRequest {
   option (gnostic.openapi.v3.schema) = {
-    example: {yaml: "{\"data\":{\"idempotency_key\":\"20000000-0000-4000-8000-000000000001\",\"name\":\"qwen-inference\",\"model_version_id\":\"30000000-0000-4000-8000-000000000001\",\"served_model_name\":\"qwen2.5-1.5b-instruct\",\"engine_image\":\"registry.example/vllm:latest\",\"engine_type\":\"vllm\",\"command\":\"exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096\",\"replicas\":1,\"preset_id\":\"40000000-0000-4000-8000-000000000001\"}}"}
+    example: {yaml: "{\"idempotency_key\":\"req-001\",\"name\":\"qwen-inference\",\"model_version_id\":\"version-1\",\"served_model_name\":\"qwen2.5-1.5b-instruct\",\"engine_image\":\"registry.example/vllm:latest\",\"engine_type\":\"vllm\",\"command\":\"exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096\",\"cpu\":\"8\",\"memory\":\"32Gi\",\"replicas\":1,\"preset_id\":\"40000000-0000-4000-8000-000000000001\"}"}
   };
-  CreateInferenceData data = 1;
-}
-message CreateInferenceData {
-  string idempotency_key = 1 [json_name = "idempotency_key"];
-  string name = 2;
-  string model_version_id = 3 [json_name = "model_version_id"];
-  string served_model_name = 4 [json_name = "served_model_name"];
-  string engine_image = 5 [json_name = "engine_image"];
-  string engine_type = 6 [json_name = "engine_type"];
-  string command = 7;
-  string cpu = 8 [deprecated = true];
-  string memory = 9 [deprecated = true];
-  int32 replicas = 10;
-  GpuSelection gpu = 11 [deprecated = true];
-  inference.view.v1.RuntimeMode runtime_mode = 12 [json_name = "runtime_mode"];
-  int32 worker_replicas = 13 [json_name = "worker_replicas"];
-  // Required for new managed creates. Legacy resource fields remain reserved input and are rejected.
-  string preset_id = 14 [json_name = "preset_id"];
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  string name = 3;
+  string model_version_id = 4 [json_name = "model_version_id"];
+  string served_model_name = 5 [json_name = "served_model_name"];
+  string engine_image = 6 [json_name = "engine_image"];
+  string engine_type = 7 [json_name = "engine_type"];
+  string command = 8;
+  string cpu = 9 [deprecated = true];
+  string memory = 10 [deprecated = true];
+  int32 replicas = 11;
+  GpuSelection gpu = 12 [deprecated = true];
+  inference.view.v1.RuntimeMode runtime_mode = 13 [json_name = "runtime_mode"];
+  int32 worker_replicas = 14 [json_name = "worker_replicas"];
+  // Required for new managed creates. Legacy resource fields remain rejected.
+  string preset_id = 15 [json_name = "preset_id"];
 }
 message GpuSelection {
   string cluster_id = 1 [json_name = "cluster_id"];
@@ -37,11 +37,13 @@ message GpuSelection {
   string profile_id = 3 [json_name = "profile_id"];
   uint64 profile_version = 4 [json_name = "profile_version"];
 }
-message DeleteInferenceRequest { DeleteInferenceData data = 1; }
-message DeleteInferenceData {
-  string idempotency_key = 1 [json_name = "idempotency_key"];
-  string resource_id = 2 [json_name = "resource_id"];
-  int64 expected_generation = 3 [json_name = "expected_generation"];
+message DeleteInferenceRequest {
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  string resource_id = 3 [json_name = "resource_id"];
+  int64 expected_generation = 4 [json_name = "expected_generation"];
 }
 message InferenceAcceptance {
   string operation_id = 1 [json_name = "operation_id"];
@@ -58,9 +60,6 @@ message ListInferenceRequest {
   string status = 3;
   string capability = 4;
 }
-// InferenceView is the Governance-owned read projection for UI consumers.
-// It intentionally keeps the business-facing flat fields while hiding
-// Inference's resource, runtime, engine, artifact and admission internals.
 message InferenceView {
   string id = 1;
   string name = 2;
@@ -87,7 +86,6 @@ message InferenceView {
   int64 cpu_millis = 23 [json_name = "cpu_millis"];
   int64 memory_mib = 24 [json_name = "memory_mib"];
   string selection_digest = 25 [json_name = "selection_digest"];
-
 }
 message ListInferenceResponse {
   repeated InferenceView items = 1;
@@ -95,33 +93,35 @@ message ListInferenceResponse {
 }
 message GetInferenceOperationRequest { string operation_id = 1 [json_name = "operation_id"]; }
 
-// UpdateInferenceRequest is the tenant-facing partial update. Fields named by
-// update_mask are forwarded as supplied; Governance never derives or edits an
-// engine command.
-message UpdateInferenceRequest { UpdateInferenceData data = 1; }
-message UpdateInferenceData {
-  string idempotency_key = 1 [json_name = "idempotency_key"];
-  string resource_id = 2 [json_name = "resource_id"];
-  int64 expected_generation = 3 [json_name = "expected_generation"];
-  google.protobuf.FieldMask update_mask = 4 [json_name = "update_mask"];
-  string model_version_id = 5 [json_name = "model_version_id"];
-  string served_model_name = 6 [json_name = "served_model_name"];
-  string engine_image = 7 [json_name = "engine_image"];
-  string engine_type = 8 [json_name = "engine_type"];
-  string command = 9;
-  string cpu = 10 [deprecated = true];
-  string memory = 11 [deprecated = true];
-  int32 replicas = 12 [deprecated = true];
-  GpuSelection gpu = 13 [deprecated = true];
-  inference.view.v1.RuntimeMode runtime_mode = 14 [json_name = "runtime_mode"];
-  int32 worker_replicas = 15 [json_name = "worker_replicas"];
+message UpdateInferenceRequest {
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  string resource_id = 3 [json_name = "resource_id"];
+  int64 expected_generation = 4 [json_name = "expected_generation"];
+  google.protobuf.FieldMask update_mask = 5 [json_name = "update_mask"];
+  string model_version_id = 6 [json_name = "model_version_id"];
+  string served_model_name = 7 [json_name = "served_model_name"];
+  string engine_image = 8 [json_name = "engine_image"];
+  string engine_type = 9 [json_name = "engine_type"];
+  string command = 10;
+  string cpu = 11 [deprecated = true];
+  string memory = 12 [deprecated = true];
+  int32 replicas = 13 [deprecated = true];
+  GpuSelection gpu = 14 [deprecated = true];
+  inference.view.v1.RuntimeMode runtime_mode = 15 [json_name = "runtime_mode"];
+  int32 worker_replicas = 16 [json_name = "worker_replicas"];
+  string preset_id = 17 [json_name = "preset_id"];
 }
 
-message InferenceServiceCommandRequest { InferenceServiceCommandData data = 1; }
-message InferenceServiceCommandData {
-  string idempotency_key = 1 [json_name = "idempotency_key"];
-  string resource_id = 2 [json_name = "resource_id"];
-  int64 expected_generation = 3 [json_name = "expected_generation"];
+message InferenceServiceCommandRequest {
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  string resource_id = 3 [json_name = "resource_id"];
+  int64 expected_generation = 4 [json_name = "expected_generation"];
 }
 
 message ListInferenceOperationsRequest {

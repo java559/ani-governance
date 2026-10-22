@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"strconv"
 
+	contractv1 "github.com/liangzai006/ani-inference-service/api/inference/contract/v1"
 	runtimev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
@@ -54,7 +55,7 @@ func DecodeInferenceCanonical(raw []byte) (*InferenceCanonical, error) {
 	if hex.EncodeToString(sum[:]) != c.BusinessPayloadDigest {
 		return nil, Invalid("inference business digest mismatch")
 	}
-	business, e := runtimev1.DecodeBusinessPayload(c.BusinessPayload)
+	business, e := contractv1.DecodeBusinessPayload(c.BusinessPayload)
 	if e != nil {
 		return nil, e
 	}
@@ -68,7 +69,7 @@ func DecodeInferenceCanonical(raw []byte) (*InferenceCanonical, error) {
 			return nil, Invalid("inference selection resources mismatch")
 		}
 	}
-	class, e := runtimev1.ManagedResourceClassForCreate(business)
+	class, e := contractv1.ManagedResourceClassForCreate(business)
 	if e != nil || class != c.ResourceClass {
 		return nil, Invalid("inference resource class mismatch")
 	}
@@ -81,7 +82,7 @@ func DecodeInferenceCanonical(raw []byte) (*InferenceCanonical, error) {
 		if c.Selection.ComputeType != "gpu" || g == nil || c.GpuRequest == nil || len(c.QuotaItems) != 1 || c.ClusterID != g.ClusterId || business.ClusterId != g.ClusterId || business.GpuDisplay == nil || business.GpuDisplay.ProfileId != g.ProfileId || business.GpuDisplay.ProfileVersion != g.ProfileVersion || business.GpuDisplay.Mode != g.Mode || business.GpuDisplay.ModelKey != g.ModelKey {
 			return nil, Invalid("inference GPU selection mismatch")
 		}
-		topology, e := runtimev1.NormalizeTopology(business.Runtime, business.Replicas, g.DevicesPerUnit)
+		topology, e := contractv1.NormalizeTopology(business.Runtime, business.Replicas, g.DevicesPerUnit)
 		if e != nil {
 			return nil, e
 		}
@@ -118,7 +119,7 @@ func validateInferenceStored(in StoredCommand) (*Facts, error) {
 	if deletion != (in.CreateOperationID != "") || deletion != (c.DeleteScope != nil) {
 		return nil, Invalid("invalid inference deletion association")
 	}
-	business, e := runtimev1.DecodeBusinessPayload(c.BusinessPayload)
+	business, e := contractv1.DecodeBusinessPayload(c.BusinessPayload)
 	if e != nil {
 		return nil, e
 	}
@@ -127,12 +128,12 @@ func validateInferenceStored(in StoredCommand) (*Facts, error) {
 		createID = in.CreateOperationID
 	}
 	business.Context = &runtimev1.CommandContext{TenantId: in.TenantID, ResourceId: in.ResourceID, OperationId: createID}
-	digest, e := runtimev1.ManagedCreateCommandHash(business, in.TenantID, c.CreateActorType, c.CreateActorID)
+	digest, e := contractv1.ManagedCreateCommandHash(business, in.TenantID, c.CreateActorType, c.CreateActorID)
 	if e != nil || digest != c.CreateCommandDigest || (!deletion && (in.ActorType != c.CreateActorType || in.ActorID != c.CreateActorID)) {
 		return nil, Invalid("inference command identity mismatch")
 	}
 	business.Context.RequestDigest = digest
-	if e = runtimev1.ValidateManagedCreate(business); e != nil {
+	if e = contractv1.ValidateManagedCreate(business); e != nil {
 		return nil, e
 	}
 
@@ -149,12 +150,12 @@ func validateInferenceStored(in StoredCommand) (*Facts, error) {
 			return nil, Invalid("inference delete scope mismatch")
 		}
 		request := &runtimev1.DeleteInferenceServiceRequest{ResourceId: in.ResourceID, CreateOperationId: in.CreateOperationID, ExpectedGeneration: c.DeleteExpectedGeneration, ManagedDeleteScope: scope, Context: &runtimev1.CommandContext{TenantId: in.TenantID, ResourceId: in.ResourceID, OperationId: in.OperationID}}
-		hash, e := runtimev1.ManagedDeleteCommandHash(request, in.TenantID, in.ActorType, in.ActorID)
+		hash, e := contractv1.ManagedDeleteCommandHash(request, in.TenantID, in.ActorType, in.ActorID)
 		if e != nil {
 			return nil, e
 		}
 		request.Context.RequestDigest = hash
-		if e = runtimev1.ValidateManagedDelete(request); e != nil {
+		if e = contractv1.ValidateManagedDelete(request); e != nil {
 			return nil, e
 		}
 	}

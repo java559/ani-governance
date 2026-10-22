@@ -34,16 +34,17 @@ type AcceleratorService struct {
 	admin.UnimplementedAcceleratorServiceServer
 	admin.UnimplementedAcceleratorAdminServiceServer
 	admin.UnimplementedQuotaSelfServiceServer
-	client   *data.AcceleratorClient
-	tenants  ResourceTenantResolver
-	refs     GpuUsageRefResolver
-	quotas   GpuPreviewQuotaReader
-	accounts AcceleratorQuotaAccounts
-	registry *QuotaAdapterRegistry
+	client           *data.AcceleratorClient
+	tenants          ResourceTenantResolver
+	refs             GpuUsageRefResolver
+	quotas           GpuPreviewQuotaReader
+	accounts         AcceleratorQuotaAccounts
+	registry         *QuotaAdapterRegistry
+	actionAuthorizer AcceleratorActionAuthorizer
 }
 
-func NewAcceleratorService(client *data.AcceleratorClient, tenants ResourceTenantResolver, refs GpuUsageRefResolver, quotas GpuPreviewQuotaReader, accounts AcceleratorQuotaAccounts, registry *QuotaAdapterRegistry) *AcceleratorService {
-	return &AcceleratorService{client: client, tenants: tenants, refs: refs, quotas: quotas, accounts: accounts, registry: registry}
+func NewAcceleratorService(client *data.AcceleratorClient, tenants ResourceTenantResolver, refs GpuUsageRefResolver, quotas GpuPreviewQuotaReader, accounts AcceleratorQuotaAccounts, registry *QuotaAdapterRegistry, actionAuthorizer AcceleratorActionAuthorizer) *AcceleratorService {
+	return &AcceleratorService{client: client, tenants: tenants, refs: refs, quotas: quotas, accounts: accounts, registry: registry, actionAuthorizer: actionAuthorizer}
 }
 
 func acceleratorPrincipal(ctx context.Context, platform bool) (*auth.Principal, error) {

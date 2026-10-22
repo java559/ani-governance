@@ -261,3 +261,153 @@ message SetAcceleratorProfileStateRequest { string profile_id = 1 [json_name="pr
 message SetAcceleratorProfileStateData { string idempotency_key = 1 [json_name="idempotency_key"]; uint64 expected_revision = 2 [json_name="expected_revision"]; string desired = 3; }
 message DeleteAcceleratorProfileRequest { string profile_id = 1 [json_name="profile_id"]; DeleteAcceleratorProfileData data = 2; }
 message DeleteAcceleratorProfileData { string idempotency_key = 1 [json_name="idempotency_key"]; uint64 expected_revision = 2 [json_name="expected_revision"]; }
+
+message AcceleratorInitializationCheck {
+  string key = 1;
+  string source = 2;
+  string state = 3;
+  string reason = 4;
+}
+message AcceleratorInitialization {
+  bool registered = 1;
+  string connection_ref = 2 [json_name="connection_ref"];
+  string cluster_id = 3 [json_name="cluster_id"];
+  string display_name = 4 [json_name="display_name"];
+  string configuration_state = 5 [json_name="configuration_state"];
+  repeated AcceleratorInitializationCheck checks = 6;
+  AcceleratorInitializationOperation latest_operation = 7 [json_name="latest_operation"];
+  bool configuration_complete = 8 [json_name="configuration_complete"];
+}
+message ListAcceleratorDiscoveredNodesRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2 [json_name="pageSize"];
+}
+message AcceleratorDiscoveredGPU {
+  string uuid = 1;
+  string model_key = 2 [json_name="model_key"];
+  uint64 physical_memory_bytes = 3 [json_name="physical_memory_bytes"];
+  optional int64 safe_memory_budget_mib = 4 [json_name="safe_memory_budget_mib"];
+  string budget_reason = 5 [json_name="budget_reason"];
+}
+message AcceleratorDiscoveredBaseline {
+  string baseline_ref = 1 [json_name="baseline_ref"];
+  string mode = 2;
+  string source = 3;
+}
+message AcceleratorNodeSource {
+  string source = 1;
+  string observed_at = 2 [json_name="observed_at"];
+  string received_at = 3 [json_name="received_at"];
+  bool complete = 4;
+  repeated string issues = 5;
+}
+message AcceleratorDiscoveredNode {
+  AcceleratorNode node = 1;
+  string group_id = 2 [json_name="group_id"];
+  repeated AcceleratorDiscoveredGPU gpus = 3;
+  repeated AcceleratorDiscoveredBaseline baselines = 4;
+  bool agent_online = 5 [json_name="agent_online"];
+  string agent_lease_expires_at = 6 [json_name="agent_lease_expires_at"];
+  repeated AcceleratorNodeSource sources = 7;
+  bool selectable = 8;
+  repeated string blocking_reasons = 9 [json_name="blocking_reasons"];
+}
+message AcceleratorDiscoveredNodes {
+  repeated AcceleratorDiscoveredNode items = 1;
+  uint64 total = 2;
+  string discovery_revision = 3 [json_name="discovery_revision"];
+}
+message AcceleratorInitializationNewPool { string display_name = 1 [json_name="display_name"]; }
+message AcceleratorInitializationPoolInput {
+  string client_key = 1 [json_name="client_key"];
+  oneof pool {
+    string existing_pool_id = 2 [json_name="existing_pool_id"];
+    AcceleratorInitializationNewPool new_pool = 3 [json_name="new_pool"];
+  }
+}
+message AcceleratorInitializationExistingGroup {
+  string group_id = 1 [json_name="group_id"];
+  uint64 expected_version = 2 [json_name="expected_version"];
+}
+message AcceleratorInitializationNewGroup {
+  string pool_key = 1 [json_name="pool_key"];
+  string display_name = 2 [json_name="display_name"];
+  repeated AcceleratorNode nodes = 3;
+  string baseline_ref = 4 [json_name="baseline_ref"];
+  string queue_name = 5 [json_name="queue_name"];
+}
+message AcceleratorInitializationGroupInput {
+  string client_key = 1 [json_name="client_key"];
+  oneof group {
+    AcceleratorInitializationExistingGroup existing_group = 2 [json_name="existing_group"];
+    AcceleratorInitializationNewGroup new_group = 3 [json_name="new_group"];
+  }
+}
+message AcceleratorInitializationProfileInput {
+  string client_key = 1 [json_name="client_key"];
+  string group_key = 2 [json_name="group_key"];
+  string display_name = 3 [json_name="display_name"];
+  int64 memory_mib_per_device = 4 [json_name="memory_mib_per_device"];
+  uint32 core_limit_percent = 5 [json_name="core_limit_percent"];
+  uint32 max_devices_per_replica = 6 [json_name="max_devices_per_replica"];
+}
+message CreateAcceleratorInitializationRequest { CreateAcceleratorInitializationData data = 1; }
+message CreateAcceleratorInitializationData {
+  string idempotency_key = 1 [json_name="idempotency_key"];
+  string discovery_revision = 2 [json_name="discovery_revision"];
+  repeated AcceleratorInitializationPoolInput pools = 3;
+  repeated AcceleratorInitializationGroupInput groups = 4;
+  repeated AcceleratorInitializationProfileInput profiles = 5;
+}
+message GetAcceleratorInitializationOperationRequest { string operation_id = 1 [json_name="operation_id"]; }
+message RetryAcceleratorInitializationOperationRequest {
+  string operation_id = 1 [json_name="operation_id"];
+  RetryAcceleratorInitializationOperationData data = 2;
+}
+message RetryAcceleratorInitializationOperationData {
+  string idempotency_key = 1 [json_name="idempotency_key"];
+  uint64 expected_version = 2 [json_name="expected_version"];
+}
+message AcceleratorInitializationPoolResult {
+  string client_key = 1 [json_name="client_key"];
+  string pool_id = 2 [json_name="pool_id"];
+}
+message AcceleratorInitializationGroupResult {
+  string client_key = 1 [json_name="client_key"];
+  string group_id = 2 [json_name="group_id"];
+  uint64 recorded_group_version = 3 [json_name="recorded_group_version"];
+  string auto_open_result = 4 [json_name="auto_open_result"];
+  string admission = 5;
+}
+message AcceleratorInitializationProfileResult {
+  string client_key = 1 [json_name="client_key"];
+  string profile_id = 2 [json_name="profile_id"];
+  uint64 recorded_revision = 3 [json_name="recorded_revision"];
+  string recorded_state = 4 [json_name="recorded_state"];
+}
+message AcceleratorInitializationStep {
+  string step_id = 1 [json_name="step_id"];
+  string object_key = 2 [json_name="object_key"];
+  string kind = 3;
+  string state = 4;
+  string resource_id = 5 [json_name="resource_id"];
+  uint64 input_group_version = 6 [json_name="input_group_version"];
+  uint64 output_group_version = 7 [json_name="output_group_version"];
+  string reason = 8;
+}
+message AcceleratorInitializationOperation {
+  string operation_id = 1 [json_name="operation_id"];
+  uint64 version = 2;
+  string state = 3;
+  string created_at = 4 [json_name="created_at"];
+  string updated_at = 5 [json_name="updated_at"];
+  string current_step = 6 [json_name="current_step"];
+  bool retryable = 7;
+  string reason = 8;
+  repeated string required_actions = 9 [json_name="required_actions"];
+  string cluster_id = 10 [json_name="cluster_id"];
+  repeated AcceleratorInitializationPoolResult pools = 11;
+  repeated AcceleratorInitializationGroupResult groups = 12;
+  repeated AcceleratorInitializationProfileResult profiles = 13;
+  repeated AcceleratorInitializationStep steps = 14;
+}

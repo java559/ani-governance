@@ -69,14 +69,14 @@ func (s *ModelService) trustedModelOperator(ctx context.Context) (string, string
 }
 
 func (s *ModelService) CreateModel(ctx context.Context, in *catalogv1.CreateModelRequest) (*catalogv1.CreateModelResponse, error) {
-	if in == nil || in.Data == nil || strings.TrimSpace(in.Data.Name) == "" || strings.TrimSpace(in.Data.IdempotencyKey) == "" {
+	if in == nil || strings.TrimSpace(in.Name) == "" || strings.TrimSpace(in.IdempotencyKey) == "" {
 		return nil, kratoserrors.BadRequest("INVALID_MODEL_REQUEST", "model name and idempotency_key are required")
 	}
 	tenant, actor, err := s.trustedModelOperator(ctx)
 	if err != nil {
 		return nil, err
 	}
-	d := in.Data
+	d := in
 	model, err := s.client.CreateModel(ctx, tenant, actor, &modelv1.CreateModelRequest{TenantId: tenant, Name: d.Name, DisplayName: d.DisplayName, Description: d.Description, Capabilities: d.Capabilities, IdempotencyKey: d.IdempotencyKey, ModelId: d.ModelId})
 	if err != nil {
 		return nil, mapModelError(err)
@@ -176,14 +176,14 @@ func (s *ModelService) DeleteModel(ctx context.Context, in *catalogv1.DeleteMode
 }
 
 func (s *ModelService) CreateModelVersion(ctx context.Context, in *catalogv1.CreateModelVersionRequest) (*catalogv1.CreateModelVersionResponse, error) {
-	if in == nil || in.Data == nil || strings.TrimSpace(in.Data.ModelId) == "" || strings.TrimSpace(in.Data.Version) == "" || strings.TrimSpace(in.Data.IdempotencyKey) == "" {
+	if in == nil || strings.TrimSpace(in.ModelId) == "" || strings.TrimSpace(in.Version) == "" || strings.TrimSpace(in.IdempotencyKey) == "" {
 		return nil, kratoserrors.BadRequest("INVALID_MODEL_VERSION", "model_id, version and idempotency_key are required")
 	}
 	tenant, actor, err := s.trustedModelOperator(ctx)
 	if err != nil {
 		return nil, err
 	}
-	d := in.Data
+	d := in
 	version, err := s.client.CreateModelVersion(ctx, tenant, actor, &modelv1.CreateModelVersionRequest{
 		ModelId: d.ModelId, Version: d.Version, Format: d.Format, StoragePath: d.StoragePath,
 		ChecksumSha256: d.ChecksumSha256, SizeBytes: d.SizeBytes, IsEncrypted: d.IsEncrypted,
@@ -232,7 +232,7 @@ func (s *ModelService) ListModelVersions(ctx context.Context, in *catalogv1.List
 	if err != nil {
 		return nil, err
 	}
-	reply, err := s.client.ListModelVersions(ctx, tenant, actor, &modelv1.ListModelVersionsRequest{ModelId: in.ModelId, Page: in.Page, PageSize: in.PageSize})
+	reply, err := s.client.ListModelVersions(ctx, tenant, actor, &modelv1.ListModelVersionsRequest{ModelId: in.ModelId, Page: in.Page, PageSize: in.PageSize, Status: in.Status})
 	if err != nil {
 		return nil, mapModelError(err)
 	}
@@ -289,14 +289,14 @@ func (s *ModelService) GetUploadURL(ctx context.Context, in *catalogv1.GetUpload
 }
 
 func (s *ModelService) ImportModel(ctx context.Context, in *catalogv1.ImportModelRequest) (*catalogv1.ImportModelResponse, error) {
-	if in == nil || in.Data == nil || strings.TrimSpace(in.Data.Source) == "" || strings.TrimSpace(in.Data.RepoId) == "" || strings.TrimSpace(in.Data.IdempotencyKey) == "" {
+	if in == nil || strings.TrimSpace(in.Source) == "" || strings.TrimSpace(in.RepoId) == "" || strings.TrimSpace(in.IdempotencyKey) == "" {
 		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT", "source, repo_id and idempotency_key are required")
 	}
 	tenant, actor, err := s.trustedModelOperator(ctx)
 	if err != nil {
 		return nil, err
 	}
-	d := in.Data
+	d := in
 	task, err := s.client.ImportModel(ctx, tenant, actor, &modelv1.ImportModelRequest{Source: d.Source, RepoId: d.RepoId, Revision: d.Revision, IdempotencyKey: d.IdempotencyKey, WebhookUrl: d.WebhookUrl, ModelId: d.ModelId, ModelVersionId: d.ModelVersionId})
 	if err != nil {
 		return nil, mapModelError(err)
@@ -308,10 +308,10 @@ func (s *ModelService) ImportModel(ctx context.Context, in *catalogv1.ImportMode
 }
 
 func (s *ModelService) ImportModelBundle(ctx context.Context, in *catalogv1.ImportModelBundleRequest) (*catalogv1.ImportModelBundleResponse, error) {
-	if in == nil || in.Data == nil {
-		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT_BUNDLE", "data is required")
+	if in == nil {
+		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT_BUNDLE", "request is required")
 	}
-	d := in.Data
+	d := in
 	if strings.TrimSpace(d.IdempotencyKey) == "" || d.Model == nil || strings.TrimSpace(d.Model.Name) == "" || len(d.Model.Capabilities) == 0 || d.Version == nil || strings.TrimSpace(d.Version.Version) == "" || strings.TrimSpace(d.Version.Format) == "" || strings.TrimSpace(d.Version.EngineType) == "" || strings.TrimSpace(d.Version.EngineImage) == "" || strings.TrimSpace(d.Version.StartupCommand) == "" || d.Source == nil || strings.TrimSpace(d.Source.Provider) == "" || strings.TrimSpace(d.Source.RepoId) == "" || strings.TrimSpace(d.Source.Revision) == "" {
 		return nil, kratoserrors.BadRequest("INVALID_MODEL_IMPORT_BUNDLE", "idempotency_key, model, version, source and complete runtime input are required")
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	runtimev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
+	contractv1 "github.com/liangzai006/ani-inference-service/api/inference/contract/v1"
 	view "go-wind-admin/api/gen/go/inference/service/v1"
 	operationview "go-wind-admin/api/gen/go/inference/view/v1"
 	"go-wind-admin/app/admin/service/internal/commandcontract"
@@ -62,7 +62,7 @@ func (s *GpuAcceptance) inferenceOperation(ctx context.Context, id string) (*ent
 }
 func acceptedInferenceView(op *ent.QuotaOperation, c *commandcontract.InferenceCanonical) *view.InferenceView {
 	out := &view.InferenceView{Id: op.ResourceID, Phase: string(op.DispatchState)}
-	if business, e := runtimev1.DecodeBusinessPayload(c.BusinessPayload); e == nil {
+	if business, e := contractv1.DecodeBusinessPayload(c.BusinessPayload); e == nil {
 		out.Name = business.Name
 		out.ModelVersionId = business.ModelVersionId
 		out.ServedModelName = business.ServedModelName

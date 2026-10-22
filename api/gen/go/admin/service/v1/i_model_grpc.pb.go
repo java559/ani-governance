@@ -29,6 +29,7 @@ const (
 	ModelService_CreateModelVersion_FullMethodName   = "/admin.service.v1.ModelService/CreateModelVersion"
 	ModelService_GetModelVersion_FullMethodName      = "/admin.service.v1.ModelService/GetModelVersion"
 	ModelService_ListModelVersions_FullMethodName    = "/admin.service.v1.ModelService/ListModelVersions"
+	ModelService_ListModelOperations_FullMethodName  = "/admin.service.v1.ModelService/ListModelOperations"
 	ModelService_DeleteModelVersion_FullMethodName   = "/admin.service.v1.ModelService/DeleteModelVersion"
 	ModelService_GetUploadURL_FullMethodName         = "/admin.service.v1.ModelService/GetUploadURL"
 	ModelService_ImportModel_FullMethodName          = "/admin.service.v1.ModelService/ImportModel"
@@ -55,6 +56,9 @@ type ModelServiceClient interface {
 	CreateModelVersion(ctx context.Context, in *v1.CreateModelVersionRequest, opts ...grpc.CallOption) (*v1.CreateModelVersionResponse, error)
 	GetModelVersion(ctx context.Context, in *v1.GetModelVersionRequest, opts ...grpc.CallOption) (*v1.GetModelVersionResponse, error)
 	ListModelVersions(ctx context.Context, in *v1.ListModelVersionsRequest, opts ...grpc.CallOption) (*v1.ListModelVersionsResponse, error)
+	// Authenticated tenant principal, model:service:read and MODEL plan required.
+	// Model verifies ownership; inaccessible models return 404.
+	ListModelOperations(ctx context.Context, in *v1.ListModelOperationsRequest, opts ...grpc.CallOption) (*v1.ListModelOperationsResponse, error)
 	DeleteModelVersion(ctx context.Context, in *v1.DeleteModelVersionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetUploadURL(ctx context.Context, in *v1.GetUploadURLRequest, opts ...grpc.CallOption) (*v1.GetUploadURLResponse, error)
 	ImportModel(ctx context.Context, in *v1.ImportModelRequest, opts ...grpc.CallOption) (*v1.ImportModelResponse, error)
@@ -147,6 +151,16 @@ func (c *modelServiceClient) ListModelVersions(ctx context.Context, in *v1.ListM
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.ListModelVersionsResponse)
 	err := c.cc.Invoke(ctx, ModelService_ListModelVersions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelServiceClient) ListModelOperations(ctx context.Context, in *v1.ListModelOperationsRequest, opts ...grpc.CallOption) (*v1.ListModelOperationsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListModelOperationsResponse)
+	err := c.cc.Invoke(ctx, ModelService_ListModelOperations_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -249,6 +263,9 @@ type ModelServiceServer interface {
 	CreateModelVersion(context.Context, *v1.CreateModelVersionRequest) (*v1.CreateModelVersionResponse, error)
 	GetModelVersion(context.Context, *v1.GetModelVersionRequest) (*v1.GetModelVersionResponse, error)
 	ListModelVersions(context.Context, *v1.ListModelVersionsRequest) (*v1.ListModelVersionsResponse, error)
+	// Authenticated tenant principal, model:service:read and MODEL plan required.
+	// Model verifies ownership; inaccessible models return 404.
+	ListModelOperations(context.Context, *v1.ListModelOperationsRequest) (*v1.ListModelOperationsResponse, error)
 	DeleteModelVersion(context.Context, *v1.DeleteModelVersionRequest) (*emptypb.Empty, error)
 	GetUploadURL(context.Context, *v1.GetUploadURLRequest) (*v1.GetUploadURLResponse, error)
 	ImportModel(context.Context, *v1.ImportModelRequest) (*v1.ImportModelResponse, error)
@@ -290,6 +307,9 @@ func (UnimplementedModelServiceServer) GetModelVersion(context.Context, *v1.GetM
 }
 func (UnimplementedModelServiceServer) ListModelVersions(context.Context, *v1.ListModelVersionsRequest) (*v1.ListModelVersionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListModelVersions not implemented")
+}
+func (UnimplementedModelServiceServer) ListModelOperations(context.Context, *v1.ListModelOperationsRequest) (*v1.ListModelOperationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListModelOperations not implemented")
 }
 func (UnimplementedModelServiceServer) DeleteModelVersion(context.Context, *v1.DeleteModelVersionRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteModelVersion not implemented")
@@ -480,6 +500,24 @@ func _ModelService_ListModelVersions_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ModelService_ListModelOperations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListModelOperationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelServiceServer).ListModelOperations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelService_ListModelOperations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelServiceServer).ListModelOperations(ctx, req.(*v1.ListModelOperationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ModelService_DeleteModelVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v1.DeleteModelVersionRequest)
 	if err := dec(in); err != nil {
@@ -662,6 +700,10 @@ var ModelService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListModelVersions",
 			Handler:    _ModelService_ListModelVersions_Handler,
+		},
+		{
+			MethodName: "ListModelOperations",
+			Handler:    _ModelService_ListModelOperations_Handler,
 		},
 		{
 			MethodName: "DeleteModelVersion",

@@ -54,15 +54,17 @@ message ImportTask {
   google.protobuf.Timestamp completed_at = 11 [json_name = "completed_at"];
 }
 
-message CreateModelData {
-  string name = 1;
-  string display_name = 2 [json_name = "display_name"];
-  string description = 3;
-  repeated string capabilities = 4;
-  string idempotency_key = 5 [json_name = "idempotency_key"];
-  string model_id = 6 [json_name = "model_id"];
+message CreateModelRequest {
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string name = 2;
+  string display_name = 3 [json_name = "display_name"];
+  string description = 4;
+  repeated string capabilities = 5;
+  string idempotency_key = 6 [json_name = "idempotency_key"];
+  string model_id = 7 [json_name = "model_id"];
 }
-message CreateModelRequest { CreateModelData data = 1; }
 message CreateModelResponse { Model model = 1; }
 
 message GetModelRequest { string model_id = 1 [json_name = "model_id"]; }
@@ -146,23 +148,25 @@ message GetModelDownloadURLResponse {
   google.protobuf.Timestamp expires_at = 6 [json_name = "expires_at"];
 }
 
-message CreateModelVersionData {
-  string model_id = 1 [json_name = "model_id"];
-  string version = 2;
-  string format = 3;
-  string storage_path = 4 [json_name = "storage_path"];
-  string checksum_sha256 = 5 [json_name = "checksum_sha256"];
-  int64 size_bytes = 6 [json_name = "size_bytes"];
-  bool is_encrypted = 7 [json_name = "is_encrypted"];
-  string encrypt_algo = 8 [json_name = "encrypt_algo"];
-  string encrypt_hint = 9 [json_name = "encrypt_hint"];
-  string idempotency_key = 10 [json_name = "idempotency_key"];
-  string engine_type = 11 [json_name = "engine_type"];
-  string startup_command = 12 [json_name = "startup_command"];
-  reserved 13;
-  string engine_image = 14 [json_name = "engine_image"];
+message CreateModelVersionRequest {
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string model_id = 2 [json_name = "model_id"];
+  string version = 3;
+  string format = 4;
+  string storage_path = 5 [json_name = "storage_path"];
+  string checksum_sha256 = 6 [json_name = "checksum_sha256"];
+  int64 size_bytes = 7 [json_name = "size_bytes"];
+  bool is_encrypted = 8 [json_name = "is_encrypted"];
+  string encrypt_algo = 9 [json_name = "encrypt_algo"];
+  string encrypt_hint = 10 [json_name = "encrypt_hint"];
+  string idempotency_key = 11 [json_name = "idempotency_key"];
+  string engine_type = 12 [json_name = "engine_type"];
+  string startup_command = 13 [json_name = "startup_command"];
+  reserved 14;
+  string engine_image = 15 [json_name = "engine_image"];
 }
-message CreateModelVersionRequest { CreateModelVersionData data = 1; }
 message CreateModelVersionResponse { ModelVersion version = 1; }
 
 message GetModelVersionRequest {
@@ -180,6 +184,7 @@ message ListModelVersionsRequest {
   reserved 2;
   optional int32 page = 3;
   optional int32 page_size = 4 [json_name = "pageSize"];
+  string status = 5;
 }
 message ListModelVersionsResponse {
   reserved 1, 2;
@@ -187,16 +192,18 @@ message ListModelVersionsResponse {
   int64 total = 4;
 }
 
-message ImportModelData {
-  string source = 1;
-  string repo_id = 2 [json_name = "repo_id"];
-  string revision = 3;
-  string idempotency_key = 4 [json_name = "idempotency_key"];
-  string webhook_url = 5 [json_name = "webhook_url"];
-  string model_id = 6 [json_name = "model_id"];
-  string model_version_id = 7 [json_name = "model_version_id"];
+message ImportModelRequest {
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string source = 2;
+  string repo_id = 3 [json_name = "repo_id"];
+  string revision = 4;
+  string idempotency_key = 5 [json_name = "idempotency_key"];
+  string webhook_url = 6 [json_name = "webhook_url"];
+  string model_id = 7 [json_name = "model_id"];
+  string model_version_id = 8 [json_name = "model_version_id"];
 }
-message ImportModelRequest { ImportModelData data = 1; }
 message ImportModelResponse { ImportTask task = 1; }
 
 // ImportModelBundleRequest creates the model, version and remote import task
@@ -224,14 +231,15 @@ message ImportModelBundleSourceData {
   string revision = 3;
 }
 
-message ImportModelBundleData {
-  string idempotency_key = 1 [json_name = "idempotency_key"];
-  ImportModelBundleModelData model = 2;
-  ImportModelBundleVersionData version = 3;
-  ImportModelBundleSourceData source = 4;
+message ImportModelBundleRequest {
+  // The former envelope field is retired; public JSON fields are top-level.
+  reserved 1;
+  reserved "data";
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  ImportModelBundleModelData model = 3;
+  ImportModelBundleVersionData version = 4;
+  ImportModelBundleSourceData source = 5;
 }
-
-message ImportModelBundleRequest { ImportModelBundleData data = 1; }
 
 message ImportModelBundleResponse {
   Model model = 1;
@@ -250,3 +258,29 @@ message GetImportTaskLogsResponse {
 }
 message RetryImportTaskRequest { string task_id = 1 [json_name = "task_id"]; }
 message RetryImportTaskResponse { ImportTask task = 1; }
+
+// Operation history is tenant scoped and newest first. Accepted imports are
+// queued work, not completed imports.
+message ListModelOperationsRequest {
+  string model_id = 1 [json_name = "model_id"];
+  optional int32 page = 2;
+  optional int32 page_size = 3 [json_name = "pageSize"];
+}
+message ListModelOperationsResponse {
+  repeated ModelOperation items = 1;
+  int64 total = 2;
+}
+message ModelOperation {
+  string id = 1;
+  string model_id = 2 [json_name = "model_id"];
+  string model_version_id = 3 [json_name = "model_version_id"];
+  string action = 4;
+  string actor = 5;
+  string result = 6;
+  string before_state = 7 [json_name = "before_state"];
+  string after_state = 8 [json_name = "after_state"];
+  string error_class = 9 [json_name = "error_class"];
+  string request_id = 10 [json_name = "request_id"];
+  google.protobuf.Timestamp created_at = 11 [json_name = "created_at"];
+  string task_id = 12 [json_name = "task_id"];
+}

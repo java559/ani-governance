@@ -8,6 +8,11 @@ import "google/protobuf/empty.proto";
 // Governance requires a JWT platform user and current role permission.
 // Accelerator validates the service RPC and its provider-managed cluster scope.
 service AcceleratorAdminService {
+  rpc GetInitialization(google.protobuf.Empty) returns (catalog.service.v1.AcceleratorInitialization) { option (google.api.http) = {get:"/api/v1/admin/accelerator/initialization"}; }
+  rpc ListDiscoveredNodes(catalog.service.v1.ListAcceleratorDiscoveredNodesRequest) returns (catalog.service.v1.AcceleratorDiscoveredNodes) { option (google.api.http) = {get:"/api/v1/admin/accelerator/discovered-nodes"}; }
+  rpc CreateInitialization(catalog.service.v1.CreateAcceleratorInitializationRequest) returns (catalog.service.v1.AcceleratorInitializationOperation) { option (google.api.http) = {post:"/api/v1/admin/accelerator/initializations" body:"*"}; }
+  rpc GetInitializationOperation(catalog.service.v1.GetAcceleratorInitializationOperationRequest) returns (catalog.service.v1.AcceleratorInitializationOperation) { option (google.api.http) = {get:"/api/v1/admin/accelerator/initializations/{operation_id}"}; }
+  rpc RetryInitializationOperation(catalog.service.v1.RetryAcceleratorInitializationOperationRequest) returns (catalog.service.v1.AcceleratorInitializationOperation) { option (google.api.http) = {post:"/api/v1/admin/accelerator/initializations/{operation_id}:retry" body:"*"}; }
   rpc ListClusters(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorClusters) { option (google.api.http) = {get:"/api/v1/admin/accelerator/clusters"}; }
   rpc RegisterCluster(catalog.service.v1.RegisterAcceleratorClusterRequest) returns (catalog.service.v1.AcceleratorCluster) { option (google.api.http) = {post:"/api/v1/admin/accelerator/clusters" body:"*"}; }
   rpc ListPools(catalog.service.v1.AcceleratorPageRequest) returns (catalog.service.v1.AcceleratorPools) { option (google.api.http) = {get:"/api/v1/admin/accelerator/pools"}; }

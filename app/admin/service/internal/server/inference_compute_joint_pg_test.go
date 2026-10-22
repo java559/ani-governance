@@ -100,14 +100,14 @@ func TestInferenceComputeSoftwareFlow(t *testing.T) {
 			require.Equal(t, int64(1), f.providers.modelCalls)
 			require.NoError(t, os.WriteFile(filepath.Join(f.control, "model-unavailable"), nil, 0600))
 			// Name-only updates inherit artifacts and frozen resources, with no Model.
-			update := &view.UpdateInferenceRequest{Data: &view.UpdateInferenceData{IdempotencyKey: uuid.NewString(), ResourceId: accepted.ResourceId, ExpectedGeneration: 1, UpdateMask: fieldMask("served_model_name"), ServedModelName: "renamed"}}
+			update := &view.UpdateInferenceRequest{IdempotencyKey: uuid.NewString(), ResourceId: accepted.ResourceId, ExpectedGeneration: 1, UpdateMask: fieldMask("served_model_name"), ServedModelName: "renamed"}
 			changed := new(view.InferenceAcceptance)
 			f.call("POST", "/api/v1/inference/services/"+accepted.ResourceId+":update", update, changed, 202)
 			f.waitOwner(changed.OperationId, "succeeded")
 			for _, action := range []string{"stop", "start", "restart"} {
 				current, err := f.owner.GetTrusted(context.Background(), f.tenant.ResourceTenantID, f.actor, &runtimev1.GetInferenceServiceRequest{ResourceId: accepted.ResourceId})
 				require.NoError(t, err)
-				cmd := &view.InferenceServiceCommandRequest{Data: &view.InferenceServiceCommandData{IdempotencyKey: uuid.NewString(), ResourceId: accepted.ResourceId, ExpectedGeneration: current.Generation}}
+				cmd := &view.InferenceServiceCommandRequest{IdempotencyKey: uuid.NewString(), ResourceId: accepted.ResourceId, ExpectedGeneration: current.Generation}
 				out := new(view.InferenceAcceptance)
 				f.call("POST", "/api/v1/inference/services/"+accepted.ResourceId+":"+action, cmd, out, 202)
 				f.waitOwner(out.OperationId, "succeeded")
@@ -129,7 +129,7 @@ func TestInferenceComputeSoftwareFlow(t *testing.T) {
 				require.NoError(t, os.WriteFile(filepath.Join(f.control, "cleanup-model-fails"), nil, 0600))
 			}
 			deletion := new(view.InferenceAcceptance)
-			f.call("POST", "/api/v1/inference/services/"+accepted.ResourceId+":delete", &view.DeleteInferenceRequest{Data: &view.DeleteInferenceData{IdempotencyKey: uuid.NewString(), ResourceId: accepted.ResourceId}}, deletion, 202)
+			f.call("POST", "/api/v1/inference/services/"+accepted.ResourceId+":delete", &view.DeleteInferenceRequest{IdempotencyKey: uuid.NewString(), ResourceId: accepted.ResourceId}, deletion, 202)
 			if mode != "cpu" {
 				require.Eventually(t, func() bool { return f.eventCount("cleanup_model") > 0 }, 10*time.Second, 20*time.Millisecond)
 				require.Zero(t, f.eventCount("observe_release"), "CleanupModel failure must precede release coordination")
@@ -170,7 +170,7 @@ func TestInferenceComputeDeleteFirstRecovery(t *testing.T) {
 				require.NotEqual(t, quotaoperation.DispatchStateAcked, op.DispatchState)
 				require.NoError(t, os.WriteFile(filepath.Join(f.control, "pause"), nil, 0600))
 				d := new(view.InferenceAcceptance)
-				f.call("POST", "/api/v1/inference/services/"+a.ResourceId+":delete", &view.DeleteInferenceRequest{Data: &view.DeleteInferenceData{IdempotencyKey: uuid.NewString(), ResourceId: a.ResourceId}}, d, 202)
+				f.call("POST", "/api/v1/inference/services/"+a.ResourceId+":delete", &view.DeleteInferenceRequest{IdempotencyKey: uuid.NewString(), ResourceId: a.ResourceId}, d, 202)
 				require.Eventually(t, func() bool {
 					o, e := f.ledger.GetOperationForUser(context.Background(), f.tenant.ID, d.OperationId)
 					return e == nil && o.DispatchState == quotaoperation.DispatchStateAcked
@@ -439,7 +439,7 @@ func newComputeCrossFixture(t *testing.T, mode string) *computeCrossFixture {
 	httpServer := httptest.NewServer(h)
 	t.Cleanup(httpServer.Close)
 	f.url = httpServer.URL
-	f.request = &view.CreateInferenceRequest{Data: &view.CreateInferenceData{IdempotencyKey: uuid.NewString(), PresetId: f.providers.selection.PresetId, Name: "software-" + uuid.NewString(), ModelVersionId: uuid.NewString(), ServedModelName: "software-model", EngineImage: "runtime.invalid/fixture:v1", EngineType: "vllm", Command: "complete caller command --served-model-name software-model", Replicas: 1}}
+	f.request = &view.CreateInferenceRequest{IdempotencyKey: uuid.NewString(), PresetId: f.providers.selection.PresetId, Name: "software-" + uuid.NewString(), ModelVersionId: uuid.NewString(), ServedModelName: "software-model", EngineImage: "runtime.invalid/fixture:v1", EngineType: "vllm", Command: "complete caller command --served-model-name software-model", Replicas: 1}
 	return f
 }
 func fieldMask(paths ...string) *fieldmaskpb.FieldMask { return &fieldmaskpb.FieldMask{Paths: paths} }

@@ -7,14 +7,14 @@ import "inference/view/v1/view.proto";
 
 // Requires trusted tenant-user Principal, active tenant and the separately
 // registered INFERENCE module/action/role/plan grants. Accelerator read grants
-// cannot admit inference commands. CREATE requires preset_id; only model,
-// served name and whole engine patches may be updated. CRUD retains data.
+// cannot admit inference commands. CREATE requires preset_id; public business
+// fields are top-level and CRUD retains durable resource data.
 service InferenceService {
   rpc CreateInference(inference.service.v1.CreateInferenceRequest) returns (inference.service.v1.InferenceAcceptance) {
     option (google.api.http) = {post: "/api/v1/inference/services" body: "*"};
   }
   rpc DeleteInference(inference.service.v1.DeleteInferenceRequest) returns (inference.service.v1.InferenceAcceptance) {
-    option (google.api.http) = {post: "/api/v1/inference/services/{data.resource_id}:delete" body: "*"};
+    option (google.api.http) = {post: "/api/v1/inference/services/{resource_id}:delete" body: "*"};
   }
   rpc GetInference(inference.service.v1.GetInferenceRequest) returns (inference.service.v1.InferenceView) {
     option (google.api.http) = {get: "/api/v1/inference/services/{resource_id}"};
@@ -26,16 +26,16 @@ service InferenceService {
     option (google.api.http) = {get: "/api/v1/inference/operations/{operation_id}"};
   }
   rpc UpdateInference(inference.service.v1.UpdateInferenceRequest) returns (inference.service.v1.InferenceAcceptance) {
-    option (google.api.http) = {post: "/api/v1/inference/services/{data.resource_id}:update" body: "*"};
+    option (google.api.http) = {post: "/api/v1/inference/services/{resource_id}:update" body: "*"};
   }
   rpc StartInference(inference.service.v1.InferenceServiceCommandRequest) returns (inference.service.v1.InferenceAcceptance) {
-    option (google.api.http) = {post: "/api/v1/inference/services/{data.resource_id}:start" body: "*"};
+    option (google.api.http) = {post: "/api/v1/inference/services/{resource_id}:start" body: "*"};
   }
   rpc StopInference(inference.service.v1.InferenceServiceCommandRequest) returns (inference.service.v1.InferenceAcceptance) {
-    option (google.api.http) = {post: "/api/v1/inference/services/{data.resource_id}:stop" body: "*"};
+    option (google.api.http) = {post: "/api/v1/inference/services/{resource_id}:stop" body: "*"};
   }
   rpc RestartInference(inference.service.v1.InferenceServiceCommandRequest) returns (inference.service.v1.InferenceAcceptance) {
-    option (google.api.http) = {post: "/api/v1/inference/services/{data.resource_id}:restart" body: "*"};
+    option (google.api.http) = {post: "/api/v1/inference/services/{resource_id}:restart" body: "*"};
   }
   rpc ListInferenceOperations(inference.service.v1.ListInferenceOperationsRequest) returns (inference.service.v1.ListInferenceOperationsResponse) {
     option (google.api.http) = {get: "/api/v1/inference/services/{resource_id}/operations"};

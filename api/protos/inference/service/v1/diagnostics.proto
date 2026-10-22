@@ -1,0 +1,57 @@
+syntax = "proto3";
+package inference.service.v1;
+import "google/protobuf/timestamp.proto";
+
+message GetRuntimeDiagnosticsRequest { string resource_id = 1 [json_name = "resource_id"]; }
+message RuntimeInstance {
+  string name = 1;
+  string uid = 2;
+  string phase = 3;
+  repeated string containers = 4;
+}
+message RuntimeDiagnostics {
+  string invocation_health = 1 [json_name = "invocation_health"];
+  string health_reason = 2 [json_name = "health_reason"];
+  // Absent until an invocation probe with its own timestamp is recorded.
+  google.protobuf.Timestamp health_observed_at = 3 [json_name = "health_observed_at"];
+  google.protobuf.Timestamp runtime_observed_at = 4 [json_name = "runtime_observed_at"];
+  repeated RuntimeInstance instances = 5;
+  google.protobuf.Timestamp observed_at = 6 [json_name = "observed_at"];
+}
+message RuntimeLogsRequest {
+  string resource_id = 1 [json_name = "resource_id"];
+  string instance = 2;
+  string container = 3;
+  google.protobuf.Timestamp since = 4;
+  google.protobuf.Timestamp until = 5;
+  int64 tail_lines = 6 [json_name = "tail_lines"];
+}
+message RuntimeLogLine {
+  google.protobuf.Timestamp timestamp = 1;
+  string message = 2;
+}
+message RuntimeLogsResponse {
+  repeated RuntimeLogLine items = 1;
+  bool truncated = 2;
+}
+message ListRuntimeEventsRequest {
+  string resource_id = 1 [json_name = "resource_id"];
+  int32 page = 2;
+  int32 page_size = 3 [json_name = "pageSize"];
+  google.protobuf.Timestamp since = 4;
+  google.protobuf.Timestamp until = 5;
+  string type = 6;
+}
+message RuntimeEvent {
+  string id = 1;
+  string type = 2;
+  string reason = 3;
+  string message = 4;
+  google.protobuf.Timestamp timestamp = 5;
+  string instance = 6;
+  int64 count = 7;
+}
+message ListRuntimeEventsResponse {
+  repeated RuntimeEvent items = 1;
+  int64 total = 2;
+}

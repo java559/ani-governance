@@ -27,17 +27,17 @@ var File_admin_service_v1_i_inference_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_inference_proto_rawDesc = "" +
 	"\n" +
-	"\"admin/service/v1/i_inference.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a inference/service/v1/owner.proto\x1a\x1cinference/view/v1/view.proto2\xa9\r\n" +
+	"\"admin/service/v1/i_inference.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a inference/service/v1/owner.proto\x1a\x1cinference/view/v1/view.proto2\x90\r\n" +
 	"\x10InferenceService\x12\x91\x01\n" +
-	"\x0fCreateInference\x12,.inference.service.v1.CreateInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/inference/services\x12\xab\x01\n" +
-	"\x0fDeleteInference\x12,.inference.service.v1.DeleteInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/inference/services/{data.resource_id}:delete\x12\x90\x01\n" +
+	"\x0fCreateInference\x12,.inference.service.v1.CreateInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/inference/services\x12\xa6\x01\n" +
+	"\x0fDeleteInference\x12,.inference.service.v1.DeleteInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\":\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/inference/services/{resource_id}:delete\x12\x90\x01\n" +
 	"\fGetInference\x12).inference.service.v1.GetInferenceRequest\x1a#.inference.service.v1.InferenceView\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/inference/services/{resource_id}\x12\x8c\x01\n" +
 	"\rListInference\x12*.inference.service.v1.ListInferenceRequest\x1a+.inference.service.v1.ListInferenceResponse\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/inference/services\x12\x9e\x01\n" +
-	"\x15GetInferenceOperation\x122.inference.service.v1.GetInferenceOperationRequest\x1a\x1c.inference.view.v1.Operation\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/inference/operations/{operation_id}\x12\xab\x01\n" +
-	"\x0fUpdateInference\x12,.inference.service.v1.UpdateInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/inference/services/{data.resource_id}:update\x12\xb1\x01\n" +
-	"\x0eStartInference\x124.inference.service.v1.InferenceServiceCommandRequest\x1a).inference.service.v1.InferenceAcceptance\">\x82\xd3\xe4\x93\x028:\x01*\"3/api/v1/inference/services/{data.resource_id}:start\x12\xaf\x01\n" +
-	"\rStopInference\x124.inference.service.v1.InferenceServiceCommandRequest\x1a).inference.service.v1.InferenceAcceptance\"=\x82\xd3\xe4\x93\x027:\x01*\"2/api/v1/inference/services/{data.resource_id}:stop\x12\xb5\x01\n" +
-	"\x10RestartInference\x124.inference.service.v1.InferenceServiceCommandRequest\x1a).inference.service.v1.InferenceAcceptance\"@\x82\xd3\xe4\x93\x02::\x01*\"5/api/v1/inference/services/{data.resource_id}:restart\x12\xc3\x01\n" +
+	"\x15GetInferenceOperation\x122.inference.service.v1.GetInferenceOperationRequest\x1a\x1c.inference.view.v1.Operation\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/inference/operations/{operation_id}\x12\xa6\x01\n" +
+	"\x0fUpdateInference\x12,.inference.service.v1.UpdateInferenceRequest\x1a).inference.service.v1.InferenceAcceptance\":\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/inference/services/{resource_id}:update\x12\xac\x01\n" +
+	"\x0eStartInference\x124.inference.service.v1.InferenceServiceCommandRequest\x1a).inference.service.v1.InferenceAcceptance\"9\x82\xd3\xe4\x93\x023:\x01*\"./api/v1/inference/services/{resource_id}:start\x12\xaa\x01\n" +
+	"\rStopInference\x124.inference.service.v1.InferenceServiceCommandRequest\x1a).inference.service.v1.InferenceAcceptance\"8\x82\xd3\xe4\x93\x022:\x01*\"-/api/v1/inference/services/{resource_id}:stop\x12\xb0\x01\n" +
+	"\x10RestartInference\x124.inference.service.v1.InferenceServiceCommandRequest\x1a).inference.service.v1.InferenceAcceptance\";\x82\xd3\xe4\x93\x025:\x01*\"0/api/v1/inference/services/{resource_id}:restart\x12\xc3\x01\n" +
 	"\x17ListInferenceOperations\x124.inference.service.v1.ListInferenceOperationsRequest\x1a5.inference.service.v1.ListInferenceOperationsResponse\";\x82\xd3\xe4\x93\x025\x123/api/v1/inference/services/{resource_id}/operationsB\xbc\x01\n" +
 	"\x14com.admin.service.v1B\x0fIInferenceProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 

@@ -127,11 +127,11 @@
 | Accelerator 平台/租户 | 22 | register-accelerator-permissions.sql | 明确平台与租户读取及各个命令，不能合成 accelerator:view/create |
 | Quota 自助 | 1 | 同一 Accelerator 注册脚本 | 保持 quota:account:self-read；business_module 为 TENANT |
 | Instance | 9 | register-instance-permissions.sql | list/read、operation/preset读取、create/start/stop/delete/exec分别登记 |
-| Model | 14 | register-model-permissions.sql | 保持 model:service:read/manage |
-| Inference | 10 | register-inference-permissions.sql | 推理管理由 Governance BFF 提供，Higress 不承载 `/api/v1/...` |
-| 合计 | 119 | 现行能力映射附录 | 所有条目均须被实际聚合入口接入并通过校验 |
+| Model | 16 | register-model-permissions.sql | 保持 model:service:read/manage |
+| Inference | 14 | register-inference-permissions.sql、register-inference-diagnostics-permissions.sql | 推理管理由 Governance BFF 提供，Higress 不承载 `/api/v1/...` |
+| 合计 | 125 | 现行能力映射附录 | 所有条目均须被实际聚合入口接入并通过校验 |
 
-这 119 条对应 103 个不同权限码。`network:snat:get` 有意用于 VPC SNAT 与 SNAT binding 两种读取，Model 与 Inference 的读取和管理分别聚合多个接口，附录已记录这些能力。其他方法/目标路径均唯一。这是接口面的现有显式能力清单，不是数据库现状快照，也不包含全部管理或其他业务接口。未实现的覆盖接入属于本规范落地缺项，不能同时声明“全域收敛完成”并把相应接口面延期。
+这 125 条对应 103 个不同权限码。`network:snat:get` 有意用于 VPC SNAT 与 SNAT binding 两种读取，Model 与 Inference 的读取和管理分别聚合多个接口，附录已记录这些能力。其他方法/目标路径均唯一。这是接口面的现有显式能力清单，不是数据库现状快照，也不包含全部管理或其他业务接口。未实现的覆盖接入属于本规范落地缺项，不能同时声明“全域收敛完成”并把相应接口面延期。
 
 主体范围字段用于描述已有平台/租户/本人约束，不能通过码字符串或 URL 前缀自动赋予平台身份、跨租户范围或套餐许可。BOSS/Console 可以共用 path，仍按可信主体和现有授权边界检查。
 

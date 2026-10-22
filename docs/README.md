@@ -9,7 +9,7 @@
 | [平台网络接入](contracts/platform-network.md) | 平台用户的地址池、二层网络与依赖接口、委托和响应合同 |
 | [前端 HTTP 接口规范](contracts/frontend-http-api.md) | 请求、详情和列表响应、公共分页与错误规则、VPC 参考实现 |
 | [服务间调用规范](contracts/service-to-service-calls.md) | 三种方向的统一调用要求、存量差异与迁移边界 |
-| [权限码规范](contracts/permission-code.md) | 权限码业务语义、命名、接口映射与目录校验；附[业务能力映射表](contracts/permission-code-capability-map.tsv)（各业务域+Quota 119 条）与[管理面权限映射表](contracts/permission-code-management-map.tsv)（管理接口 190 条） |
+| [权限码规范](contracts/permission-code.md) | 权限码业务语义、命名、接口映射与目录校验；附[业务能力映射表](contracts/permission-code-capability-map.tsv)（各业务域+Quota 125 条）与[管理面权限映射表](contracts/permission-code-management-map.tsv)（管理接口 194 条） |
 | [业务服务接入](service-integration.md) | 当前客户端配置、手工装配与 API 登记 |
 | [接口集成登记](interface-integration-register.md) | 现行接口与问题，不因归档自动结项 |
 | [API 权限运维](api-role-permission-ops.md) | 目录同步、权限、套餐和策略 |

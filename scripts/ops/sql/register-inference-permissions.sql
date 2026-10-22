@@ -10,11 +10,11 @@ BEGIN
   ('GET','/api/v1/inference/services/{resource_id}','inference:service:read'),
   ('GET','/api/v1/inference/operations/{operation_id}','inference:service:read'),
   ('POST','/api/v1/inference/services','inference:service:create'),
-  ('POST','/api/v1/inference/services/{data.resource_id}:delete','inference:service:delete'),
-  ('POST','/api/v1/inference/services/{data.resource_id}:update','inference:service:update'),
-  ('POST','/api/v1/inference/services/{data.resource_id}:start','inference:service:start'),
-  ('POST','/api/v1/inference/services/{data.resource_id}:stop','inference:service:stop'),
-  ('POST','/api/v1/inference/services/{data.resource_id}:restart','inference:service:restart'),
+  ('POST','/api/v1/inference/services/{resource_id}:delete','inference:service:delete'),
+  ('POST','/api/v1/inference/services/{resource_id}:update','inference:service:update'),
+  ('POST','/api/v1/inference/services/{resource_id}:start','inference:service:start'),
+  ('POST','/api/v1/inference/services/{resource_id}:stop','inference:service:stop'),
+  ('POST','/api/v1/inference/services/{resource_id}:restart','inference:service:restart'),
   ('GET','/api/v1/inference/services/{resource_id}/operations','inference:service:read')
  ) AS routes(method,path,code) LOOP
   SELECT count(*),min(id) INTO route_count,aid FROM sys_apis

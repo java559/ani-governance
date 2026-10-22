@@ -179,7 +179,8 @@ func deriveGpuProjection(op *ent.QuotaOperation, charges []*ent.QuotaCharge, has
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU projection source")
 	}
 	refs := make([]QuotaChargeRef, 0, len(charges))
-	gpuEnded, allEnded := true, true
+	gpuEnded := true
+	allEnded := true
 	for _, q := range charges {
 		if q == nil || q.TenantID == nil || *q.TenantID != *op.TenantID || q.OperationID != op.OperationID || q.ReleasedUnits < 0 || q.ReleasedUnits > q.OriginalUnits {
 			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid original GPU accounting")

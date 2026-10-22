@@ -11,11 +11,11 @@ import (
 
 const (
 	InferenceCreatePath         = "/api/v1/inference/services"
-	InferenceDeletePath         = "/api/v1/inference/services/{data.resource_id}:delete"
-	InferenceUpdatePath         = "/api/v1/inference/services/{data.resource_id}:update"
-	InferenceStartPath          = "/api/v1/inference/services/{data.resource_id}:start"
-	InferenceStopPath           = "/api/v1/inference/services/{data.resource_id}:stop"
-	InferenceRestartPath        = "/api/v1/inference/services/{data.resource_id}:restart"
+	InferenceDeletePath         = "/api/v1/inference/services/{resource_id}:delete"
+	InferenceUpdatePath         = "/api/v1/inference/services/{resource_id}:update"
+	InferenceStartPath          = "/api/v1/inference/services/{resource_id}:start"
+	InferenceStopPath           = "/api/v1/inference/services/{resource_id}:stop"
+	InferenceRestartPath        = "/api/v1/inference/services/{resource_id}:restart"
 	InferenceListOperationsPath = "/api/v1/inference/services/{resource_id}/operations"
 )
 

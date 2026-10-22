@@ -32,9 +32,9 @@ func TestInferenceQueriesRegisteredBehindMiddleware(t *testing.T) {
 	require.Equal(t, 3, called)
 }
 
-func TestInferenceDeletePathResourceIDUsesNestedRouteVariable(t *testing.T) {
+func TestInferenceDeletePathResourceIDUsesTopLevelRouteVariable(t *testing.T) {
 	vars := url.Values{}
-	vars.Set("data.resource_id", "service-1")
+	vars.Set("resource_id", "service-1")
 	require.Equal(t, "service-1", inferenceDeletePathResourceID(vars))
 	vars = url.Values{}
 	vars.Set("resource_id", "service-2")
@@ -42,11 +42,11 @@ func TestInferenceDeletePathResourceIDUsesNestedRouteVariable(t *testing.T) {
 }
 
 func TestInferencePublicHTTPRejectsTrustedFieldsAndAmbiguousJSON(t *testing.T) {
-	valid := `{"data":{"idempotency_key":"20000000-0000-4000-8000-000000000001","name":"wire","model_version_id":"m","served_model_name":"wire","engine_image":"image","engine_type":"vllm","command":"server","preset_id":"40000000-0000-4000-8000-000000000001","replicas":1}}`
+	valid := `{"idempotency_key":"20000000-0000-4000-8000-000000000001","name":"wire","model_version_id":"m","served_model_name":"wire","engine_image":"image","engine_type":"vllm","command":"server","cpu":"1","memory":"1Gi","replicas":1,"gpu":{"cluster_id":"c","pool_id":"p","profile_id":"v","profile_version":"1"}}`
 	request := httptest.NewRequest("POST", "/api/v1/inference/services", strings.NewReader(valid))
 	request.Header.Set("Content-Type", "application/json")
 	require.NoError(t, decodeInferenceHTTP(request, new(view.CreateInferenceRequest)))
-	for _, body := range []string{`{"data":{"tenant_id":"forged"}}`, `{"data":{"gpu_owner_attachment":{}}}`, `{"data":{"original_charges":[]}}`, `{"data":{"plan":{}}}`, `{"data":{"cpu":""}}`, `{"data":{"memory":""}}`, `{"data":{"gpu":null}}`, `{"data":{"name":"a","name":"b"}}`, `{"data":{}} {"data":{}}`} {
+	for _, body := range []string{`{"data":{"name":"legacy-envelope"}}`, `{"tenant_id":"forged"}`, `{"gpu_owner_attachment":{}}`, `{"original_charges":[]}`, `{"plan":{}}`, `{"name":"a","name":"b"}`, `{} {}`} {
 		request = httptest.NewRequest("POST", "/api/v1/inference/services", strings.NewReader(body))
 		request.Header.Set("Content-Type", "application/json")
 		require.Error(t, decodeInferenceHTTP(request, new(view.CreateInferenceRequest)))
@@ -60,12 +60,12 @@ func TestInferencePublicHTTPRejectsTrustedFieldsAndAmbiguousJSON(t *testing.T) {
 	require.Error(t, decodeInferenceHTTP(request, new(view.CreateInferenceRequest)))
 }
 
-func TestInferenceDeleteHTTPDecodesDataEnvelope(t *testing.T) {
-	request := httptest.NewRequest("POST", "/api/v1/inference/services/service-1:delete", strings.NewReader(`{"data":{"idempotency_key":"20000000-0000-4000-8000-000000000001","resource_id":"service-1","expected_generation":"1"}}`))
+func TestInferenceDeleteHTTPDecodesFlatBody(t *testing.T) {
+	request := httptest.NewRequest("POST", "/api/v1/inference/services/service-1:delete", strings.NewReader(`{"idempotency_key":"20000000-0000-4000-8000-000000000001","resource_id":"service-1","expected_generation":"1"}`))
 	request.Header.Set("Content-Type", "application/json")
 	decoded := new(view.DeleteInferenceRequest)
 	require.NoError(t, decodeInferenceHTTP(request, decoded))
-	require.Equal(t, "service-1", decoded.Data.ResourceId)
+	require.Equal(t, "service-1", decoded.ResourceId)
 }
 
 func TestInferenceDeleteHTTPBindsRouteResourceID(t *testing.T) {
@@ -78,7 +78,7 @@ func TestInferenceDeleteHTTPBindsRouteResourceID(t *testing.T) {
 	}))
 	RegisterInferenceHTTPServer(srv, service.NewInferenceService(nil))
 	recorder := httptest.NewRecorder()
-	request := httptest.NewRequest("POST", "/api/v1/inference/services/service-1:delete", strings.NewReader(`{"data":{"idempotency_key":"20000000-0000-4000-8000-000000000001"}}`))
+	request := httptest.NewRequest("POST", "/api/v1/inference/services/service-1:delete", strings.NewReader(`{"idempotency_key":"20000000-0000-4000-8000-000000000001"}`))
 	request.Header.Set("Content-Type", "application/json")
 	srv.ServeHTTP(recorder, request)
 	require.Equal(t, http.StatusAccepted, recorder.Code)
@@ -86,7 +86,7 @@ func TestInferenceDeleteHTTPBindsRouteResourceID(t *testing.T) {
 }
 
 func TestInferenceHTTPAcceptsCanonicalRawPath(t *testing.T) {
-	request := httptest.NewRequest("POST", "/api/v1/inference/services/service-1:delete", strings.NewReader(`{"data":{"idempotency_key":"20000000-0000-4000-8000-000000000001"}}`))
+	request := httptest.NewRequest("POST", "/api/v1/inference/services/service-1:delete", strings.NewReader(`{"idempotency_key":"20000000-0000-4000-8000-000000000001"}`))
 	request.URL.RawPath = request.URL.Path
 	request.Header.Set("Content-Type", "application/json")
 	require.NoError(t, decodeInferenceHTTP(request, new(view.DeleteInferenceRequest)))

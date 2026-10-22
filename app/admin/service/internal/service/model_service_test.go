@@ -115,7 +115,7 @@ func TestModelServiceUsesAuthenticatedTenantAndActor(t *testing.T) {
 	}}
 	s := NewModelService(client, modelTenantProbe{})
 	ctx := auth.NewPrincipalContext(context.Background(), &auth.Principal{ID: 7, TenantID: 42, Type: auth.SubjectUser})
-	reply, err := s.CreateModel(ctx, &catalogv1.CreateModelRequest{Data: &catalogv1.CreateModelData{Name: "qwen2.5-1.5b-instruct", IdempotencyKey: "create-1"}})
+	reply, err := s.CreateModel(ctx, &catalogv1.CreateModelRequest{Name: "qwen2.5-1.5b-instruct", IdempotencyKey: "create-1"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,9 +137,9 @@ func TestModelServiceCreatesVersionWithCallerSuppliedEngine(t *testing.T) {
 	}
 	s := NewModelService(clientVersion, modelTenantProbe{})
 	ctx := auth.NewPrincipalContext(context.Background(), &auth.Principal{ID: 7, TenantID: 42, Type: auth.SubjectUser})
-	reply, err := s.CreateModelVersion(ctx, &catalogv1.CreateModelVersionRequest{Data: &catalogv1.CreateModelVersionData{
+	reply, err := s.CreateModelVersion(ctx, &catalogv1.CreateModelVersionRequest{
 		ModelId: "qwen2.5-1.5b-instruct", Version: "main", IdempotencyKey: "version-1", EngineType: "vllm", StartupCommand: "vllm --served-model-name qwen2.5-1.5b-instruct", EngineImage: "registry/vllm:latest",
-	}})
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,12 +161,12 @@ func TestModelServiceForwardsModelBundle(t *testing.T) {
 	}}
 	s := NewModelService(client, modelTenantProbe{})
 	ctx := auth.NewPrincipalContext(context.Background(), &auth.Principal{ID: 7, TenantID: 42, Type: auth.SubjectUser})
-	reply, err := s.ImportModelBundle(ctx, &catalogv1.ImportModelBundleRequest{Data: &catalogv1.ImportModelBundleData{
+	reply, err := s.ImportModelBundle(ctx, &catalogv1.ImportModelBundleRequest{
 		IdempotencyKey: "bundle-1",
 		Model:          &catalogv1.ImportModelBundleModelData{Name: "qwen", Capabilities: []string{"text-generation"}, ExternalModelId: "Qwen/Qwen3-0.6B"},
 		Version:        &catalogv1.ImportModelBundleVersionData{Version: "main", Format: "safetensors", EngineType: "vllm", EngineImage: "registry/vllm:tag", StartupCommand: "vllm serve /models --served-model-name qwen"},
 		Source:         &catalogv1.ImportModelBundleSourceData{Provider: "modelscope", RepoId: "Qwen/Qwen3-0.6B", Revision: "master"},
-	}})
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
