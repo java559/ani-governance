@@ -6,14 +6,14 @@ Governance BFF 当前提供 `/api/v1/inference/...` 推理服务管理接口，�
 
 ## 推理服务管理接口
 
-当前注册的管理路由如下；写入请求仍遵循本规范的 `data` 请求体约定：
+当前注册的管理路由如下；创建、更新、删除、启动、停止和重启请求的业务字段直接位于 JSON 顶层，不使用 `data` 包装：
 
 - `POST /api/v1/inference/services`：创建服务。
 - `GET /api/v1/inference/services`：列表，可选 `status`、`capability`，分页使用 `page`/`pageSize`。
 - `GET /api/v1/inference/services/{resource_id}`：详情。
-- `POST /api/v1/inference/services/{data.resource_id}:update`：部分更新。
-- `POST /api/v1/inference/services/{data.resource_id}:delete`：删除。
-- `POST /api/v1/inference/services/{data.resource_id}:start`、`:stop`、`:restart`：生命周期操作。
+- `POST /api/v1/inference/services/{resource_id}:update`：部分更新。
+- `POST /api/v1/inference/services/{resource_id}:delete`：删除。
+- `POST /api/v1/inference/services/{resource_id}:start`、`:stop`、`:restart`：生命周期操作。
 - `GET /api/v1/inference/operations/{operation_id}`：操作详情。
 - `GET /api/v1/inference/services/{resource_id}/operations`：服务操作列表，分页使用 `page`/`pageSize`。
 
@@ -22,7 +22,8 @@ Governance BFF 当前提供 `/api/v1/inference/...` 推理服务管理接口，�
 ## 1 请求约定
 
 - 查询参数放在 URL 中，创建和修改的业务数据使用 JSON 请求体。
-- 业务字段及请求体结构以接口定义为准，前端不自行增加或删除 `data` 包装。
+- 业务字段及请求体结构以接口定义为准。模型创建、版本创建、导入、组合导入及推理创建、更新、删除、启动、停止、重启共 10 个接口不使用 `data` 包装；其他接口保持各自已声明结构。
+- 本批次只迁移请求体，响应结构不变。推理路径中的 `resource_id` 为资源身份；请求体可省略该字段，若提供则必须与路径一致。`idempotency_key`、`expected_generation`、`update_mask` 的含义保持不变。
 - 公共分页参数统一使用 `page`、`pageSize`；筛选和排序参数由各接口声明。
 
 ## 2 详情响应
@@ -144,4 +145,20 @@ HTTP/1.1 400 Bad Request
 
 Gov 通过 [go.mod](https://github.com/zhangzhe-ctrl/ani-governance/blob/ba7db4c30b6ee8a2a8046a1adb1591bf6f01e2a4/go.mod) 固定正式 Resource 模块版本。各 owner 参考以上分层、查询和测试方式，业务筛选、可见性和授权条件由所属领域维护。参数解析和窗口计算保持清晰边界，后续有实际重复再提取公共代码。
 
-算力规格查询统一为 [`GET /api/v1/compute-presets`](compute-presets.md)，必须显式传入 usage；实例、训练/微调、推理分别执行自己的当前业务授权。
+## 模型版本筛选与操作历史（2026-10-21）
+
+- `GET /api/v1/models/{model_id}/versions?page=1&pageSize=20&status=ready`
+  的 `status` 可省略；接受 `pending`、`importing`、`ready`、`error`，兼容界面别名
+  `downloading`→`importing`、`failed`→`error`。Model 在数据库分页前筛选，返回
+  canonical 状态和相同筛选条件的 `total`；Governance 不进行本地筛选或计数。
+- `GET /api/v1/models/{model_id}/operations?page=1&pageSize=20` 返回 `items/total`，
+  项字段为 `id`、`model_id`、`model_version_id`、`action`、`actor`、`result`、
+  `before_state`、`after_state`、`error_class`、`request_id`、`created_at`、`task_id`。
+  时间为 RFC 3339，`total` 为十进制字符串。按创建时间、唯一 ID 倒序。
+- 这两个 Model 查询的页码和页大小均为 `1..100`，缺省 `1/20`，不接受其他查询
+  参数、重复参数、空值、前导零或查询请求体。操作历史不支持 `status` 筛选。
+- `result=accepted` 表示异步导入已受理，不能显示成导入成功；`succeeded` 和
+  `failed` 表示该条已记录动作的结果。任务当前结果仍以任务查询为准。历史记录
+  仅覆盖 Model 实际产生并能关联到模型的审计事件，不补造未记录的删除等动作。
+- 两个入口均经过 Governance 用户认证、`model:service:read` 和 `MODEL` 套餐闸门。
+  模型归属由 Model 验证；前端不能指定租户或操作人。

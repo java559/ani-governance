@@ -3,13 +3,11 @@
 package data
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
-	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/conformance"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
 )
 
@@ -17,7 +15,7 @@ func TestModelDevAcceptanceFindsOriginalBeforeCatalogueResolution(t *testing.T) 
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
 	repo := NewModelDevAcceptanceRepo(client)
 	// The preliminary read needs only intent. A miss must work before any
-	// current binding exists and leave the key available for real acceptance.
+	// current compute resolution and leave the key available for real acceptance.
 	missing, err := repo.FindAccepted(ctx, scope, candidate.Intent)
 	require.ErrorIs(t, err, ErrModelDevAcceptanceNotFound)
 	require.Nil(t, missing)
@@ -25,15 +23,9 @@ func TestModelDevAcceptanceFindsOriginalBeforeCatalogueResolution(t *testing.T) 
 	require.NoError(t, err)
 	require.Zero(t, count)
 
-	binding := bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	original, replayed, err := repo.AcceptFrozen(ctx, scope, candidate)
 	require.NoError(t, err)
 	require.False(t, replayed)
-	target := ModelDevReleaseBindingTarget{
-		ReleaseID: uuid.NewString(), ReleaseDigest: strings.Repeat("c", 64),
-		NewSubmissionsEnabled: false,
-	}
-	binding = changeModelDevAcceptanceBinding(t, ctx, client, binding, target)
 
 	reader := newModelDevPGClient(t)
 	actual, err := NewModelDevAcceptanceRepo(reader).FindAccepted(ctx, scope, candidate.Intent)
@@ -43,23 +35,20 @@ func TestModelDevAcceptanceFindsOriginalBeforeCatalogueResolution(t *testing.T) 
 	require.Equal(t, original.OperationID, actual.OperationID)
 	require.Equal(t, original.ExecutionID, actual.ExecutionID)
 	require.Equal(t, original.IntentHash, actual.IntentHash)
-	require.Equal(t, conformance.SnapshotSHA256V1, actual.ExecutionSpecHash)
+	require.Equal(t, fixtureSnapshotHash(t, candidate), actual.ExecutionSpecHash)
 	require.Equal(t, "QUEUED", actual.DispatchState)
 	require.True(t, original.AcceptedAt.Equal(actual.AcceptedAt))
 	canonical, err := actual.Snapshot.Canonical()
 	require.NoError(t, err)
-	require.Equal(t, conformance.SnapshotCanonicalV1(), canonical)
+	require.Equal(t, fixtureSnapshotBytes(t, candidate), canonical)
 	count, err = reader.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(scope.TenantID)).Count(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, count, "lookup must neither requeue nor create another acceptance")
-	current, err := NewModelDevReleaseBindingRepo(reader).Get(ctx, binding.Scope)
-	require.NoError(t, err)
-	require.Equal(t, binding, current, "lookup must leave the changed current pointer and gate untouched")
+
 }
 
 func TestModelDevAcceptanceFindRejectsConflictingIntentWithoutMutation(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	original, replayed, err := NewModelDevAcceptanceRepo(client).AcceptFrozen(ctx, scope, candidate)
 	require.NoError(t, err)
 	require.False(t, replayed)
@@ -84,7 +73,6 @@ func TestModelDevAcceptanceFindRejectsConflictingIntentWithoutMutation(t *testin
 func TestModelDevAcceptanceFindRejectsInvalidScopeAndIntent(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
 	_, _, otherScope, _ := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	original, replayed, err := NewModelDevAcceptanceRepo(client).AcceptFrozen(ctx, scope, candidate)
 	require.NoError(t, err)
 	require.False(t, replayed)
@@ -125,9 +113,7 @@ func TestModelDevAcceptanceFindRejectsInvalidScopeAndIntent(t *testing.T) {
 
 func TestModelDevAcceptanceFindIsolatesTenantActorAndKey(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	_, otherClient, otherTenant, otherCandidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
-	bindModelDevAcceptanceFixture(t, ctx, otherClient, otherTenant, otherCandidate)
+	_, _, otherTenant, otherCandidate := newModelDevAcceptanceFixture(t)
 	original, replayed, err := NewModelDevAcceptanceRepo(client).AcceptFrozen(ctx, scope, candidate)
 	require.NoError(t, err)
 	require.False(t, replayed)
@@ -151,6 +137,7 @@ func TestModelDevAcceptanceFindIsolatesTenantActorAndKey(t *testing.T) {
 			separate := group.candidate
 			separate.OperationID, separate.ExecutionID = uuid.NewString(), uuid.NewString()
 			separate.Intent.Name = "separate-training"
+			separate = freezeModelDevFixture(t, group.scope, separate)
 			requireValidModelDevCandidate(t, group.scope, separate)
 			// A different valid scope must not expose the original, including by
 			// reporting its different intent as a conflict. Current authorization

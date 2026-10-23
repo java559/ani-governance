@@ -57,11 +57,12 @@ func TestModelDevResolveUsesRealManagedAdmissionProvider(t *testing.T) {
 	directContext := metadata.NewOutgoingContext(ctx, metadata.Pairs(
 		"x-ani-tenant-id", fixture.Scope.ResourceTenantID, "x-ani-actor", fixture.Scope.Actor, "x-ani-request-id", uuid.NewString(),
 	))
-	direct, err := modeldevv1.NewModelDevAdmissionServiceClient(connection).ResolveAdmission(directContext, &modeldevv1.ResolveAdmissionRequest{
-		Intent:     intent,
-		Release:    &modeldevv1.AdmissionReleaseSelection{ReleaseId: fixture.Release.ReleaseID, ReleaseDigest: fixture.Release.ReleaseDigest, BindingGeneration: fixture.Release.BindingGeneration},
-		AcceptedAt: timestamppb.New(fixture.AcceptedAt),
-	}, grpc.WaitForReady(true))
+	admissionClient := modeldevv1.NewModelDevAdmissionServiceClient(connection)
+	prepared, err := admissionClient.PrepareAdmission(directContext, &modeldevv1.PrepareAdmissionRequest{Intent: intent, IdentityRef: &modeldevv1.IdentityRef{TenantId: fixture.IdentityRef.TenantID, Actor: fixture.IdentityRef.Actor, OperationId: fixture.IdentityRef.OperationID, ExecutionId: fixture.IdentityRef.ExecutionID, IntentHash: fixture.IdentityRef.IntentHash}, ComputeSelectionCanonical: []byte(fixture.ComputeSelectionCanonical), SelectionDigest: fixture.SelectionDigest, AcceptedAt: timestamppb.New(fixture.AcceptedAt)}, grpc.WaitForReady(true))
+	if err != nil || prepared == nil {
+		t.Fatalf("MODELDEV_CLIENT_PREFLIGHT: direct Prepare unavailable code=%s", status.Code(err))
+	}
+	direct, err := admissionClient.FinalizeAdmission(directContext, &modeldevv1.FinalizeAdmissionRequest{CandidateCanonical: prepared.CandidateCanonical, CandidateHash: prepared.CandidateHash}, grpc.WaitForReady(true))
 	if err != nil || direct == nil {
 		t.Fatalf("MODELDEV_CLIENT_PREFLIGHT: generated direct RPC unavailable (code=%s); behavior NOT_RUN", status.Code(err))
 	}
@@ -82,10 +83,10 @@ func TestModelDevResolveUsesRealManagedAdmissionProvider(t *testing.T) {
 		t.Fatal("MODELDEV_CLIENT_BEHAVIOR: valid client configuration rejected")
 	}
 	t.Cleanup(closeClient)
-	resolved, err := client.Resolve(ctx,
+	resolved, err := client.ResolvePrepared(ctx,
 		ModelDevResolveScope{ResourceTenantID: fixture.Scope.ResourceTenantID, Actor: fixture.Scope.Actor},
 		fixture.Intent,
-		ModelDevReleaseSelection{ReleaseID: fixture.Release.ReleaseID, ReleaseDigest: fixture.Release.ReleaseDigest, BindingGeneration: fixture.Release.BindingGeneration},
+		fixture.IdentityRef, testutil.ModelDevContractSelection(t, fixture),
 		fixture.AcceptedAt,
 	)
 	if err != nil {

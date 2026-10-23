@@ -5,9 +5,11 @@ package modeldev_test
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"io"
@@ -29,12 +31,10 @@ import (
 	modeldevv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
 	trainingv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/training/v1"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
-	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/conformance"
 	contractpb "github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/protobuf"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
-	"go-wind-admin/app/admin/service/internal/data/ent/modeldevreleasebinding"
 	"go-wind-admin/app/admin/service/internal/service"
 	"go-wind-admin/app/admin/service/tests/testutil"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
@@ -68,20 +68,10 @@ func TestModelDevWorkerDeliversFrozenAcceptanceAfterRestart(t *testing.T) {
 		defer stop()
 		_, err := writer.Client().ModelDevAcceptance.Delete().Where(modeldevacceptance.TenantIDEQ(owner.ID)).Exec(cleanup)
 		require.NoError(t, err)
-		_, err = writer.Client().ModelDevReleaseBinding.Delete().Where(modeldevreleasebinding.TenantIDEQ(owner.ID)).Exec(cleanup)
-		require.NoError(t, err)
+
 		require.NoError(t, writer.Client().Tenant.DeleteOneID(owner.ID).Exec(cleanup))
 	})
 	scope := data.ModelDevAdmissionScope{TenantID: owner.ID, ResourceTenantID: original.TenantID, Actor: original.Actor, Action: data.ModelDevCreateAction, IdempotencyKey: uuid.NewString()}
-	change, err := data.NewModelDevReleaseBindingRepo(initial).CompareAndSwap(ctx,
-		data.ModelDevReleaseBindingScope{TenantID: owner.ID, ResourceTenantID: original.TenantID, PresetID: original.Intent.PresetID},
-		data.ModelDevReleaseBindingUpdate{
-			Target: data.ModelDevReleaseBindingTarget{ReleaseID: original.Snapshot.Release.ReleaseID, ReleaseDigest: original.Snapshot.Release.ReleaseDigest, NewSubmissionsEnabled: true},
-			Actor:  original.Actor, RequestedAt: original.AcceptedAt.Add(-time.Minute), Reason: "synthetic delivery fixture", EvidenceReference: "contract:cpu-p01:delivery",
-		})
-	require.NoError(t, err)
-	require.False(t, change.Replayed)
-	require.Equal(t, uint64(1), change.After.Generation)
 	accepted, replayed, err := data.NewModelDevAcceptanceRepo(initial).AcceptFrozen(ctx, scope, data.ModelDevFrozenCandidate{
 		OperationID: original.OperationID, ExecutionID: original.ExecutionID, Intent: original.Intent, Snapshot: original.Snapshot, AcceptedAt: original.AcceptedAt,
 	})
@@ -317,7 +307,14 @@ type modelDevDeliveryFrozen struct {
 }
 
 func (f modelDevDeliveryFrozen) envelope(identity modelDevDeliveryIdentity) cpup01.AdmissionEnvelope {
-	return cpup01.AdmissionEnvelope{TenantID: f.ResourceTenantID, Actor: f.Actor, OperationID: identity.OperationID, ExecutionID: identity.ExecutionID, Intent: f.Intent, IntentHash: f.IntentHash, Snapshot: f.Snapshot, SpecHash: f.ExecutionSpecHash, AcceptedAt: f.AcceptedAt}
+	snapshot := f.Snapshot
+	snapshot.IdentityRef = cpup01.IdentityRef{TenantID: f.ResourceTenantID, Actor: f.Actor, OperationID: identity.OperationID, ExecutionID: identity.ExecutionID, IntentHash: f.IntentHash}
+	snapshot.RuntimePlan.ExpectedSpec = []byte(strings.ReplaceAll(string(snapshot.RuntimePlan.ExpectedSpec), "ani-kfp-workspace-99999999-9999-4999-8999-999999999999", "ani-kfp-workspace-"+identity.ExecutionID))
+	digest := sha256.Sum256(snapshot.RuntimePlan.ExpectedSpec)
+	snapshot.RuntimePlan.ExpectedSpecSHA256 = hex.EncodeToString(digest[:])
+	snapshot.RuntimePlan.Name = cpup01.RuntimeName(snapshot.Environment.NamespaceUID, identity.ExecutionID)
+	hash, _ := snapshot.Digest()
+	return cpup01.AdmissionEnvelope{TenantID: f.ResourceTenantID, Actor: f.Actor, OperationID: identity.OperationID, ExecutionID: identity.ExecutionID, Intent: f.Intent, IntentHash: f.IntentHash, Snapshot: snapshot, SpecHash: hash, AcceptedAt: f.AcceptedAt}
 }
 
 type modelDevDeliveryFixture struct {
@@ -370,7 +367,7 @@ func readModelDevDeliveryFixture(t *testing.T) modelDevDeliveryFixture {
 	}
 	host, port, addressErr := net.SplitHostPort(fixture.Address)
 	portNumber, portErr := strconv.ParseUint(port, 10, 16)
-	if fixture.Schema != "ani.cpu-p01.governance-delivery-fixture.v1" || addressErr != nil || host != "127.0.0.1" || portErr != nil || portNumber == 0 ||
+	if fixture.Schema != "ani.modeldev.governance-delivery-fixture.v2.1" || addressErr != nil || host != "127.0.0.1" || portErr != nil || portNumber == 0 ||
 		fixture.TLS.CAFile != filepath.Join(directory, "ca.pem") || fixture.TLS.CertFile != filepath.Join(directory, "governance.pem") || fixture.TLS.KeyFile != filepath.Join(directory, "governance.key") {
 		t.Fatal("MODELDEV_DELIVERY_PREFLIGHT: handshake connection scope invalid")
 	}
@@ -388,23 +385,26 @@ func readModelDevDeliveryFixture(t *testing.T) modelDevDeliveryFixture {
 	if fixture.Target.OperationID == fixture.Control.OperationID || fixture.Target.ExecutionID == fixture.Control.ExecutionID {
 		t.Fatal("MODELDEV_DELIVERY_PREFLIGHT: target and control must differ")
 	}
-	seed, release := conformance.SnapshotV1(), conformance.ReleaseV1()
-	parameters := []cpup01.Parameter{{Name: "learning_rate", Type: "DECIMAL", Value: "0.0200"}}
-	wantIntent, wantIntentHash, err := cpup01.CanonicalIntent(cpup01.Intent{Name: "configured-admission", Kind: "GENERAL_TRAINING", PresetID: release.PresetID, DatasetVersionID: seed.Input.InputVersionID, GeneralParameters: &parameters})
+	wantIntent, wantIntentHash, err := cpup01.CanonicalIntent(testutil.ModelDevContractIntent())
 	require.NoError(t, err)
-	wantBytes, _ := testutil.ExpectedModelDevContractSnapshot(t)
-	var want cpup01.Snapshot
-	require.NoError(t, json.Unmarshal(wantBytes, &want))
-	want.Release.AcceptedBindingGeneration = 1
-	wantBytes, err = want.Canonical()
+	if fixture.Frozen.ResourceTenantID != "11111111-2222-4333-8444-555555555555" || fixture.Frozen.Actor != "governance:user:42" || fixture.Frozen.AcceptedAt.IsZero() || fixture.Frozen.AcceptedAt.Nanosecond()%1000 != 0 {
+		t.Fatal("MODELDEV_DELIVERY_PREFLIGHT: invalid fixed original scope/time")
+	}
+	baseIdentity := cpup01.IdentityRef{TenantID: fixture.Frozen.ResourceTenantID, Actor: fixture.Frozen.Actor, OperationID: "88888888-8888-4888-8888-888888888888", ExecutionID: "99999999-9999-4999-8999-999999999999", IntentHash: wantIntentHash}
+	baseBytes, baseHash := testutil.ExpectedModelDevContractSnapshotAt(t, baseIdentity, fixture.Frozen.AcceptedAt)
+	actualBase, err := fixture.Frozen.Snapshot.Canonical()
 	require.NoError(t, err)
-	wantHash, err := want.Digest()
-	require.NoError(t, err)
+	require.Equal(t, baseBytes, actualBase)
+	require.Equal(t, baseHash, fixture.Frozen.ExecutionSpecHash)
 	for _, identity := range []modelDevDeliveryIdentity{fixture.Target, fixture.Control} {
-		actualIntent, actualSnapshot, err := fixture.Frozen.envelope(identity).CanonicalPayloads()
-		if err != nil || !bytes.Equal(actualIntent, wantIntent) || !bytes.Equal(actualSnapshot, wantBytes) || fixture.Frozen.IntentHash != wantIntentHash || fixture.Frozen.ExecutionSpecHash != wantHash ||
-			fixture.Frozen.ResourceTenantID != "11111111-2222-4333-8444-555555555555" || fixture.Frozen.Actor != "governance:user:42" || !fixture.Frozen.AcceptedAt.Equal(time.Date(2026, 9, 30, 12, 3, 0, 123000, time.UTC)) {
-			t.Fatal("MODELDEV_DELIVERY_PREFLIGHT: frozen command differs from independently authored fixture")
+		envelope := fixture.Frozen.envelope(identity)
+		expectedIdentity := baseIdentity
+		expectedIdentity.OperationID = identity.OperationID
+		expectedIdentity.ExecutionID = identity.ExecutionID
+		wantBytes, wantHash := testutil.ExpectedModelDevContractSnapshotAt(t, expectedIdentity, fixture.Frozen.AcceptedAt)
+		actualIntent, actualSnapshot, e := envelope.CanonicalPayloads()
+		if e != nil || !bytes.Equal(actualIntent, wantIntent) || !bytes.Equal(actualSnapshot, wantBytes) || fixture.Frozen.IntentHash != wantIntentHash || envelope.SpecHash != wantHash {
+			t.Fatal("MODELDEV_DELIVERY_PREFLIGHT: frozen command differs from independent complete fixture")
 		}
 	}
 	return fixture

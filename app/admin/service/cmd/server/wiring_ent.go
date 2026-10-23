@@ -155,7 +155,6 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	tenantUsageRepo := data.NewTenantUsageRepo(ctx, entClient, authenticator)
 	modeldevAuthorizationRepo := data.NewModelDevAuthorizationRepo(entClient)
 	modeldevAcceptanceRepo := data.NewModelDevAcceptanceRepo(entClient)
-	modeldevBindingRepo := data.NewModelDevReleaseBindingRepo(entClient)
 
 	// RBAC：permission/role 相关仓储已提前到「身份与账号」段构造
 	// （userRepo 按 role_code 解析角色 ID 依赖 roleRepo）。此处仅补充其余挂载点。
@@ -373,7 +372,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		acceleratorClient = client
 	}
 	gpuBffLedger := service.NewGpuBffLedgerBridge(quotaLedgerRepo, quotaAdminRepo)
-	acceleratorService := service.NewAcceleratorService(acceleratorClient, tenantRepo, gpuBffLedger, gpuBffLedger, quotaAdminRepo, quotaRegistry)
+	acceleratorService := service.NewAcceleratorService(acceleratorClient, tenantRepo, gpuBffLedger, gpuBffLedger, quotaAdminRepo, quotaRegistry, authz.Engine())
 	var gpuPlans service.GpuPlanResolver
 	if acceleratorClient != nil {
 		gpuPlans = acceleratorClient.Catalog
@@ -416,7 +415,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	}
 	instanceService := service.NewInstanceService(instanceAcceptance, instanceBinding, tenantRepo, quotaLedgerRepo, instanceSessions, instanceCatalog)
 	computeService := service.NewComputePresetService(computeClient, computeCatalog)
-	modeldevService := service.NewModelDevService(modeldevAuthorizationRepo, tenantRepo, modeldevAcceptanceRepo, modeldevBindingRepo, modeldevClient)
+	modeldevService := service.NewModelDevService(modeldevAuthorizationRepo, tenantRepo, modeldevAcceptanceRepo, modeldevClient, computeOwner)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 

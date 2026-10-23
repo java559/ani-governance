@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	stderrors "errors"
 	"time"
 	"unicode"
@@ -12,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	modeldevcontractv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
+	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
@@ -20,7 +20,7 @@ import (
 )
 
 // ModelDevCreateInput preserves the parsed user intent, including the
-// distinction between omitted general_parameters and an explicit empty array.
+// distinction between omitted parameter fields and explicit default values.
 // Identity is obtained separately from the trusted request context.
 type ModelDevCreateInput struct {
 	Intent         cpup01.Intent
@@ -30,11 +30,15 @@ type ModelDevCreateInput struct {
 // ModelDevService owns the current authorization, original-key lookup and
 // durable Governance acceptance sequence. Resolving a candidate does not
 // deliver an execution command or start computation.
+type ModelDevComputeResolver interface {
+	ResolveComputePreset(context.Context, string, string, *compute.ResolveComputePresetRequest) (*compute.ComputeSelection, error)
+}
+
 type ModelDevService struct {
 	authorization *data.ModelDevAuthorizationRepo
 	tenants       ResourceTenantResolver
 	acceptances   *data.ModelDevAcceptanceRepo
-	bindings      *data.ModelDevReleaseBindingRepo
+	compute       ModelDevComputeResolver
 	resolver      *data.ModelDevClient
 }
 
@@ -42,21 +46,21 @@ func NewModelDevService(
 	authorization *data.ModelDevAuthorizationRepo,
 	tenants ResourceTenantResolver,
 	acceptances *data.ModelDevAcceptanceRepo,
-	bindings *data.ModelDevReleaseBindingRepo,
 	resolver *data.ModelDevClient,
+	computeResolver ModelDevComputeResolver,
 ) *ModelDevService {
 	return &ModelDevService{
 		authorization: authorization,
 		tenants:       tenants,
 		acceptances:   acceptances,
-		bindings:      bindings,
 		resolver:      resolver,
+		compute:       computeResolver,
 	}
 }
 
 // CreateExecution is called by the strict JSON HTTP adapter. It intentionally
-// does not accept a protobuf request: repeated fields cannot retain whether an
-// empty general_parameters array was present in the original user request.
+// does not accept a protobuf request: the strict shared parser retains field
+// presence and rejects null, duplicate and unknown input before resolution.
 func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreateInput) (reply *modeldevv1.CreateExecutionResponse, result error) {
 	defer func() {
 		if err := ctx.Err(); err != nil {
@@ -105,83 +109,65 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	if err != nil {
 		return nil, modelDevCreateInvalid()
 	}
-	// Use a fresh normalized value for both lookups and resolution. The shared
-	// canonical contract preserves optional-field presence and normalizes values.
-	var normalized struct {
-		Schema string `json:"schema"`
-		cpup01.Intent
-	}
-	if json.Unmarshal(canonical, &normalized) != nil {
+	normalized, err := cpup01.DecodeCanonicalIntent(canonical)
+	if err != nil {
 		return nil, modelDevCreateUnavailable()
 	}
-	if normalized.SourceExecutionID != nil {
-		return nil, errors.Forbidden("SOURCE_EXECUTION_UNAVAILABLE", "source execution is unavailable")
+	if normalized.Kind == "FINETUNING" {
+		if err := s.authorization.AuthorizeFinetuning(ctx, principal.TenantID, principal.ID, normalized.NewModelName != nil); err != nil {
+			return nil, modelDevCreateFailure(err)
+		}
 	}
 	scope := data.ModelDevAdmissionScope{
 		TenantID: principal.TenantID, ResourceTenantID: tenant, Actor: actor,
 		Action: data.ModelDevCreateAction, IdempotencyKey: in.IdempotencyKey,
 	}
-	candidate := data.ModelDevFrozenCandidate{
-		Intent: normalized.Intent, AcceptedAt: time.Now().UTC().Truncate(time.Microsecond),
+	// Replay needs only current authorization and original persisted intent.
+	// It never observes current compute or implementation defaults.
+	accepted, err := s.acceptances.FindAccepted(ctx, scope, normalized)
+	if err == nil {
+		return modelDevCreateReply(accepted, true)
 	}
-	for attempt := 0; attempt < 2; attempt++ {
-		if err := ctx.Err(); err != nil {
-			return nil, modelDevCreateFailure(err)
-		}
-		accepted, err := s.acceptances.FindAccepted(ctx, scope, normalized.Intent)
-		if err == nil {
-			return modelDevCreateReply(accepted, true)
-		}
-		if !stderrors.Is(err, data.ErrModelDevAcceptanceNotFound) {
-			return nil, modelDevCreateFailure(err)
-		}
-		// Only a new key needs the current binding and a configured resolver.
-		if s.bindings == nil || s.resolver == nil {
-			return nil, modelDevCreateUnavailable()
-		}
-		binding, err := s.bindings.Get(ctx, data.ModelDevReleaseBindingScope{
-			TenantID: principal.TenantID, ResourceTenantID: tenant, PresetID: normalized.PresetID,
-		})
-		if err != nil {
-			return nil, modelDevCreateFailure(err)
-		}
-		if binding == nil {
-			return nil, modelDevCreateUnavailable()
-		}
-		if !binding.Target.NewSubmissionsEnabled {
-			return nil, modelDevCreateFailure(data.ErrModelDevBindingDisabled)
-		}
-		resolved, err := s.resolver.Resolve(ctx, data.ModelDevResolveScope{ResourceTenantID: tenant, Actor: actor}, normalized.Intent,
-			data.ModelDevReleaseSelection{ReleaseID: binding.Target.ReleaseID, ReleaseDigest: binding.Target.ReleaseDigest, BindingGeneration: binding.Generation}, candidate.AcceptedAt)
-		if err != nil {
-			return nil, modelDevCreateResolutionFailure(err)
-		}
-		if candidate.OperationID == "" {
-			operationID, err := uuid.NewRandom()
-			if err != nil {
-				return nil, modelDevCreateUnavailable()
-			}
-			executionID, err := uuid.NewRandom()
-			if err != nil {
-				return nil, modelDevCreateUnavailable()
-			}
-			candidate.OperationID, candidate.ExecutionID = operationID.String(), executionID.String()
-		}
-		candidate.Snapshot = resolved.Snapshot
-		// Network work is complete before this transaction. AcceptFrozen checks
-		// the key and current generation again, then commits the queued command.
-		accepted, replayed, err := s.acceptances.AcceptFrozen(ctx, scope, candidate)
-		if stderrors.Is(err, data.ErrModelDevBindingGenerationConflict) && attempt == 0 {
-			// One fresh binding observation is allowed, starting with the original
-			// key again. IDs and accepted_at remain fixed across this retry.
-			continue
-		}
-		if err != nil {
-			return nil, modelDevCreateFailure(err)
-		}
-		return modelDevCreateReply(accepted, replayed)
+	if !stderrors.Is(err, data.ErrModelDevAcceptanceNotFound) {
+		return nil, modelDevCreateFailure(err)
 	}
-	return nil, modelDevCreateFailure(data.ErrModelDevBindingGenerationConflict)
+	if s.resolver == nil || s.compute == nil {
+		return nil, modelDevCreateUnavailable()
+	}
+	operationID, err := uuid.NewRandom()
+	if err != nil {
+		return nil, modelDevCreateUnavailable()
+	}
+	executionID, err := uuid.NewRandom()
+	if err != nil {
+		return nil, modelDevCreateUnavailable()
+	}
+	candidate := data.ModelDevFrozenCandidate{Intent: normalized, OperationID: operationID.String(), ExecutionID: executionID.String(), AcceptedAt: time.Now().UTC().Truncate(time.Microsecond)}
+	selection, err := s.compute.ResolveComputePreset(ctx, tenant, actor, &compute.ResolveComputePresetRequest{TenantId: tenant, PresetId: normalized.ComputePresetID, Usage: compute.Usage_TRAINING})
+	if err != nil {
+		return nil, modelDevCreateResolutionFailure(err)
+	}
+	if compute.ValidateSelection(selection) != nil || selection.PresetId != normalized.ComputePresetID {
+		return nil, modelDevCreateUnavailable()
+	}
+	if selection.Gpu != nil {
+		return nil, errors.ServiceUnavailable("MODELDEV_GPU_NOT_READY", "managed GPU admission is not yet available")
+	}
+	_, intentHash, err := cpup01.CanonicalIntent(normalized)
+	if err != nil {
+		return nil, modelDevCreateInvalid()
+	}
+	resolved, err := s.resolver.ResolvePrepared(ctx, data.ModelDevResolveScope{ResourceTenantID: tenant, Actor: actor}, normalized,
+		cpup01.IdentityRef{TenantID: tenant, Actor: actor, OperationID: candidate.OperationID, ExecutionID: candidate.ExecutionID, IntentHash: intentHash}, selection, candidate.AcceptedAt)
+	if err != nil {
+		return nil, modelDevCreateResolutionFailure(err)
+	}
+	candidate.Snapshot = resolved.Snapshot
+	accepted, replayed, err := s.acceptances.AcceptFrozen(ctx, scope, candidate)
+	if err != nil {
+		return nil, modelDevCreateFailure(err)
+	}
+	return modelDevCreateReply(accepted, replayed)
 }
 
 func modelDevCreateReply(accepted *data.ModelDevAcceptance, replayed bool) (*modeldevv1.CreateExecutionResponse, error) {
@@ -190,7 +176,7 @@ func modelDevCreateReply(accepted *data.ModelDevAcceptance, replayed bool) (*mod
 	}
 	reply := &modeldevv1.CreateExecutionResponse{
 		OperationId: accepted.OperationID, ExecutionId: accepted.ExecutionID,
-		ResolvedReleaseId: accepted.Snapshot.Release.ReleaseID, Replayed: replayed,
+		Replayed: replayed,
 	}
 	switch accepted.DispatchState {
 	case "QUEUED", "DISPATCHING", "UNKNOWN":
@@ -235,12 +221,9 @@ func modelDevCreateFailure(err error) error {
 		return errors.Forbidden("FORBIDDEN", "modeldev create forbidden")
 	case stderrors.Is(err, data.ErrModelDevIdempotencyConflict):
 		return errors.Conflict("IDEMPOTENCY_CONFLICT", "idempotency key has a different intent")
-	case stderrors.Is(err, data.ErrModelDevBindingNotFound):
-		return errors.New(412, "NO_COMPATIBLE_RELEASE", "no compatible release is enabled")
-	case stderrors.Is(err, data.ErrModelDevBindingDisabled):
-		return errors.New(412, "SUBMISSIONS_PAUSED", "new submissions are paused")
-	case stderrors.Is(err, data.ErrModelDevBindingGenerationConflict):
-		return errors.Conflict("MODELDEV_BINDING_CHANGED", "release binding changed during acceptance")
+	case stderrors.Is(err, data.ErrModelDevAdmissionExpired):
+		return errors.New(412, "EXECUTION_DEADLINE_EXCEEDED", "candidate execution deadline has passed")
+
 	default:
 		return modelDevCreateUnavailable()
 	}
@@ -267,8 +250,6 @@ func modelDevCreateResolutionFailure(err error) error {
 	switch {
 	case failure.Code() == codes.InvalidArgument && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_INVALID_ARGUMENT:
 		return modelDevCreateInvalid()
-	case failure.Code() == codes.FailedPrecondition && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_NO_COMPATIBLE_RELEASE:
-		return errors.New(412, "NO_COMPATIBLE_RELEASE", "selected release is unavailable or incompatible")
 	case failure.Code() == codes.NotFound && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_RESOURCE_NOT_FOUND:
 		return errors.NotFound("RESOURCE_NOT_FOUND", "input version unavailable")
 	case failure.Code() == codes.FailedPrecondition && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_INPUT_NOT_READY:

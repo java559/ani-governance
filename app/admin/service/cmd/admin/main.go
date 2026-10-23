@@ -37,14 +37,12 @@ func run() error {
 
 func runAdmin(ctx context.Context, args []string, stdout io.Writer) error {
 	if len(args) < 1 {
-		return fmt.Errorf("usage: admin <init|check|sync-apis|permissions-align|modeldev-pause> [--username admin] [--password-file PATH] [--dry-run]; connection: ANI_DATABASE_DSN")
+		return fmt.Errorf("usage: admin <init|check|sync-apis|permissions-align> [--username admin] [--password-file PATH] [--dry-run]; connection: ANI_DATABASE_DSN")
 	}
 	command := args[0]
-	if command == "modeldev-pause" {
-		return runModelDevPause(ctx, args[1:], stdout)
-	}
+
 	switch command {
-	case "modeldev-enable", "modeldev-import-release", "modeldev-import-csv", "modeldev-import-finetuning-dataset", "modeldev-inspect", "modeldev-reconcile", "modeldev-cleanup-plan", "modeldev-cleanup-apply":
+	case "modeldev-import-csv", "modeldev-import-finetuning-dataset", "modeldev-inspect", "modeldev-reconcile", "modeldev-cleanup-plan", "modeldev-cleanup-apply":
 		return runModelDevManagement(ctx, command, args[1:], stdout)
 	}
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)

@@ -1,13 +1,12 @@
 package data
 
 import (
+	"bytes"
 	"context"
-	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/hex"
-	"encoding/json"
 	"errors"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -17,6 +16,7 @@ import (
 	modeldevv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	contractpb "github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/protobuf"
+	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
@@ -47,14 +47,6 @@ type ModelDevClientConfig struct {
 type ModelDevResolveScope struct {
 	ResourceTenantID string
 	Actor            string
-}
-
-// ModelDevReleaseSelection is one current binding observation. ModelDev must
-// not choose another Release or allocate Governance's binding generation.
-type ModelDevReleaseSelection struct {
-	ReleaseID         string
-	ReleaseDigest     string
-	BindingGeneration uint64
 }
 
 // ModelDevResolution is an unpersisted candidate, not a command receipt.
@@ -139,79 +131,109 @@ func modelDevClientTLS(config ModelDevClientConfig) (*tls.Config, error) {
 	}, nil
 }
 
-func (c *ModelDevClient) Resolve(ctx context.Context, scope ModelDevResolveScope, intent cpup01.Intent, selection ModelDevReleaseSelection, acceptedAt time.Time) (ModelDevResolution, error) {
+// ResolvePrepared performs both read-only calls with the same fixed identity,
+// accepted_at and official compute observation. No command is sent here.
+func (c *ModelDevClient) ResolvePrepared(ctx context.Context, scope ModelDevResolveScope, intent cpup01.Intent, identity cpup01.IdentityRef, selection *compute.ComputeSelection, acceptedAt time.Time) (ModelDevResolution, error) {
 	if err := ctx.Err(); err != nil {
 		return ModelDevResolution{}, status.FromContextError(err).Err()
 	}
-	request, normalized, err := modelDevResolutionRequest(scope, intent, selection, acceptedAt)
-	if err != nil {
-		return ModelDevResolution{}, err
-	}
+	invalid := status.Error(codes.InvalidArgument, "invalid modeldev admission request")
 	if c == nil || c.connection == nil || c.client == nil || c.timeout <= 0 {
 		return ModelDevResolution{}, modelDevAdmissionUnavailable()
 	}
-	callContext, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-	requestID := uuid.NewString()
-	callContext = metadata.NewOutgoingContext(callContext, metadata.Pairs(
-		"x-ani-tenant-id", scope.ResourceTenantID, "x-ani-actor", scope.Actor, "x-ani-request-id", requestID,
-	))
-	reply, err := c.client.ResolveAdmission(callContext, request, grpc.WaitForReady(true))
-	if contextErr := ctx.Err(); contextErr != nil {
-		return ModelDevResolution{}, status.FromContextError(contextErr).Err()
+	if !validModelDevClientActor(scope.Actor) || identity.TenantID != scope.ResourceTenantID || identity.Actor != scope.Actor || acceptedAt.IsZero() || acceptedAt.Nanosecond()%1000 != 0 || compute.ValidateSelection(selection) != nil || selection.PresetId != intent.ComputePresetID || selection.Gpu != nil {
+		return ModelDevResolution{}, invalid
 	}
-	if callContext.Err() != nil {
-		if c.connection.GetState() != connectivity.Ready {
-			return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	intentBytes, intentHash, err := cpup01.CanonicalIntent(intent)
+	if err != nil || identity.IntentHash != intentHash {
+		return ModelDevResolution{}, invalid
+	}
+	for _, id := range []string{identity.TenantID, identity.ExecutionID, identity.OperationID} {
+		parsed, e := uuid.Parse(id)
+		if e != nil || parsed == uuid.Nil || parsed.String() != id {
+			return ModelDevResolution{}, invalid
 		}
-		return ModelDevResolution{}, status.FromContextError(callContext.Err()).Err()
 	}
+	selectionBytes, err := compute.CanonicalSelection(selection)
 	if err != nil {
-		return ModelDevResolution{}, modelDevResolutionError(err, requestID)
+		return ModelDevResolution{}, invalid
 	}
-	resolved, err := validateModelDevResolution(reply, normalized, request.Release, request.AcceptedAt.AsTime())
-	if contextErr := ctx.Err(); contextErr != nil {
-		return ModelDevResolution{}, status.FromContextError(contextErr).Err()
-	}
+	wireIntent, err := contractpb.EncodeIntent(intent)
 	if err != nil {
-		return ModelDevResolution{}, err
+		return ModelDevResolution{}, invalid
 	}
-	return resolved, nil
+	prepare := &modeldevv1.PrepareAdmissionRequest{Intent: wireIntent, IdentityRef: &modeldevv1.IdentityRef{TenantId: identity.TenantID, Actor: identity.Actor, ExecutionId: identity.ExecutionID, OperationId: identity.OperationID, IntentHash: identity.IntentHash}, AcceptedAt: timestamppb.New(acceptedAt), ComputeSelectionCanonical: selectionBytes, SelectionDigest: selection.SelectionDigest}
+	call, cancel, requestID := c.admissionCall(ctx, scope)
+	preparedReply, err := c.client.PrepareAdmission(call, prepare, grpc.WaitForReady(true))
+	callErr := call.Err()
+	cancel()
+	if err != nil || callErr != nil {
+		return ModelDevResolution{}, c.admissionFailure(ctx, callErr, err, requestID)
+	}
+	if preparedReply == nil || len(preparedReply.ProtoReflect().GetUnknown()) != 0 {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	prepared, err := cpup01.DecodePreparedCandidate(preparedReply.CandidateCanonical, preparedReply.CandidateHash)
+	if err != nil {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	returnedIntent, _, err := cpup01.CanonicalIntent(prepared.Intent)
+	origin := prepared.Snapshot.ComputeOrigin
+	if err != nil || prepared.GPURequest != nil || prepared.Snapshot.GPU != nil || selection.MemoryMib > math.MaxInt64/(1024*1024) || prepared.Snapshot.Resources != (cpup01.CPUResources{Nodes: 1, ProcessesPerNode: 1, RequestMillicpu: selection.CpuMillis, LimitMillicpu: selection.CpuMillis, RequestMemoryBytes: selection.MemoryMib * 1024 * 1024, LimitMemoryBytes: selection.MemoryMib * 1024 * 1024}) || !bytes.Equal(intentBytes, returnedIntent) || prepared.Snapshot.IdentityRef != identity || !prepared.Snapshot.Timing.AcceptedAt.Equal(acceptedAt) || origin.ComputePresetID != selection.PresetId || origin.SelectionDigest != selection.SelectionDigest || origin.SelectionJSON != string(selectionBytes) || origin.CPUMillis != selection.CpuMillis || origin.MemoryMiB != selection.MemoryMib || origin.DeviceMode != "cpu" {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	call, cancel, requestID = c.admissionCall(ctx, scope)
+	reply, err := c.client.FinalizeAdmission(call, &modeldevv1.FinalizeAdmissionRequest{CandidateCanonical: preparedReply.CandidateCanonical, CandidateHash: preparedReply.CandidateHash}, grpc.WaitForReady(true))
+	callErr = call.Err()
+	cancel()
+	if err != nil || callErr != nil {
+		return ModelDevResolution{}, c.admissionFailure(ctx, callErr, err, requestID)
+	}
+	if reply == nil || len(reply.ProtoReflect().GetUnknown()) != 0 {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	snapshot, err := contractpb.DecodeSnapshot(reply.Snapshot)
+	if err != nil {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	expected := prepared.Snapshot
+	expected.RuntimePlan = snapshot.RuntimePlan
+	expectedBytes, err := expected.Canonical()
+	if err != nil {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	actualBytes, err := snapshot.Canonical()
+	if err != nil || !bytes.Equal(expectedBytes, actualBytes) {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	digest, err := snapshot.Digest()
+	if err != nil || digest != reply.ExecutionSpecHash {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	envelope := cpup01.AdmissionEnvelope{TenantID: identity.TenantID, Actor: identity.Actor, OperationID: identity.OperationID, ExecutionID: identity.ExecutionID, Intent: intent, IntentHash: intentHash, Snapshot: snapshot, SpecHash: digest, AcceptedAt: acceptedAt}
+	if _, _, err := envelope.CanonicalPayloads(); err != nil {
+		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	return ModelDevResolution{Snapshot: snapshot, ExecutionSpecHash: digest}, nil
 }
 
-func modelDevResolutionRequest(scope ModelDevResolveScope, intent cpup01.Intent, selection ModelDevReleaseSelection, acceptedAt time.Time) (*modeldevv1.ResolveAdmissionRequest, cpup01.Intent, error) {
-	invalid := status.Error(codes.InvalidArgument, "invalid modeldev resolution request")
-	tenant, tenantOK := canonicalModelDevBindingUUID(scope.ResourceTenantID)
-	release, releaseOK := canonicalModelDevBindingUUID(selection.ReleaseID)
-	digest, digestErr := hex.DecodeString(selection.ReleaseDigest)
-	acceptedAt = acceptedAt.UTC()
-	if !tenantOK || tenant != scope.ResourceTenantID || !validModelDevClientActor(scope.Actor) || !releaseOK ||
-		digestErr != nil || len(digest) != sha256.Size || strings.ToLower(selection.ReleaseDigest) != selection.ReleaseDigest || selection.BindingGeneration == 0 ||
-		acceptedAt.IsZero() || acceptedAt.Year() < 1 || acceptedAt.Year() > 9999 || acceptedAt.Nanosecond()%1000 != 0 {
-		return nil, cpup01.Intent{}, invalid
+func (c *ModelDevClient) admissionCall(ctx context.Context, scope ModelDevResolveScope) (context.Context, context.CancelFunc, string) {
+	call, cancel := context.WithTimeout(ctx, c.timeout)
+	id := uuid.NewString()
+	call = metadata.NewOutgoingContext(call, metadata.Pairs("x-ani-tenant-id", scope.ResourceTenantID, "x-ani-actor", scope.Actor, "x-ani-request-id", id))
+	return call, cancel, id
+}
+func (c *ModelDevClient) admissionFailure(ctx context.Context, callErr, err error, requestID string) error {
+	if ctx.Err() != nil {
+		return status.FromContextError(ctx.Err()).Err()
 	}
-	canonical, _, err := cpup01.CanonicalIntent(intent)
-	if err != nil {
-		return nil, cpup01.Intent{}, invalid
+	if callErr != nil {
+		if c.connection.GetState() != connectivity.Ready {
+			return modelDevAdmissionUnavailable()
+		}
+		return status.FromContextError(callErr).Err()
 	}
-	// Shared canonical bytes preserve optional presence and normalize UUIDs and
-	// decimal values. Decode a fresh value so the caller retains its own slices.
-	var normalized struct {
-		Schema string `json:"schema"`
-		cpup01.Intent
-	}
-	if json.Unmarshal(canonical, &normalized) != nil {
-		return nil, cpup01.Intent{}, invalid
-	}
-	wireIntent, err := contractpb.EncodeIntent(normalized.Intent)
-	if err != nil {
-		return nil, cpup01.Intent{}, invalid
-	}
-	return &modeldevv1.ResolveAdmissionRequest{
-		Intent:     wireIntent,
-		Release:    &modeldevv1.AdmissionReleaseSelection{ReleaseId: release, ReleaseDigest: selection.ReleaseDigest, BindingGeneration: selection.BindingGeneration},
-		AcceptedAt: timestamppb.New(acceptedAt),
-	}, normalized.Intent, nil
+	return modelDevResolutionError(err, requestID)
 }
 
 func validModelDevClientActor(actor string) bool {
@@ -222,49 +244,6 @@ func validModelDevClientActor(actor string) bool {
 		}
 	}
 	return false
-}
-
-func validateModelDevResolution(reply *modeldevv1.ResolveAdmissionResponse, intent cpup01.Intent, release *modeldevv1.AdmissionReleaseSelection, acceptedAt time.Time) (ModelDevResolution, error) {
-	if reply == nil || len(reply.ProtoReflect().GetUnknown()) != 0 {
-		return ModelDevResolution{}, modelDevAdmissionUnavailable()
-	}
-	snapshot, err := contractpb.DecodeSnapshot(reply.Snapshot)
-	if err != nil {
-		return ModelDevResolution{}, modelDevAdmissionUnavailable()
-	}
-	canonical, err := snapshot.Canonical()
-	if err != nil {
-		return ModelDevResolution{}, modelDevAdmissionUnavailable()
-	}
-	digest := sha256.Sum256(canonical)
-	if hex.EncodeToString(digest[:]) != reply.ExecutionSpecHash {
-		return ModelDevResolution{}, modelDevAdmissionUnavailable()
-	}
-	var normalized cpup01.Snapshot
-	if json.Unmarshal(canonical, &normalized) != nil ||
-		normalized.Release.ReleaseID != release.ReleaseId || normalized.Release.ReleaseDigest != release.ReleaseDigest || normalized.Release.AcceptedBindingGeneration != release.BindingGeneration ||
-		normalized.Kind != intent.Kind || normalized.Release.PresetID != intent.PresetID || normalized.Input.InputVersionID != intent.DatasetVersionID ||
-		normalized.DeadlineAt.Nanosecond()%1000 != 0 || !normalized.DeadlineAt.After(acceptedAt) {
-		return ModelDevResolution{}, modelDevAdmissionUnavailable()
-	}
-	if intent.ImageVersionID != nil && *intent.ImageVersionID != normalized.Program.ImageVersionID {
-		return ModelDevResolution{}, modelDevAdmissionUnavailable()
-	}
-	if intent.GeneralParameters != nil {
-		for _, parameter := range *intent.GeneralParameters {
-			matched := false
-			for _, resolved := range normalized.Program.ResolvedParameters {
-				if parameter == resolved {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				return ModelDevResolution{}, modelDevAdmissionUnavailable()
-			}
-		}
-	}
-	return ModelDevResolution{Snapshot: normalized, ExecutionSpecHash: reply.ExecutionSpecHash}, nil
 }
 
 func modelDevAdmissionUnavailable() error {
@@ -302,8 +281,6 @@ func modelDevResolutionError(err error, requestID string) error {
 	switch {
 	case failure.Code() == codes.InvalidArgument && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_INVALID_ARGUMENT:
 		message = "invalid modeldev resolution request"
-	case failure.Code() == codes.FailedPrecondition && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_NO_COMPATIBLE_RELEASE:
-		message = "selected Release is unavailable or incompatible"
 	case failure.Code() == codes.NotFound && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_RESOURCE_NOT_FOUND:
 		message = "input version unavailable"
 	case failure.Code() == codes.FailedPrecondition && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_INPUT_NOT_READY:

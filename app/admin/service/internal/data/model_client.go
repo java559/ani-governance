@@ -383,3 +383,17 @@ func (c *ModelClient) GetModelDownloadURL(ctx context.Context, tenant, actor str
 	defer cancel()
 	return c.client.GetModelDownloadURL(call, req, grpc.WaitForReady(true))
 }
+
+func (c *ModelClient) ListModelOperations(ctx context.Context, tenant, actor string, request *modelv1.ListModelOperationsRequest) (*modelv1.ListModelOperationsResponse, error) {
+	req, err := cloneModelRequest(request)
+	if err != nil {
+		return nil, err
+	}
+	req.TenantId = tenant
+	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	if err != nil {
+		return nil, err
+	}
+	defer cancel()
+	return c.client.ListModelOperations(call, req, grpc.WaitForReady(true))
+}

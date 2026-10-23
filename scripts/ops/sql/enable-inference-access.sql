@@ -24,11 +24,11 @@ BEGIN
  FOR r IN SELECT * FROM (VALUES
   ('inference:service:read','GET','/api/v1/inference/services'),
   ('inference:service:create','POST','/api/v1/inference/services'),
-  ('inference:service:delete','POST','/api/v1/inference/services/{data.resource_id}:delete'),
-  ('inference:service:update','POST','/api/v1/inference/services/{data.resource_id}:update'),
-  ('inference:service:start','POST','/api/v1/inference/services/{data.resource_id}:start'),
-  ('inference:service:stop','POST','/api/v1/inference/services/{data.resource_id}:stop'),
-  ('inference:service:restart','POST','/api/v1/inference/services/{data.resource_id}:restart')
+  ('inference:service:delete','POST','/api/v1/inference/services/{resource_id}:delete'),
+  ('inference:service:update','POST','/api/v1/inference/services/{resource_id}:update'),
+  ('inference:service:start','POST','/api/v1/inference/services/{resource_id}:start'),
+  ('inference:service:stop','POST','/api/v1/inference/services/{resource_id}:stop'),
+  ('inference:service:restart','POST','/api/v1/inference/services/{resource_id}:restart')
  ) AS permissions(code,method,path) LOOP
   SELECT id INTO STRICT pid FROM sys_permissions WHERE code=r.code AND status='ON' AND deleted_at IS NULL;
   IF NOT EXISTS(SELECT 1 FROM sys_permission_apis pa JOIN sys_apis a ON a.id=pa.api_id

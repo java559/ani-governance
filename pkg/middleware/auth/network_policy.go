@@ -202,12 +202,16 @@ func validateNetworkQuery(operation string, query url.Values) bool {
 			return false
 		}
 		value := values[0]
-		if pattern := networkIDPatterns[field]; pattern != nil && value != "" && !pattern.MatchString(value) {
+		pattern := networkIDPatterns[field]
+		if pattern == nil {
+			pattern = platformNetworkIDPatterns[field]
+		}
+		if pattern != nil && value != "" && !pattern.MatchString(value) {
 			return false
 		}
 		if field == "page" || field == "pageSize" {
 			n, err := strconv.ParseUint(value, 10, 32)
-			if err != nil || n == 0 || strconv.FormatUint(n, 10) != value || (field == "pageSize" && n > 100) {
+			if err != nil || n == 0 || strconv.FormatUint(n, 10) != value || (field == "pageSize" && n > 100) || (operation == "/admin.service.v1.PlatformNetworkService/ListVirtualSwitches" && n > 2147483647) {
 				return false
 			}
 		}
@@ -319,7 +323,7 @@ func NetworkHTTPFilter(next http.Handler) http.Handler {
 				return
 			}
 			m := message.ProtoReflect()
-			if !validateNetworkMessage(m) {
+			if !validateNetworkMessage(m) || (IsPlatformNetworkOperation(operation) && !validPlatformNetworkInput(message)) {
 				fail()
 				return
 			}

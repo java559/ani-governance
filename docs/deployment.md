@@ -243,42 +243,13 @@ psql -v ON_ERROR_STOP=1 -f scripts/ops/sql/repair-tenant-logout.sql
 
 执行后重启所有服务实例以重载 Casbin 策略，再用启用且套餐包含 DASHBOARD 的租户管理员验证登录、登出及旧令牌失效。这里的重启只读数据库，不会自动执行补丁。
 
-### 暂停 ModelDev 新受理
+### ModelDev 执行合同切换
 
-CPU-P01 的暂停命令只关闭当前租户下一个已存在 Release 绑定的新受理开关。
-它不要求 ModelDev 在线，不创建绑定或切换版本，也不停止已经受理的执行。
-启用/回退入口和目标集群业务验收仍待完成。
+本轮删除训练 Release 导入、启用、暂停和绑定审批；`modeldev-pause`、`modeldev-enable`、`modeldev-import-release` 不再注册。输入导入保留 `modeldev-import-csv` / `modeldev-import-finetuning-dataset`，当前租户用户需具有独立 `modeldev:manage_input` 与 ALL 范围，导入按实现和固定对象校验。
 
-```bash
-./bin/admin modeldev-pause --conf /run/secrets/governance-config \
-  --token-file /run/secrets/governance-user-access-token \
-  --request-file /run/secrets/modeldev-pause.json
-```
+切换须先停止新受理、备份并盘点原 acceptance/dispatch、未决创建和适用 GPU 原账，再显式运行 Atlas 迁移，发布匹配 ModelDev/Gov 合同、镜像与材料。历史 raw payload 不能交给新 decoder；旧二进制不可与删除 binding schema 的新代码交叉运行。旧记录、PVC/publication/模型的保留和回退以本任务实际备份/清理记录为准，普通进程不执行 DDL。
 
-配置目录使用现有 Governance Bootstrap 配置：显式 PostgreSQL、`migrate: false`、
-Redis 和 JWT 校验配置。使用受管凭据文件，不能把 token 或连接密码放在命令参数中。
-token/request 文件必须是 `0600` 的普通文件；命令不播种权限、不迁移 schema。
-操作者必须持有实际 admin ACCESS JWT、有效 Redis session，并在当前数据库拥有
-租户内有效角色的 ALL 数据范围和独立 `modeldev:manage_release_binding` 权限。
-仅有执行创建权限不等于管理权限。权限通过既有受权管理流程准备，命令不自动授予。
-
-请求是严格 JSON，恰好包含以下六个字段：
-
-| 字段 | 要求 |
-| --- | --- |
-| `preset_id` | 当前租户已有绑定的非零 UUID |
-| `release_id` | 操作者明确要暂停的当前 Release UUID |
-| `release_digest` | 该 Release 的 64 位小写十六进制摘要 |
-| `expected_generation` | 已观察到的绑定代际，`1..MaxInt64` |
-| `reason` / `evidence_reference` | 非空白 UTF-8 原因与证据引用，不含 NUL |
-
-不能提交 tenant、actor、启用开关或连接地址；未知、重复、null 字段均拒绝。
-目标 ID/digest 已变化或请求代际来自未来时拒绝，不能把旧请求解释为暂停新版本。
-成功输出一个 JSON 对象，包含当前可信 `operator`、`before`、`after`、`replayed`；
-两份绑定视图含 release ID/digest、generation、开关与 `updated_by`。
-首次暂停增加一次代际，服务端保存当前操作者、时间、原因和证据引用。
-同目标已经暂停时可以按原请求重放，保留原代际和审计字段，但仍重新验证当前身份及权限。
-超时或输出失败时应先核对结果或重放原固定目标请求，不能臆测变更没有提交。
+生成 API 后先运行 `admin sync-apis --dry-run`，再按部署授权同步新 implementation 规则查询。新 `(path,method)` 需显式当前权限和套餐关联，目录同步不自动授权。旧 Release 权限和 `/api/v1/modeldev/presets` 退出活动入口。
 
 ## 6. 日常升级与排错
 

@@ -24,6 +24,67 @@ message PlatformResource {
   IntranetAddressPool intranet_pool = 18 [json_name = "intranet_pool"];
 }
 
+// A persisted platform switch has no Provider object or cluster before first use.
+message VirtualSwitch {
+  string id = 1 [json_name = "id"];
+  string name = 2 [json_name = "name"];
+  string state = 3 [json_name = "state"];
+  string reason = 4 [json_name = "reason"];
+  string reason_message = 5 [json_name = "reason_message"];
+  int64 version = 6 [json_name = "version"];
+  google.protobuf.Timestamp created_at = 7 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 8 [json_name = "updated_at"];
+  string last_operation_id = 9 [json_name = "last_operation_id"];
+  string cluster_id = 10 [json_name = "cluster_id"];
+  string group_name = 11 [json_name = "group_name"];
+  string binding_state = 12 [json_name = "binding_state"];
+  int64 binding_version = 13 [json_name = "binding_version"];
+  string membership_fingerprint = 14 [json_name = "membership_fingerprint"];
+  repeated VirtualSwitchNode nodes = 15 [json_name = "nodes"];
+}
+
+message VirtualSwitchNode {
+  string node_name = 1 [json_name = "node_name"];
+  string node_uid = 2 [json_name = "node_uid"];
+  string mac = 3 [json_name = "mac"];
+  int32 priority = 4 [json_name = "priority"];
+  string state = 5 [json_name = "state"];
+  string reason = 6 [json_name = "reason"];
+}
+
+message CreateVirtualSwitchData {
+  string name = 1 [json_name = "name"];
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+}
+message CreateVirtualSwitchRequest {
+  CreateVirtualSwitchData data = 1 [json_name = "data"];
+}
+message CreateVirtualSwitchResponse {
+  VirtualSwitch resource = 1 [json_name = "resource"];
+}
+message GetVirtualSwitchRequest {
+  string virtual_switch_id = 1 [json_name = "virtual_switch_id"];
+}
+message GetVirtualSwitchResponse {
+  VirtualSwitch resource = 1 [json_name = "resource"];
+}
+message ListVirtualSwitchesRequest {
+  string name = 1 [json_name = "name"];
+  string state = 2 [json_name = "state"];
+  optional int32 page = 3 [json_name = "page"];
+  optional int32 page_size = 4 [json_name = "pageSize"];
+}
+message ListVirtualSwitchesResponse {
+  repeated VirtualSwitch items = 1 [json_name = "items"];
+  int64 total = 2 [json_name = "total"];
+}
+message DeleteVirtualSwitchRequest {
+  string virtual_switch_id = 1 [json_name = "virtual_switch_id"];
+}
+message DeleteVirtualSwitchResponse {
+  VirtualSwitch resource = 1 [json_name = "resource"];
+}
+
 message NodeInterface {
   string node_name = 1 [json_name = "node_name"];
   string node_uid = 2 [json_name = "node_uid"];
@@ -54,6 +115,10 @@ message NetworkDevice {
 message VlanNetwork {
   string device_id = 1 [json_name = "device_id"];
   int32 vlan_id = 2 [json_name = "vlan_id"];
+  string virtual_switch_id = 3 [json_name = "virtual_switch_id"];
+  string device_name = 4 [json_name = "device_name"];
+  string group_name = 5 [json_name = "group_name"];
+  repeated VirtualSwitchNode nodes = 6 [json_name = "nodes"];
 }
 
 message EgressGateway {
@@ -143,6 +208,8 @@ message PlatformOperation {
 
 message ListNodeInterfacesRequest {
   string node_name = 1 [json_name = "node_name"];
+  string cluster_id = 2 [json_name = "cluster_id"];
+  string virtual_switch_id = 3 [json_name = "virtual_switch_id"];
 }
 message ListNodeInterfacesResponse {
   repeated NodeInterface items = 1 [json_name = "items"];
@@ -176,6 +243,10 @@ message CreateVlanNetworkData {
   string device_id = 3 [json_name = "device_id"];
   int32 vlan_id = 4 [json_name = "vlan_id"];
   string idempotency_key = 5 [json_name = "idempotency_key"];
+  // Legacy device_id and the three v2 fields are mutually exclusive.
+  string cluster_id = 6 [json_name = "cluster_id"];
+  string virtual_switch_id = 7 [json_name = "virtual_switch_id"];
+  string device_name = 8 [json_name = "device_name"];
 }
 message CreateVlanNetworkRequest {
   CreateVlanNetworkData data = 1 [json_name = "data"];
@@ -424,4 +495,92 @@ message GetPlatformOperationRequest {
 }
 message GetPlatformOperationResponse {
   PlatformOperation operation = 1 [json_name = "operation"];
+}
+
+// A restricted legacy registration closure has a durable fence and keeps history.
+message DeviceRetirement {
+  string device_id = 1 [json_name = "device_id"];
+  string operation_id = 2 [json_name = "operation_id"];
+  string state = 3 [json_name = "state"];
+  string reason = 4 [json_name = "reason"];
+  int64 version = 5 [json_name = "version"];
+  int64 expected_version = 6 [json_name = "expected_version"];
+  string config_uid = 7 [json_name = "config_uid"];
+  int64 fence_version = 8 [json_name = "fence_version"];
+  bool pending_unknown = 9 [json_name = "pending_unknown"];
+  google.protobuf.Timestamp created_at = 10 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 11 [json_name = "updated_at"];
+  google.protobuf.Timestamp completed_at = 12 [json_name = "completed_at"];
+}
+message RetireNetworkDeviceData {
+  int64 expected_version = 1 [json_name = "expected_version"];
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+}
+message RetireNetworkDeviceRequest {
+  string device_id = 1 [json_name = "device_id"];
+  RetireNetworkDeviceData data = 2 [json_name = "data"];
+}
+message RetireNetworkDeviceResponse {
+  DeviceRetirement retirement = 1 [json_name = "retirement"];
+}
+message GetNetworkDeviceRetirementRequest {
+  string device_id = 1 [json_name = "device_id"];
+}
+message GetNetworkDeviceRetirementResponse {
+  DeviceRetirement retirement = 1 [json_name = "retirement"];
+}
+
+// The system VPC identity is output-only and fixed by Resource configuration.
+message DefaultVPCEgress {
+  string id = 1 [json_name = "id"];
+  string name = 2 [json_name = "name"];
+  string pool_id = 3 [json_name = "pool_id"];
+  string state = 4 [json_name = "state"];
+  string reason = 5 [json_name = "reason"];
+  int64 version = 6 [json_name = "version"];
+  string last_operation_id = 7 [json_name = "last_operation_id"];
+  string operation_state = 8 [json_name = "operation_state"];
+  string phase = 9 [json_name = "phase"];
+  bool pending_unknown = 10 [json_name = "pending_unknown"];
+  string address = 11 [json_name = "address"];
+  string eip_provider_name = 12 [json_name = "eip_provider_name"];
+  string eip_provider_uid = 13 [json_name = "eip_provider_uid"];
+  string snat_provider_name = 14 [json_name = "snat_provider_name"];
+  string snat_provider_uid = 15 [json_name = "snat_provider_uid"];
+  bool desired_enabled = 16 [json_name = "desired_enabled"];
+  optional bool applied_enabled = 17 [json_name = "applied_enabled"];
+  string cluster_id = 18 [json_name = "cluster_id"];
+  string cluster_uid = 19 [json_name = "cluster_uid"];
+  string default_vpc_namespace = 20 [json_name = "default_vpc_namespace"];
+  string default_vpc_name = 21 [json_name = "default_vpc_name"];
+  string default_vpc_uid = 22 [json_name = "default_vpc_uid"];
+  google.protobuf.Timestamp created_at = 23 [json_name = "created_at"];
+  google.protobuf.Timestamp updated_at = 24 [json_name = "updated_at"];
+  google.protobuf.Timestamp observed_at = 25 [json_name = "observed_at"];
+  int64 target_generation = 26 [json_name = "target_generation"];
+  string pending_action = 27 [json_name = "pending_action"];
+  bool observation_stale = 28 [json_name = "observation_stale"];
+}
+message CreateDefaultVPCEgressData {
+  string name = 1 [json_name = "name"];
+  string pool_id = 2 [json_name = "pool_id"];
+  string idempotency_key = 3 [json_name = "idempotency_key"];
+}
+message CreateDefaultVPCEgressRequest {
+  CreateDefaultVPCEgressData data = 1 [json_name = "data"];
+}
+message CreateDefaultVPCEgressResponse {
+  DefaultVPCEgress egress = 1 [json_name = "egress"];
+}
+message GetDefaultVPCEgressRequest {
+  string egress_id = 1 [json_name = "egress_id"];
+}
+message GetDefaultVPCEgressResponse {
+  DefaultVPCEgress egress = 1 [json_name = "egress"];
+}
+message DeleteDefaultVPCEgressRequest {
+  string egress_id = 1 [json_name = "egress_id"];
+}
+message DeleteDefaultVPCEgressResponse {
+  DefaultVPCEgress egress = 1 [json_name = "egress"];
 }

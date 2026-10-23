@@ -77,8 +77,7 @@ func modelDevDispatchRequest(envelope cpup01.AdmissionEnvelope) (*modeldevv1.Acc
 		return nil, invalid
 	}
 	for _, value := range []string{envelope.TenantID, envelope.OperationID, envelope.ExecutionID} {
-		canonical, valid := canonicalModelDevBindingUUID(value)
-		if !valid || canonical != value {
+		if !modelDevCanonicalUUID(value) {
 			return nil, invalid
 		}
 	}

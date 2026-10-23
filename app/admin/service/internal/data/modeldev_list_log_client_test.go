@@ -64,6 +64,13 @@ func (p *modelDevListLogPeer) GetExecutionLogs(ctx context.Context, in *modeldev
 func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing.T) {
 	id := uuid.NewString()
 	execution := &modeldevv1.ExecutionView{Identity: &trainingv1.ExecutionIdentity{ExecutionId: id, OperationId: uuid.NewString(), ExecutionSpecHash: strings.Repeat("a", 64)}, Kind: trainingv1.ExecutionKind_EXECUTION_KIND_GENERAL_TRAINING, States: &modeldevv1.ExecutionStates{ComputeState: modeldevv1.ComputeState_COMPUTE_STATE_TRAINING, DeliveryState: modeldevv1.DeliveryState_DELIVERY_STATE_PENDING, CloseState: modeldevv1.CloseState_CLOSE_STATE_OPEN, ResourceState: modeldevv1.ResourceState_RESOURCE_STATE_NOT_APPLICABLE}, AcceptedAt: timestamppb.Now(), DeadlineAt: timestamppb.Now(), ObservedAt: timestamppb.Now()}
+	f := modelDevResponseFixture(t)
+	execution.ImplementationId = "builtin.mlp"
+	execution.ComputePresetId = f.selection.PresetId
+	execution.ComputeOrigin = f.response.Snapshot.ComputeOrigin
+	execution.Timing = f.response.Snapshot.Timing
+	execution.AcceptedAt = f.response.Snapshot.Timing.AcceptedAt
+	execution.DeadlineAt = f.response.Snapshot.Timing.ExecutionDeadlineAt
 	list := &modeldevv1.ListExecutionsResponse{Executions: []*modeldevv1.ExecutionView{execution}}
 	logs := &modeldevv1.GetExecutionLogsResponse{Source: &trainingv1.LogRef{LogId: uuid.NewString(), ResourceUid: uuid.NewString(), ContainerName: "node"}, Lines: []*modeldevv1.LogLine{{Timestamp: timestamppb.Now(), Text: "real stdout boundary sample"}}, ObservedAt: timestamppb.Now()}
 	for _, test := range []struct {

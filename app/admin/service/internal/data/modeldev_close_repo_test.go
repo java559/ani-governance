@@ -15,7 +15,6 @@ import (
 
 func TestModelDevCloseDeliveryRecoversOriginalAndFencesExpiredWorker(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
 	intent, replayed, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
@@ -82,7 +81,6 @@ func TestModelDevCloseDeliveryRecoversOriginalAndFencesExpiredWorker(t *testing.
 
 func TestModelDevCloseDeliveryRetainsUnknownAndRetriesAfterRestart(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
 	intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")

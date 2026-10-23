@@ -47,24 +47,22 @@ func TestModelDevAcceptanceRejectsInvalidEnvelopeWithoutConsumingKey(t *testing.
 			candidate.AcceptedAt = candidate.AcceptedAt.Add(time.Nanosecond)
 		}},
 		{"different preset", func(_ *ModelDevAdmissionScope, candidate *ModelDevFrozenCandidate) {
-			candidate.Intent.PresetID = uuid.NewString()
+			candidate.Intent.ComputePresetID = uuid.NewString()
 		}},
 		{"different input", func(_ *ModelDevAdmissionScope, candidate *ModelDevFrozenCandidate) {
 			candidate.Intent.DatasetVersionID = uuid.NewString()
 		}},
-		{"different explicitly selected image", func(_ *ModelDevAdmissionScope, candidate *ModelDevFrozenCandidate) {
-			imageID := uuid.NewString()
-			candidate.Intent.ImageVersionID = &imageID
-		}},
+
 		{"different explicitly selected learning rate", func(_ *ModelDevAdmissionScope, candidate *ModelDevFrozenCandidate) {
-			parameters := []cpup01.Parameter{{Name: "learning_rate", Type: "DECIMAL", Value: "0.02"}}
-			candidate.Intent.GeneralParameters = &parameters
+			rate := "0.02"
+			p := *candidate.Intent.MLP
+			p.LearningRate = &rate
+			candidate.Intent.MLP = &p
 		}},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
 			ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-			bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 			invalidScope, invalidCandidate := scope, candidate
 			test.mutate(&invalidScope, &invalidCandidate)
 			accepted, replayed, err := NewModelDevAcceptanceRepo(client).AcceptFrozen(ctx, invalidScope, invalidCandidate)
@@ -104,9 +102,10 @@ func newModelDevAcceptanceFixture(t *testing.T) (context.Context, *entCrud.EntCl
 	})
 	snapshot := conformance.SnapshotV1()
 	intent := conformance.IntentV1()
-	intent.PresetID = snapshot.Release.PresetID
+	intent.ComputePresetID = snapshot.ComputeOrigin.ComputePresetID
 	intent.DatasetVersionID = snapshot.Input.InputVersionID
 	scope := ModelDevAdmissionScope{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, Actor: "governance:user:7", Action: ModelDevCreateAction, IdempotencyKey: uuid.NewString()}
-	candidate := ModelDevFrozenCandidate{OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), Intent: intent, Snapshot: snapshot, AcceptedAt: snapshot.DeadlineAt.Add(-time.Hour)}
+	candidate := ModelDevFrozenCandidate{OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), Intent: intent, Snapshot: snapshot, AcceptedAt: time.Now().UTC().Truncate(time.Microsecond)}
+	candidate = freezeModelDevFixture(t, scope, candidate)
 	return ctx, client, scope, candidate
 }

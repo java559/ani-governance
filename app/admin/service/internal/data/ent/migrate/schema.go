@@ -1451,39 +1451,6 @@ var (
 			},
 		},
 	}
-	// SysModeldevReleaseBindingsColumns holds the columns for the "sys_modeldev_release_bindings" table.
-	SysModeldevReleaseBindingsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUint32, Increment: true},
-		{Name: "tenant_id", Type: field.TypeUint32},
-		{Name: "resource_tenant_id", Type: field.TypeString},
-		{Name: "preset_id", Type: field.TypeString},
-		{Name: "release_id", Type: field.TypeString},
-		{Name: "release_digest", Type: field.TypeString},
-		{Name: "generation", Type: field.TypeUint64},
-		{Name: "new_submissions_enabled", Type: field.TypeBool, Default: false},
-		{Name: "updated_by", Type: field.TypeString},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "reason", Type: field.TypeString},
-		{Name: "evidence_reference", Type: field.TypeString},
-	}
-	// SysModeldevReleaseBindingsTable holds the schema information for the "sys_modeldev_release_bindings" table.
-	SysModeldevReleaseBindingsTable = &schema.Table{
-		Name:       "sys_modeldev_release_bindings",
-		Columns:    SysModeldevReleaseBindingsColumns,
-		PrimaryKey: []*schema.Column{SysModeldevReleaseBindingsColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "uix_sys_modeldev_release_bindings_scope",
-				Unique:  true,
-				Columns: []*schema.Column{SysModeldevReleaseBindingsColumns[2], SysModeldevReleaseBindingsColumns[3]},
-			},
-			{
-				Name:    "uix_sys_modeldev_release_bindings_tenant_preset",
-				Unique:  true,
-				Columns: []*schema.Column{SysModeldevReleaseBindingsColumns[1], SysModeldevReleaseBindingsColumns[3]},
-			},
-		},
-	}
 	// SysNotificationChannelsColumns holds the columns for the "sys_notification_channels" table.
 	SysNotificationChannelsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint32, Increment: true, Comment: "id"},
@@ -3463,7 +3430,6 @@ var (
 		SysMembershipRolesTable,
 		SysMenusTable,
 		SysModeldevAcceptancesTable,
-		SysModeldevReleaseBindingsTable,
 		SysNotificationChannelsTable,
 		SysOperationAuditLogsTable,
 		SysOrgUnitsTable,
@@ -3640,13 +3606,6 @@ func init() {
 		"sys_modeldev_acceptances_owner_receipt_ck":     "((dispatch_state = 'ACKED' AND owner_receipt_canonical IS NOT NULL AND octet_length(owner_receipt_canonical) BETWEEN 1 AND 4096) OR (dispatch_state <> 'ACKED' AND owner_receipt_canonical IS NULL))",
 		"sys_modeldev_acceptances_stop_intent_ck":       "((stop_intent_generation = 0 AND stop_requested_at IS NULL AND stop_requested_actor IS NULL AND close_dispatch_state = 'IDLE') OR (stop_intent_generation > 0 AND stop_requested_at IS NOT NULL AND stop_requested_actor IS NOT NULL AND length(stop_requested_actor) BETWEEN 1 AND 128 AND close_dispatch_state IN ('QUEUED','DISPATCHING','UNKNOWN','ACKED')))",
 		"sys_modeldev_acceptances_tenant_positive_ck":   "tenant_id > 0",
-	}
-	SysModeldevReleaseBindingsTable.Annotation = &entsql.Annotation{
-		Table: "sys_modeldev_release_bindings",
-	}
-	SysModeldevReleaseBindingsTable.Annotation.Checks = map[string]string{
-		"sys_modeldev_release_bindings_generation_positive_ck": "generation > 0",
-		"sys_modeldev_release_bindings_tenant_positive_ck":     "tenant_id > 0",
 	}
 	SysNotificationChannelsTable.Annotation = &entsql.Annotation{
 		Table:     "sys_notification_channels",

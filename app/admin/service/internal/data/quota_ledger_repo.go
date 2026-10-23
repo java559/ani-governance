@@ -154,7 +154,20 @@ func validateFrozenCharges(canonical string, charges []*ent.QuotaCharge) error {
 	return nil
 }
 
+// Occupy retains the existing standalone transaction boundary for current
+// callers. ModelDev composes the validated core into its acceptance transaction.
 func (r *QuotaLedgerRepo) Occupy(ctx context.Context, in *QuotaOccupyInput) (out *QuotaOccupyResult, err error) {
+	if _, validateErr := validateQuotaOccupyInput(in); validateErr != nil {
+		return nil, validateErr
+	}
+	err = r.transaction(ctx, func(tx *ent.Tx) error { out, err = r.occupyInTx(ctx, tx, in); return err })
+	if err != nil {
+		return nil, r.storageError(ctx, err)
+	}
+	return out, nil
+}
+
+func validateQuotaOccupyInput(in *QuotaOccupyInput) ([]QuotaOccupyItem, error) {
 	if in == nil || in.TenantID == 0 || in.IdempotencyKey == "" || in.RequestHash == "" || in.CanonicalRequest == "" || in.ResourceTenantID == "" || in.ResourceID == "" || in.OwnerService == "" || in.Action == "" || in.ActorType == "" || in.ActorID == "" {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "incomplete quota input")
 	}
@@ -179,7 +192,17 @@ func (r *QuotaLedgerRepo) Occupy(ctx context.Context, in *QuotaOccupyInput) (out
 			return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid or duplicate quota item")
 		}
 	}
-	err = r.transaction(ctx, func(tx *ent.Tx) error {
+	return items, nil
+}
+
+// occupyInTx uses the caller's original transaction. External authorization,
+// selection and GPU resolution must finish before this point.
+func (r *QuotaLedgerRepo) occupyInTx(ctx context.Context, tx *ent.Tx, in *QuotaOccupyInput) (out *QuotaOccupyResult, err error) {
+	items, err := validateQuotaOccupyInput(in)
+	if err != nil {
+		return nil, err
+	}
+	err = func() error {
 		databaseNow, clockErr := quotaDatabaseNow(ctx, tx)
 		if clockErr != nil {
 			return clockErr
@@ -287,12 +310,10 @@ func (r *QuotaLedgerRepo) Occupy(ctx context.Context, in *QuotaOccupyInput) (out
 		}
 		out = &QuotaOccupyResult{op.OperationID, op.ResourceID, ids, false}
 		return nil
-	})
-	if err != nil {
-		return nil, r.storageError(ctx, err)
-	}
-	return out, nil
+	}()
+	return out, err
 }
+
 func changeAccount(ctx context.Context, tx *ent.Tx, tenant uint32, code string, delta int64) error {
 	databaseNow, clockErr := quotaDatabaseNow(ctx, tx)
 	if clockErr != nil {

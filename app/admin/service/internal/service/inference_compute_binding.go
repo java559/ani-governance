@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	contractv1 "github.com/liangzai006/ani-inference-service/api/inference/contract/v1"
 	runtimev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
@@ -26,9 +27,9 @@ type InferenceComputeClient interface {
 func NewInferenceComputeBinding(client InferenceOwnerClient, authorization InferenceActionAuthorizer, model InferenceModelClient, computeClient InferenceComputeClient) *InferenceGpuBinding {
 	return &InferenceGpuBinding{client: client, authorization: authorization, model: model, compute: computeClient}
 }
-func validateInferenceCreateIntent(d *view.CreateInferenceData) error {
+func validateInferenceCreateIntent(d *view.CreateInferenceRequest) error {
 	if d == nil || len(d.ProtoReflect().GetUnknown()) != 0 {
-		return status.Error(codes.InvalidArgument, "invalid inference data")
+		return status.Error(codes.InvalidArgument, "invalid inference request")
 	}
 	if d.Cpu != "" || d.Memory != "" || d.Gpu != nil {
 		return status.Error(codes.InvalidArgument, "cpu, memory and gpu input are retired; use preset_id")
@@ -41,20 +42,20 @@ func validateInferenceCreateIntent(d *view.CreateInferenceData) error {
 	if id, e := uuid.Parse(d.PresetId); e != nil || id == uuid.Nil || id.String() != d.PresetId {
 		return status.Error(codes.InvalidArgument, "invalid preset_id")
 	}
-	if _, err := runtimev1.NormalizeTopology(&runtimev1.RuntimeSpec{Mode: runtimev1.RuntimeMode(d.RuntimeMode), WorkerReplicas: d.WorkerReplicas, Provider: "kserve"}, d.Replicas, 0); err != nil {
+	if _, err := contractv1.NormalizeTopology(&runtimev1.RuntimeSpec{Mode: runtimev1.RuntimeMode(d.RuntimeMode), WorkerReplicas: d.WorkerReplicas, Provider: "kserve"}, d.Replicas, 0); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
 	}
 	return nil
 }
 func (b *InferenceGpuBinding) IntentHash(tenant, actorType, actorID string, message proto.Message) (string, error) {
-	d, ok := message.(*view.CreateInferenceData)
+	d, ok := message.(*view.CreateInferenceRequest)
 	if !ok {
 		return "", commandcontract.Invalid("invalid inference intent")
 	}
 	if err := validateInferenceCreateIntent(d); err != nil {
 		return "", err
 	}
-	intent := proto.Clone(d).(*view.CreateInferenceData)
+	intent := proto.Clone(d).(*view.CreateInferenceRequest)
 	intent.IdempotencyKey = ""
 	if intent.RuntimeMode == 0 {
 		intent.RuntimeMode = 1
@@ -66,7 +67,7 @@ func (b *InferenceGpuBinding) IntentHash(tenant, actorType, actorID string, mess
 	return commandcontract.Hash(map[string]any{"schema": "gov-inference-intent-v2", "tenant_id": tenant, "actor_type": actorType, "actor_id": actorID, "owner": commandcontract.InferenceOwner, "action": InferenceCreateAction, "usage": "INFERENCE", "business": business})
 }
 func (b *InferenceGpuBinding) PrepareManagedBusiness(ctx context.Context, p *auth.Principal, tenant string, message proto.Message) (*preparedManagedBusiness, error) {
-	d, ok := message.(*view.CreateInferenceData)
+	d, ok := message.(*view.CreateInferenceRequest)
 	if !ok || p == nil {
 		return nil, commandcontract.Invalid("invalid inference intent")
 	}
@@ -96,7 +97,7 @@ func (b *InferenceGpuBinding) PrepareManagedBusiness(ctx context.Context, p *aut
 	if selection.Gpu != nil {
 		devices = selection.Gpu.DevicesPerUnit
 	}
-	topology, e := runtimev1.NormalizeTopology(request.Runtime, request.Replicas, devices)
+	topology, e := contractv1.NormalizeTopology(request.Runtime, request.Replicas, devices)
 	if e != nil {
 		return nil, status.Error(codes.InvalidArgument, e.Error())
 	}
@@ -128,19 +129,19 @@ func (b *InferenceGpuBinding) PrepareManagedBusiness(ctx context.Context, p *aut
 			return nil, commandcontract.Invalid("CPU inference cannot have GPU plan")
 		}
 		frozen.Context = &runtimev1.CommandContext{TenantId: tenant, ResourceId: resourceID, OperationId: operationID}
-		digest, e := runtimev1.ManagedCreateCommandHash(frozen, tenant, actorType, actorID)
+		digest, e := contractv1.ManagedCreateCommandHash(frozen, tenant, actorType, actorID)
 		if e != nil {
 			return nil, e
 		}
 		frozen.Context.RequestDigest = digest
-		if e = runtimev1.ValidateManagedCreate(frozen); e != nil {
+		if e = contractv1.ValidateManagedCreate(frozen); e != nil {
 			return nil, e
 		}
-		raw, e := runtimev1.CanonicalBusinessPayload(frozen)
+		raw, e := contractv1.CanonicalBusinessPayload(frozen)
 		if e != nil {
 			return nil, e
 		}
-		class, e := runtimev1.ManagedResourceClassForCreate(frozen)
+		class, e := contractv1.ManagedResourceClassForCreate(frozen)
 		if e != nil {
 			return nil, e
 		}

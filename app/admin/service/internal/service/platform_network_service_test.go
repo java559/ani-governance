@@ -36,3 +36,75 @@ func TestPlatformNetworkIdentity(t *testing.T) {
 		})
 	}
 }
+
+func TestVirtualSwitchIdentity(t *testing.T) {
+	claims := &authv1.UserTokenPayload{UserId: 9, Roles: []string{"platform:network-reader"}, Permissions: []string{"network:platform:virtual-switch:list"}}
+	s := NewPlatformNetworkService(nil)
+	if _, err := s.actor(auth.NewContext(context.Background(), claims), "ListVirtualSwitches"); errors.FromError(err).Code != 503 {
+		t.Fatalf("authorized platform switch list did not reach dependency: %v", err)
+	}
+	for _, tc := range []struct {
+		name      string
+		principal *auth.Principal
+		operation string
+	}{
+		{"tenant", &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 1, Claims: claims, Roles: claims.Roles}, "ListVirtualSwitches"},
+		{"api_key", &auth.Principal{Type: auth.SubjectAPIKey, ID: 9, Claims: claims, Roles: claims.Roles}, "ListVirtualSwitches"},
+		{"read_not_create", &auth.Principal{Type: auth.SubjectUser, ID: 9, Claims: claims, Roles: claims.Roles}, "CreateVirtualSwitch"},
+		{"read_not_delete", &auth.Principal{Type: auth.SubjectUser, ID: 9, Claims: claims, Roles: claims.Roles}, "DeleteVirtualSwitch"},
+		{"read_not_get", &auth.Principal{Type: auth.SubjectUser, ID: 9, Claims: claims, Roles: claims.Roles}, "GetVirtualSwitch"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := s.actor(auth.NewPrincipalContext(context.Background(), tc.principal), tc.operation); errors.FromError(err).Code != 403 {
+				t.Fatalf("platform switch action or subject boundary bypassed: %v", err)
+			}
+		})
+	}
+}
+
+func TestDeviceRetirementIdentity(t *testing.T) {
+	claims := &authv1.UserTokenPayload{UserId: 9, Roles: []string{"platform:network-reader"}, Permissions: []string{"network:platform:device-retirement:get"}}
+	s := NewPlatformNetworkService(nil)
+	if _, err := s.actor(auth.NewContext(context.Background(), claims), "GetNetworkDeviceRetirement"); errors.FromError(err).Code != 503 {
+		t.Fatalf("authorized retirement read did not reach dependency: %v", err)
+	}
+	for _, tc := range []struct {
+		name      string
+		principal *auth.Principal
+		operation string
+	}{
+		{"tenant", &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 1, Claims: claims, Roles: claims.Roles}, "GetNetworkDeviceRetirement"},
+		{"api_key", &auth.Principal{Type: auth.SubjectAPIKey, ID: 9, Claims: claims, Roles: claims.Roles}, "GetNetworkDeviceRetirement"},
+		{"read_not_retire", &auth.Principal{Type: auth.SubjectUser, ID: 9, Claims: claims, Roles: claims.Roles}, "RetireNetworkDevice"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := s.actor(auth.NewPrincipalContext(context.Background(), tc.principal), tc.operation); errors.FromError(err).Code != 403 {
+				t.Fatalf("device retirement subject or action boundary bypassed: %v", err)
+			}
+		})
+	}
+}
+
+func TestDefaultVPCEgressIdentity(t *testing.T) {
+	claims := &authv1.UserTokenPayload{UserId: 9, Roles: []string{"platform:network-reader"}, Permissions: []string{"network:platform:default-egress:get"}}
+	s := NewPlatformNetworkService(nil)
+	if _, err := s.actor(auth.NewContext(context.Background(), claims), "GetDefaultVPCEgress"); errors.FromError(err).Code != 503 {
+		t.Fatalf("authorized default egress read did not reach dependency: %v", err)
+	}
+	for _, tc := range []struct {
+		name      string
+		principal *auth.Principal
+		operation string
+	}{
+		{"tenant", &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 1, Claims: claims, Roles: claims.Roles}, "GetDefaultVPCEgress"},
+		{"api_key", &auth.Principal{Type: auth.SubjectAPIKey, ID: 9, Claims: claims, Roles: claims.Roles}, "GetDefaultVPCEgress"},
+		{"read_not_create", &auth.Principal{Type: auth.SubjectUser, ID: 9, Claims: claims, Roles: claims.Roles}, "CreateDefaultVPCEgress"},
+		{"read_not_delete", &auth.Principal{Type: auth.SubjectUser, ID: 9, Claims: claims, Roles: claims.Roles}, "DeleteDefaultVPCEgress"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := s.actor(auth.NewPrincipalContext(context.Background(), tc.principal), tc.operation); errors.FromError(err).Code != 403 {
+				t.Fatalf("default egress subject or action boundary bypassed: %v", err)
+			}
+		})
+	}
+}

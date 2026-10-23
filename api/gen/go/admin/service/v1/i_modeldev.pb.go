@@ -27,9 +27,9 @@ var File_admin_service_v1_i_modeldev_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_modeldev_proto_rawDesc = "" +
 	"\n" +
-	"!admin/service/v1/i_modeldev.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a#modeldev/service/v1/execution.proto2\xa8\x11\n" +
-	"\x0fModelDevService\x12\x82\x01\n" +
-	"\vListPresets\x12'.modeldev.service.v1.ListPresetsRequest\x1a(.modeldev.service.v1.ListPresetsResponse\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/modeldev/presets\x12\x8f\x02\n" +
+	"!admin/service/v1/i_modeldev.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a#modeldev/service/v1/execution.proto2\xc8\x11\n" +
+	"\x0fModelDevService\x12\xa2\x01\n" +
+	"\x13ListImplementations\x12/.modeldev.service.v1.ListImplementationsRequest\x1a0.modeldev.service.v1.ListImplementationsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/modeldev/implementations\x12\x8f\x02\n" +
 	"\x0fGetInputVersion\x12+.modeldev.service.v1.GetInputVersionRequest\x1a,.modeldev.service.v1.GetInputVersionResponse\"\xa0\x01\xbaGTBR\x12P\n" +
 	"\x03200\x12I\n" +
 	"G\n" +
@@ -76,7 +76,7 @@ const file_admin_service_v1_i_modeldev_proto_rawDesc = "" +
 	"\x14com.admin.service.v1B\x0eIModeldevProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_modeldev_proto_goTypes = []any{
-	(*v1.ListPresetsRequest)(nil),                // 0: modeldev.service.v1.ListPresetsRequest
+	(*v1.ListImplementationsRequest)(nil),        // 0: modeldev.service.v1.ListImplementationsRequest
 	(*v1.GetInputVersionRequest)(nil),            // 1: modeldev.service.v1.GetInputVersionRequest
 	(*v1.ListInputVersionsRequest)(nil),          // 2: modeldev.service.v1.ListInputVersionsRequest
 	(*v1.ListExecutionsRequest)(nil),             // 3: modeldev.service.v1.ListExecutionsRequest
@@ -86,7 +86,7 @@ var file_admin_service_v1_i_modeldev_proto_goTypes = []any{
 	(*v1.ListExecutionArtifactsRequest)(nil),     // 7: modeldev.service.v1.ListExecutionArtifactsRequest
 	(*v1.AuthorizeArtifactDownloadRequest)(nil),  // 8: modeldev.service.v1.AuthorizeArtifactDownloadRequest
 	(*v1.CreateExecutionRequest)(nil),            // 9: modeldev.service.v1.CreateExecutionRequest
-	(*v1.ListPresetsResponse)(nil),               // 10: modeldev.service.v1.ListPresetsResponse
+	(*v1.ListImplementationsResponse)(nil),       // 10: modeldev.service.v1.ListImplementationsResponse
 	(*v1.GetInputVersionResponse)(nil),           // 11: modeldev.service.v1.GetInputVersionResponse
 	(*v1.ListInputVersionsResponse)(nil),         // 12: modeldev.service.v1.ListInputVersionsResponse
 	(*v1.ListExecutionsResponse)(nil),            // 13: modeldev.service.v1.ListExecutionsResponse
@@ -98,7 +98,7 @@ var file_admin_service_v1_i_modeldev_proto_goTypes = []any{
 	(*v1.CreateExecutionResponse)(nil),           // 19: modeldev.service.v1.CreateExecutionResponse
 }
 var file_admin_service_v1_i_modeldev_proto_depIdxs = []int32{
-	0,  // 0: admin.service.v1.ModelDevService.ListPresets:input_type -> modeldev.service.v1.ListPresetsRequest
+	0,  // 0: admin.service.v1.ModelDevService.ListImplementations:input_type -> modeldev.service.v1.ListImplementationsRequest
 	1,  // 1: admin.service.v1.ModelDevService.GetInputVersion:input_type -> modeldev.service.v1.GetInputVersionRequest
 	2,  // 2: admin.service.v1.ModelDevService.ListInputVersions:input_type -> modeldev.service.v1.ListInputVersionsRequest
 	3,  // 3: admin.service.v1.ModelDevService.ListExecutions:input_type -> modeldev.service.v1.ListExecutionsRequest
@@ -108,7 +108,7 @@ var file_admin_service_v1_i_modeldev_proto_depIdxs = []int32{
 	7,  // 7: admin.service.v1.ModelDevService.ListExecutionArtifacts:input_type -> modeldev.service.v1.ListExecutionArtifactsRequest
 	8,  // 8: admin.service.v1.ModelDevService.AuthorizeArtifactDownload:input_type -> modeldev.service.v1.AuthorizeArtifactDownloadRequest
 	9,  // 9: admin.service.v1.ModelDevService.CreateExecution:input_type -> modeldev.service.v1.CreateExecutionRequest
-	10, // 10: admin.service.v1.ModelDevService.ListPresets:output_type -> modeldev.service.v1.ListPresetsResponse
+	10, // 10: admin.service.v1.ModelDevService.ListImplementations:output_type -> modeldev.service.v1.ListImplementationsResponse
 	11, // 11: admin.service.v1.ModelDevService.GetInputVersion:output_type -> modeldev.service.v1.GetInputVersionResponse
 	12, // 12: admin.service.v1.ModelDevService.ListInputVersions:output_type -> modeldev.service.v1.ListInputVersionsResponse
 	13, // 13: admin.service.v1.ModelDevService.ListExecutions:output_type -> modeldev.service.v1.ListExecutionsResponse

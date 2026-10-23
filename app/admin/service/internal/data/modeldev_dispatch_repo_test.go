@@ -24,7 +24,6 @@ import (
 
 func TestModelDevDeliveryClaimsOnceAcrossConcurrentWorkers(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	original := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	clients := []*entCrud.EntClient[*ent.Client]{newModelDevPGClient(t), newModelDevPGClient(t)}
 	type outcome struct {
@@ -78,7 +77,6 @@ func TestModelDevDeliveryClaimsOnceAcrossConcurrentWorkers(t *testing.T) {
 func TestModelDevDeliveryTakeoverFencesLateAndForeignClaims(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
 	_, _, otherScope, _ := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	original := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
 	old := claimModelDevDelivery(t, ctx, repo, "worker-old")
@@ -138,7 +136,6 @@ func TestModelDevDeliveryTakeoverFencesLateAndForeignClaims(t *testing.T) {
 
 func TestModelDevDeliveryPersistsFullOwnerReceiptAndRejectsInvalidACK(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	original := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
 	claim := claimModelDevDelivery(t, ctx, repo, "receipt-worker")
@@ -195,7 +192,6 @@ func TestModelDevDeliveryPersistsFullOwnerReceiptAndRejectsInvalidACK(t *testing
 
 func TestModelDevDeliveryUnknownBackoffAndPermanentFailurePreserveOriginal(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	original := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
 	first := claimModelDevDelivery(t, ctx, repo, "retry-worker")
@@ -249,7 +245,6 @@ func TestModelDevDeliveryUnknownBackoffAndPermanentFailurePreserveOriginal(t *te
 
 func TestModelDevDeliveryQuarantinesCorruptOriginalWithoutStarvingNext(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	corrupt := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
 	first := claimModelDevDelivery(t, ctx, repo, "corrupt-preflight")
@@ -288,7 +283,6 @@ func TestModelDevDeliveryQuarantinesCorruptOriginalWithoutStarvingNext(t *testin
 
 func TestModelDevDeliveryCommitBoundaryFailuresReturnNoClaimOrACK(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 	preflight := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
 	preflightClaim := claimModelDevDelivery(t, ctx, repo, "commit-preflight")
@@ -339,6 +333,7 @@ func TestModelDevDeliveryCommitBoundaryFailuresReturnNoClaimOrACK(t *testing.T) 
 
 func acceptModelDevDelivery(t *testing.T, ctx context.Context, client *entCrud.EntClient[*ent.Client], scope ModelDevAdmissionScope, candidate ModelDevFrozenCandidate) *ModelDevAcceptance {
 	t.Helper()
+	candidate = freezeModelDevFixture(t, scope, candidate)
 	original, replayed, err := NewModelDevAcceptanceRepo(client).AcceptFrozen(ctx, scope, candidate)
 	require.NoError(t, err)
 	require.False(t, replayed)

@@ -43,7 +43,7 @@ func TestQuotaAdminAndSelfDomainViews(t *testing.T) {
 	require.Equal(t, tenant.ID, platformAccounts.TenantId)
 	require.Len(t, platformAccounts.Items, len(definitions.Items))
 
-	selfService := NewAcceleratorService(nil, nil, nil, nil, repo, NewQuotaAdapterRegistry())
+	selfService := NewAcceleratorService(nil, nil, nil, nil, repo, NewQuotaAdapterRegistry(), nil)
 	selfAccounts, err := selfService.GetMyQuotaAccounts(self, &emptypb.Empty{})
 	require.NoError(t, err)
 	require.Equal(t, tenant.ID, selfAccounts.TenantId)

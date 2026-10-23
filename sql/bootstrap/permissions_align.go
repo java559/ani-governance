@@ -188,7 +188,7 @@ type disableDecision struct {
 //   - 当前非 `ON` 的码不处置；
 //   - 未绑定任何纳入范围路由的码不处置，计入 Protect。涵盖两类：
 //     a) 只绑定豁免路由（独立认证/会话、特殊传输、业务域，如 modeldev 查询接口）的码；
-//     b) 不绑定任何路由、由 CLI 等按码直接检查的业务能力（如 `modeldev:manage_release_binding`）。
+//     b) 不绑定任何路由、由 CLI 等按码直接检查的业务能力（如 `modeldev:manage_input`）。
 //     误停用会直接破坏功能；漏停用只是留下一个未被任何范围路由使用的码（不授予访问），风险更低。
 //   - 其余（绑定纳入范围路由且码不在期望集）置 OFF（保 id）。
 func decideDisable(perms []permissionRow, links map[uint64]map[uint64]bool,

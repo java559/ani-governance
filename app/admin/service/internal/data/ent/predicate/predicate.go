@@ -72,9 +72,6 @@ type Menu func(*sql.Selector)
 // ModelDevAcceptance is the predicate function for modeldevacceptance builders.
 type ModelDevAcceptance func(*sql.Selector)
 
-// ModelDevReleaseBinding is the predicate function for modeldevreleasebinding builders.
-type ModelDevReleaseBinding func(*sql.Selector)
-
 // NotificationChannel is the predicate function for notificationchannel builders.
 type NotificationChannel func(*sql.Selector)
 

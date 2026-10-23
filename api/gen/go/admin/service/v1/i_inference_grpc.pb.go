@@ -39,8 +39,8 @@ const (
 //
 // Requires trusted tenant-user Principal, active tenant and the separately
 // registered INFERENCE module/action/role/plan grants. Accelerator read grants
-// cannot admit inference commands. CREATE requires preset_id; only model,
-// served name and whole engine patches may be updated. CRUD retains data.
+// cannot admit inference commands. CREATE requires preset_id; public business
+// fields are top-level and CRUD retains durable resource data.
 type InferenceServiceClient interface {
 	CreateInference(ctx context.Context, in *v1.CreateInferenceRequest, opts ...grpc.CallOption) (*v1.InferenceAcceptance, error)
 	DeleteInference(ctx context.Context, in *v1.DeleteInferenceRequest, opts ...grpc.CallOption) (*v1.InferenceAcceptance, error)
@@ -168,8 +168,8 @@ func (c *inferenceServiceClient) ListInferenceOperations(ctx context.Context, in
 //
 // Requires trusted tenant-user Principal, active tenant and the separately
 // registered INFERENCE module/action/role/plan grants. Accelerator read grants
-// cannot admit inference commands. CREATE requires preset_id; only model,
-// served name and whole engine patches may be updated. CRUD retains data.
+// cannot admit inference commands. CREATE requires preset_id; public business
+// fields are top-level and CRUD retains durable resource data.
 type InferenceServiceServer interface {
 	CreateInference(context.Context, *v1.CreateInferenceRequest) (*v1.InferenceAcceptance, error)
 	DeleteInference(context.Context, *v1.DeleteInferenceRequest) (*v1.InferenceAcceptance, error)

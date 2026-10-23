@@ -29,7 +29,7 @@ func TestModelDevCreateOpenAPIContract(t *testing.T) {
 	request := object(schemas["CreateExecutionRequest"])
 	require.ElementsMatch(t, []any{"name", "kind", "preset_id", "dataset_version_id", "idempotency_key"}, request["required"])
 	fields := object(request["properties"])
-	require.Len(t, fields, 8, "only CPU-P01 intent and idempotency fields are public")
+	require.Len(t, fields, 12, "only the public CPU-P01 and FINETUNING intent fields are public")
 	for _, forbidden := range []string{"data", "tenant_id", "actor", "namespace", "command", "snapshot", "gpu"} {
 		require.NotContains(t, fields, forbidden)
 	}

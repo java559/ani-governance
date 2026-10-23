@@ -13,16 +13,16 @@ import (
 
 func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.ModelDevService) {
 	route := server.Route("/")
-	route.GET(data.ModelDevListPresetsPath, func(ctx khttp.Context) error {
+	route.GET(data.ModelDevListImplementationsPath, func(ctx khttp.Context) error {
 		modelDevQueryHeaders(ctx)
-		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListPresets)
+		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListImplementations)
 		size, pageSize, _, err := modelDevCatalogueSelectors(ctx.Request(), false)
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListPresetsRequest{Page: size, PageSize: pageSize}
+		in := &modeldevv1.ListImplementationsRequest{Page: size, PageSize: pageSize}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
-			return modeldev.ListPresets(c, v.(*modeldevv1.ListPresetsRequest))
+			return modeldev.ListImplementations(c, v.(*modeldevv1.ListImplementationsRequest))
 		})
 		out, err := handler(ctx, in)
 		if err != nil {

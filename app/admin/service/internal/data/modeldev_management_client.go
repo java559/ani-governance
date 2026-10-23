@@ -5,32 +5,12 @@ import (
 
 	"github.com/google/uuid"
 	modeldevv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
-	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
-
-func (c *ModelDevClient) ValidateRelease(ctx context.Context, scope ModelDevResolveScope, preset, release, digest string) error {
-	if !modelDevCanonicalUUID(preset) || !modelDevCanonicalUUID(release) || !modelDevDigest(digest) {
-		return modelDevQueryUnavailable()
-	}
-	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevManagementService_ValidateRelease_FullMethodName)
-	if err != nil {
-		return err
-	}
-	defer cancel()
-	out, err := modeldevv1.NewModelDevManagementServiceClient(c.connection).ValidateRelease(call, &modeldevv1.ValidateReleaseRequest{PresetId: preset, ReleaseId: release, ReleaseDigest: digest}, grpc.WaitForReady(true))
-	if err != nil {
-		return modelDevQueryError(err)
-	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || out.PresetId != preset || out.ReleaseId != release || out.ReleaseDigest != digest {
-		return modelDevQueryUnavailable()
-	}
-	return nil
-}
 
 // ManagedOperation is a closed set of authenticated platform operations. The
 // CLI cannot supply an RPC method, endpoint, tenant, actor or desired state.
@@ -39,19 +19,13 @@ func (c *ModelDevClient) ManagedOperation(ctx context.Context, scope ModelDevRes
 	var execution string
 	var executionOperation bool
 	switch request := in.(type) {
-	case *modeldevv1.ImportReleaseRequest:
-		document, digest, err := cpup01.ParseRelease(request.CanonicalRelease)
-		if err != nil || document.ReleaseID != request.ReleaseId || document.PresetID != request.PresetId || digest != request.ReleaseDigest {
-			return nil, modelDevQueryUnavailable()
-		}
-		method = modeldevv1.ModelDevManagementService_ImportRelease_FullMethodName
 	case *modeldevv1.ImportCSVRequest:
-		if !modelDevCanonicalUUID(request.InputVersionId) || !modelDevCanonicalUUID(request.ReleaseId) || !modelDevDigest(request.ReleaseDigest) || request.Object == nil || !modelDevValidTimestamp(request.RequestedAt) {
+		if !modelDevCanonicalUUID(request.InputVersionId) || request.ImplementationId != "builtin.mlp" || request.Object == nil || !modelDevValidTimestamp(request.RequestedAt) {
 			return nil, modelDevQueryUnavailable()
 		}
 		method = modeldevv1.ModelDevManagementService_ImportCSV_FullMethodName
 	case *modeldevv1.ImportFinetuningDatasetRequest:
-		if !modelDevCanonicalUUID(request.InputVersionId) || !modelDevCanonicalUUID(request.ReleaseId) || !modelDevDigest(request.ReleaseDigest) || request.Object == nil || !modelDevValidTimestamp(request.RequestedAt) || request.Format != "JSON" {
+		if !modelDevCanonicalUUID(request.InputVersionId) || request.ImplementationId != "builtin.sft_lora" || request.Object == nil || !modelDevValidTimestamp(request.RequestedAt) || request.Format != "JSON" {
 			return nil, modelDevQueryUnavailable()
 		}
 		method = modeldevv1.ModelDevManagementService_ImportFinetuningDataset_FullMethodName
@@ -105,13 +79,6 @@ func (c *ModelDevClient) ManagedOperation(ctx context.Context, scope ModelDevRes
 	operations := modeldevv1.NewModelDevOperationsServiceClient(c.connection)
 	var out proto.Message
 	switch request := in.(type) {
-	case *modeldevv1.ImportReleaseRequest:
-		response, e := management.ImportRelease(call, request, grpc.WaitForReady(true))
-		err = e
-		if e == nil && (response == nil || response.PresetId != request.PresetId || response.ReleaseId != request.ReleaseId || response.ReleaseDigest != request.ReleaseDigest) {
-			return nil, modelDevQueryUnavailable()
-		}
-		out = response
 	case *modeldevv1.ImportCSVRequest:
 		response, e := management.ImportCSV(call, request, grpc.WaitForReady(true))
 		err = e

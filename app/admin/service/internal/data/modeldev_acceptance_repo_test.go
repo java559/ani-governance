@@ -17,6 +17,9 @@ import (
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/conformance"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
+	"go-wind-admin/app/admin/service/internal/data/ent/quotaaccount"
+	"go-wind-admin/app/admin/service/internal/data/ent/quotacharge"
+	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	entCrud "go-wind-admin/pkg/localdeps/go-crud/entgo"
 )
@@ -39,10 +42,10 @@ func TestModelDevAcceptancePersistsAndReplaysFrozenVersion(t *testing.T) {
 	// Shared vectors are individually normative. Align the intent's asset IDs
 	// with the snapshot fixture; these synthetic references are never ENV facts.
 	intent := conformance.IntentV1()
-	intent.PresetID = snapshot.Release.PresetID
+	intent.ComputePresetID = snapshot.ComputeOrigin.ComputePresetID
 	intent.DatasetVersionID = snapshot.Input.InputVersionID
-	candidate := ModelDevFrozenCandidate{OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), Intent: intent, Snapshot: snapshot, AcceptedAt: snapshot.DeadlineAt.Add(-time.Hour)}
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
+	candidate := ModelDevFrozenCandidate{OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), Intent: intent, Snapshot: snapshot, AcceptedAt: time.Now().UTC().Truncate(time.Microsecond)}
+	candidate = freezeModelDevFixture(t, scope, candidate)
 	intentCanonical, intentHash, err := cpup01.CanonicalIntent(intent)
 	require.NoError(t, err)
 
@@ -54,7 +57,7 @@ func TestModelDevAcceptancePersistsAndReplaysFrozenVersion(t *testing.T) {
 	require.Equal(t, candidate.ExecutionID, accepted.ExecutionID)
 	require.Equal(t, scope, accepted.Scope)
 	require.Equal(t, intentHash, accepted.IntentHash)
-	require.Equal(t, conformance.SnapshotSHA256V1, accepted.ExecutionSpecHash)
+	require.Equal(t, fixtureSnapshotHash(t, candidate), accepted.ExecutionSpecHash)
 	require.Equal(t, "QUEUED", accepted.DispatchState)
 	acceptedIntent, _, err := cpup01.CanonicalIntent(accepted.Intent)
 	require.NoError(t, err)
@@ -66,13 +69,13 @@ func TestModelDevAcceptancePersistsAndReplaysFrozenVersion(t *testing.T) {
 	stored, err := reader.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(tenant.ID), modeldevacceptance.OperationIDEQ(candidate.OperationID)).Only(ctx)
 	require.NoError(t, err)
 	require.Equal(t, intentCanonical, stored.IntentCanonical)
-	require.Equal(t, conformance.SnapshotCanonicalV1(), stored.SnapshotCanonical)
+	require.Equal(t, fixtureSnapshotBytes(t, candidate), stored.SnapshotCanonical)
 	require.Equal(t, scope.ResourceTenantID, stored.ResourceTenantID)
 	require.Equal(t, scope.Actor, stored.Actor)
 	require.Equal(t, scope.IdempotencyKey, stored.IdempotencyKey)
 	require.Equal(t, candidate.ExecutionID, stored.ExecutionID)
 	require.Equal(t, intentHash, stored.IntentHash)
-	require.Equal(t, conformance.SnapshotSHA256V1, stored.ExecutionSpecHash)
+	require.Equal(t, fixtureSnapshotHash(t, candidate), stored.ExecutionSpecHash)
 	require.Equal(t, "QUEUED", string(stored.DispatchState))
 	require.True(t, candidate.AcceptedAt.Equal(stored.AcceptedAt))
 
@@ -81,9 +84,8 @@ func TestModelDevAcceptancePersistsAndReplaysFrozenVersion(t *testing.T) {
 	next := candidate
 	next.OperationID, next.ExecutionID = uuid.NewString(), uuid.NewString()
 	next.Snapshot = conformance.SnapshotV1()
-	next.Snapshot.Release.ReleaseID = uuid.NewString()
-	next.Snapshot.Release.PipelineVersionID = uuid.NewString()
-	next.Snapshot.Release.AcceptedBindingGeneration++
+	next.Snapshot.Implementation.Version = "different-new-default"
+	next.Snapshot.Implementation.PipelineVersionID = uuid.NewString()
 	next.AcceptedAt = candidate.AcceptedAt.Add(time.Minute)
 	replayedRecord, replayed, err := NewModelDevAcceptanceRepo(reader).AcceptFrozen(ctx, scope, next)
 	require.NoError(t, err)
@@ -100,7 +102,7 @@ func TestModelDevAcceptancePersistsAndReplaysFrozenVersion(t *testing.T) {
 	require.Equal(t, intentCanonical, replayedIntent)
 	actualCanonical, err := replayedRecord.Snapshot.Canonical()
 	require.NoError(t, err)
-	require.Equal(t, conformance.SnapshotCanonicalV1(), actualCanonical)
+	require.Equal(t, fixtureSnapshotBytes(t, candidate), actualCanonical)
 	count, err := reader.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(tenant.ID)).Count(ctx)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
@@ -125,4 +127,23 @@ func newModelDevPGClient(t *testing.T) *entCrud.EntClient[*ent.Client] {
 	_, err = client.ModelDevAcceptance.Query().Limit(1).Exist(ctx)
 	require.NoError(t, err, "modeldev acceptance schema and runtime read grant must be prepared before product RED")
 	return entCrud.NewEntClient(client, driver)
+}
+
+func TestModelDevCPUAcceptanceCreatesNoGPUAccounting(t *testing.T) {
+	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
+	accepted, replayed, err := NewModelDevAcceptanceRepo(client).AcceptFrozen(ctx, scope, candidate)
+	require.NoError(t, err)
+	require.False(t, replayed)
+	require.NotNil(t, accepted)
+	// These are actual tenant-scoped reads through the restricted runtime role.
+	// CPU admission has no zero-valued placeholder operation, charge or account.
+	operations, err := client.Client().QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(scope.TenantID)).Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, operations)
+	charges, err := client.Client().QuotaCharge.Query().Where(quotacharge.TenantIDEQ(scope.TenantID)).Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, charges)
+	accounts, err := client.Client().QuotaAccount.Query().Where(quotaaccount.TenantIDEQ(scope.TenantID)).Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, accounts)
 }

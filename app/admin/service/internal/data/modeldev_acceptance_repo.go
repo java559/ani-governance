@@ -10,10 +10,11 @@ import (
 	"strings"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
-	"go-wind-admin/app/admin/service/internal/data/ent/modeldevreleasebinding"
+	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	entCrud "go-wind-admin/pkg/localdeps/go-crud/entgo"
 )
@@ -23,6 +24,8 @@ const ModelDevCreateAction = "modeldev.execution.create"
 var ErrModelDevIdempotencyConflict = errors.New("modeldev idempotency conflict")
 
 var ErrModelDevAcceptanceNotFound = errors.New("modeldev acceptance not found")
+
+var ErrModelDevAdmissionExpired = errors.New("modeldev admission deadline exceeded")
 
 // ModelDevAdmissionScope is derived by Governance from the current verified
 // Principal and its persisted resource tenant mapping, never from public JSON.
@@ -35,8 +38,8 @@ type ModelDevAdmissionScope struct {
 }
 
 // ModelDevFrozenCandidate is resolved before entering the database transaction.
-// New keys recheck the current binding within the acceptance transaction;
-// replay returns the first accepted value rather than use a new candidate.
+// Replay returns the first accepted value rather than using new defaults or
+// provider observations. All external resolution finishes before this transaction.
 type ModelDevFrozenCandidate struct {
 	OperationID string
 	ExecutionID string
@@ -164,28 +167,6 @@ func (r *ModelDevAcceptanceRepo) AcceptFrozen(ctx context.Context, scope ModelDe
 		if err != nil {
 			return err
 		}
-		// Catalogue resolution happened outside this transaction. Serialize
-		// against pointer CAS using the same tenant -> binding lock order;
-		// only new keys consume the current target and admission gate.
-		binding, err := tx.ModelDevReleaseBinding.Query().Where(
-			modeldevreleasebinding.TenantIDEQ(scope.TenantID),
-			modeldevreleasebinding.ResourceTenantIDEQ(scope.ResourceTenantID),
-			modeldevreleasebinding.PresetIDEQ(strings.ToLower(candidate.Snapshot.Release.PresetID)),
-		).ForUpdate().Only(ctx)
-		if ent.IsNotFound(err) {
-			return ErrModelDevBindingNotFound
-		}
-		if err != nil {
-			return err
-		}
-		if !binding.NewSubmissionsEnabled {
-			return ErrModelDevBindingDisabled
-		}
-		if binding.Generation != candidate.Snapshot.Release.AcceptedBindingGeneration ||
-			binding.ReleaseID != strings.ToLower(candidate.Snapshot.Release.ReleaseID) ||
-			binding.ReleaseDigest != candidate.Snapshot.Release.ReleaseDigest {
-			return ErrModelDevBindingGenerationConflict
-		}
 		// The shared envelope rejects sub-microsecond timestamps instead of
 		// silently changing the immutable accepted_at persisted by PostgreSQL.
 		acceptedAt := candidate.AcceptedAt.UTC()
@@ -210,7 +191,21 @@ func (r *ModelDevAcceptanceRepo) AcceptFrozen(ctx context.Context, scope ModelDe
 			return err
 		}
 		accepted, err = modelDevAcceptanceFromRow(row)
-		return err
+		if err != nil {
+			return err
+		}
+		// Check the database clock after all writes. A candidate that expired
+		// while waiting for a tenant/unique-key lock rolls back as a whole.
+		withinBudget, err := tx.Tenant.Query().Where(tenant.IDEQ(scope.TenantID), predicate.Tenant(func(q *entsql.Selector) {
+			q.Where(entsql.P(func(b *entsql.Builder) { b.WriteString("clock_timestamp() < ").Arg(candidate.Snapshot.DeadlineAt) }))
+		})).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !withinBudget {
+			return ErrModelDevAdmissionExpired
+		}
+		return nil
 	})
 	if err != nil {
 		return nil, false, err
@@ -251,18 +246,15 @@ func modelDevAcceptanceFromRow(row *ent.ModelDevAcceptance) (*ModelDevAcceptance
 	if row == nil || row.TenantID == nil || *row.TenantID == 0 || row.Action != ModelDevCreateAction || row.IdempotencyKey == "" {
 		return nil, invalid
 	}
-	var intentEnvelope struct {
-		Schema string `json:"schema"`
-		cpup01.Intent
-	}
+	intent, err := cpup01.DecodeCanonicalIntent(row.IntentCanonical)
 	var snapshot cpup01.Snapshot
-	if json.Unmarshal(row.IntentCanonical, &intentEnvelope) != nil || json.Unmarshal(row.SnapshotCanonical, &snapshot) != nil {
+	if err != nil || json.Unmarshal(row.SnapshotCanonical, &snapshot) != nil {
 		return nil, invalid
 	}
 	envelope := cpup01.AdmissionEnvelope{
 		TenantID: row.ResourceTenantID, Actor: row.Actor,
 		OperationID: row.OperationID, ExecutionID: row.ExecutionID,
-		Intent: intentEnvelope.Intent, IntentHash: row.IntentHash,
+		Intent: intent, IntentHash: row.IntentHash,
 		Snapshot: snapshot, SpecHash: row.ExecutionSpecHash, AcceptedAt: row.AcceptedAt,
 	}
 	intentCanonical, snapshotCanonical, err := envelope.CanonicalPayloads()
@@ -272,7 +264,7 @@ func modelDevAcceptanceFromRow(row *ent.ModelDevAcceptance) (*ModelDevAcceptance
 	accepted := &ModelDevAcceptance{
 		Scope:       ModelDevAdmissionScope{TenantID: *row.TenantID, ResourceTenantID: row.ResourceTenantID, Actor: row.Actor, Action: row.Action, IdempotencyKey: row.IdempotencyKey},
 		OperationID: row.OperationID, ExecutionID: row.ExecutionID,
-		Intent: intentEnvelope.Intent, Snapshot: snapshot,
+		Intent: intent, Snapshot: snapshot,
 		IntentHash: row.IntentHash, ExecutionSpecHash: row.ExecutionSpecHash,
 		AcceptedAt: row.AcceptedAt, DispatchState: string(row.DispatchState),
 	}

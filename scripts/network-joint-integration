@@ -3,7 +3,17 @@ set -Eeuo pipefail
 cd "$(dirname "$0")/.."
 [[ ${RESOURCE_NETWORK_TEST_BINARY:-} = /* && -x ${RESOURCE_NETWORK_TEST_BINARY:-} ]] || { echo "absolute Resource Network test binary required" >&2; exit 1; }
 suite=joint
-if [[ ${1:-} == --regressions ]];then suite=regressions;shift;fi
+test_binary=''
+while [[ $# -gt 0 ]];do
+ case "$1" in
+  --regressions) suite=regressions;shift;;
+  --test-binary)
+   [[ ${2:-} = /* && -x ${2:-} ]] || { echo "absolute Governance test binary required" >&2;exit 1; }
+   test_binary=$2;shift 2;;
+  *) break;;
+ esac
+done
+[[ $suite == joint || -z $test_binary ]] || { echo "--test-binary is supported only for joint tests" >&2;exit 1; }
 readonly pg_image='docker.io/library/postgres@sha256:21f6013073bc6b92830a2129570e2f5ec42a6c734b5a985a41e83aa58f54c3c1'
 readonly redis_image='docker.io/library/redis@sha256:a9cc41d6d01da2aa26c219e4f99ecbeead955a7b656c1c499cce8922311b2514'
 private=$(mktemp -d "${TMPDIR:?task-owned HOME TMPDIR required}/ngov.XXXXXX")
@@ -73,6 +83,9 @@ export NETWORK_TEST_ADMIN_DSN
 NETWORK_TEST_ADMIN_DSN=$(cat "$private/admin.dsn")
 if [[ $suite == regressions ]];then
  go test -mod=readonly -count=1 -timeout=15m "$@" ./app/admin/service/internal/data ./app/admin/service/internal/service ./app/admin/service/internal/server ./app/admin/service/cmd/server
+elif [[ -n $test_binary ]];then
+ cd app/admin/service/internal/service
+ "$test_binary" -test.count=1 -test.timeout=10m -test.run="${NETWORK_JOINT_TEST_RUN:-^TestNetworkJointHTTP$}" -test.v "$@"
 else
  go test -mod=readonly -tags=networkintegration -count=1 -timeout=10m -run "${NETWORK_JOINT_TEST_RUN:-^TestNetworkJointHTTP$}" -v "$@" ./app/admin/service/internal/service
 fi

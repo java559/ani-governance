@@ -26,10 +26,37 @@ import (
 )
 
 type acceleratorIdentityServer struct {
+	acc.UnimplementedAcceleratorAdminServiceServer
 	acc.UnimplementedAcceleratorCatalogServiceServer
 	acc.UnimplementedAcceleratorUsageServiceServer
 	t        *testing.T
 	received chan metadata.MD
+}
+
+func (s *acceleratorIdentityServer) GetInitialization(ctx context.Context, _ *acc.GetInitializationRequest) (*acc.Initialization, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.Initialization{Registered: true}, nil
+}
+func (s *acceleratorIdentityServer) ListDiscoveredNodes(ctx context.Context, _ *acc.ListDiscoveredNodesRequest) (*acc.DiscoveredNodes, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.DiscoveredNodes{}, nil
+}
+func (s *acceleratorIdentityServer) CreateInitialization(ctx context.Context, _ *acc.CreateInitializationRequest) (*acc.InitializationOperation, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.InitializationOperation{}, nil
+}
+func (s *acceleratorIdentityServer) GetInitializationOperation(ctx context.Context, _ *acc.GetInitializationOperationRequest) (*acc.InitializationOperation, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.InitializationOperation{}, nil
+}
+func (s *acceleratorIdentityServer) RetryInitializationOperation(ctx context.Context, _ *acc.RetryInitializationOperationRequest) (*acc.InitializationOperation, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.InitializationOperation{}, nil
 }
 
 func (s *acceleratorIdentityServer) ListProfiles(ctx context.Context, r *acc.ListProfilesRequest) (*acc.ListProfilesResponse, error) {
@@ -128,6 +155,7 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 	impl := &acceleratorIdentityServer{t: t, received: make(chan metadata.MD, 4)}
 	acc.RegisterAcceleratorCatalogServiceServer(srv, impl)
 	acc.RegisterAcceleratorUsageServiceServer(srv, impl)
+	acc.RegisterAcceleratorAdminServiceServer(srv, impl)
 	go srv.Serve(listener)
 	t.Cleanup(srv.Stop)
 	cfg := AcceleratorClientConfig{Address: listener.Addr().String(), ServerName: "accelerator.test", CAFile: caPath, CertFile: cp, KeyFile: kp, Timeout: 2 * time.Second}
@@ -168,6 +196,45 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 	for _, key := range []string{"authorization", "x-ani-action", "x-ani-tenant-id", "x-ani-actor-type", "x-ani-actor-id"} {
 		if len(md.Get(key)) != 0 {
 			t.Fatalf("sync received delegated %s", key)
+		}
+	}
+	adminRead := &acc.AdminRead{RequestId: uuid.NewString(), Actor: &acc.Actor{Type: "user", Id: "42"}}
+	mutation := &acc.AdminMutation{Context: adminRead, IdempotencyKey: uuid.NewString()}
+	for _, call := range []struct {
+		action string
+		invoke func() error
+	}{
+		{"GetInitialization", func() error {
+			_, err := client.Admin.GetInitialization(ctx, &acc.GetInitializationRequest{Context: adminRead})
+			return err
+		}},
+		{"ListDiscoveredNodes", func() error {
+			_, err := client.Admin.ListDiscoveredNodes(ctx, &acc.ListDiscoveredNodesRequest{Context: adminRead})
+			return err
+		}},
+		{"CreateInitialization", func() error {
+			_, err := client.Admin.CreateInitialization(ctx, &acc.CreateInitializationRequest{Mutation: mutation})
+			return err
+		}},
+		{"GetInitializationOperation", func() error {
+			_, err := client.Admin.GetInitializationOperation(ctx, &acc.GetInitializationOperationRequest{Context: adminRead})
+			return err
+		}},
+		{"RetryInitializationOperation", func() error {
+			_, err := client.Admin.RetryInitializationOperation(ctx, &acc.RetryInitializationOperationRequest{Mutation: mutation})
+			return err
+		}},
+	} {
+		requireNoAcceleratorError(t, call.invoke())
+		delegation := <-impl.received
+		if values := delegation.Get("x-ani-action"); len(values) != 1 || values[0] != call.action {
+			t.Fatalf("initialization action = %v", values)
+		}
+		if values := delegation.Get("x-ani-actor-id"); len(values) != 1 || values[0] != "42" {
+			t.Fatalf("initialization actor = %v", values)
+		}
+		if len(delegation.Get("authorization")) != 0 || len(delegation.Get("x-ani-tenant-id")) != 0 {
+			t.Fatal("initialization forwarded public credential or tenant")
 		}
 	}
 	for _, identity := range []struct {

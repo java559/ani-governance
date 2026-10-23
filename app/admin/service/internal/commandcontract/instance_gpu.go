@@ -144,7 +144,6 @@ func GpuProjectionDigest(p *acc.GpuUsageProjection) (string, error) {
 }
 
 // GpuResolvedQuota validates the final execution and the one original GPU meter.
-// Runtime values are MiB with F=1; this check never reloads mutable catalog state.
 func GpuResolvedQuota(p *acc.ResolvedGpuRequest, request *acc.GpuRequest) (QuotaItem, error) {
 	bad := func() (QuotaItem, error) {
 		return QuotaItem{}, quotapb.ErrorInvalidQuotaRequest("%s", "invalid resolved GPU execution")
@@ -157,7 +156,7 @@ func GpuResolvedQuota(p *acc.ResolvedGpuRequest, request *acc.GpuRequest) (Quota
 	if err != nil {
 		return bad()
 	}
-	memory, err := strconv.ParseInt(g.Resources["volcano.sh/vgpu-memory"], 10, 32)
+	memory, err := protocol.GpuMemoryMiBPerDevice(g)
 	if err != nil {
 		return bad()
 	}

@@ -21,28 +21,37 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationPlatformNetworkServiceAdoptNetworkDevice = "/admin.service.v1.PlatformNetworkService/AdoptNetworkDevice"
+const OperationPlatformNetworkServiceCreateDefaultVPCEgress = "/admin.service.v1.PlatformNetworkService/CreateDefaultVPCEgress"
 const OperationPlatformNetworkServiceCreateEgressGateway = "/admin.service.v1.PlatformNetworkService/CreateEgressGateway"
 const OperationPlatformNetworkServiceCreateIntranetAddressPool = "/admin.service.v1.PlatformNetworkService/CreateIntranetAddressPool"
 const OperationPlatformNetworkServiceCreatePublicAddressPool = "/admin.service.v1.PlatformNetworkService/CreatePublicAddressPool"
+const OperationPlatformNetworkServiceCreateVirtualSwitch = "/admin.service.v1.PlatformNetworkService/CreateVirtualSwitch"
 const OperationPlatformNetworkServiceCreateVlanNetwork = "/admin.service.v1.PlatformNetworkService/CreateVlanNetwork"
+const OperationPlatformNetworkServiceDeleteDefaultVPCEgress = "/admin.service.v1.PlatformNetworkService/DeleteDefaultVPCEgress"
 const OperationPlatformNetworkServiceDeleteEgressGateway = "/admin.service.v1.PlatformNetworkService/DeleteEgressGateway"
 const OperationPlatformNetworkServiceDeleteIntranetAddressPool = "/admin.service.v1.PlatformNetworkService/DeleteIntranetAddressPool"
 const OperationPlatformNetworkServiceDeletePublicAddressPool = "/admin.service.v1.PlatformNetworkService/DeletePublicAddressPool"
+const OperationPlatformNetworkServiceDeleteVirtualSwitch = "/admin.service.v1.PlatformNetworkService/DeleteVirtualSwitch"
 const OperationPlatformNetworkServiceDeleteVlanNetwork = "/admin.service.v1.PlatformNetworkService/DeleteVlanNetwork"
+const OperationPlatformNetworkServiceGetDefaultVPCEgress = "/admin.service.v1.PlatformNetworkService/GetDefaultVPCEgress"
 const OperationPlatformNetworkServiceGetEgressGateway = "/admin.service.v1.PlatformNetworkService/GetEgressGateway"
 const OperationPlatformNetworkServiceGetIntranetAddressPool = "/admin.service.v1.PlatformNetworkService/GetIntranetAddressPool"
 const OperationPlatformNetworkServiceGetNetworkDevice = "/admin.service.v1.PlatformNetworkService/GetNetworkDevice"
+const OperationPlatformNetworkServiceGetNetworkDeviceRetirement = "/admin.service.v1.PlatformNetworkService/GetNetworkDeviceRetirement"
 const OperationPlatformNetworkServiceGetPlatformNetworkCapabilities = "/admin.service.v1.PlatformNetworkService/GetPlatformNetworkCapabilities"
 const OperationPlatformNetworkServiceGetPlatformOperation = "/admin.service.v1.PlatformNetworkService/GetPlatformOperation"
 const OperationPlatformNetworkServiceGetPublicAddressPool = "/admin.service.v1.PlatformNetworkService/GetPublicAddressPool"
+const OperationPlatformNetworkServiceGetVirtualSwitch = "/admin.service.v1.PlatformNetworkService/GetVirtualSwitch"
 const OperationPlatformNetworkServiceGetVlanNetwork = "/admin.service.v1.PlatformNetworkService/GetVlanNetwork"
 const OperationPlatformNetworkServiceListEgressGateways = "/admin.service.v1.PlatformNetworkService/ListEgressGateways"
 const OperationPlatformNetworkServiceListIntranetAddressPools = "/admin.service.v1.PlatformNetworkService/ListIntranetAddressPools"
 const OperationPlatformNetworkServiceListNodeInterfaces = "/admin.service.v1.PlatformNetworkService/ListNodeInterfaces"
 const OperationPlatformNetworkServiceListPublicAddressPools = "/admin.service.v1.PlatformNetworkService/ListPublicAddressPools"
+const OperationPlatformNetworkServiceListVirtualSwitches = "/admin.service.v1.PlatformNetworkService/ListVirtualSwitches"
 const OperationPlatformNetworkServiceListVlanNetworks = "/admin.service.v1.PlatformNetworkService/ListVlanNetworks"
 const OperationPlatformNetworkServiceRecordIntranetPoolVerification = "/admin.service.v1.PlatformNetworkService/RecordIntranetPoolVerification"
 const OperationPlatformNetworkServiceRecordPublicPoolVerification = "/admin.service.v1.PlatformNetworkService/RecordPublicPoolVerification"
+const OperationPlatformNetworkServiceRetireNetworkDevice = "/admin.service.v1.PlatformNetworkService/RetireNetworkDevice"
 const OperationPlatformNetworkServiceSetDefaultIntranetPool = "/admin.service.v1.PlatformNetworkService/SetDefaultIntranetPool"
 const OperationPlatformNetworkServiceSetDefaultPublicPool = "/admin.service.v1.PlatformNetworkService/SetDefaultPublicPool"
 const OperationPlatformNetworkServiceSetIntranetPoolAllocationEnabled = "/admin.service.v1.PlatformNetworkService/SetIntranetPoolAllocationEnabled"
@@ -50,28 +59,37 @@ const OperationPlatformNetworkServiceSetPublicPoolAllocationEnabled = "/admin.se
 
 type PlatformNetworkServiceHTTPServer interface {
 	AdoptNetworkDevice(context.Context, *v1.AdoptNetworkDeviceRequest) (*v1.AdoptNetworkDeviceResponse, error)
+	CreateDefaultVPCEgress(context.Context, *v1.CreateDefaultVPCEgressRequest) (*v1.CreateDefaultVPCEgressResponse, error)
 	CreateEgressGateway(context.Context, *v1.CreateEgressGatewayRequest) (*v1.CreateEgressGatewayResponse, error)
 	CreateIntranetAddressPool(context.Context, *v1.CreateIntranetAddressPoolRequest) (*v1.CreateIntranetAddressPoolResponse, error)
 	CreatePublicAddressPool(context.Context, *v1.CreatePublicAddressPoolRequest) (*v1.CreatePublicAddressPoolResponse, error)
+	CreateVirtualSwitch(context.Context, *v1.CreateVirtualSwitchRequest) (*v1.CreateVirtualSwitchResponse, error)
 	CreateVlanNetwork(context.Context, *v1.CreateVlanNetworkRequest) (*v1.CreateVlanNetworkResponse, error)
+	DeleteDefaultVPCEgress(context.Context, *v1.DeleteDefaultVPCEgressRequest) (*v1.DeleteDefaultVPCEgressResponse, error)
 	DeleteEgressGateway(context.Context, *v1.DeleteEgressGatewayRequest) (*v1.DeleteEgressGatewayResponse, error)
 	DeleteIntranetAddressPool(context.Context, *v1.DeleteIntranetAddressPoolRequest) (*v1.DeleteIntranetAddressPoolResponse, error)
 	DeletePublicAddressPool(context.Context, *v1.DeletePublicAddressPoolRequest) (*v1.DeletePublicAddressPoolResponse, error)
+	DeleteVirtualSwitch(context.Context, *v1.DeleteVirtualSwitchRequest) (*v1.DeleteVirtualSwitchResponse, error)
 	DeleteVlanNetwork(context.Context, *v1.DeleteVlanNetworkRequest) (*v1.DeleteVlanNetworkResponse, error)
+	GetDefaultVPCEgress(context.Context, *v1.GetDefaultVPCEgressRequest) (*v1.GetDefaultVPCEgressResponse, error)
 	GetEgressGateway(context.Context, *v1.GetEgressGatewayRequest) (*v1.GetEgressGatewayResponse, error)
 	GetIntranetAddressPool(context.Context, *v1.GetIntranetAddressPoolRequest) (*v1.GetIntranetAddressPoolResponse, error)
 	GetNetworkDevice(context.Context, *v1.GetNetworkDeviceRequest) (*v1.GetNetworkDeviceResponse, error)
+	GetNetworkDeviceRetirement(context.Context, *v1.GetNetworkDeviceRetirementRequest) (*v1.GetNetworkDeviceRetirementResponse, error)
 	GetPlatformNetworkCapabilities(context.Context, *v1.GetPlatformNetworkCapabilitiesRequest) (*v1.GetPlatformNetworkCapabilitiesResponse, error)
 	GetPlatformOperation(context.Context, *v1.GetPlatformOperationRequest) (*v1.GetPlatformOperationResponse, error)
 	GetPublicAddressPool(context.Context, *v1.GetPublicAddressPoolRequest) (*v1.GetPublicAddressPoolResponse, error)
+	GetVirtualSwitch(context.Context, *v1.GetVirtualSwitchRequest) (*v1.GetVirtualSwitchResponse, error)
 	GetVlanNetwork(context.Context, *v1.GetVlanNetworkRequest) (*v1.GetVlanNetworkResponse, error)
 	ListEgressGateways(context.Context, *v1.ListEgressGatewaysRequest) (*v1.ListEgressGatewaysResponse, error)
 	ListIntranetAddressPools(context.Context, *v1.ListIntranetAddressPoolsRequest) (*v1.ListIntranetAddressPoolsResponse, error)
 	ListNodeInterfaces(context.Context, *v1.ListNodeInterfacesRequest) (*v1.ListNodeInterfacesResponse, error)
 	ListPublicAddressPools(context.Context, *v1.ListPublicAddressPoolsRequest) (*v1.ListPublicAddressPoolsResponse, error)
+	ListVirtualSwitches(context.Context, *v1.ListVirtualSwitchesRequest) (*v1.ListVirtualSwitchesResponse, error)
 	ListVlanNetworks(context.Context, *v1.ListVlanNetworksRequest) (*v1.ListVlanNetworksResponse, error)
 	RecordIntranetPoolVerification(context.Context, *v1.RecordIntranetPoolVerificationRequest) (*v1.RecordIntranetPoolVerificationResponse, error)
 	RecordPublicPoolVerification(context.Context, *v1.RecordPublicPoolVerificationRequest) (*v1.RecordPublicPoolVerificationResponse, error)
+	RetireNetworkDevice(context.Context, *v1.RetireNetworkDeviceRequest) (*v1.RetireNetworkDeviceResponse, error)
 	SetDefaultIntranetPool(context.Context, *v1.SetDefaultIntranetPoolRequest) (*v1.SetDefaultIntranetPoolResponse, error)
 	SetDefaultPublicPool(context.Context, *v1.SetDefaultPublicPoolRequest) (*v1.SetDefaultPublicPoolResponse, error)
 	SetIntranetPoolAllocationEnabled(context.Context, *v1.SetIntranetPoolAllocationEnabledRequest) (*v1.SetIntranetPoolAllocationEnabledResponse, error)
@@ -80,6 +98,15 @@ type PlatformNetworkServiceHTTPServer interface {
 
 func RegisterPlatformNetworkServiceHTTPServer(s *http.Server, srv PlatformNetworkServiceHTTPServer) {
 	r := s.Route("/")
+	r.POST("/api/v1/admin/networks/default-vpc-egresses", _PlatformNetworkService_CreateDefaultVPCEgress0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/networks/default-vpc-egresses/{egress_id}", _PlatformNetworkService_GetDefaultVPCEgress0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/networks/default-vpc-egresses/{egress_id}", _PlatformNetworkService_DeleteDefaultVPCEgress0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/networks/devices/{device_id}/retirement", _PlatformNetworkService_RetireNetworkDevice0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/networks/devices/{device_id}/retirement", _PlatformNetworkService_GetNetworkDeviceRetirement0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/networks/virtual-switches", _PlatformNetworkService_CreateVirtualSwitch0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", _PlatformNetworkService_GetVirtualSwitch0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/networks/virtual-switches", _PlatformNetworkService_ListVirtualSwitches0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", _PlatformNetworkService_DeleteVirtualSwitch0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/node-interfaces", _PlatformNetworkService_ListNodeInterfaces0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/networks/devices", _PlatformNetworkService_AdoptNetworkDevice0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/devices/{device_id}", _PlatformNetworkService_GetNetworkDevice0_HTTP_Handler(srv))
@@ -107,6 +134,204 @@ func RegisterPlatformNetworkServiceHTTPServer(s *http.Server, srv PlatformNetwor
 	r.POST("/api/v1/admin/networks/intranet-address-pools/{pool_id}/default", _PlatformNetworkService_SetDefaultIntranetPool0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/capabilities", _PlatformNetworkService_GetPlatformNetworkCapabilities0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/operations/{operation_id}", _PlatformNetworkService_GetPlatformOperation0_HTTP_Handler(srv))
+}
+
+func _PlatformNetworkService_CreateDefaultVPCEgress0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CreateDefaultVPCEgressRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceCreateDefaultVPCEgress)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateDefaultVPCEgress(ctx, req.(*v1.CreateDefaultVPCEgressRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.CreateDefaultVPCEgressResponse)
+		return ctx.Result(200, reply.Egress)
+	}
+}
+
+func _PlatformNetworkService_GetDefaultVPCEgress0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetDefaultVPCEgressRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceGetDefaultVPCEgress)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetDefaultVPCEgress(ctx, req.(*v1.GetDefaultVPCEgressRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetDefaultVPCEgressResponse)
+		return ctx.Result(200, reply.Egress)
+	}
+}
+
+func _PlatformNetworkService_DeleteDefaultVPCEgress0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteDefaultVPCEgressRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceDeleteDefaultVPCEgress)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteDefaultVPCEgress(ctx, req.(*v1.DeleteDefaultVPCEgressRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.DeleteDefaultVPCEgressResponse)
+		return ctx.Result(200, reply.Egress)
+	}
+}
+
+func _PlatformNetworkService_RetireNetworkDevice0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.RetireNetworkDeviceRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceRetireNetworkDevice)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RetireNetworkDevice(ctx, req.(*v1.RetireNetworkDeviceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.RetireNetworkDeviceResponse)
+		return ctx.Result(200, reply.Retirement)
+	}
+}
+
+func _PlatformNetworkService_GetNetworkDeviceRetirement0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetNetworkDeviceRetirementRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceGetNetworkDeviceRetirement)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetNetworkDeviceRetirement(ctx, req.(*v1.GetNetworkDeviceRetirementRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetNetworkDeviceRetirementResponse)
+		return ctx.Result(200, reply.Retirement)
+	}
+}
+
+func _PlatformNetworkService_CreateVirtualSwitch0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CreateVirtualSwitchRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceCreateVirtualSwitch)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateVirtualSwitch(ctx, req.(*v1.CreateVirtualSwitchRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.CreateVirtualSwitchResponse)
+		return ctx.Result(200, reply.Resource)
+	}
+}
+
+func _PlatformNetworkService_GetVirtualSwitch0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetVirtualSwitchRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceGetVirtualSwitch)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetVirtualSwitch(ctx, req.(*v1.GetVirtualSwitchRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetVirtualSwitchResponse)
+		return ctx.Result(200, reply.Resource)
+	}
+}
+
+func _PlatformNetworkService_ListVirtualSwitches0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListVirtualSwitchesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceListVirtualSwitches)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListVirtualSwitches(ctx, req.(*v1.ListVirtualSwitchesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListVirtualSwitchesResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _PlatformNetworkService_DeleteVirtualSwitch0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteVirtualSwitchRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceDeleteVirtualSwitch)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteVirtualSwitch(ctx, req.(*v1.DeleteVirtualSwitchRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.DeleteVirtualSwitchResponse)
+		return ctx.Result(200, reply.Resource)
+	}
 }
 
 func _PlatformNetworkService_ListNodeInterfaces0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
@@ -705,28 +930,37 @@ func _PlatformNetworkService_GetPlatformOperation0_HTTP_Handler(srv PlatformNetw
 
 type PlatformNetworkServiceHTTPClient interface {
 	AdoptNetworkDevice(ctx context.Context, req *v1.AdoptNetworkDeviceRequest, opts ...http.CallOption) (rsp *v1.AdoptNetworkDeviceResponse, err error)
+	CreateDefaultVPCEgress(ctx context.Context, req *v1.CreateDefaultVPCEgressRequest, opts ...http.CallOption) (rsp *v1.CreateDefaultVPCEgressResponse, err error)
 	CreateEgressGateway(ctx context.Context, req *v1.CreateEgressGatewayRequest, opts ...http.CallOption) (rsp *v1.CreateEgressGatewayResponse, err error)
 	CreateIntranetAddressPool(ctx context.Context, req *v1.CreateIntranetAddressPoolRequest, opts ...http.CallOption) (rsp *v1.CreateIntranetAddressPoolResponse, err error)
 	CreatePublicAddressPool(ctx context.Context, req *v1.CreatePublicAddressPoolRequest, opts ...http.CallOption) (rsp *v1.CreatePublicAddressPoolResponse, err error)
+	CreateVirtualSwitch(ctx context.Context, req *v1.CreateVirtualSwitchRequest, opts ...http.CallOption) (rsp *v1.CreateVirtualSwitchResponse, err error)
 	CreateVlanNetwork(ctx context.Context, req *v1.CreateVlanNetworkRequest, opts ...http.CallOption) (rsp *v1.CreateVlanNetworkResponse, err error)
+	DeleteDefaultVPCEgress(ctx context.Context, req *v1.DeleteDefaultVPCEgressRequest, opts ...http.CallOption) (rsp *v1.DeleteDefaultVPCEgressResponse, err error)
 	DeleteEgressGateway(ctx context.Context, req *v1.DeleteEgressGatewayRequest, opts ...http.CallOption) (rsp *v1.DeleteEgressGatewayResponse, err error)
 	DeleteIntranetAddressPool(ctx context.Context, req *v1.DeleteIntranetAddressPoolRequest, opts ...http.CallOption) (rsp *v1.DeleteIntranetAddressPoolResponse, err error)
 	DeletePublicAddressPool(ctx context.Context, req *v1.DeletePublicAddressPoolRequest, opts ...http.CallOption) (rsp *v1.DeletePublicAddressPoolResponse, err error)
+	DeleteVirtualSwitch(ctx context.Context, req *v1.DeleteVirtualSwitchRequest, opts ...http.CallOption) (rsp *v1.DeleteVirtualSwitchResponse, err error)
 	DeleteVlanNetwork(ctx context.Context, req *v1.DeleteVlanNetworkRequest, opts ...http.CallOption) (rsp *v1.DeleteVlanNetworkResponse, err error)
+	GetDefaultVPCEgress(ctx context.Context, req *v1.GetDefaultVPCEgressRequest, opts ...http.CallOption) (rsp *v1.GetDefaultVPCEgressResponse, err error)
 	GetEgressGateway(ctx context.Context, req *v1.GetEgressGatewayRequest, opts ...http.CallOption) (rsp *v1.GetEgressGatewayResponse, err error)
 	GetIntranetAddressPool(ctx context.Context, req *v1.GetIntranetAddressPoolRequest, opts ...http.CallOption) (rsp *v1.GetIntranetAddressPoolResponse, err error)
 	GetNetworkDevice(ctx context.Context, req *v1.GetNetworkDeviceRequest, opts ...http.CallOption) (rsp *v1.GetNetworkDeviceResponse, err error)
+	GetNetworkDeviceRetirement(ctx context.Context, req *v1.GetNetworkDeviceRetirementRequest, opts ...http.CallOption) (rsp *v1.GetNetworkDeviceRetirementResponse, err error)
 	GetPlatformNetworkCapabilities(ctx context.Context, req *v1.GetPlatformNetworkCapabilitiesRequest, opts ...http.CallOption) (rsp *v1.GetPlatformNetworkCapabilitiesResponse, err error)
 	GetPlatformOperation(ctx context.Context, req *v1.GetPlatformOperationRequest, opts ...http.CallOption) (rsp *v1.GetPlatformOperationResponse, err error)
 	GetPublicAddressPool(ctx context.Context, req *v1.GetPublicAddressPoolRequest, opts ...http.CallOption) (rsp *v1.GetPublicAddressPoolResponse, err error)
+	GetVirtualSwitch(ctx context.Context, req *v1.GetVirtualSwitchRequest, opts ...http.CallOption) (rsp *v1.GetVirtualSwitchResponse, err error)
 	GetVlanNetwork(ctx context.Context, req *v1.GetVlanNetworkRequest, opts ...http.CallOption) (rsp *v1.GetVlanNetworkResponse, err error)
 	ListEgressGateways(ctx context.Context, req *v1.ListEgressGatewaysRequest, opts ...http.CallOption) (rsp *v1.ListEgressGatewaysResponse, err error)
 	ListIntranetAddressPools(ctx context.Context, req *v1.ListIntranetAddressPoolsRequest, opts ...http.CallOption) (rsp *v1.ListIntranetAddressPoolsResponse, err error)
 	ListNodeInterfaces(ctx context.Context, req *v1.ListNodeInterfacesRequest, opts ...http.CallOption) (rsp *v1.ListNodeInterfacesResponse, err error)
 	ListPublicAddressPools(ctx context.Context, req *v1.ListPublicAddressPoolsRequest, opts ...http.CallOption) (rsp *v1.ListPublicAddressPoolsResponse, err error)
+	ListVirtualSwitches(ctx context.Context, req *v1.ListVirtualSwitchesRequest, opts ...http.CallOption) (rsp *v1.ListVirtualSwitchesResponse, err error)
 	ListVlanNetworks(ctx context.Context, req *v1.ListVlanNetworksRequest, opts ...http.CallOption) (rsp *v1.ListVlanNetworksResponse, err error)
 	RecordIntranetPoolVerification(ctx context.Context, req *v1.RecordIntranetPoolVerificationRequest, opts ...http.CallOption) (rsp *v1.RecordIntranetPoolVerificationResponse, err error)
 	RecordPublicPoolVerification(ctx context.Context, req *v1.RecordPublicPoolVerificationRequest, opts ...http.CallOption) (rsp *v1.RecordPublicPoolVerificationResponse, err error)
+	RetireNetworkDevice(ctx context.Context, req *v1.RetireNetworkDeviceRequest, opts ...http.CallOption) (rsp *v1.RetireNetworkDeviceResponse, err error)
 	SetDefaultIntranetPool(ctx context.Context, req *v1.SetDefaultIntranetPoolRequest, opts ...http.CallOption) (rsp *v1.SetDefaultIntranetPoolResponse, err error)
 	SetDefaultPublicPool(ctx context.Context, req *v1.SetDefaultPublicPoolRequest, opts ...http.CallOption) (rsp *v1.SetDefaultPublicPoolResponse, err error)
 	SetIntranetPoolAllocationEnabled(ctx context.Context, req *v1.SetIntranetPoolAllocationEnabledRequest, opts ...http.CallOption) (rsp *v1.SetIntranetPoolAllocationEnabledResponse, err error)
@@ -748,6 +982,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) AdoptNetworkDevice(ctx context.Co
 	opts = append(opts, http.Operation(OperationPlatformNetworkServiceAdoptNetworkDevice))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PlatformNetworkServiceHTTPClientImpl) CreateDefaultVPCEgress(ctx context.Context, in *v1.CreateDefaultVPCEgressRequest, opts ...http.CallOption) (*v1.CreateDefaultVPCEgressResponse, error) {
+	var out v1.CreateDefaultVPCEgressResponse
+	pattern := "/api/v1/admin/networks/default-vpc-egresses"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceCreateDefaultVPCEgress))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out.Egress, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -793,6 +1040,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) CreatePublicAddressPool(ctx conte
 	return &out, nil
 }
 
+func (c *PlatformNetworkServiceHTTPClientImpl) CreateVirtualSwitch(ctx context.Context, in *v1.CreateVirtualSwitchRequest, opts ...http.CallOption) (*v1.CreateVirtualSwitchResponse, error) {
+	var out v1.CreateVirtualSwitchResponse
+	pattern := "/api/v1/admin/networks/virtual-switches"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceCreateVirtualSwitch))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *PlatformNetworkServiceHTTPClientImpl) CreateVlanNetwork(ctx context.Context, in *v1.CreateVlanNetworkRequest, opts ...http.CallOption) (*v1.CreateVlanNetworkResponse, error) {
 	var out v1.CreateVlanNetworkResponse
 	pattern := "/api/v1/admin/networks/vlan-networks"
@@ -800,6 +1060,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) CreateVlanNetwork(ctx context.Con
 	opts = append(opts, http.Operation(OperationPlatformNetworkServiceCreateVlanNetwork))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PlatformNetworkServiceHTTPClientImpl) DeleteDefaultVPCEgress(ctx context.Context, in *v1.DeleteDefaultVPCEgressRequest, opts ...http.CallOption) (*v1.DeleteDefaultVPCEgressResponse, error) {
+	var out v1.DeleteDefaultVPCEgressResponse
+	pattern := "/api/v1/admin/networks/default-vpc-egresses/{egress_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceDeleteDefaultVPCEgress))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out.Egress, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -845,6 +1118,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) DeletePublicAddressPool(ctx conte
 	return &out, nil
 }
 
+func (c *PlatformNetworkServiceHTTPClientImpl) DeleteVirtualSwitch(ctx context.Context, in *v1.DeleteVirtualSwitchRequest, opts ...http.CallOption) (*v1.DeleteVirtualSwitchResponse, error) {
+	var out v1.DeleteVirtualSwitchResponse
+	pattern := "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceDeleteVirtualSwitch))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *PlatformNetworkServiceHTTPClientImpl) DeleteVlanNetwork(ctx context.Context, in *v1.DeleteVlanNetworkRequest, opts ...http.CallOption) (*v1.DeleteVlanNetworkResponse, error) {
 	var out v1.DeleteVlanNetworkResponse
 	pattern := "/api/v1/admin/networks/vlan-networks/{vlan_network_id}"
@@ -852,6 +1138,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) DeleteVlanNetwork(ctx context.Con
 	opts = append(opts, http.Operation(OperationPlatformNetworkServiceDeleteVlanNetwork))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PlatformNetworkServiceHTTPClientImpl) GetDefaultVPCEgress(ctx context.Context, in *v1.GetDefaultVPCEgressRequest, opts ...http.CallOption) (*v1.GetDefaultVPCEgressResponse, error) {
+	var out v1.GetDefaultVPCEgressResponse
+	pattern := "/api/v1/admin/networks/default-vpc-egresses/{egress_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceGetDefaultVPCEgress))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out.Egress, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -897,6 +1196,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) GetNetworkDevice(ctx context.Cont
 	return &out, nil
 }
 
+func (c *PlatformNetworkServiceHTTPClientImpl) GetNetworkDeviceRetirement(ctx context.Context, in *v1.GetNetworkDeviceRetirementRequest, opts ...http.CallOption) (*v1.GetNetworkDeviceRetirementResponse, error) {
+	var out v1.GetNetworkDeviceRetirementResponse
+	pattern := "/api/v1/admin/networks/devices/{device_id}/retirement"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceGetNetworkDeviceRetirement))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out.Retirement, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *PlatformNetworkServiceHTTPClientImpl) GetPlatformNetworkCapabilities(ctx context.Context, in *v1.GetPlatformNetworkCapabilitiesRequest, opts ...http.CallOption) (*v1.GetPlatformNetworkCapabilitiesResponse, error) {
 	var out v1.GetPlatformNetworkCapabilitiesResponse
 	pattern := "/api/v1/admin/networks/capabilities"
@@ -928,6 +1240,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) GetPublicAddressPool(ctx context.
 	pattern := "/api/v1/admin/networks/public-address-pools/{pool_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlatformNetworkServiceGetPublicAddressPool))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PlatformNetworkServiceHTTPClientImpl) GetVirtualSwitch(ctx context.Context, in *v1.GetVirtualSwitchRequest, opts ...http.CallOption) (*v1.GetVirtualSwitchResponse, error) {
+	var out v1.GetVirtualSwitchResponse
+	pattern := "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceGetVirtualSwitch))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out.Resource, opts...)
 	if err != nil {
@@ -1001,6 +1326,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) ListPublicAddressPools(ctx contex
 	return &out, nil
 }
 
+func (c *PlatformNetworkServiceHTTPClientImpl) ListVirtualSwitches(ctx context.Context, in *v1.ListVirtualSwitchesRequest, opts ...http.CallOption) (*v1.ListVirtualSwitchesResponse, error) {
+	var out v1.ListVirtualSwitchesResponse
+	pattern := "/api/v1/admin/networks/virtual-switches"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceListVirtualSwitches))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *PlatformNetworkServiceHTTPClientImpl) ListVlanNetworks(ctx context.Context, in *v1.ListVlanNetworksRequest, opts ...http.CallOption) (*v1.ListVlanNetworksResponse, error) {
 	var out v1.ListVlanNetworksResponse
 	pattern := "/api/v1/admin/networks/vlan-networks"
@@ -1034,6 +1372,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) RecordPublicPoolVerification(ctx 
 	opts = append(opts, http.Operation(OperationPlatformNetworkServiceRecordPublicPoolVerification))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PlatformNetworkServiceHTTPClientImpl) RetireNetworkDevice(ctx context.Context, in *v1.RetireNetworkDeviceRequest, opts ...http.CallOption) (*v1.RetireNetworkDeviceResponse, error) {
+	var out v1.RetireNetworkDeviceResponse
+	pattern := "/api/v1/admin/networks/devices/{device_id}/retirement"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceRetireNetworkDevice))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out.Retirement, opts...)
 	if err != nil {
 		return nil, err
 	}

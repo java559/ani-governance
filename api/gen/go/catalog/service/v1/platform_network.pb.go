@@ -203,6 +203,683 @@ func (x *PlatformResource) GetIntranetPool() *IntranetAddressPool {
 	return nil
 }
 
+// A persisted platform switch has no Provider object or cluster before first use.
+type VirtualSwitch struct {
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Id                    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	State                 string                 `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
+	Reason                string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	ReasonMessage         string                 `protobuf:"bytes,5,opt,name=reason_message,proto3" json:"reason_message,omitempty"`
+	Version               int64                  `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt             *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	UpdatedAt             *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	LastOperationId       string                 `protobuf:"bytes,9,opt,name=last_operation_id,proto3" json:"last_operation_id,omitempty"`
+	ClusterId             string                 `protobuf:"bytes,10,opt,name=cluster_id,proto3" json:"cluster_id,omitempty"`
+	GroupName             string                 `protobuf:"bytes,11,opt,name=group_name,proto3" json:"group_name,omitempty"`
+	BindingState          string                 `protobuf:"bytes,12,opt,name=binding_state,proto3" json:"binding_state,omitempty"`
+	BindingVersion        int64                  `protobuf:"varint,13,opt,name=binding_version,proto3" json:"binding_version,omitempty"`
+	MembershipFingerprint string                 `protobuf:"bytes,14,opt,name=membership_fingerprint,proto3" json:"membership_fingerprint,omitempty"`
+	Nodes                 []*VirtualSwitchNode   `protobuf:"bytes,15,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *VirtualSwitch) Reset() {
+	*x = VirtualSwitch{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualSwitch) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualSwitch) ProtoMessage() {}
+
+func (x *VirtualSwitch) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualSwitch.ProtoReflect.Descriptor instead.
+func (*VirtualSwitch) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *VirtualSwitch) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetReasonMessage() string {
+	if x != nil {
+		return x.ReasonMessage
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetVersion() int64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *VirtualSwitch) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *VirtualSwitch) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *VirtualSwitch) GetLastOperationId() string {
+	if x != nil {
+		return x.LastOperationId
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetGroupName() string {
+	if x != nil {
+		return x.GroupName
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetBindingState() string {
+	if x != nil {
+		return x.BindingState
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetBindingVersion() int64 {
+	if x != nil {
+		return x.BindingVersion
+	}
+	return 0
+}
+
+func (x *VirtualSwitch) GetMembershipFingerprint() string {
+	if x != nil {
+		return x.MembershipFingerprint
+	}
+	return ""
+}
+
+func (x *VirtualSwitch) GetNodes() []*VirtualSwitchNode {
+	if x != nil {
+		return x.Nodes
+	}
+	return nil
+}
+
+type VirtualSwitchNode struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NodeName      string                 `protobuf:"bytes,1,opt,name=node_name,proto3" json:"node_name,omitempty"`
+	NodeUid       string                 `protobuf:"bytes,2,opt,name=node_uid,proto3" json:"node_uid,omitempty"`
+	Mac           string                 `protobuf:"bytes,3,opt,name=mac,proto3" json:"mac,omitempty"`
+	Priority      int32                  `protobuf:"varint,4,opt,name=priority,proto3" json:"priority,omitempty"`
+	State         string                 `protobuf:"bytes,5,opt,name=state,proto3" json:"state,omitempty"`
+	Reason        string                 `protobuf:"bytes,6,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VirtualSwitchNode) Reset() {
+	*x = VirtualSwitchNode{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualSwitchNode) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualSwitchNode) ProtoMessage() {}
+
+func (x *VirtualSwitchNode) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualSwitchNode.ProtoReflect.Descriptor instead.
+func (*VirtualSwitchNode) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *VirtualSwitchNode) GetNodeName() string {
+	if x != nil {
+		return x.NodeName
+	}
+	return ""
+}
+
+func (x *VirtualSwitchNode) GetNodeUid() string {
+	if x != nil {
+		return x.NodeUid
+	}
+	return ""
+}
+
+func (x *VirtualSwitchNode) GetMac() string {
+	if x != nil {
+		return x.Mac
+	}
+	return ""
+}
+
+func (x *VirtualSwitchNode) GetPriority() int32 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
+func (x *VirtualSwitchNode) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *VirtualSwitchNode) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type CreateVirtualSwitchData struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	IdempotencyKey string                 `protobuf:"bytes,2,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateVirtualSwitchData) Reset() {
+	*x = CreateVirtualSwitchData{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVirtualSwitchData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVirtualSwitchData) ProtoMessage() {}
+
+func (x *CreateVirtualSwitchData) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVirtualSwitchData.ProtoReflect.Descriptor instead.
+func (*CreateVirtualSwitchData) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CreateVirtualSwitchData) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateVirtualSwitchData) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+type CreateVirtualSwitchRequest struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	Data          *CreateVirtualSwitchData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateVirtualSwitchRequest) Reset() {
+	*x = CreateVirtualSwitchRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVirtualSwitchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVirtualSwitchRequest) ProtoMessage() {}
+
+func (x *CreateVirtualSwitchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVirtualSwitchRequest.ProtoReflect.Descriptor instead.
+func (*CreateVirtualSwitchRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateVirtualSwitchRequest) GetData() *CreateVirtualSwitchData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type CreateVirtualSwitchResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Resource      *VirtualSwitch         `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateVirtualSwitchResponse) Reset() {
+	*x = CreateVirtualSwitchResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVirtualSwitchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVirtualSwitchResponse) ProtoMessage() {}
+
+func (x *CreateVirtualSwitchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVirtualSwitchResponse.ProtoReflect.Descriptor instead.
+func (*CreateVirtualSwitchResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *CreateVirtualSwitchResponse) GetResource() *VirtualSwitch {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
+type GetVirtualSwitchRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	VirtualSwitchId string                 `protobuf:"bytes,1,opt,name=virtual_switch_id,proto3" json:"virtual_switch_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetVirtualSwitchRequest) Reset() {
+	*x = GetVirtualSwitchRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVirtualSwitchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVirtualSwitchRequest) ProtoMessage() {}
+
+func (x *GetVirtualSwitchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVirtualSwitchRequest.ProtoReflect.Descriptor instead.
+func (*GetVirtualSwitchRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetVirtualSwitchRequest) GetVirtualSwitchId() string {
+	if x != nil {
+		return x.VirtualSwitchId
+	}
+	return ""
+}
+
+type GetVirtualSwitchResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Resource      *VirtualSwitch         `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVirtualSwitchResponse) Reset() {
+	*x = GetVirtualSwitchResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVirtualSwitchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVirtualSwitchResponse) ProtoMessage() {}
+
+func (x *GetVirtualSwitchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVirtualSwitchResponse.ProtoReflect.Descriptor instead.
+func (*GetVirtualSwitchResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetVirtualSwitchResponse) GetResource() *VirtualSwitch {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
+type ListVirtualSwitchesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
+	Page          *int32                 `protobuf:"varint,3,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *int32                 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVirtualSwitchesRequest) Reset() {
+	*x = ListVirtualSwitchesRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVirtualSwitchesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVirtualSwitchesRequest) ProtoMessage() {}
+
+func (x *ListVirtualSwitchesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVirtualSwitchesRequest.ProtoReflect.Descriptor instead.
+func (*ListVirtualSwitchesRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListVirtualSwitchesRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ListVirtualSwitchesRequest) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *ListVirtualSwitchesRequest) GetPage() int32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
+	}
+	return 0
+}
+
+func (x *ListVirtualSwitchesRequest) GetPageSize() int32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
+	}
+	return 0
+}
+
+type ListVirtualSwitchesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*VirtualSwitch       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVirtualSwitchesResponse) Reset() {
+	*x = ListVirtualSwitchesResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVirtualSwitchesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVirtualSwitchesResponse) ProtoMessage() {}
+
+func (x *ListVirtualSwitchesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVirtualSwitchesResponse.ProtoReflect.Descriptor instead.
+func (*ListVirtualSwitchesResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListVirtualSwitchesResponse) GetItems() []*VirtualSwitch {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListVirtualSwitchesResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type DeleteVirtualSwitchRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	VirtualSwitchId string                 `protobuf:"bytes,1,opt,name=virtual_switch_id,proto3" json:"virtual_switch_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeleteVirtualSwitchRequest) Reset() {
+	*x = DeleteVirtualSwitchRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteVirtualSwitchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteVirtualSwitchRequest) ProtoMessage() {}
+
+func (x *DeleteVirtualSwitchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteVirtualSwitchRequest.ProtoReflect.Descriptor instead.
+func (*DeleteVirtualSwitchRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *DeleteVirtualSwitchRequest) GetVirtualSwitchId() string {
+	if x != nil {
+		return x.VirtualSwitchId
+	}
+	return ""
+}
+
+type DeleteVirtualSwitchResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Resource      *VirtualSwitch         `protobuf:"bytes,1,opt,name=resource,proto3" json:"resource,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteVirtualSwitchResponse) Reset() {
+	*x = DeleteVirtualSwitchResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteVirtualSwitchResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteVirtualSwitchResponse) ProtoMessage() {}
+
+func (x *DeleteVirtualSwitchResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteVirtualSwitchResponse.ProtoReflect.Descriptor instead.
+func (*DeleteVirtualSwitchResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *DeleteVirtualSwitchResponse) GetResource() *VirtualSwitch {
+	if x != nil {
+		return x.Resource
+	}
+	return nil
+}
+
 type NodeInterface struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	NodeName           string                 `protobuf:"bytes,1,opt,name=node_name,proto3" json:"node_name,omitempty"`
@@ -229,7 +906,7 @@ type NodeInterface struct {
 
 func (x *NodeInterface) Reset() {
 	*x = NodeInterface{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[1]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -241,7 +918,7 @@ func (x *NodeInterface) String() string {
 func (*NodeInterface) ProtoMessage() {}
 
 func (x *NodeInterface) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[1]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -254,7 +931,7 @@ func (x *NodeInterface) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeInterface.ProtoReflect.Descriptor instead.
 func (*NodeInterface) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{1}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *NodeInterface) GetNodeName() string {
@@ -394,7 +1071,7 @@ type NetworkDevice struct {
 
 func (x *NetworkDevice) Reset() {
 	*x = NetworkDevice{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[2]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -406,7 +1083,7 @@ func (x *NetworkDevice) String() string {
 func (*NetworkDevice) ProtoMessage() {}
 
 func (x *NetworkDevice) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[2]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -419,7 +1096,7 @@ func (x *NetworkDevice) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NetworkDevice.ProtoReflect.Descriptor instead.
 func (*NetworkDevice) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{2}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *NetworkDevice) GetDeviceName() string {
@@ -444,16 +1121,20 @@ func (x *NetworkDevice) GetNodes() []*NodeInterface {
 }
 
 type VlanNetwork struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	DeviceId      string                 `protobuf:"bytes,1,opt,name=device_id,proto3" json:"device_id,omitempty"`
-	VlanId        int32                  `protobuf:"varint,2,opt,name=vlan_id,proto3" json:"vlan_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	DeviceId        string                 `protobuf:"bytes,1,opt,name=device_id,proto3" json:"device_id,omitempty"`
+	VlanId          int32                  `protobuf:"varint,2,opt,name=vlan_id,proto3" json:"vlan_id,omitempty"`
+	VirtualSwitchId string                 `protobuf:"bytes,3,opt,name=virtual_switch_id,proto3" json:"virtual_switch_id,omitempty"`
+	DeviceName      string                 `protobuf:"bytes,4,opt,name=device_name,proto3" json:"device_name,omitempty"`
+	GroupName       string                 `protobuf:"bytes,5,opt,name=group_name,proto3" json:"group_name,omitempty"`
+	Nodes           []*VirtualSwitchNode   `protobuf:"bytes,6,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *VlanNetwork) Reset() {
 	*x = VlanNetwork{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[3]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -465,7 +1146,7 @@ func (x *VlanNetwork) String() string {
 func (*VlanNetwork) ProtoMessage() {}
 
 func (x *VlanNetwork) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[3]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -478,7 +1159,7 @@ func (x *VlanNetwork) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VlanNetwork.ProtoReflect.Descriptor instead.
 func (*VlanNetwork) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{3}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *VlanNetwork) GetDeviceId() string {
@@ -495,6 +1176,34 @@ func (x *VlanNetwork) GetVlanId() int32 {
 	return 0
 }
 
+func (x *VlanNetwork) GetVirtualSwitchId() string {
+	if x != nil {
+		return x.VirtualSwitchId
+	}
+	return ""
+}
+
+func (x *VlanNetwork) GetDeviceName() string {
+	if x != nil {
+		return x.DeviceName
+	}
+	return ""
+}
+
+func (x *VlanNetwork) GetGroupName() string {
+	if x != nil {
+		return x.GroupName
+	}
+	return ""
+}
+
+func (x *VlanNetwork) GetNodes() []*VirtualSwitchNode {
+	if x != nil {
+		return x.Nodes
+	}
+	return nil
+}
+
 type EgressGateway struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -503,7 +1212,7 @@ type EgressGateway struct {
 
 func (x *EgressGateway) Reset() {
 	*x = EgressGateway{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[4]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -515,7 +1224,7 @@ func (x *EgressGateway) String() string {
 func (*EgressGateway) ProtoMessage() {}
 
 func (x *EgressGateway) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[4]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -528,7 +1237,7 @@ func (x *EgressGateway) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EgressGateway.ProtoReflect.Descriptor instead.
 func (*EgressGateway) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{4}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{15}
 }
 
 type PublicAddressPool struct {
@@ -553,7 +1262,7 @@ type PublicAddressPool struct {
 
 func (x *PublicAddressPool) Reset() {
 	*x = PublicAddressPool{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[5]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -565,7 +1274,7 @@ func (x *PublicAddressPool) String() string {
 func (*PublicAddressPool) ProtoMessage() {}
 
 func (x *PublicAddressPool) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[5]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -578,7 +1287,7 @@ func (x *PublicAddressPool) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublicAddressPool.ProtoReflect.Descriptor instead.
 func (*PublicAddressPool) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{5}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *PublicAddressPool) GetMode() string {
@@ -700,7 +1409,7 @@ type IntranetAddressPool struct {
 
 func (x *IntranetAddressPool) Reset() {
 	*x = IntranetAddressPool{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[6]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -712,7 +1421,7 @@ func (x *IntranetAddressPool) String() string {
 func (*IntranetAddressPool) ProtoMessage() {}
 
 func (x *IntranetAddressPool) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[6]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -725,7 +1434,7 @@ func (x *IntranetAddressPool) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntranetAddressPool.ProtoReflect.Descriptor instead.
 func (*IntranetAddressPool) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{6}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *IntranetAddressPool) GetCidr() string {
@@ -834,7 +1543,7 @@ type IntranetPoolVerification struct {
 
 func (x *IntranetPoolVerification) Reset() {
 	*x = IntranetPoolVerification{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[7]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +1555,7 @@ func (x *IntranetPoolVerification) String() string {
 func (*IntranetPoolVerification) ProtoMessage() {}
 
 func (x *IntranetPoolVerification) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[7]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -859,7 +1568,7 @@ func (x *IntranetPoolVerification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use IntranetPoolVerification.ProtoReflect.Descriptor instead.
 func (*IntranetPoolVerification) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{7}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *IntranetPoolVerification) GetProviderSourceRevision() string {
@@ -923,7 +1632,7 @@ type CapabilityObservation struct {
 
 func (x *CapabilityObservation) Reset() {
 	*x = CapabilityObservation{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[8]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -935,7 +1644,7 @@ func (x *CapabilityObservation) String() string {
 func (*CapabilityObservation) ProtoMessage() {}
 
 func (x *CapabilityObservation) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[8]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -948,7 +1657,7 @@ func (x *CapabilityObservation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapabilityObservation.ProtoReflect.Descriptor instead.
 func (*CapabilityObservation) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{8}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CapabilityObservation) GetReason() string {
@@ -993,7 +1702,7 @@ type PlatformNetworkCapabilities struct {
 
 func (x *PlatformNetworkCapabilities) Reset() {
 	*x = PlatformNetworkCapabilities{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[9]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1005,7 +1714,7 @@ func (x *PlatformNetworkCapabilities) String() string {
 func (*PlatformNetworkCapabilities) ProtoMessage() {}
 
 func (x *PlatformNetworkCapabilities) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[9]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1018,7 +1727,7 @@ func (x *PlatformNetworkCapabilities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformNetworkCapabilities.ProtoReflect.Descriptor instead.
 func (*PlatformNetworkCapabilities) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{9}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PlatformNetworkCapabilities) GetBaseConnectivityReady() bool {
@@ -1078,7 +1787,7 @@ type PublicPoolVerification struct {
 
 func (x *PublicPoolVerification) Reset() {
 	*x = PublicPoolVerification{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[10]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1090,7 +1799,7 @@ func (x *PublicPoolVerification) String() string {
 func (*PublicPoolVerification) ProtoMessage() {}
 
 func (x *PublicPoolVerification) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[10]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1103,7 +1812,7 @@ func (x *PublicPoolVerification) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublicPoolVerification.ProtoReflect.Descriptor instead.
 func (*PublicPoolVerification) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{10}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *PublicPoolVerification) GetProviderSourceRevision() string {
@@ -1173,7 +1882,7 @@ type PlatformOperation struct {
 
 func (x *PlatformOperation) Reset() {
 	*x = PlatformOperation{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[11]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1185,7 +1894,7 @@ func (x *PlatformOperation) String() string {
 func (*PlatformOperation) ProtoMessage() {}
 
 func (x *PlatformOperation) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[11]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1198,7 +1907,7 @@ func (x *PlatformOperation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformOperation.ProtoReflect.Descriptor instead.
 func (*PlatformOperation) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{11}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *PlatformOperation) GetId() string {
@@ -1272,15 +1981,17 @@ func (x *PlatformOperation) GetNextAttemptAt() *timestamppb.Timestamp {
 }
 
 type ListNodeInterfacesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeName      string                 `protobuf:"bytes,1,opt,name=node_name,proto3" json:"node_name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	NodeName        string                 `protobuf:"bytes,1,opt,name=node_name,proto3" json:"node_name,omitempty"`
+	ClusterId       string                 `protobuf:"bytes,2,opt,name=cluster_id,proto3" json:"cluster_id,omitempty"`
+	VirtualSwitchId string                 `protobuf:"bytes,3,opt,name=virtual_switch_id,proto3" json:"virtual_switch_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListNodeInterfacesRequest) Reset() {
 	*x = ListNodeInterfacesRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[12]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1292,7 +2003,7 @@ func (x *ListNodeInterfacesRequest) String() string {
 func (*ListNodeInterfacesRequest) ProtoMessage() {}
 
 func (x *ListNodeInterfacesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[12]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1305,12 +2016,26 @@ func (x *ListNodeInterfacesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeInterfacesRequest.ProtoReflect.Descriptor instead.
 func (*ListNodeInterfacesRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{12}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ListNodeInterfacesRequest) GetNodeName() string {
 	if x != nil {
 		return x.NodeName
+	}
+	return ""
+}
+
+func (x *ListNodeInterfacesRequest) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *ListNodeInterfacesRequest) GetVirtualSwitchId() string {
+	if x != nil {
+		return x.VirtualSwitchId
 	}
 	return ""
 }
@@ -1326,7 +2051,7 @@ type ListNodeInterfacesResponse struct {
 
 func (x *ListNodeInterfacesResponse) Reset() {
 	*x = ListNodeInterfacesResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[13]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1338,7 +2063,7 @@ func (x *ListNodeInterfacesResponse) String() string {
 func (*ListNodeInterfacesResponse) ProtoMessage() {}
 
 func (x *ListNodeInterfacesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[13]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1351,7 +2076,7 @@ func (x *ListNodeInterfacesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListNodeInterfacesResponse.ProtoReflect.Descriptor instead.
 func (*ListNodeInterfacesResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{13}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListNodeInterfacesResponse) GetItems() []*NodeInterface {
@@ -1387,7 +2112,7 @@ type AdoptNetworkDeviceData struct {
 
 func (x *AdoptNetworkDeviceData) Reset() {
 	*x = AdoptNetworkDeviceData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[14]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1399,7 +2124,7 @@ func (x *AdoptNetworkDeviceData) String() string {
 func (*AdoptNetworkDeviceData) ProtoMessage() {}
 
 func (x *AdoptNetworkDeviceData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[14]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1412,7 +2137,7 @@ func (x *AdoptNetworkDeviceData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdoptNetworkDeviceData.ProtoReflect.Descriptor instead.
 func (*AdoptNetworkDeviceData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{14}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *AdoptNetworkDeviceData) GetName() string {
@@ -1452,7 +2177,7 @@ type AdoptNetworkDeviceRequest struct {
 
 func (x *AdoptNetworkDeviceRequest) Reset() {
 	*x = AdoptNetworkDeviceRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[15]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1464,7 +2189,7 @@ func (x *AdoptNetworkDeviceRequest) String() string {
 func (*AdoptNetworkDeviceRequest) ProtoMessage() {}
 
 func (x *AdoptNetworkDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[15]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1477,7 +2202,7 @@ func (x *AdoptNetworkDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdoptNetworkDeviceRequest.ProtoReflect.Descriptor instead.
 func (*AdoptNetworkDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{15}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *AdoptNetworkDeviceRequest) GetData() *AdoptNetworkDeviceData {
@@ -1496,7 +2221,7 @@ type AdoptNetworkDeviceResponse struct {
 
 func (x *AdoptNetworkDeviceResponse) Reset() {
 	*x = AdoptNetworkDeviceResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[16]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1508,7 +2233,7 @@ func (x *AdoptNetworkDeviceResponse) String() string {
 func (*AdoptNetworkDeviceResponse) ProtoMessage() {}
 
 func (x *AdoptNetworkDeviceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[16]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1521,7 +2246,7 @@ func (x *AdoptNetworkDeviceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdoptNetworkDeviceResponse.ProtoReflect.Descriptor instead.
 func (*AdoptNetworkDeviceResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{16}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *AdoptNetworkDeviceResponse) GetResource() *PlatformResource {
@@ -1540,7 +2265,7 @@ type GetNetworkDeviceRequest struct {
 
 func (x *GetNetworkDeviceRequest) Reset() {
 	*x = GetNetworkDeviceRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[17]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1552,7 +2277,7 @@ func (x *GetNetworkDeviceRequest) String() string {
 func (*GetNetworkDeviceRequest) ProtoMessage() {}
 
 func (x *GetNetworkDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[17]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1565,7 +2290,7 @@ func (x *GetNetworkDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkDeviceRequest.ProtoReflect.Descriptor instead.
 func (*GetNetworkDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{17}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetNetworkDeviceRequest) GetDeviceId() string {
@@ -1584,7 +2309,7 @@ type GetNetworkDeviceResponse struct {
 
 func (x *GetNetworkDeviceResponse) Reset() {
 	*x = GetNetworkDeviceResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[18]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1596,7 +2321,7 @@ func (x *GetNetworkDeviceResponse) String() string {
 func (*GetNetworkDeviceResponse) ProtoMessage() {}
 
 func (x *GetNetworkDeviceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[18]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1609,7 +2334,7 @@ func (x *GetNetworkDeviceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetNetworkDeviceResponse.ProtoReflect.Descriptor instead.
 func (*GetNetworkDeviceResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{18}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetNetworkDeviceResponse) GetResource() *PlatformResource {
@@ -1626,13 +2351,17 @@ type CreateVlanNetworkData struct {
 	DeviceId       string                 `protobuf:"bytes,3,opt,name=device_id,proto3" json:"device_id,omitempty"`
 	VlanId         int32                  `protobuf:"varint,4,opt,name=vlan_id,proto3" json:"vlan_id,omitempty"`
 	IdempotencyKey string                 `protobuf:"bytes,5,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Legacy device_id and the three v2 fields are mutually exclusive.
+	ClusterId       string `protobuf:"bytes,6,opt,name=cluster_id,proto3" json:"cluster_id,omitempty"`
+	VirtualSwitchId string `protobuf:"bytes,7,opt,name=virtual_switch_id,proto3" json:"virtual_switch_id,omitempty"`
+	DeviceName      string `protobuf:"bytes,8,opt,name=device_name,proto3" json:"device_name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateVlanNetworkData) Reset() {
 	*x = CreateVlanNetworkData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[19]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1644,7 +2373,7 @@ func (x *CreateVlanNetworkData) String() string {
 func (*CreateVlanNetworkData) ProtoMessage() {}
 
 func (x *CreateVlanNetworkData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[19]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1657,7 +2386,7 @@ func (x *CreateVlanNetworkData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateVlanNetworkData.ProtoReflect.Descriptor instead.
 func (*CreateVlanNetworkData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{19}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CreateVlanNetworkData) GetName() string {
@@ -1695,6 +2424,27 @@ func (x *CreateVlanNetworkData) GetIdempotencyKey() string {
 	return ""
 }
 
+func (x *CreateVlanNetworkData) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *CreateVlanNetworkData) GetVirtualSwitchId() string {
+	if x != nil {
+		return x.VirtualSwitchId
+	}
+	return ""
+}
+
+func (x *CreateVlanNetworkData) GetDeviceName() string {
+	if x != nil {
+		return x.DeviceName
+	}
+	return ""
+}
+
 type CreateVlanNetworkRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          *CreateVlanNetworkData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
@@ -1704,7 +2454,7 @@ type CreateVlanNetworkRequest struct {
 
 func (x *CreateVlanNetworkRequest) Reset() {
 	*x = CreateVlanNetworkRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[20]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1716,7 +2466,7 @@ func (x *CreateVlanNetworkRequest) String() string {
 func (*CreateVlanNetworkRequest) ProtoMessage() {}
 
 func (x *CreateVlanNetworkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[20]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1729,7 +2479,7 @@ func (x *CreateVlanNetworkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateVlanNetworkRequest.ProtoReflect.Descriptor instead.
 func (*CreateVlanNetworkRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{20}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CreateVlanNetworkRequest) GetData() *CreateVlanNetworkData {
@@ -1748,7 +2498,7 @@ type CreateVlanNetworkResponse struct {
 
 func (x *CreateVlanNetworkResponse) Reset() {
 	*x = CreateVlanNetworkResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[21]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1760,7 +2510,7 @@ func (x *CreateVlanNetworkResponse) String() string {
 func (*CreateVlanNetworkResponse) ProtoMessage() {}
 
 func (x *CreateVlanNetworkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[21]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1773,7 +2523,7 @@ func (x *CreateVlanNetworkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateVlanNetworkResponse.ProtoReflect.Descriptor instead.
 func (*CreateVlanNetworkResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{21}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *CreateVlanNetworkResponse) GetResource() *PlatformResource {
@@ -1792,7 +2542,7 @@ type GetVlanNetworkRequest struct {
 
 func (x *GetVlanNetworkRequest) Reset() {
 	*x = GetVlanNetworkRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[22]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1804,7 +2554,7 @@ func (x *GetVlanNetworkRequest) String() string {
 func (*GetVlanNetworkRequest) ProtoMessage() {}
 
 func (x *GetVlanNetworkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[22]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1817,7 +2567,7 @@ func (x *GetVlanNetworkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVlanNetworkRequest.ProtoReflect.Descriptor instead.
 func (*GetVlanNetworkRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{22}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetVlanNetworkRequest) GetVlanNetworkId() string {
@@ -1836,7 +2586,7 @@ type GetVlanNetworkResponse struct {
 
 func (x *GetVlanNetworkResponse) Reset() {
 	*x = GetVlanNetworkResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[23]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1848,7 +2598,7 @@ func (x *GetVlanNetworkResponse) String() string {
 func (*GetVlanNetworkResponse) ProtoMessage() {}
 
 func (x *GetVlanNetworkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[23]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1861,7 +2611,7 @@ func (x *GetVlanNetworkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetVlanNetworkResponse.ProtoReflect.Descriptor instead.
 func (*GetVlanNetworkResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{23}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GetVlanNetworkResponse) GetResource() *PlatformResource {
@@ -1883,7 +2633,7 @@ type ListVlanNetworksRequest struct {
 
 func (x *ListVlanNetworksRequest) Reset() {
 	*x = ListVlanNetworksRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[24]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1895,7 +2645,7 @@ func (x *ListVlanNetworksRequest) String() string {
 func (*ListVlanNetworksRequest) ProtoMessage() {}
 
 func (x *ListVlanNetworksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[24]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1908,7 +2658,7 @@ func (x *ListVlanNetworksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListVlanNetworksRequest.ProtoReflect.Descriptor instead.
 func (*ListVlanNetworksRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{24}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ListVlanNetworksRequest) GetName() string {
@@ -1950,7 +2700,7 @@ type ListVlanNetworksResponse struct {
 
 func (x *ListVlanNetworksResponse) Reset() {
 	*x = ListVlanNetworksResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[25]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1962,7 +2712,7 @@ func (x *ListVlanNetworksResponse) String() string {
 func (*ListVlanNetworksResponse) ProtoMessage() {}
 
 func (x *ListVlanNetworksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[25]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1975,7 +2725,7 @@ func (x *ListVlanNetworksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListVlanNetworksResponse.ProtoReflect.Descriptor instead.
 func (*ListVlanNetworksResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{25}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ListVlanNetworksResponse) GetItems() []*PlatformResource {
@@ -2008,7 +2758,7 @@ type DeleteVlanNetworkRequest struct {
 
 func (x *DeleteVlanNetworkRequest) Reset() {
 	*x = DeleteVlanNetworkRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[26]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2020,7 +2770,7 @@ func (x *DeleteVlanNetworkRequest) String() string {
 func (*DeleteVlanNetworkRequest) ProtoMessage() {}
 
 func (x *DeleteVlanNetworkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[26]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2033,7 +2783,7 @@ func (x *DeleteVlanNetworkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteVlanNetworkRequest.ProtoReflect.Descriptor instead.
 func (*DeleteVlanNetworkRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{26}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *DeleteVlanNetworkRequest) GetVlanNetworkId() string {
@@ -2052,7 +2802,7 @@ type DeleteVlanNetworkResponse struct {
 
 func (x *DeleteVlanNetworkResponse) Reset() {
 	*x = DeleteVlanNetworkResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[27]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2064,7 +2814,7 @@ func (x *DeleteVlanNetworkResponse) String() string {
 func (*DeleteVlanNetworkResponse) ProtoMessage() {}
 
 func (x *DeleteVlanNetworkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[27]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2077,7 +2827,7 @@ func (x *DeleteVlanNetworkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteVlanNetworkResponse.ProtoReflect.Descriptor instead.
 func (*DeleteVlanNetworkResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{27}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *DeleteVlanNetworkResponse) GetResource() *PlatformResource {
@@ -2098,7 +2848,7 @@ type CreateEgressGatewayData struct {
 
 func (x *CreateEgressGatewayData) Reset() {
 	*x = CreateEgressGatewayData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[28]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2110,7 +2860,7 @@ func (x *CreateEgressGatewayData) String() string {
 func (*CreateEgressGatewayData) ProtoMessage() {}
 
 func (x *CreateEgressGatewayData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[28]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2123,7 +2873,7 @@ func (x *CreateEgressGatewayData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateEgressGatewayData.ProtoReflect.Descriptor instead.
 func (*CreateEgressGatewayData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{28}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *CreateEgressGatewayData) GetName() string {
@@ -2156,7 +2906,7 @@ type CreateEgressGatewayRequest struct {
 
 func (x *CreateEgressGatewayRequest) Reset() {
 	*x = CreateEgressGatewayRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[29]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2168,7 +2918,7 @@ func (x *CreateEgressGatewayRequest) String() string {
 func (*CreateEgressGatewayRequest) ProtoMessage() {}
 
 func (x *CreateEgressGatewayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[29]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2181,7 +2931,7 @@ func (x *CreateEgressGatewayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateEgressGatewayRequest.ProtoReflect.Descriptor instead.
 func (*CreateEgressGatewayRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{29}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *CreateEgressGatewayRequest) GetData() *CreateEgressGatewayData {
@@ -2200,7 +2950,7 @@ type CreateEgressGatewayResponse struct {
 
 func (x *CreateEgressGatewayResponse) Reset() {
 	*x = CreateEgressGatewayResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[30]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2212,7 +2962,7 @@ func (x *CreateEgressGatewayResponse) String() string {
 func (*CreateEgressGatewayResponse) ProtoMessage() {}
 
 func (x *CreateEgressGatewayResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[30]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2225,7 +2975,7 @@ func (x *CreateEgressGatewayResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateEgressGatewayResponse.ProtoReflect.Descriptor instead.
 func (*CreateEgressGatewayResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{30}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *CreateEgressGatewayResponse) GetResource() *PlatformResource {
@@ -2244,7 +2994,7 @@ type GetEgressGatewayRequest struct {
 
 func (x *GetEgressGatewayRequest) Reset() {
 	*x = GetEgressGatewayRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[31]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2256,7 +3006,7 @@ func (x *GetEgressGatewayRequest) String() string {
 func (*GetEgressGatewayRequest) ProtoMessage() {}
 
 func (x *GetEgressGatewayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[31]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2269,7 +3019,7 @@ func (x *GetEgressGatewayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEgressGatewayRequest.ProtoReflect.Descriptor instead.
 func (*GetEgressGatewayRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{31}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *GetEgressGatewayRequest) GetGatewayId() string {
@@ -2288,7 +3038,7 @@ type GetEgressGatewayResponse struct {
 
 func (x *GetEgressGatewayResponse) Reset() {
 	*x = GetEgressGatewayResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[32]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2300,7 +3050,7 @@ func (x *GetEgressGatewayResponse) String() string {
 func (*GetEgressGatewayResponse) ProtoMessage() {}
 
 func (x *GetEgressGatewayResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[32]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2313,7 +3063,7 @@ func (x *GetEgressGatewayResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetEgressGatewayResponse.ProtoReflect.Descriptor instead.
 func (*GetEgressGatewayResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{32}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *GetEgressGatewayResponse) GetResource() *PlatformResource {
@@ -2335,7 +3085,7 @@ type ListEgressGatewaysRequest struct {
 
 func (x *ListEgressGatewaysRequest) Reset() {
 	*x = ListEgressGatewaysRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[33]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2347,7 +3097,7 @@ func (x *ListEgressGatewaysRequest) String() string {
 func (*ListEgressGatewaysRequest) ProtoMessage() {}
 
 func (x *ListEgressGatewaysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[33]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2360,7 +3110,7 @@ func (x *ListEgressGatewaysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEgressGatewaysRequest.ProtoReflect.Descriptor instead.
 func (*ListEgressGatewaysRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{33}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ListEgressGatewaysRequest) GetName() string {
@@ -2402,7 +3152,7 @@ type ListEgressGatewaysResponse struct {
 
 func (x *ListEgressGatewaysResponse) Reset() {
 	*x = ListEgressGatewaysResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[34]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2414,7 +3164,7 @@ func (x *ListEgressGatewaysResponse) String() string {
 func (*ListEgressGatewaysResponse) ProtoMessage() {}
 
 func (x *ListEgressGatewaysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[34]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2427,7 +3177,7 @@ func (x *ListEgressGatewaysResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListEgressGatewaysResponse.ProtoReflect.Descriptor instead.
 func (*ListEgressGatewaysResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{34}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ListEgressGatewaysResponse) GetItems() []*PlatformResource {
@@ -2460,7 +3210,7 @@ type DeleteEgressGatewayRequest struct {
 
 func (x *DeleteEgressGatewayRequest) Reset() {
 	*x = DeleteEgressGatewayRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[35]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2472,7 +3222,7 @@ func (x *DeleteEgressGatewayRequest) String() string {
 func (*DeleteEgressGatewayRequest) ProtoMessage() {}
 
 func (x *DeleteEgressGatewayRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[35]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2485,7 +3235,7 @@ func (x *DeleteEgressGatewayRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEgressGatewayRequest.ProtoReflect.Descriptor instead.
 func (*DeleteEgressGatewayRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{35}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *DeleteEgressGatewayRequest) GetGatewayId() string {
@@ -2504,7 +3254,7 @@ type DeleteEgressGatewayResponse struct {
 
 func (x *DeleteEgressGatewayResponse) Reset() {
 	*x = DeleteEgressGatewayResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[36]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2516,7 +3266,7 @@ func (x *DeleteEgressGatewayResponse) String() string {
 func (*DeleteEgressGatewayResponse) ProtoMessage() {}
 
 func (x *DeleteEgressGatewayResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[36]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2529,7 +3279,7 @@ func (x *DeleteEgressGatewayResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteEgressGatewayResponse.ProtoReflect.Descriptor instead.
 func (*DeleteEgressGatewayResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{36}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *DeleteEgressGatewayResponse) GetResource() *PlatformResource {
@@ -2557,7 +3307,7 @@ type CreatePublicAddressPoolData struct {
 
 func (x *CreatePublicAddressPoolData) Reset() {
 	*x = CreatePublicAddressPoolData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[37]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2569,7 +3319,7 @@ func (x *CreatePublicAddressPoolData) String() string {
 func (*CreatePublicAddressPoolData) ProtoMessage() {}
 
 func (x *CreatePublicAddressPoolData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[37]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2582,7 +3332,7 @@ func (x *CreatePublicAddressPoolData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePublicAddressPoolData.ProtoReflect.Descriptor instead.
 func (*CreatePublicAddressPoolData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{37}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *CreatePublicAddressPoolData) GetName() string {
@@ -2664,7 +3414,7 @@ type CreatePublicAddressPoolRequest struct {
 
 func (x *CreatePublicAddressPoolRequest) Reset() {
 	*x = CreatePublicAddressPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[38]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2676,7 +3426,7 @@ func (x *CreatePublicAddressPoolRequest) String() string {
 func (*CreatePublicAddressPoolRequest) ProtoMessage() {}
 
 func (x *CreatePublicAddressPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[38]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2689,7 +3439,7 @@ func (x *CreatePublicAddressPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePublicAddressPoolRequest.ProtoReflect.Descriptor instead.
 func (*CreatePublicAddressPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{38}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *CreatePublicAddressPoolRequest) GetData() *CreatePublicAddressPoolData {
@@ -2708,7 +3458,7 @@ type CreatePublicAddressPoolResponse struct {
 
 func (x *CreatePublicAddressPoolResponse) Reset() {
 	*x = CreatePublicAddressPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[39]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2720,7 +3470,7 @@ func (x *CreatePublicAddressPoolResponse) String() string {
 func (*CreatePublicAddressPoolResponse) ProtoMessage() {}
 
 func (x *CreatePublicAddressPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[39]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2733,7 +3483,7 @@ func (x *CreatePublicAddressPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePublicAddressPoolResponse.ProtoReflect.Descriptor instead.
 func (*CreatePublicAddressPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{39}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *CreatePublicAddressPoolResponse) GetResource() *PlatformResource {
@@ -2752,7 +3502,7 @@ type GetPublicAddressPoolRequest struct {
 
 func (x *GetPublicAddressPoolRequest) Reset() {
 	*x = GetPublicAddressPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[40]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2764,7 +3514,7 @@ func (x *GetPublicAddressPoolRequest) String() string {
 func (*GetPublicAddressPoolRequest) ProtoMessage() {}
 
 func (x *GetPublicAddressPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[40]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2777,7 +3527,7 @@ func (x *GetPublicAddressPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPublicAddressPoolRequest.ProtoReflect.Descriptor instead.
 func (*GetPublicAddressPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{40}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *GetPublicAddressPoolRequest) GetPoolId() string {
@@ -2796,7 +3546,7 @@ type GetPublicAddressPoolResponse struct {
 
 func (x *GetPublicAddressPoolResponse) Reset() {
 	*x = GetPublicAddressPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[41]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2808,7 +3558,7 @@ func (x *GetPublicAddressPoolResponse) String() string {
 func (*GetPublicAddressPoolResponse) ProtoMessage() {}
 
 func (x *GetPublicAddressPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[41]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2821,7 +3571,7 @@ func (x *GetPublicAddressPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPublicAddressPoolResponse.ProtoReflect.Descriptor instead.
 func (*GetPublicAddressPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{41}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *GetPublicAddressPoolResponse) GetResource() *PlatformResource {
@@ -2843,7 +3593,7 @@ type ListPublicAddressPoolsRequest struct {
 
 func (x *ListPublicAddressPoolsRequest) Reset() {
 	*x = ListPublicAddressPoolsRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[42]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2855,7 +3605,7 @@ func (x *ListPublicAddressPoolsRequest) String() string {
 func (*ListPublicAddressPoolsRequest) ProtoMessage() {}
 
 func (x *ListPublicAddressPoolsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[42]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2868,7 +3618,7 @@ func (x *ListPublicAddressPoolsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPublicAddressPoolsRequest.ProtoReflect.Descriptor instead.
 func (*ListPublicAddressPoolsRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{42}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ListPublicAddressPoolsRequest) GetName() string {
@@ -2910,7 +3660,7 @@ type ListPublicAddressPoolsResponse struct {
 
 func (x *ListPublicAddressPoolsResponse) Reset() {
 	*x = ListPublicAddressPoolsResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[43]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2922,7 +3672,7 @@ func (x *ListPublicAddressPoolsResponse) String() string {
 func (*ListPublicAddressPoolsResponse) ProtoMessage() {}
 
 func (x *ListPublicAddressPoolsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[43]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2935,7 +3685,7 @@ func (x *ListPublicAddressPoolsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPublicAddressPoolsResponse.ProtoReflect.Descriptor instead.
 func (*ListPublicAddressPoolsResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{43}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *ListPublicAddressPoolsResponse) GetItems() []*PlatformResource {
@@ -2968,7 +3718,7 @@ type DeletePublicAddressPoolRequest struct {
 
 func (x *DeletePublicAddressPoolRequest) Reset() {
 	*x = DeletePublicAddressPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[44]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2980,7 +3730,7 @@ func (x *DeletePublicAddressPoolRequest) String() string {
 func (*DeletePublicAddressPoolRequest) ProtoMessage() {}
 
 func (x *DeletePublicAddressPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[44]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2993,7 +3743,7 @@ func (x *DeletePublicAddressPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePublicAddressPoolRequest.ProtoReflect.Descriptor instead.
 func (*DeletePublicAddressPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{44}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *DeletePublicAddressPoolRequest) GetPoolId() string {
@@ -3012,7 +3762,7 @@ type DeletePublicAddressPoolResponse struct {
 
 func (x *DeletePublicAddressPoolResponse) Reset() {
 	*x = DeletePublicAddressPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[45]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3024,7 +3774,7 @@ func (x *DeletePublicAddressPoolResponse) String() string {
 func (*DeletePublicAddressPoolResponse) ProtoMessage() {}
 
 func (x *DeletePublicAddressPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[45]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3037,7 +3787,7 @@ func (x *DeletePublicAddressPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePublicAddressPoolResponse.ProtoReflect.Descriptor instead.
 func (*DeletePublicAddressPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{45}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *DeletePublicAddressPoolResponse) GetResource() *PlatformResource {
@@ -3058,7 +3808,7 @@ type RecordPublicPoolVerificationData struct {
 
 func (x *RecordPublicPoolVerificationData) Reset() {
 	*x = RecordPublicPoolVerificationData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[46]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3070,7 +3820,7 @@ func (x *RecordPublicPoolVerificationData) String() string {
 func (*RecordPublicPoolVerificationData) ProtoMessage() {}
 
 func (x *RecordPublicPoolVerificationData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[46]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3083,7 +3833,7 @@ func (x *RecordPublicPoolVerificationData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RecordPublicPoolVerificationData.ProtoReflect.Descriptor instead.
 func (*RecordPublicPoolVerificationData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{46}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *RecordPublicPoolVerificationData) GetExpectedVersion() int64 {
@@ -3117,7 +3867,7 @@ type RecordPublicPoolVerificationRequest struct {
 
 func (x *RecordPublicPoolVerificationRequest) Reset() {
 	*x = RecordPublicPoolVerificationRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[47]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3129,7 +3879,7 @@ func (x *RecordPublicPoolVerificationRequest) String() string {
 func (*RecordPublicPoolVerificationRequest) ProtoMessage() {}
 
 func (x *RecordPublicPoolVerificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[47]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3142,7 +3892,7 @@ func (x *RecordPublicPoolVerificationRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use RecordPublicPoolVerificationRequest.ProtoReflect.Descriptor instead.
 func (*RecordPublicPoolVerificationRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{47}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *RecordPublicPoolVerificationRequest) GetPoolId() string {
@@ -3168,7 +3918,7 @@ type RecordPublicPoolVerificationResponse struct {
 
 func (x *RecordPublicPoolVerificationResponse) Reset() {
 	*x = RecordPublicPoolVerificationResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[48]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3180,7 +3930,7 @@ func (x *RecordPublicPoolVerificationResponse) String() string {
 func (*RecordPublicPoolVerificationResponse) ProtoMessage() {}
 
 func (x *RecordPublicPoolVerificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[48]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3193,7 +3943,7 @@ func (x *RecordPublicPoolVerificationResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use RecordPublicPoolVerificationResponse.ProtoReflect.Descriptor instead.
 func (*RecordPublicPoolVerificationResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{48}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *RecordPublicPoolVerificationResponse) GetResource() *PlatformResource {
@@ -3214,7 +3964,7 @@ type SetPublicPoolAllocationEnabledData struct {
 
 func (x *SetPublicPoolAllocationEnabledData) Reset() {
 	*x = SetPublicPoolAllocationEnabledData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[49]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3226,7 +3976,7 @@ func (x *SetPublicPoolAllocationEnabledData) String() string {
 func (*SetPublicPoolAllocationEnabledData) ProtoMessage() {}
 
 func (x *SetPublicPoolAllocationEnabledData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[49]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3239,7 +3989,7 @@ func (x *SetPublicPoolAllocationEnabledData) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use SetPublicPoolAllocationEnabledData.ProtoReflect.Descriptor instead.
 func (*SetPublicPoolAllocationEnabledData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{49}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *SetPublicPoolAllocationEnabledData) GetEnabled() bool {
@@ -3273,7 +4023,7 @@ type SetPublicPoolAllocationEnabledRequest struct {
 
 func (x *SetPublicPoolAllocationEnabledRequest) Reset() {
 	*x = SetPublicPoolAllocationEnabledRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[50]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3285,7 +4035,7 @@ func (x *SetPublicPoolAllocationEnabledRequest) String() string {
 func (*SetPublicPoolAllocationEnabledRequest) ProtoMessage() {}
 
 func (x *SetPublicPoolAllocationEnabledRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[50]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3298,7 +4048,7 @@ func (x *SetPublicPoolAllocationEnabledRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use SetPublicPoolAllocationEnabledRequest.ProtoReflect.Descriptor instead.
 func (*SetPublicPoolAllocationEnabledRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{50}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *SetPublicPoolAllocationEnabledRequest) GetPoolId() string {
@@ -3324,7 +4074,7 @@ type SetPublicPoolAllocationEnabledResponse struct {
 
 func (x *SetPublicPoolAllocationEnabledResponse) Reset() {
 	*x = SetPublicPoolAllocationEnabledResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[51]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3336,7 +4086,7 @@ func (x *SetPublicPoolAllocationEnabledResponse) String() string {
 func (*SetPublicPoolAllocationEnabledResponse) ProtoMessage() {}
 
 func (x *SetPublicPoolAllocationEnabledResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[51]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3349,7 +4099,7 @@ func (x *SetPublicPoolAllocationEnabledResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use SetPublicPoolAllocationEnabledResponse.ProtoReflect.Descriptor instead.
 func (*SetPublicPoolAllocationEnabledResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{51}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *SetPublicPoolAllocationEnabledResponse) GetResource() *PlatformResource {
@@ -3369,7 +4119,7 @@ type SetDefaultPublicPoolData struct {
 
 func (x *SetDefaultPublicPoolData) Reset() {
 	*x = SetDefaultPublicPoolData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[52]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3381,7 +4131,7 @@ func (x *SetDefaultPublicPoolData) String() string {
 func (*SetDefaultPublicPoolData) ProtoMessage() {}
 
 func (x *SetDefaultPublicPoolData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[52]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3394,7 +4144,7 @@ func (x *SetDefaultPublicPoolData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDefaultPublicPoolData.ProtoReflect.Descriptor instead.
 func (*SetDefaultPublicPoolData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{52}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *SetDefaultPublicPoolData) GetExpectedVersion() int64 {
@@ -3421,7 +4171,7 @@ type SetDefaultPublicPoolRequest struct {
 
 func (x *SetDefaultPublicPoolRequest) Reset() {
 	*x = SetDefaultPublicPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[53]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3433,7 +4183,7 @@ func (x *SetDefaultPublicPoolRequest) String() string {
 func (*SetDefaultPublicPoolRequest) ProtoMessage() {}
 
 func (x *SetDefaultPublicPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[53]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3446,7 +4196,7 @@ func (x *SetDefaultPublicPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDefaultPublicPoolRequest.ProtoReflect.Descriptor instead.
 func (*SetDefaultPublicPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{53}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *SetDefaultPublicPoolRequest) GetPoolId() string {
@@ -3472,7 +4222,7 @@ type SetDefaultPublicPoolResponse struct {
 
 func (x *SetDefaultPublicPoolResponse) Reset() {
 	*x = SetDefaultPublicPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[54]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3484,7 +4234,7 @@ func (x *SetDefaultPublicPoolResponse) String() string {
 func (*SetDefaultPublicPoolResponse) ProtoMessage() {}
 
 func (x *SetDefaultPublicPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[54]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3497,7 +4247,7 @@ func (x *SetDefaultPublicPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDefaultPublicPoolResponse.ProtoReflect.Descriptor instead.
 func (*SetDefaultPublicPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{54}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *SetDefaultPublicPoolResponse) GetResource() *PlatformResource {
@@ -3524,7 +4274,7 @@ type CreateIntranetAddressPoolData struct {
 
 func (x *CreateIntranetAddressPoolData) Reset() {
 	*x = CreateIntranetAddressPoolData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[55]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3536,7 +4286,7 @@ func (x *CreateIntranetAddressPoolData) String() string {
 func (*CreateIntranetAddressPoolData) ProtoMessage() {}
 
 func (x *CreateIntranetAddressPoolData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[55]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3549,7 +4299,7 @@ func (x *CreateIntranetAddressPoolData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateIntranetAddressPoolData.ProtoReflect.Descriptor instead.
 func (*CreateIntranetAddressPoolData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{55}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *CreateIntranetAddressPoolData) GetName() string {
@@ -3624,7 +4374,7 @@ type CreateIntranetAddressPoolRequest struct {
 
 func (x *CreateIntranetAddressPoolRequest) Reset() {
 	*x = CreateIntranetAddressPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[56]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3636,7 +4386,7 @@ func (x *CreateIntranetAddressPoolRequest) String() string {
 func (*CreateIntranetAddressPoolRequest) ProtoMessage() {}
 
 func (x *CreateIntranetAddressPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[56]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3649,7 +4399,7 @@ func (x *CreateIntranetAddressPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateIntranetAddressPoolRequest.ProtoReflect.Descriptor instead.
 func (*CreateIntranetAddressPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{56}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *CreateIntranetAddressPoolRequest) GetData() *CreateIntranetAddressPoolData {
@@ -3668,7 +4418,7 @@ type CreateIntranetAddressPoolResponse struct {
 
 func (x *CreateIntranetAddressPoolResponse) Reset() {
 	*x = CreateIntranetAddressPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[57]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3680,7 +4430,7 @@ func (x *CreateIntranetAddressPoolResponse) String() string {
 func (*CreateIntranetAddressPoolResponse) ProtoMessage() {}
 
 func (x *CreateIntranetAddressPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[57]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3693,7 +4443,7 @@ func (x *CreateIntranetAddressPoolResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use CreateIntranetAddressPoolResponse.ProtoReflect.Descriptor instead.
 func (*CreateIntranetAddressPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{57}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *CreateIntranetAddressPoolResponse) GetResource() *PlatformResource {
@@ -3712,7 +4462,7 @@ type GetIntranetAddressPoolRequest struct {
 
 func (x *GetIntranetAddressPoolRequest) Reset() {
 	*x = GetIntranetAddressPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[58]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3724,7 +4474,7 @@ func (x *GetIntranetAddressPoolRequest) String() string {
 func (*GetIntranetAddressPoolRequest) ProtoMessage() {}
 
 func (x *GetIntranetAddressPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[58]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3737,7 +4487,7 @@ func (x *GetIntranetAddressPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIntranetAddressPoolRequest.ProtoReflect.Descriptor instead.
 func (*GetIntranetAddressPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{58}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *GetIntranetAddressPoolRequest) GetPoolId() string {
@@ -3756,7 +4506,7 @@ type GetIntranetAddressPoolResponse struct {
 
 func (x *GetIntranetAddressPoolResponse) Reset() {
 	*x = GetIntranetAddressPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[59]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3768,7 +4518,7 @@ func (x *GetIntranetAddressPoolResponse) String() string {
 func (*GetIntranetAddressPoolResponse) ProtoMessage() {}
 
 func (x *GetIntranetAddressPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[59]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3781,7 +4531,7 @@ func (x *GetIntranetAddressPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetIntranetAddressPoolResponse.ProtoReflect.Descriptor instead.
 func (*GetIntranetAddressPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{59}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *GetIntranetAddressPoolResponse) GetResource() *PlatformResource {
@@ -3803,7 +4553,7 @@ type ListIntranetAddressPoolsRequest struct {
 
 func (x *ListIntranetAddressPoolsRequest) Reset() {
 	*x = ListIntranetAddressPoolsRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[60]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3815,7 +4565,7 @@ func (x *ListIntranetAddressPoolsRequest) String() string {
 func (*ListIntranetAddressPoolsRequest) ProtoMessage() {}
 
 func (x *ListIntranetAddressPoolsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[60]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3828,7 +4578,7 @@ func (x *ListIntranetAddressPoolsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIntranetAddressPoolsRequest.ProtoReflect.Descriptor instead.
 func (*ListIntranetAddressPoolsRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{60}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *ListIntranetAddressPoolsRequest) GetName() string {
@@ -3870,7 +4620,7 @@ type ListIntranetAddressPoolsResponse struct {
 
 func (x *ListIntranetAddressPoolsResponse) Reset() {
 	*x = ListIntranetAddressPoolsResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[61]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3882,7 +4632,7 @@ func (x *ListIntranetAddressPoolsResponse) String() string {
 func (*ListIntranetAddressPoolsResponse) ProtoMessage() {}
 
 func (x *ListIntranetAddressPoolsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[61]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3895,7 +4645,7 @@ func (x *ListIntranetAddressPoolsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListIntranetAddressPoolsResponse.ProtoReflect.Descriptor instead.
 func (*ListIntranetAddressPoolsResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{61}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *ListIntranetAddressPoolsResponse) GetItems() []*PlatformResource {
@@ -3928,7 +4678,7 @@ type DeleteIntranetAddressPoolRequest struct {
 
 func (x *DeleteIntranetAddressPoolRequest) Reset() {
 	*x = DeleteIntranetAddressPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[62]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3940,7 +4690,7 @@ func (x *DeleteIntranetAddressPoolRequest) String() string {
 func (*DeleteIntranetAddressPoolRequest) ProtoMessage() {}
 
 func (x *DeleteIntranetAddressPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[62]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3953,7 +4703,7 @@ func (x *DeleteIntranetAddressPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteIntranetAddressPoolRequest.ProtoReflect.Descriptor instead.
 func (*DeleteIntranetAddressPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{62}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *DeleteIntranetAddressPoolRequest) GetPoolId() string {
@@ -3972,7 +4722,7 @@ type DeleteIntranetAddressPoolResponse struct {
 
 func (x *DeleteIntranetAddressPoolResponse) Reset() {
 	*x = DeleteIntranetAddressPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[63]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3984,7 +4734,7 @@ func (x *DeleteIntranetAddressPoolResponse) String() string {
 func (*DeleteIntranetAddressPoolResponse) ProtoMessage() {}
 
 func (x *DeleteIntranetAddressPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[63]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3997,7 +4747,7 @@ func (x *DeleteIntranetAddressPoolResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use DeleteIntranetAddressPoolResponse.ProtoReflect.Descriptor instead.
 func (*DeleteIntranetAddressPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{63}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *DeleteIntranetAddressPoolResponse) GetResource() *PlatformResource {
@@ -4018,7 +4768,7 @@ type RecordIntranetPoolVerificationData struct {
 
 func (x *RecordIntranetPoolVerificationData) Reset() {
 	*x = RecordIntranetPoolVerificationData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[64]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4030,7 +4780,7 @@ func (x *RecordIntranetPoolVerificationData) String() string {
 func (*RecordIntranetPoolVerificationData) ProtoMessage() {}
 
 func (x *RecordIntranetPoolVerificationData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[64]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4043,7 +4793,7 @@ func (x *RecordIntranetPoolVerificationData) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use RecordIntranetPoolVerificationData.ProtoReflect.Descriptor instead.
 func (*RecordIntranetPoolVerificationData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{64}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *RecordIntranetPoolVerificationData) GetExpectedVersion() int64 {
@@ -4077,7 +4827,7 @@ type RecordIntranetPoolVerificationRequest struct {
 
 func (x *RecordIntranetPoolVerificationRequest) Reset() {
 	*x = RecordIntranetPoolVerificationRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[65]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4089,7 +4839,7 @@ func (x *RecordIntranetPoolVerificationRequest) String() string {
 func (*RecordIntranetPoolVerificationRequest) ProtoMessage() {}
 
 func (x *RecordIntranetPoolVerificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[65]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4102,7 +4852,7 @@ func (x *RecordIntranetPoolVerificationRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use RecordIntranetPoolVerificationRequest.ProtoReflect.Descriptor instead.
 func (*RecordIntranetPoolVerificationRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{65}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *RecordIntranetPoolVerificationRequest) GetPoolId() string {
@@ -4128,7 +4878,7 @@ type RecordIntranetPoolVerificationResponse struct {
 
 func (x *RecordIntranetPoolVerificationResponse) Reset() {
 	*x = RecordIntranetPoolVerificationResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[66]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4140,7 +4890,7 @@ func (x *RecordIntranetPoolVerificationResponse) String() string {
 func (*RecordIntranetPoolVerificationResponse) ProtoMessage() {}
 
 func (x *RecordIntranetPoolVerificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[66]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4153,7 +4903,7 @@ func (x *RecordIntranetPoolVerificationResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use RecordIntranetPoolVerificationResponse.ProtoReflect.Descriptor instead.
 func (*RecordIntranetPoolVerificationResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{66}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *RecordIntranetPoolVerificationResponse) GetResource() *PlatformResource {
@@ -4174,7 +4924,7 @@ type SetIntranetPoolAllocationEnabledData struct {
 
 func (x *SetIntranetPoolAllocationEnabledData) Reset() {
 	*x = SetIntranetPoolAllocationEnabledData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[67]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4186,7 +4936,7 @@ func (x *SetIntranetPoolAllocationEnabledData) String() string {
 func (*SetIntranetPoolAllocationEnabledData) ProtoMessage() {}
 
 func (x *SetIntranetPoolAllocationEnabledData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[67]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4199,7 +4949,7 @@ func (x *SetIntranetPoolAllocationEnabledData) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use SetIntranetPoolAllocationEnabledData.ProtoReflect.Descriptor instead.
 func (*SetIntranetPoolAllocationEnabledData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{67}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *SetIntranetPoolAllocationEnabledData) GetEnabled() bool {
@@ -4233,7 +4983,7 @@ type SetIntranetPoolAllocationEnabledRequest struct {
 
 func (x *SetIntranetPoolAllocationEnabledRequest) Reset() {
 	*x = SetIntranetPoolAllocationEnabledRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[68]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4245,7 +4995,7 @@ func (x *SetIntranetPoolAllocationEnabledRequest) String() string {
 func (*SetIntranetPoolAllocationEnabledRequest) ProtoMessage() {}
 
 func (x *SetIntranetPoolAllocationEnabledRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[68]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4258,7 +5008,7 @@ func (x *SetIntranetPoolAllocationEnabledRequest) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use SetIntranetPoolAllocationEnabledRequest.ProtoReflect.Descriptor instead.
 func (*SetIntranetPoolAllocationEnabledRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{68}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *SetIntranetPoolAllocationEnabledRequest) GetPoolId() string {
@@ -4284,7 +5034,7 @@ type SetIntranetPoolAllocationEnabledResponse struct {
 
 func (x *SetIntranetPoolAllocationEnabledResponse) Reset() {
 	*x = SetIntranetPoolAllocationEnabledResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[69]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4296,7 +5046,7 @@ func (x *SetIntranetPoolAllocationEnabledResponse) String() string {
 func (*SetIntranetPoolAllocationEnabledResponse) ProtoMessage() {}
 
 func (x *SetIntranetPoolAllocationEnabledResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[69]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4309,7 +5059,7 @@ func (x *SetIntranetPoolAllocationEnabledResponse) ProtoReflect() protoreflect.M
 
 // Deprecated: Use SetIntranetPoolAllocationEnabledResponse.ProtoReflect.Descriptor instead.
 func (*SetIntranetPoolAllocationEnabledResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{69}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *SetIntranetPoolAllocationEnabledResponse) GetResource() *PlatformResource {
@@ -4329,7 +5079,7 @@ type SetDefaultIntranetPoolData struct {
 
 func (x *SetDefaultIntranetPoolData) Reset() {
 	*x = SetDefaultIntranetPoolData{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[70]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4341,7 +5091,7 @@ func (x *SetDefaultIntranetPoolData) String() string {
 func (*SetDefaultIntranetPoolData) ProtoMessage() {}
 
 func (x *SetDefaultIntranetPoolData) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[70]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4354,7 +5104,7 @@ func (x *SetDefaultIntranetPoolData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDefaultIntranetPoolData.ProtoReflect.Descriptor instead.
 func (*SetDefaultIntranetPoolData) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{70}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *SetDefaultIntranetPoolData) GetExpectedVersion() int64 {
@@ -4381,7 +5131,7 @@ type SetDefaultIntranetPoolRequest struct {
 
 func (x *SetDefaultIntranetPoolRequest) Reset() {
 	*x = SetDefaultIntranetPoolRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[71]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4393,7 +5143,7 @@ func (x *SetDefaultIntranetPoolRequest) String() string {
 func (*SetDefaultIntranetPoolRequest) ProtoMessage() {}
 
 func (x *SetDefaultIntranetPoolRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[71]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4406,7 +5156,7 @@ func (x *SetDefaultIntranetPoolRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDefaultIntranetPoolRequest.ProtoReflect.Descriptor instead.
 func (*SetDefaultIntranetPoolRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{71}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *SetDefaultIntranetPoolRequest) GetPoolId() string {
@@ -4432,7 +5182,7 @@ type SetDefaultIntranetPoolResponse struct {
 
 func (x *SetDefaultIntranetPoolResponse) Reset() {
 	*x = SetDefaultIntranetPoolResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[72]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4444,7 +5194,7 @@ func (x *SetDefaultIntranetPoolResponse) String() string {
 func (*SetDefaultIntranetPoolResponse) ProtoMessage() {}
 
 func (x *SetDefaultIntranetPoolResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[72]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4457,7 +5207,7 @@ func (x *SetDefaultIntranetPoolResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SetDefaultIntranetPoolResponse.ProtoReflect.Descriptor instead.
 func (*SetDefaultIntranetPoolResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{72}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *SetDefaultIntranetPoolResponse) GetResource() *PlatformResource {
@@ -4475,7 +5225,7 @@ type GetPlatformNetworkCapabilitiesRequest struct {
 
 func (x *GetPlatformNetworkCapabilitiesRequest) Reset() {
 	*x = GetPlatformNetworkCapabilitiesRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[73]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4487,7 +5237,7 @@ func (x *GetPlatformNetworkCapabilitiesRequest) String() string {
 func (*GetPlatformNetworkCapabilitiesRequest) ProtoMessage() {}
 
 func (x *GetPlatformNetworkCapabilitiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[73]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4500,7 +5250,7 @@ func (x *GetPlatformNetworkCapabilitiesRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetPlatformNetworkCapabilitiesRequest.ProtoReflect.Descriptor instead.
 func (*GetPlatformNetworkCapabilitiesRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{73}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{84}
 }
 
 type GetPlatformNetworkCapabilitiesResponse struct {
@@ -4512,7 +5262,7 @@ type GetPlatformNetworkCapabilitiesResponse struct {
 
 func (x *GetPlatformNetworkCapabilitiesResponse) Reset() {
 	*x = GetPlatformNetworkCapabilitiesResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[74]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4524,7 +5274,7 @@ func (x *GetPlatformNetworkCapabilitiesResponse) String() string {
 func (*GetPlatformNetworkCapabilitiesResponse) ProtoMessage() {}
 
 func (x *GetPlatformNetworkCapabilitiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[74]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4537,7 +5287,7 @@ func (x *GetPlatformNetworkCapabilitiesResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetPlatformNetworkCapabilitiesResponse.ProtoReflect.Descriptor instead.
 func (*GetPlatformNetworkCapabilitiesResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{74}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *GetPlatformNetworkCapabilitiesResponse) GetCapabilities() *PlatformNetworkCapabilities {
@@ -4556,7 +5306,7 @@ type GetPlatformOperationRequest struct {
 
 func (x *GetPlatformOperationRequest) Reset() {
 	*x = GetPlatformOperationRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[75]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4568,7 +5318,7 @@ func (x *GetPlatformOperationRequest) String() string {
 func (*GetPlatformOperationRequest) ProtoMessage() {}
 
 func (x *GetPlatformOperationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[75]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4581,7 +5331,7 @@ func (x *GetPlatformOperationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlatformOperationRequest.ProtoReflect.Descriptor instead.
 func (*GetPlatformOperationRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{75}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *GetPlatformOperationRequest) GetOperationId() string {
@@ -4600,7 +5350,7 @@ type GetPlatformOperationResponse struct {
 
 func (x *GetPlatformOperationResponse) Reset() {
 	*x = GetPlatformOperationResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[76]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4612,7 +5362,7 @@ func (x *GetPlatformOperationResponse) String() string {
 func (*GetPlatformOperationResponse) ProtoMessage() {}
 
 func (x *GetPlatformOperationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[76]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4625,12 +5375,966 @@ func (x *GetPlatformOperationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPlatformOperationResponse.ProtoReflect.Descriptor instead.
 func (*GetPlatformOperationResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{76}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *GetPlatformOperationResponse) GetOperation() *PlatformOperation {
 	if x != nil {
 		return x.Operation
+	}
+	return nil
+}
+
+// A restricted legacy registration closure has a durable fence and keeps history.
+type DeviceRetirement struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	DeviceId        string                 `protobuf:"bytes,1,opt,name=device_id,proto3" json:"device_id,omitempty"`
+	OperationId     string                 `protobuf:"bytes,2,opt,name=operation_id,proto3" json:"operation_id,omitempty"`
+	State           string                 `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
+	Reason          string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	Version         int64                  `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	ExpectedVersion int64                  `protobuf:"varint,6,opt,name=expected_version,proto3" json:"expected_version,omitempty"`
+	ConfigUid       string                 `protobuf:"bytes,7,opt,name=config_uid,proto3" json:"config_uid,omitempty"`
+	FenceVersion    int64                  `protobuf:"varint,8,opt,name=fence_version,proto3" json:"fence_version,omitempty"`
+	PendingUnknown  bool                   `protobuf:"varint,9,opt,name=pending_unknown,proto3" json:"pending_unknown,omitempty"`
+	CreatedAt       *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	UpdatedAt       *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	CompletedAt     *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=completed_at,proto3" json:"completed_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DeviceRetirement) Reset() {
+	*x = DeviceRetirement{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[88]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeviceRetirement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeviceRetirement) ProtoMessage() {}
+
+func (x *DeviceRetirement) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[88]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeviceRetirement.ProtoReflect.Descriptor instead.
+func (*DeviceRetirement) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{88}
+}
+
+func (x *DeviceRetirement) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+func (x *DeviceRetirement) GetOperationId() string {
+	if x != nil {
+		return x.OperationId
+	}
+	return ""
+}
+
+func (x *DeviceRetirement) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *DeviceRetirement) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *DeviceRetirement) GetVersion() int64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *DeviceRetirement) GetExpectedVersion() int64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+func (x *DeviceRetirement) GetConfigUid() string {
+	if x != nil {
+		return x.ConfigUid
+	}
+	return ""
+}
+
+func (x *DeviceRetirement) GetFenceVersion() int64 {
+	if x != nil {
+		return x.FenceVersion
+	}
+	return 0
+}
+
+func (x *DeviceRetirement) GetPendingUnknown() bool {
+	if x != nil {
+		return x.PendingUnknown
+	}
+	return false
+}
+
+func (x *DeviceRetirement) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *DeviceRetirement) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *DeviceRetirement) GetCompletedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return nil
+}
+
+type RetireNetworkDeviceData struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ExpectedVersion int64                  `protobuf:"varint,1,opt,name=expected_version,proto3" json:"expected_version,omitempty"`
+	IdempotencyKey  string                 `protobuf:"bytes,2,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *RetireNetworkDeviceData) Reset() {
+	*x = RetireNetworkDeviceData{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[89]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetireNetworkDeviceData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetireNetworkDeviceData) ProtoMessage() {}
+
+func (x *RetireNetworkDeviceData) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[89]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetireNetworkDeviceData.ProtoReflect.Descriptor instead.
+func (*RetireNetworkDeviceData) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{89}
+}
+
+func (x *RetireNetworkDeviceData) GetExpectedVersion() int64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+func (x *RetireNetworkDeviceData) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+type RetireNetworkDeviceRequest struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	DeviceId      string                   `protobuf:"bytes,1,opt,name=device_id,proto3" json:"device_id,omitempty"`
+	Data          *RetireNetworkDeviceData `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetireNetworkDeviceRequest) Reset() {
+	*x = RetireNetworkDeviceRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[90]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetireNetworkDeviceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetireNetworkDeviceRequest) ProtoMessage() {}
+
+func (x *RetireNetworkDeviceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[90]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetireNetworkDeviceRequest.ProtoReflect.Descriptor instead.
+func (*RetireNetworkDeviceRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{90}
+}
+
+func (x *RetireNetworkDeviceRequest) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+func (x *RetireNetworkDeviceRequest) GetData() *RetireNetworkDeviceData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type RetireNetworkDeviceResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Retirement    *DeviceRetirement      `protobuf:"bytes,1,opt,name=retirement,proto3" json:"retirement,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetireNetworkDeviceResponse) Reset() {
+	*x = RetireNetworkDeviceResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[91]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetireNetworkDeviceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetireNetworkDeviceResponse) ProtoMessage() {}
+
+func (x *RetireNetworkDeviceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[91]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetireNetworkDeviceResponse.ProtoReflect.Descriptor instead.
+func (*RetireNetworkDeviceResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{91}
+}
+
+func (x *RetireNetworkDeviceResponse) GetRetirement() *DeviceRetirement {
+	if x != nil {
+		return x.Retirement
+	}
+	return nil
+}
+
+type GetNetworkDeviceRetirementRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DeviceId      string                 `protobuf:"bytes,1,opt,name=device_id,proto3" json:"device_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetNetworkDeviceRetirementRequest) Reset() {
+	*x = GetNetworkDeviceRetirementRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[92]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNetworkDeviceRetirementRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNetworkDeviceRetirementRequest) ProtoMessage() {}
+
+func (x *GetNetworkDeviceRetirementRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[92]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNetworkDeviceRetirementRequest.ProtoReflect.Descriptor instead.
+func (*GetNetworkDeviceRetirementRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{92}
+}
+
+func (x *GetNetworkDeviceRetirementRequest) GetDeviceId() string {
+	if x != nil {
+		return x.DeviceId
+	}
+	return ""
+}
+
+type GetNetworkDeviceRetirementResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Retirement    *DeviceRetirement      `protobuf:"bytes,1,opt,name=retirement,proto3" json:"retirement,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetNetworkDeviceRetirementResponse) Reset() {
+	*x = GetNetworkDeviceRetirementResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[93]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNetworkDeviceRetirementResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNetworkDeviceRetirementResponse) ProtoMessage() {}
+
+func (x *GetNetworkDeviceRetirementResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[93]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNetworkDeviceRetirementResponse.ProtoReflect.Descriptor instead.
+func (*GetNetworkDeviceRetirementResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{93}
+}
+
+func (x *GetNetworkDeviceRetirementResponse) GetRetirement() *DeviceRetirement {
+	if x != nil {
+		return x.Retirement
+	}
+	return nil
+}
+
+// The system VPC identity is output-only and fixed by Resource configuration.
+type DefaultVPCEgress struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	PoolId              string                 `protobuf:"bytes,3,opt,name=pool_id,proto3" json:"pool_id,omitempty"`
+	State               string                 `protobuf:"bytes,4,opt,name=state,proto3" json:"state,omitempty"`
+	Reason              string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	Version             int64                  `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`
+	LastOperationId     string                 `protobuf:"bytes,7,opt,name=last_operation_id,proto3" json:"last_operation_id,omitempty"`
+	OperationState      string                 `protobuf:"bytes,8,opt,name=operation_state,proto3" json:"operation_state,omitempty"`
+	Phase               string                 `protobuf:"bytes,9,opt,name=phase,proto3" json:"phase,omitempty"`
+	PendingUnknown      bool                   `protobuf:"varint,10,opt,name=pending_unknown,proto3" json:"pending_unknown,omitempty"`
+	Address             string                 `protobuf:"bytes,11,opt,name=address,proto3" json:"address,omitempty"`
+	EipProviderName     string                 `protobuf:"bytes,12,opt,name=eip_provider_name,proto3" json:"eip_provider_name,omitempty"`
+	EipProviderUid      string                 `protobuf:"bytes,13,opt,name=eip_provider_uid,proto3" json:"eip_provider_uid,omitempty"`
+	SnatProviderName    string                 `protobuf:"bytes,14,opt,name=snat_provider_name,proto3" json:"snat_provider_name,omitempty"`
+	SnatProviderUid     string                 `protobuf:"bytes,15,opt,name=snat_provider_uid,proto3" json:"snat_provider_uid,omitempty"`
+	DesiredEnabled      bool                   `protobuf:"varint,16,opt,name=desired_enabled,proto3" json:"desired_enabled,omitempty"`
+	AppliedEnabled      *bool                  `protobuf:"varint,17,opt,name=applied_enabled,proto3,oneof" json:"applied_enabled,omitempty"`
+	ClusterId           string                 `protobuf:"bytes,18,opt,name=cluster_id,proto3" json:"cluster_id,omitempty"`
+	ClusterUid          string                 `protobuf:"bytes,19,opt,name=cluster_uid,proto3" json:"cluster_uid,omitempty"`
+	DefaultVpcNamespace string                 `protobuf:"bytes,20,opt,name=default_vpc_namespace,proto3" json:"default_vpc_namespace,omitempty"`
+	DefaultVpcName      string                 `protobuf:"bytes,21,opt,name=default_vpc_name,proto3" json:"default_vpc_name,omitempty"`
+	DefaultVpcUid       string                 `protobuf:"bytes,22,opt,name=default_vpc_uid,proto3" json:"default_vpc_uid,omitempty"`
+	CreatedAt           *timestamppb.Timestamp `protobuf:"bytes,23,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	UpdatedAt           *timestamppb.Timestamp `protobuf:"bytes,24,opt,name=updated_at,proto3" json:"updated_at,omitempty"`
+	ObservedAt          *timestamppb.Timestamp `protobuf:"bytes,25,opt,name=observed_at,proto3" json:"observed_at,omitempty"`
+	TargetGeneration    int64                  `protobuf:"varint,26,opt,name=target_generation,proto3" json:"target_generation,omitempty"`
+	PendingAction       string                 `protobuf:"bytes,27,opt,name=pending_action,proto3" json:"pending_action,omitempty"`
+	ObservationStale    bool                   `protobuf:"varint,28,opt,name=observation_stale,proto3" json:"observation_stale,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *DefaultVPCEgress) Reset() {
+	*x = DefaultVPCEgress{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[94]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DefaultVPCEgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DefaultVPCEgress) ProtoMessage() {}
+
+func (x *DefaultVPCEgress) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[94]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DefaultVPCEgress.ProtoReflect.Descriptor instead.
+func (*DefaultVPCEgress) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{94}
+}
+
+func (x *DefaultVPCEgress) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetPoolId() string {
+	if x != nil {
+		return x.PoolId
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetVersion() int64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *DefaultVPCEgress) GetLastOperationId() string {
+	if x != nil {
+		return x.LastOperationId
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetOperationState() string {
+	if x != nil {
+		return x.OperationState
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetPhase() string {
+	if x != nil {
+		return x.Phase
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetPendingUnknown() bool {
+	if x != nil {
+		return x.PendingUnknown
+	}
+	return false
+}
+
+func (x *DefaultVPCEgress) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetEipProviderName() string {
+	if x != nil {
+		return x.EipProviderName
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetEipProviderUid() string {
+	if x != nil {
+		return x.EipProviderUid
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetSnatProviderName() string {
+	if x != nil {
+		return x.SnatProviderName
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetSnatProviderUid() string {
+	if x != nil {
+		return x.SnatProviderUid
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetDesiredEnabled() bool {
+	if x != nil {
+		return x.DesiredEnabled
+	}
+	return false
+}
+
+func (x *DefaultVPCEgress) GetAppliedEnabled() bool {
+	if x != nil && x.AppliedEnabled != nil {
+		return *x.AppliedEnabled
+	}
+	return false
+}
+
+func (x *DefaultVPCEgress) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetClusterUid() string {
+	if x != nil {
+		return x.ClusterUid
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetDefaultVpcNamespace() string {
+	if x != nil {
+		return x.DefaultVpcNamespace
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetDefaultVpcName() string {
+	if x != nil {
+		return x.DefaultVpcName
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetDefaultVpcUid() string {
+	if x != nil {
+		return x.DefaultVpcUid
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *DefaultVPCEgress) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return nil
+}
+
+func (x *DefaultVPCEgress) GetObservedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ObservedAt
+	}
+	return nil
+}
+
+func (x *DefaultVPCEgress) GetTargetGeneration() int64 {
+	if x != nil {
+		return x.TargetGeneration
+	}
+	return 0
+}
+
+func (x *DefaultVPCEgress) GetPendingAction() string {
+	if x != nil {
+		return x.PendingAction
+	}
+	return ""
+}
+
+func (x *DefaultVPCEgress) GetObservationStale() bool {
+	if x != nil {
+		return x.ObservationStale
+	}
+	return false
+}
+
+type CreateDefaultVPCEgressData struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	PoolId         string                 `protobuf:"bytes,2,opt,name=pool_id,proto3" json:"pool_id,omitempty"`
+	IdempotencyKey string                 `protobuf:"bytes,3,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateDefaultVPCEgressData) Reset() {
+	*x = CreateDefaultVPCEgressData{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[95]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateDefaultVPCEgressData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateDefaultVPCEgressData) ProtoMessage() {}
+
+func (x *CreateDefaultVPCEgressData) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[95]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateDefaultVPCEgressData.ProtoReflect.Descriptor instead.
+func (*CreateDefaultVPCEgressData) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{95}
+}
+
+func (x *CreateDefaultVPCEgressData) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateDefaultVPCEgressData) GetPoolId() string {
+	if x != nil {
+		return x.PoolId
+	}
+	return ""
+}
+
+func (x *CreateDefaultVPCEgressData) GetIdempotencyKey() string {
+	if x != nil {
+		return x.IdempotencyKey
+	}
+	return ""
+}
+
+type CreateDefaultVPCEgressRequest struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Data          *CreateDefaultVPCEgressData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateDefaultVPCEgressRequest) Reset() {
+	*x = CreateDefaultVPCEgressRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[96]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateDefaultVPCEgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateDefaultVPCEgressRequest) ProtoMessage() {}
+
+func (x *CreateDefaultVPCEgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[96]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateDefaultVPCEgressRequest.ProtoReflect.Descriptor instead.
+func (*CreateDefaultVPCEgressRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{96}
+}
+
+func (x *CreateDefaultVPCEgressRequest) GetData() *CreateDefaultVPCEgressData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type CreateDefaultVPCEgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Egress        *DefaultVPCEgress      `protobuf:"bytes,1,opt,name=egress,proto3" json:"egress,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateDefaultVPCEgressResponse) Reset() {
+	*x = CreateDefaultVPCEgressResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[97]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateDefaultVPCEgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateDefaultVPCEgressResponse) ProtoMessage() {}
+
+func (x *CreateDefaultVPCEgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[97]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateDefaultVPCEgressResponse.ProtoReflect.Descriptor instead.
+func (*CreateDefaultVPCEgressResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{97}
+}
+
+func (x *CreateDefaultVPCEgressResponse) GetEgress() *DefaultVPCEgress {
+	if x != nil {
+		return x.Egress
+	}
+	return nil
+}
+
+type GetDefaultVPCEgressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EgressId      string                 `protobuf:"bytes,1,opt,name=egress_id,proto3" json:"egress_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDefaultVPCEgressRequest) Reset() {
+	*x = GetDefaultVPCEgressRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[98]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDefaultVPCEgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDefaultVPCEgressRequest) ProtoMessage() {}
+
+func (x *GetDefaultVPCEgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[98]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDefaultVPCEgressRequest.ProtoReflect.Descriptor instead.
+func (*GetDefaultVPCEgressRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{98}
+}
+
+func (x *GetDefaultVPCEgressRequest) GetEgressId() string {
+	if x != nil {
+		return x.EgressId
+	}
+	return ""
+}
+
+type GetDefaultVPCEgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Egress        *DefaultVPCEgress      `protobuf:"bytes,1,opt,name=egress,proto3" json:"egress,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDefaultVPCEgressResponse) Reset() {
+	*x = GetDefaultVPCEgressResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[99]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDefaultVPCEgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDefaultVPCEgressResponse) ProtoMessage() {}
+
+func (x *GetDefaultVPCEgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[99]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDefaultVPCEgressResponse.ProtoReflect.Descriptor instead.
+func (*GetDefaultVPCEgressResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{99}
+}
+
+func (x *GetDefaultVPCEgressResponse) GetEgress() *DefaultVPCEgress {
+	if x != nil {
+		return x.Egress
+	}
+	return nil
+}
+
+type DeleteDefaultVPCEgressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EgressId      string                 `protobuf:"bytes,1,opt,name=egress_id,proto3" json:"egress_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteDefaultVPCEgressRequest) Reset() {
+	*x = DeleteDefaultVPCEgressRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[100]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteDefaultVPCEgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteDefaultVPCEgressRequest) ProtoMessage() {}
+
+func (x *DeleteDefaultVPCEgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[100]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteDefaultVPCEgressRequest.ProtoReflect.Descriptor instead.
+func (*DeleteDefaultVPCEgressRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{100}
+}
+
+func (x *DeleteDefaultVPCEgressRequest) GetEgressId() string {
+	if x != nil {
+		return x.EgressId
+	}
+	return ""
+}
+
+type DeleteDefaultVPCEgressResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Egress        *DefaultVPCEgress      `protobuf:"bytes,1,opt,name=egress,proto3" json:"egress,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteDefaultVPCEgressResponse) Reset() {
+	*x = DeleteDefaultVPCEgressResponse{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[101]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteDefaultVPCEgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteDefaultVPCEgressResponse) ProtoMessage() {}
+
+func (x *DeleteDefaultVPCEgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[101]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteDefaultVPCEgressResponse.ProtoReflect.Descriptor instead.
+func (*DeleteDefaultVPCEgressResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{101}
+}
+
+func (x *DeleteDefaultVPCEgressResponse) GetEgress() *DefaultVPCEgress {
+	if x != nil {
+		return x.Egress
 	}
 	return nil
 }
@@ -4665,7 +6369,65 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"\x04vlan\x18\x0f \x01(\v2\x1f.catalog.service.v1.VlanNetworkR\x04vlan\x12;\n" +
 	"\agateway\x18\x10 \x01(\v2!.catalog.service.v1.EgressGatewayR\agateway\x129\n" +
 	"\x04pool\x18\x11 \x01(\v2%.catalog.service.v1.PublicAddressPoolR\x04pool\x12M\n" +
-	"\rintranet_pool\x18\x12 \x01(\v2'.catalog.service.v1.IntranetAddressPoolR\rintranet_pool\"\xc3\x04\n" +
+	"\rintranet_pool\x18\x12 \x01(\v2'.catalog.service.v1.IntranetAddressPoolR\rintranet_pool\"\xce\x04\n" +
+	"\rVirtualSwitch\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05state\x18\x03 \x01(\tR\x05state\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\x12&\n" +
+	"\x0ereason_message\x18\x05 \x01(\tR\x0ereason_message\x12\x18\n" +
+	"\aversion\x18\x06 \x01(\x03R\aversion\x12:\n" +
+	"\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12:\n" +
+	"\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updated_at\x12,\n" +
+	"\x11last_operation_id\x18\t \x01(\tR\x11last_operation_id\x12\x1e\n" +
+	"\n" +
+	"cluster_id\x18\n" +
+	" \x01(\tR\n" +
+	"cluster_id\x12\x1e\n" +
+	"\n" +
+	"group_name\x18\v \x01(\tR\n" +
+	"group_name\x12$\n" +
+	"\rbinding_state\x18\f \x01(\tR\rbinding_state\x12(\n" +
+	"\x0fbinding_version\x18\r \x01(\x03R\x0fbinding_version\x126\n" +
+	"\x16membership_fingerprint\x18\x0e \x01(\tR\x16membership_fingerprint\x12;\n" +
+	"\x05nodes\x18\x0f \x03(\v2%.catalog.service.v1.VirtualSwitchNodeR\x05nodes\"\xa9\x01\n" +
+	"\x11VirtualSwitchNode\x12\x1c\n" +
+	"\tnode_name\x18\x01 \x01(\tR\tnode_name\x12\x1a\n" +
+	"\bnode_uid\x18\x02 \x01(\tR\bnode_uid\x12\x10\n" +
+	"\x03mac\x18\x03 \x01(\tR\x03mac\x12\x1a\n" +
+	"\bpriority\x18\x04 \x01(\x05R\bpriority\x12\x14\n" +
+	"\x05state\x18\x05 \x01(\tR\x05state\x12\x16\n" +
+	"\x06reason\x18\x06 \x01(\tR\x06reason\"W\n" +
+	"\x17CreateVirtualSwitchData\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12(\n" +
+	"\x0fidempotency_key\x18\x02 \x01(\tR\x0fidempotency_key\"]\n" +
+	"\x1aCreateVirtualSwitchRequest\x12?\n" +
+	"\x04data\x18\x01 \x01(\v2+.catalog.service.v1.CreateVirtualSwitchDataR\x04data\"\\\n" +
+	"\x1bCreateVirtualSwitchResponse\x12=\n" +
+	"\bresource\x18\x01 \x01(\v2!.catalog.service.v1.VirtualSwitchR\bresource\"G\n" +
+	"\x17GetVirtualSwitchRequest\x12,\n" +
+	"\x11virtual_switch_id\x18\x01 \x01(\tR\x11virtual_switch_id\"Y\n" +
+	"\x18GetVirtualSwitchResponse\x12=\n" +
+	"\bresource\x18\x01 \x01(\v2!.catalog.service.v1.VirtualSwitchR\bresource\"\x98\x01\n" +
+	"\x1aListVirtualSwitchesRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\x12\x17\n" +
+	"\x04page\x18\x03 \x01(\x05H\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x04 \x01(\x05H\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_size\"l\n" +
+	"\x1bListVirtualSwitchesResponse\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.catalog.service.v1.VirtualSwitchR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"J\n" +
+	"\x1aDeleteVirtualSwitchRequest\x12,\n" +
+	"\x11virtual_switch_id\x18\x01 \x01(\tR\x11virtual_switch_id\"\\\n" +
+	"\x1bDeleteVirtualSwitchResponse\x12=\n" +
+	"\bresource\x18\x01 \x01(\v2!.catalog.service.v1.VirtualSwitchR\bresource\"\xc3\x04\n" +
 	"\rNodeInterface\x12\x1c\n" +
 	"\tnode_name\x18\x01 \x01(\tR\tnode_name\x12\x1a\n" +
 	"\bnode_uid\x18\x02 \x01(\tR\bnode_uid\x12\x12\n" +
@@ -4695,10 +6457,16 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"\rNetworkDevice\x12 \n" +
 	"\vdevice_name\x18\x01 \x01(\tR\vdevice_name\x124\n" +
 	"\x15inventory_fingerprint\x18\x02 \x01(\tR\x15inventory_fingerprint\x127\n" +
-	"\x05nodes\x18\x03 \x03(\v2!.catalog.service.v1.NodeInterfaceR\x05nodes\"E\n" +
+	"\x05nodes\x18\x03 \x03(\v2!.catalog.service.v1.NodeInterfaceR\x05nodes\"\xf2\x01\n" +
 	"\vVlanNetwork\x12\x1c\n" +
 	"\tdevice_id\x18\x01 \x01(\tR\tdevice_id\x12\x18\n" +
-	"\avlan_id\x18\x02 \x01(\x05R\avlan_id\"\x0f\n" +
+	"\avlan_id\x18\x02 \x01(\x05R\avlan_id\x12,\n" +
+	"\x11virtual_switch_id\x18\x03 \x01(\tR\x11virtual_switch_id\x12 \n" +
+	"\vdevice_name\x18\x04 \x01(\tR\vdevice_name\x12\x1e\n" +
+	"\n" +
+	"group_name\x18\x05 \x01(\tR\n" +
+	"group_name\x12;\n" +
+	"\x05nodes\x18\x06 \x03(\v2%.catalog.service.v1.VirtualSwitchNodeR\x05nodes\"\x0f\n" +
 	"\rEgressGateway\"\xd3\x04\n" +
 	"\x11PublicAddressPool\x12\x12\n" +
 	"\x04mode\x18\x01 \x01(\tR\x04mode\x12\x1e\n" +
@@ -4784,9 +6552,13 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"updated_at\x12>\n" +
 	"\fcompleted_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\fcompleted_at\x12D\n" +
 	"\x0fnext_attempt_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\x0fnext_attempt_at\"9\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\x0fnext_attempt_at\"\x87\x01\n" +
 	"\x19ListNodeInterfacesRequest\x12\x1c\n" +
-	"\tnode_name\x18\x01 \x01(\tR\tnode_name\"\xa1\x01\n" +
+	"\tnode_name\x18\x01 \x01(\tR\tnode_name\x12\x1e\n" +
+	"\n" +
+	"cluster_id\x18\x02 \x01(\tR\n" +
+	"cluster_id\x12,\n" +
+	"\x11virtual_switch_id\x18\x03 \x01(\tR\x11virtual_switch_id\"\xa1\x01\n" +
 	"\x1aListNodeInterfacesResponse\x127\n" +
 	"\x05items\x18\x01 \x03(\v2!.catalog.service.v1.NodeInterfaceR\x05items\x124\n" +
 	"\x15inventory_fingerprint\x18\x02 \x01(\tR\x15inventory_fingerprint\x12\x14\n" +
@@ -4803,13 +6575,18 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"\x17GetNetworkDeviceRequest\x12\x1c\n" +
 	"\tdevice_id\x18\x01 \x01(\tR\tdevice_id\"\\\n" +
 	"\x18GetNetworkDeviceResponse\x12@\n" +
-	"\bresource\x18\x01 \x01(\v2$.catalog.service.v1.PlatformResourceR\bresource\"\xaf\x01\n" +
+	"\bresource\x18\x01 \x01(\v2$.catalog.service.v1.PlatformResourceR\bresource\"\x9f\x02\n" +
 	"\x15CreateVlanNetworkData\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1c\n" +
 	"\tdevice_id\x18\x03 \x01(\tR\tdevice_id\x12\x18\n" +
 	"\avlan_id\x18\x04 \x01(\x05R\avlan_id\x12(\n" +
-	"\x0fidempotency_key\x18\x05 \x01(\tR\x0fidempotency_key\"Y\n" +
+	"\x0fidempotency_key\x18\x05 \x01(\tR\x0fidempotency_key\x12\x1e\n" +
+	"\n" +
+	"cluster_id\x18\x06 \x01(\tR\n" +
+	"cluster_id\x12,\n" +
+	"\x11virtual_switch_id\x18\a \x01(\tR\x11virtual_switch_id\x12 \n" +
+	"\vdevice_name\x18\b \x01(\tR\vdevice_name\"Y\n" +
 	"\x18CreateVlanNetworkRequest\x12=\n" +
 	"\x04data\x18\x01 \x01(\v2).catalog.service.v1.CreateVlanNetworkDataR\x04data\"]\n" +
 	"\x19CreateVlanNetworkResponse\x12@\n" +
@@ -4984,7 +6761,96 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"\x1bGetPlatformOperationRequest\x12\"\n" +
 	"\foperation_id\x18\x01 \x01(\tR\foperation_id\"c\n" +
 	"\x1cGetPlatformOperationResponse\x12C\n" +
-	"\toperation\x18\x01 \x01(\v2%.catalog.service.v1.PlatformOperationR\toperationB\xcf\x01\n" +
+	"\toperation\x18\x01 \x01(\v2%.catalog.service.v1.PlatformOperationR\toperation\"\xf0\x03\n" +
+	"\x10DeviceRetirement\x12\x1c\n" +
+	"\tdevice_id\x18\x01 \x01(\tR\tdevice_id\x12\"\n" +
+	"\foperation_id\x18\x02 \x01(\tR\foperation_id\x12\x14\n" +
+	"\x05state\x18\x03 \x01(\tR\x05state\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\x12\x18\n" +
+	"\aversion\x18\x05 \x01(\x03R\aversion\x12*\n" +
+	"\x10expected_version\x18\x06 \x01(\x03R\x10expected_version\x12\x1e\n" +
+	"\n" +
+	"config_uid\x18\a \x01(\tR\n" +
+	"config_uid\x12$\n" +
+	"\rfence_version\x18\b \x01(\x03R\rfence_version\x12(\n" +
+	"\x0fpending_unknown\x18\t \x01(\bR\x0fpending_unknown\x12:\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12:\n" +
+	"\n" +
+	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updated_at\x12>\n" +
+	"\fcompleted_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\fcompleted_at\"o\n" +
+	"\x17RetireNetworkDeviceData\x12*\n" +
+	"\x10expected_version\x18\x01 \x01(\x03R\x10expected_version\x12(\n" +
+	"\x0fidempotency_key\x18\x02 \x01(\tR\x0fidempotency_key\"{\n" +
+	"\x1aRetireNetworkDeviceRequest\x12\x1c\n" +
+	"\tdevice_id\x18\x01 \x01(\tR\tdevice_id\x12?\n" +
+	"\x04data\x18\x02 \x01(\v2+.catalog.service.v1.RetireNetworkDeviceDataR\x04data\"c\n" +
+	"\x1bRetireNetworkDeviceResponse\x12D\n" +
+	"\n" +
+	"retirement\x18\x01 \x01(\v2$.catalog.service.v1.DeviceRetirementR\n" +
+	"retirement\"A\n" +
+	"!GetNetworkDeviceRetirementRequest\x12\x1c\n" +
+	"\tdevice_id\x18\x01 \x01(\tR\tdevice_id\"j\n" +
+	"\"GetNetworkDeviceRetirementResponse\x12D\n" +
+	"\n" +
+	"retirement\x18\x01 \x01(\v2$.catalog.service.v1.DeviceRetirementR\n" +
+	"retirement\"\xf7\b\n" +
+	"\x10DefaultVPCEgress\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
+	"\apool_id\x18\x03 \x01(\tR\apool_id\x12\x14\n" +
+	"\x05state\x18\x04 \x01(\tR\x05state\x12\x16\n" +
+	"\x06reason\x18\x05 \x01(\tR\x06reason\x12\x18\n" +
+	"\aversion\x18\x06 \x01(\x03R\aversion\x12,\n" +
+	"\x11last_operation_id\x18\a \x01(\tR\x11last_operation_id\x12(\n" +
+	"\x0foperation_state\x18\b \x01(\tR\x0foperation_state\x12\x14\n" +
+	"\x05phase\x18\t \x01(\tR\x05phase\x12(\n" +
+	"\x0fpending_unknown\x18\n" +
+	" \x01(\bR\x0fpending_unknown\x12\x18\n" +
+	"\aaddress\x18\v \x01(\tR\aaddress\x12,\n" +
+	"\x11eip_provider_name\x18\f \x01(\tR\x11eip_provider_name\x12*\n" +
+	"\x10eip_provider_uid\x18\r \x01(\tR\x10eip_provider_uid\x12.\n" +
+	"\x12snat_provider_name\x18\x0e \x01(\tR\x12snat_provider_name\x12,\n" +
+	"\x11snat_provider_uid\x18\x0f \x01(\tR\x11snat_provider_uid\x12(\n" +
+	"\x0fdesired_enabled\x18\x10 \x01(\bR\x0fdesired_enabled\x12-\n" +
+	"\x0fapplied_enabled\x18\x11 \x01(\bH\x00R\x0fapplied_enabled\x88\x01\x01\x12\x1e\n" +
+	"\n" +
+	"cluster_id\x18\x12 \x01(\tR\n" +
+	"cluster_id\x12 \n" +
+	"\vcluster_uid\x18\x13 \x01(\tR\vcluster_uid\x124\n" +
+	"\x15default_vpc_namespace\x18\x14 \x01(\tR\x15default_vpc_namespace\x12*\n" +
+	"\x10default_vpc_name\x18\x15 \x01(\tR\x10default_vpc_name\x12(\n" +
+	"\x0fdefault_vpc_uid\x18\x16 \x01(\tR\x0fdefault_vpc_uid\x12:\n" +
+	"\n" +
+	"created_at\x18\x17 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12:\n" +
+	"\n" +
+	"updated_at\x18\x18 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"updated_at\x12<\n" +
+	"\vobserved_at\x18\x19 \x01(\v2\x1a.google.protobuf.TimestampR\vobserved_at\x12,\n" +
+	"\x11target_generation\x18\x1a \x01(\x03R\x11target_generation\x12&\n" +
+	"\x0epending_action\x18\x1b \x01(\tR\x0epending_action\x12,\n" +
+	"\x11observation_stale\x18\x1c \x01(\bR\x11observation_staleB\x12\n" +
+	"\x10_applied_enabled\"t\n" +
+	"\x1aCreateDefaultVPCEgressData\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\apool_id\x18\x02 \x01(\tR\apool_id\x12(\n" +
+	"\x0fidempotency_key\x18\x03 \x01(\tR\x0fidempotency_key\"c\n" +
+	"\x1dCreateDefaultVPCEgressRequest\x12B\n" +
+	"\x04data\x18\x01 \x01(\v2..catalog.service.v1.CreateDefaultVPCEgressDataR\x04data\"^\n" +
+	"\x1eCreateDefaultVPCEgressResponse\x12<\n" +
+	"\x06egress\x18\x01 \x01(\v2$.catalog.service.v1.DefaultVPCEgressR\x06egress\":\n" +
+	"\x1aGetDefaultVPCEgressRequest\x12\x1c\n" +
+	"\tegress_id\x18\x01 \x01(\tR\tegress_id\"[\n" +
+	"\x1bGetDefaultVPCEgressResponse\x12<\n" +
+	"\x06egress\x18\x01 \x01(\v2$.catalog.service.v1.DefaultVPCEgressR\x06egress\"=\n" +
+	"\x1dDeleteDefaultVPCEgressRequest\x12\x1c\n" +
+	"\tegress_id\x18\x01 \x01(\tR\tegress_id\"^\n" +
+	"\x1eDeleteDefaultVPCEgressResponse\x12<\n" +
+	"\x06egress\x18\x01 \x01(\v2$.catalog.service.v1.DefaultVPCEgressR\x06egressB\xcf\x01\n" +
 	"\x16com.catalog.service.v1B\x14PlatformNetworkProtoP\x01Z5go-wind-admin/api/gen/go/catalog/service/v1;servicev1\xa2\x02\x03CSX\xaa\x02\x12Catalog.Service.V1\xca\x02\x12Catalog\\Service\\V1\xe2\x02\x1eCatalog\\Service\\V1\\GPBMetadata\xea\x02\x14Catalog::Service::V1b\x06proto3"
 
 var (
@@ -4999,157 +6865,204 @@ func file_catalog_service_v1_platform_network_proto_rawDescGZIP() []byte {
 	return file_catalog_service_v1_platform_network_proto_rawDescData
 }
 
-var file_catalog_service_v1_platform_network_proto_msgTypes = make([]protoimpl.MessageInfo, 77)
+var file_catalog_service_v1_platform_network_proto_msgTypes = make([]protoimpl.MessageInfo, 102)
 var file_catalog_service_v1_platform_network_proto_goTypes = []any{
 	(*PlatformResource)(nil),                         // 0: catalog.service.v1.PlatformResource
-	(*NodeInterface)(nil),                            // 1: catalog.service.v1.NodeInterface
-	(*NetworkDevice)(nil),                            // 2: catalog.service.v1.NetworkDevice
-	(*VlanNetwork)(nil),                              // 3: catalog.service.v1.VlanNetwork
-	(*EgressGateway)(nil),                            // 4: catalog.service.v1.EgressGateway
-	(*PublicAddressPool)(nil),                        // 5: catalog.service.v1.PublicAddressPool
-	(*IntranetAddressPool)(nil),                      // 6: catalog.service.v1.IntranetAddressPool
-	(*IntranetPoolVerification)(nil),                 // 7: catalog.service.v1.IntranetPoolVerification
-	(*CapabilityObservation)(nil),                    // 8: catalog.service.v1.CapabilityObservation
-	(*PlatformNetworkCapabilities)(nil),              // 9: catalog.service.v1.PlatformNetworkCapabilities
-	(*PublicPoolVerification)(nil),                   // 10: catalog.service.v1.PublicPoolVerification
-	(*PlatformOperation)(nil),                        // 11: catalog.service.v1.PlatformOperation
-	(*ListNodeInterfacesRequest)(nil),                // 12: catalog.service.v1.ListNodeInterfacesRequest
-	(*ListNodeInterfacesResponse)(nil),               // 13: catalog.service.v1.ListNodeInterfacesResponse
-	(*AdoptNetworkDeviceData)(nil),                   // 14: catalog.service.v1.AdoptNetworkDeviceData
-	(*AdoptNetworkDeviceRequest)(nil),                // 15: catalog.service.v1.AdoptNetworkDeviceRequest
-	(*AdoptNetworkDeviceResponse)(nil),               // 16: catalog.service.v1.AdoptNetworkDeviceResponse
-	(*GetNetworkDeviceRequest)(nil),                  // 17: catalog.service.v1.GetNetworkDeviceRequest
-	(*GetNetworkDeviceResponse)(nil),                 // 18: catalog.service.v1.GetNetworkDeviceResponse
-	(*CreateVlanNetworkData)(nil),                    // 19: catalog.service.v1.CreateVlanNetworkData
-	(*CreateVlanNetworkRequest)(nil),                 // 20: catalog.service.v1.CreateVlanNetworkRequest
-	(*CreateVlanNetworkResponse)(nil),                // 21: catalog.service.v1.CreateVlanNetworkResponse
-	(*GetVlanNetworkRequest)(nil),                    // 22: catalog.service.v1.GetVlanNetworkRequest
-	(*GetVlanNetworkResponse)(nil),                   // 23: catalog.service.v1.GetVlanNetworkResponse
-	(*ListVlanNetworksRequest)(nil),                  // 24: catalog.service.v1.ListVlanNetworksRequest
-	(*ListVlanNetworksResponse)(nil),                 // 25: catalog.service.v1.ListVlanNetworksResponse
-	(*DeleteVlanNetworkRequest)(nil),                 // 26: catalog.service.v1.DeleteVlanNetworkRequest
-	(*DeleteVlanNetworkResponse)(nil),                // 27: catalog.service.v1.DeleteVlanNetworkResponse
-	(*CreateEgressGatewayData)(nil),                  // 28: catalog.service.v1.CreateEgressGatewayData
-	(*CreateEgressGatewayRequest)(nil),               // 29: catalog.service.v1.CreateEgressGatewayRequest
-	(*CreateEgressGatewayResponse)(nil),              // 30: catalog.service.v1.CreateEgressGatewayResponse
-	(*GetEgressGatewayRequest)(nil),                  // 31: catalog.service.v1.GetEgressGatewayRequest
-	(*GetEgressGatewayResponse)(nil),                 // 32: catalog.service.v1.GetEgressGatewayResponse
-	(*ListEgressGatewaysRequest)(nil),                // 33: catalog.service.v1.ListEgressGatewaysRequest
-	(*ListEgressGatewaysResponse)(nil),               // 34: catalog.service.v1.ListEgressGatewaysResponse
-	(*DeleteEgressGatewayRequest)(nil),               // 35: catalog.service.v1.DeleteEgressGatewayRequest
-	(*DeleteEgressGatewayResponse)(nil),              // 36: catalog.service.v1.DeleteEgressGatewayResponse
-	(*CreatePublicAddressPoolData)(nil),              // 37: catalog.service.v1.CreatePublicAddressPoolData
-	(*CreatePublicAddressPoolRequest)(nil),           // 38: catalog.service.v1.CreatePublicAddressPoolRequest
-	(*CreatePublicAddressPoolResponse)(nil),          // 39: catalog.service.v1.CreatePublicAddressPoolResponse
-	(*GetPublicAddressPoolRequest)(nil),              // 40: catalog.service.v1.GetPublicAddressPoolRequest
-	(*GetPublicAddressPoolResponse)(nil),             // 41: catalog.service.v1.GetPublicAddressPoolResponse
-	(*ListPublicAddressPoolsRequest)(nil),            // 42: catalog.service.v1.ListPublicAddressPoolsRequest
-	(*ListPublicAddressPoolsResponse)(nil),           // 43: catalog.service.v1.ListPublicAddressPoolsResponse
-	(*DeletePublicAddressPoolRequest)(nil),           // 44: catalog.service.v1.DeletePublicAddressPoolRequest
-	(*DeletePublicAddressPoolResponse)(nil),          // 45: catalog.service.v1.DeletePublicAddressPoolResponse
-	(*RecordPublicPoolVerificationData)(nil),         // 46: catalog.service.v1.RecordPublicPoolVerificationData
-	(*RecordPublicPoolVerificationRequest)(nil),      // 47: catalog.service.v1.RecordPublicPoolVerificationRequest
-	(*RecordPublicPoolVerificationResponse)(nil),     // 48: catalog.service.v1.RecordPublicPoolVerificationResponse
-	(*SetPublicPoolAllocationEnabledData)(nil),       // 49: catalog.service.v1.SetPublicPoolAllocationEnabledData
-	(*SetPublicPoolAllocationEnabledRequest)(nil),    // 50: catalog.service.v1.SetPublicPoolAllocationEnabledRequest
-	(*SetPublicPoolAllocationEnabledResponse)(nil),   // 51: catalog.service.v1.SetPublicPoolAllocationEnabledResponse
-	(*SetDefaultPublicPoolData)(nil),                 // 52: catalog.service.v1.SetDefaultPublicPoolData
-	(*SetDefaultPublicPoolRequest)(nil),              // 53: catalog.service.v1.SetDefaultPublicPoolRequest
-	(*SetDefaultPublicPoolResponse)(nil),             // 54: catalog.service.v1.SetDefaultPublicPoolResponse
-	(*CreateIntranetAddressPoolData)(nil),            // 55: catalog.service.v1.CreateIntranetAddressPoolData
-	(*CreateIntranetAddressPoolRequest)(nil),         // 56: catalog.service.v1.CreateIntranetAddressPoolRequest
-	(*CreateIntranetAddressPoolResponse)(nil),        // 57: catalog.service.v1.CreateIntranetAddressPoolResponse
-	(*GetIntranetAddressPoolRequest)(nil),            // 58: catalog.service.v1.GetIntranetAddressPoolRequest
-	(*GetIntranetAddressPoolResponse)(nil),           // 59: catalog.service.v1.GetIntranetAddressPoolResponse
-	(*ListIntranetAddressPoolsRequest)(nil),          // 60: catalog.service.v1.ListIntranetAddressPoolsRequest
-	(*ListIntranetAddressPoolsResponse)(nil),         // 61: catalog.service.v1.ListIntranetAddressPoolsResponse
-	(*DeleteIntranetAddressPoolRequest)(nil),         // 62: catalog.service.v1.DeleteIntranetAddressPoolRequest
-	(*DeleteIntranetAddressPoolResponse)(nil),        // 63: catalog.service.v1.DeleteIntranetAddressPoolResponse
-	(*RecordIntranetPoolVerificationData)(nil),       // 64: catalog.service.v1.RecordIntranetPoolVerificationData
-	(*RecordIntranetPoolVerificationRequest)(nil),    // 65: catalog.service.v1.RecordIntranetPoolVerificationRequest
-	(*RecordIntranetPoolVerificationResponse)(nil),   // 66: catalog.service.v1.RecordIntranetPoolVerificationResponse
-	(*SetIntranetPoolAllocationEnabledData)(nil),     // 67: catalog.service.v1.SetIntranetPoolAllocationEnabledData
-	(*SetIntranetPoolAllocationEnabledRequest)(nil),  // 68: catalog.service.v1.SetIntranetPoolAllocationEnabledRequest
-	(*SetIntranetPoolAllocationEnabledResponse)(nil), // 69: catalog.service.v1.SetIntranetPoolAllocationEnabledResponse
-	(*SetDefaultIntranetPoolData)(nil),               // 70: catalog.service.v1.SetDefaultIntranetPoolData
-	(*SetDefaultIntranetPoolRequest)(nil),            // 71: catalog.service.v1.SetDefaultIntranetPoolRequest
-	(*SetDefaultIntranetPoolResponse)(nil),           // 72: catalog.service.v1.SetDefaultIntranetPoolResponse
-	(*GetPlatformNetworkCapabilitiesRequest)(nil),    // 73: catalog.service.v1.GetPlatformNetworkCapabilitiesRequest
-	(*GetPlatformNetworkCapabilitiesResponse)(nil),   // 74: catalog.service.v1.GetPlatformNetworkCapabilitiesResponse
-	(*GetPlatformOperationRequest)(nil),              // 75: catalog.service.v1.GetPlatformOperationRequest
-	(*GetPlatformOperationResponse)(nil),             // 76: catalog.service.v1.GetPlatformOperationResponse
-	(*timestamppb.Timestamp)(nil),                    // 77: google.protobuf.Timestamp
+	(*VirtualSwitch)(nil),                            // 1: catalog.service.v1.VirtualSwitch
+	(*VirtualSwitchNode)(nil),                        // 2: catalog.service.v1.VirtualSwitchNode
+	(*CreateVirtualSwitchData)(nil),                  // 3: catalog.service.v1.CreateVirtualSwitchData
+	(*CreateVirtualSwitchRequest)(nil),               // 4: catalog.service.v1.CreateVirtualSwitchRequest
+	(*CreateVirtualSwitchResponse)(nil),              // 5: catalog.service.v1.CreateVirtualSwitchResponse
+	(*GetVirtualSwitchRequest)(nil),                  // 6: catalog.service.v1.GetVirtualSwitchRequest
+	(*GetVirtualSwitchResponse)(nil),                 // 7: catalog.service.v1.GetVirtualSwitchResponse
+	(*ListVirtualSwitchesRequest)(nil),               // 8: catalog.service.v1.ListVirtualSwitchesRequest
+	(*ListVirtualSwitchesResponse)(nil),              // 9: catalog.service.v1.ListVirtualSwitchesResponse
+	(*DeleteVirtualSwitchRequest)(nil),               // 10: catalog.service.v1.DeleteVirtualSwitchRequest
+	(*DeleteVirtualSwitchResponse)(nil),              // 11: catalog.service.v1.DeleteVirtualSwitchResponse
+	(*NodeInterface)(nil),                            // 12: catalog.service.v1.NodeInterface
+	(*NetworkDevice)(nil),                            // 13: catalog.service.v1.NetworkDevice
+	(*VlanNetwork)(nil),                              // 14: catalog.service.v1.VlanNetwork
+	(*EgressGateway)(nil),                            // 15: catalog.service.v1.EgressGateway
+	(*PublicAddressPool)(nil),                        // 16: catalog.service.v1.PublicAddressPool
+	(*IntranetAddressPool)(nil),                      // 17: catalog.service.v1.IntranetAddressPool
+	(*IntranetPoolVerification)(nil),                 // 18: catalog.service.v1.IntranetPoolVerification
+	(*CapabilityObservation)(nil),                    // 19: catalog.service.v1.CapabilityObservation
+	(*PlatformNetworkCapabilities)(nil),              // 20: catalog.service.v1.PlatformNetworkCapabilities
+	(*PublicPoolVerification)(nil),                   // 21: catalog.service.v1.PublicPoolVerification
+	(*PlatformOperation)(nil),                        // 22: catalog.service.v1.PlatformOperation
+	(*ListNodeInterfacesRequest)(nil),                // 23: catalog.service.v1.ListNodeInterfacesRequest
+	(*ListNodeInterfacesResponse)(nil),               // 24: catalog.service.v1.ListNodeInterfacesResponse
+	(*AdoptNetworkDeviceData)(nil),                   // 25: catalog.service.v1.AdoptNetworkDeviceData
+	(*AdoptNetworkDeviceRequest)(nil),                // 26: catalog.service.v1.AdoptNetworkDeviceRequest
+	(*AdoptNetworkDeviceResponse)(nil),               // 27: catalog.service.v1.AdoptNetworkDeviceResponse
+	(*GetNetworkDeviceRequest)(nil),                  // 28: catalog.service.v1.GetNetworkDeviceRequest
+	(*GetNetworkDeviceResponse)(nil),                 // 29: catalog.service.v1.GetNetworkDeviceResponse
+	(*CreateVlanNetworkData)(nil),                    // 30: catalog.service.v1.CreateVlanNetworkData
+	(*CreateVlanNetworkRequest)(nil),                 // 31: catalog.service.v1.CreateVlanNetworkRequest
+	(*CreateVlanNetworkResponse)(nil),                // 32: catalog.service.v1.CreateVlanNetworkResponse
+	(*GetVlanNetworkRequest)(nil),                    // 33: catalog.service.v1.GetVlanNetworkRequest
+	(*GetVlanNetworkResponse)(nil),                   // 34: catalog.service.v1.GetVlanNetworkResponse
+	(*ListVlanNetworksRequest)(nil),                  // 35: catalog.service.v1.ListVlanNetworksRequest
+	(*ListVlanNetworksResponse)(nil),                 // 36: catalog.service.v1.ListVlanNetworksResponse
+	(*DeleteVlanNetworkRequest)(nil),                 // 37: catalog.service.v1.DeleteVlanNetworkRequest
+	(*DeleteVlanNetworkResponse)(nil),                // 38: catalog.service.v1.DeleteVlanNetworkResponse
+	(*CreateEgressGatewayData)(nil),                  // 39: catalog.service.v1.CreateEgressGatewayData
+	(*CreateEgressGatewayRequest)(nil),               // 40: catalog.service.v1.CreateEgressGatewayRequest
+	(*CreateEgressGatewayResponse)(nil),              // 41: catalog.service.v1.CreateEgressGatewayResponse
+	(*GetEgressGatewayRequest)(nil),                  // 42: catalog.service.v1.GetEgressGatewayRequest
+	(*GetEgressGatewayResponse)(nil),                 // 43: catalog.service.v1.GetEgressGatewayResponse
+	(*ListEgressGatewaysRequest)(nil),                // 44: catalog.service.v1.ListEgressGatewaysRequest
+	(*ListEgressGatewaysResponse)(nil),               // 45: catalog.service.v1.ListEgressGatewaysResponse
+	(*DeleteEgressGatewayRequest)(nil),               // 46: catalog.service.v1.DeleteEgressGatewayRequest
+	(*DeleteEgressGatewayResponse)(nil),              // 47: catalog.service.v1.DeleteEgressGatewayResponse
+	(*CreatePublicAddressPoolData)(nil),              // 48: catalog.service.v1.CreatePublicAddressPoolData
+	(*CreatePublicAddressPoolRequest)(nil),           // 49: catalog.service.v1.CreatePublicAddressPoolRequest
+	(*CreatePublicAddressPoolResponse)(nil),          // 50: catalog.service.v1.CreatePublicAddressPoolResponse
+	(*GetPublicAddressPoolRequest)(nil),              // 51: catalog.service.v1.GetPublicAddressPoolRequest
+	(*GetPublicAddressPoolResponse)(nil),             // 52: catalog.service.v1.GetPublicAddressPoolResponse
+	(*ListPublicAddressPoolsRequest)(nil),            // 53: catalog.service.v1.ListPublicAddressPoolsRequest
+	(*ListPublicAddressPoolsResponse)(nil),           // 54: catalog.service.v1.ListPublicAddressPoolsResponse
+	(*DeletePublicAddressPoolRequest)(nil),           // 55: catalog.service.v1.DeletePublicAddressPoolRequest
+	(*DeletePublicAddressPoolResponse)(nil),          // 56: catalog.service.v1.DeletePublicAddressPoolResponse
+	(*RecordPublicPoolVerificationData)(nil),         // 57: catalog.service.v1.RecordPublicPoolVerificationData
+	(*RecordPublicPoolVerificationRequest)(nil),      // 58: catalog.service.v1.RecordPublicPoolVerificationRequest
+	(*RecordPublicPoolVerificationResponse)(nil),     // 59: catalog.service.v1.RecordPublicPoolVerificationResponse
+	(*SetPublicPoolAllocationEnabledData)(nil),       // 60: catalog.service.v1.SetPublicPoolAllocationEnabledData
+	(*SetPublicPoolAllocationEnabledRequest)(nil),    // 61: catalog.service.v1.SetPublicPoolAllocationEnabledRequest
+	(*SetPublicPoolAllocationEnabledResponse)(nil),   // 62: catalog.service.v1.SetPublicPoolAllocationEnabledResponse
+	(*SetDefaultPublicPoolData)(nil),                 // 63: catalog.service.v1.SetDefaultPublicPoolData
+	(*SetDefaultPublicPoolRequest)(nil),              // 64: catalog.service.v1.SetDefaultPublicPoolRequest
+	(*SetDefaultPublicPoolResponse)(nil),             // 65: catalog.service.v1.SetDefaultPublicPoolResponse
+	(*CreateIntranetAddressPoolData)(nil),            // 66: catalog.service.v1.CreateIntranetAddressPoolData
+	(*CreateIntranetAddressPoolRequest)(nil),         // 67: catalog.service.v1.CreateIntranetAddressPoolRequest
+	(*CreateIntranetAddressPoolResponse)(nil),        // 68: catalog.service.v1.CreateIntranetAddressPoolResponse
+	(*GetIntranetAddressPoolRequest)(nil),            // 69: catalog.service.v1.GetIntranetAddressPoolRequest
+	(*GetIntranetAddressPoolResponse)(nil),           // 70: catalog.service.v1.GetIntranetAddressPoolResponse
+	(*ListIntranetAddressPoolsRequest)(nil),          // 71: catalog.service.v1.ListIntranetAddressPoolsRequest
+	(*ListIntranetAddressPoolsResponse)(nil),         // 72: catalog.service.v1.ListIntranetAddressPoolsResponse
+	(*DeleteIntranetAddressPoolRequest)(nil),         // 73: catalog.service.v1.DeleteIntranetAddressPoolRequest
+	(*DeleteIntranetAddressPoolResponse)(nil),        // 74: catalog.service.v1.DeleteIntranetAddressPoolResponse
+	(*RecordIntranetPoolVerificationData)(nil),       // 75: catalog.service.v1.RecordIntranetPoolVerificationData
+	(*RecordIntranetPoolVerificationRequest)(nil),    // 76: catalog.service.v1.RecordIntranetPoolVerificationRequest
+	(*RecordIntranetPoolVerificationResponse)(nil),   // 77: catalog.service.v1.RecordIntranetPoolVerificationResponse
+	(*SetIntranetPoolAllocationEnabledData)(nil),     // 78: catalog.service.v1.SetIntranetPoolAllocationEnabledData
+	(*SetIntranetPoolAllocationEnabledRequest)(nil),  // 79: catalog.service.v1.SetIntranetPoolAllocationEnabledRequest
+	(*SetIntranetPoolAllocationEnabledResponse)(nil), // 80: catalog.service.v1.SetIntranetPoolAllocationEnabledResponse
+	(*SetDefaultIntranetPoolData)(nil),               // 81: catalog.service.v1.SetDefaultIntranetPoolData
+	(*SetDefaultIntranetPoolRequest)(nil),            // 82: catalog.service.v1.SetDefaultIntranetPoolRequest
+	(*SetDefaultIntranetPoolResponse)(nil),           // 83: catalog.service.v1.SetDefaultIntranetPoolResponse
+	(*GetPlatformNetworkCapabilitiesRequest)(nil),    // 84: catalog.service.v1.GetPlatformNetworkCapabilitiesRequest
+	(*GetPlatformNetworkCapabilitiesResponse)(nil),   // 85: catalog.service.v1.GetPlatformNetworkCapabilitiesResponse
+	(*GetPlatformOperationRequest)(nil),              // 86: catalog.service.v1.GetPlatformOperationRequest
+	(*GetPlatformOperationResponse)(nil),             // 87: catalog.service.v1.GetPlatformOperationResponse
+	(*DeviceRetirement)(nil),                         // 88: catalog.service.v1.DeviceRetirement
+	(*RetireNetworkDeviceData)(nil),                  // 89: catalog.service.v1.RetireNetworkDeviceData
+	(*RetireNetworkDeviceRequest)(nil),               // 90: catalog.service.v1.RetireNetworkDeviceRequest
+	(*RetireNetworkDeviceResponse)(nil),              // 91: catalog.service.v1.RetireNetworkDeviceResponse
+	(*GetNetworkDeviceRetirementRequest)(nil),        // 92: catalog.service.v1.GetNetworkDeviceRetirementRequest
+	(*GetNetworkDeviceRetirementResponse)(nil),       // 93: catalog.service.v1.GetNetworkDeviceRetirementResponse
+	(*DefaultVPCEgress)(nil),                         // 94: catalog.service.v1.DefaultVPCEgress
+	(*CreateDefaultVPCEgressData)(nil),               // 95: catalog.service.v1.CreateDefaultVPCEgressData
+	(*CreateDefaultVPCEgressRequest)(nil),            // 96: catalog.service.v1.CreateDefaultVPCEgressRequest
+	(*CreateDefaultVPCEgressResponse)(nil),           // 97: catalog.service.v1.CreateDefaultVPCEgressResponse
+	(*GetDefaultVPCEgressRequest)(nil),               // 98: catalog.service.v1.GetDefaultVPCEgressRequest
+	(*GetDefaultVPCEgressResponse)(nil),              // 99: catalog.service.v1.GetDefaultVPCEgressResponse
+	(*DeleteDefaultVPCEgressRequest)(nil),            // 100: catalog.service.v1.DeleteDefaultVPCEgressRequest
+	(*DeleteDefaultVPCEgressResponse)(nil),           // 101: catalog.service.v1.DeleteDefaultVPCEgressResponse
+	(*timestamppb.Timestamp)(nil),                    // 102: google.protobuf.Timestamp
 }
 var file_catalog_service_v1_platform_network_proto_depIdxs = []int32{
-	77, // 0: catalog.service.v1.PlatformResource.created_at:type_name -> google.protobuf.Timestamp
-	77, // 1: catalog.service.v1.PlatformResource.updated_at:type_name -> google.protobuf.Timestamp
-	77, // 2: catalog.service.v1.PlatformResource.observed_at:type_name -> google.protobuf.Timestamp
-	2,  // 3: catalog.service.v1.PlatformResource.device:type_name -> catalog.service.v1.NetworkDevice
-	3,  // 4: catalog.service.v1.PlatformResource.vlan:type_name -> catalog.service.v1.VlanNetwork
-	4,  // 5: catalog.service.v1.PlatformResource.gateway:type_name -> catalog.service.v1.EgressGateway
-	5,  // 6: catalog.service.v1.PlatformResource.pool:type_name -> catalog.service.v1.PublicAddressPool
-	6,  // 7: catalog.service.v1.PlatformResource.intranet_pool:type_name -> catalog.service.v1.IntranetAddressPool
-	77, // 8: catalog.service.v1.NodeInterface.observed_at:type_name -> google.protobuf.Timestamp
-	1,  // 9: catalog.service.v1.NetworkDevice.nodes:type_name -> catalog.service.v1.NodeInterface
-	10, // 10: catalog.service.v1.PublicAddressPool.verification:type_name -> catalog.service.v1.PublicPoolVerification
-	7,  // 11: catalog.service.v1.IntranetAddressPool.verification:type_name -> catalog.service.v1.IntranetPoolVerification
-	77, // 12: catalog.service.v1.IntranetPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
-	77, // 13: catalog.service.v1.IntranetPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
-	77, // 14: catalog.service.v1.CapabilityObservation.observed_at:type_name -> google.protobuf.Timestamp
-	8,  // 15: catalog.service.v1.PlatformNetworkCapabilities.base_connectivity:type_name -> catalog.service.v1.CapabilityObservation
-	8,  // 16: catalog.service.v1.PlatformNetworkCapabilities.public_address:type_name -> catalog.service.v1.CapabilityObservation
-	8,  // 17: catalog.service.v1.PlatformNetworkCapabilities.load_balancer:type_name -> catalog.service.v1.CapabilityObservation
-	77, // 18: catalog.service.v1.PublicPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
-	77, // 19: catalog.service.v1.PublicPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
-	77, // 20: catalog.service.v1.PlatformOperation.created_at:type_name -> google.protobuf.Timestamp
-	77, // 21: catalog.service.v1.PlatformOperation.updated_at:type_name -> google.protobuf.Timestamp
-	77, // 22: catalog.service.v1.PlatformOperation.completed_at:type_name -> google.protobuf.Timestamp
-	77, // 23: catalog.service.v1.PlatformOperation.next_attempt_at:type_name -> google.protobuf.Timestamp
-	1,  // 24: catalog.service.v1.ListNodeInterfacesResponse.items:type_name -> catalog.service.v1.NodeInterface
-	14, // 25: catalog.service.v1.AdoptNetworkDeviceRequest.data:type_name -> catalog.service.v1.AdoptNetworkDeviceData
-	0,  // 26: catalog.service.v1.AdoptNetworkDeviceResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 27: catalog.service.v1.GetNetworkDeviceResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	19, // 28: catalog.service.v1.CreateVlanNetworkRequest.data:type_name -> catalog.service.v1.CreateVlanNetworkData
-	0,  // 29: catalog.service.v1.CreateVlanNetworkResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 30: catalog.service.v1.GetVlanNetworkResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 31: catalog.service.v1.ListVlanNetworksResponse.items:type_name -> catalog.service.v1.PlatformResource
-	0,  // 32: catalog.service.v1.DeleteVlanNetworkResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	28, // 33: catalog.service.v1.CreateEgressGatewayRequest.data:type_name -> catalog.service.v1.CreateEgressGatewayData
-	0,  // 34: catalog.service.v1.CreateEgressGatewayResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 35: catalog.service.v1.GetEgressGatewayResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 36: catalog.service.v1.ListEgressGatewaysResponse.items:type_name -> catalog.service.v1.PlatformResource
-	0,  // 37: catalog.service.v1.DeleteEgressGatewayResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	37, // 38: catalog.service.v1.CreatePublicAddressPoolRequest.data:type_name -> catalog.service.v1.CreatePublicAddressPoolData
-	0,  // 39: catalog.service.v1.CreatePublicAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 40: catalog.service.v1.GetPublicAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 41: catalog.service.v1.ListPublicAddressPoolsResponse.items:type_name -> catalog.service.v1.PlatformResource
-	0,  // 42: catalog.service.v1.DeletePublicAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	10, // 43: catalog.service.v1.RecordPublicPoolVerificationData.verification:type_name -> catalog.service.v1.PublicPoolVerification
-	46, // 44: catalog.service.v1.RecordPublicPoolVerificationRequest.data:type_name -> catalog.service.v1.RecordPublicPoolVerificationData
-	0,  // 45: catalog.service.v1.RecordPublicPoolVerificationResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	49, // 46: catalog.service.v1.SetPublicPoolAllocationEnabledRequest.data:type_name -> catalog.service.v1.SetPublicPoolAllocationEnabledData
-	0,  // 47: catalog.service.v1.SetPublicPoolAllocationEnabledResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	52, // 48: catalog.service.v1.SetDefaultPublicPoolRequest.data:type_name -> catalog.service.v1.SetDefaultPublicPoolData
-	0,  // 49: catalog.service.v1.SetDefaultPublicPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	55, // 50: catalog.service.v1.CreateIntranetAddressPoolRequest.data:type_name -> catalog.service.v1.CreateIntranetAddressPoolData
-	0,  // 51: catalog.service.v1.CreateIntranetAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 52: catalog.service.v1.GetIntranetAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	0,  // 53: catalog.service.v1.ListIntranetAddressPoolsResponse.items:type_name -> catalog.service.v1.PlatformResource
-	0,  // 54: catalog.service.v1.DeleteIntranetAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	7,  // 55: catalog.service.v1.RecordIntranetPoolVerificationData.verification:type_name -> catalog.service.v1.IntranetPoolVerification
-	64, // 56: catalog.service.v1.RecordIntranetPoolVerificationRequest.data:type_name -> catalog.service.v1.RecordIntranetPoolVerificationData
-	0,  // 57: catalog.service.v1.RecordIntranetPoolVerificationResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	67, // 58: catalog.service.v1.SetIntranetPoolAllocationEnabledRequest.data:type_name -> catalog.service.v1.SetIntranetPoolAllocationEnabledData
-	0,  // 59: catalog.service.v1.SetIntranetPoolAllocationEnabledResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	70, // 60: catalog.service.v1.SetDefaultIntranetPoolRequest.data:type_name -> catalog.service.v1.SetDefaultIntranetPoolData
-	0,  // 61: catalog.service.v1.SetDefaultIntranetPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
-	9,  // 62: catalog.service.v1.GetPlatformNetworkCapabilitiesResponse.capabilities:type_name -> catalog.service.v1.PlatformNetworkCapabilities
-	11, // 63: catalog.service.v1.GetPlatformOperationResponse.operation:type_name -> catalog.service.v1.PlatformOperation
-	64, // [64:64] is the sub-list for method output_type
-	64, // [64:64] is the sub-list for method input_type
-	64, // [64:64] is the sub-list for extension type_name
-	64, // [64:64] is the sub-list for extension extendee
-	0,  // [0:64] is the sub-list for field type_name
+	102, // 0: catalog.service.v1.PlatformResource.created_at:type_name -> google.protobuf.Timestamp
+	102, // 1: catalog.service.v1.PlatformResource.updated_at:type_name -> google.protobuf.Timestamp
+	102, // 2: catalog.service.v1.PlatformResource.observed_at:type_name -> google.protobuf.Timestamp
+	13,  // 3: catalog.service.v1.PlatformResource.device:type_name -> catalog.service.v1.NetworkDevice
+	14,  // 4: catalog.service.v1.PlatformResource.vlan:type_name -> catalog.service.v1.VlanNetwork
+	15,  // 5: catalog.service.v1.PlatformResource.gateway:type_name -> catalog.service.v1.EgressGateway
+	16,  // 6: catalog.service.v1.PlatformResource.pool:type_name -> catalog.service.v1.PublicAddressPool
+	17,  // 7: catalog.service.v1.PlatformResource.intranet_pool:type_name -> catalog.service.v1.IntranetAddressPool
+	102, // 8: catalog.service.v1.VirtualSwitch.created_at:type_name -> google.protobuf.Timestamp
+	102, // 9: catalog.service.v1.VirtualSwitch.updated_at:type_name -> google.protobuf.Timestamp
+	2,   // 10: catalog.service.v1.VirtualSwitch.nodes:type_name -> catalog.service.v1.VirtualSwitchNode
+	3,   // 11: catalog.service.v1.CreateVirtualSwitchRequest.data:type_name -> catalog.service.v1.CreateVirtualSwitchData
+	1,   // 12: catalog.service.v1.CreateVirtualSwitchResponse.resource:type_name -> catalog.service.v1.VirtualSwitch
+	1,   // 13: catalog.service.v1.GetVirtualSwitchResponse.resource:type_name -> catalog.service.v1.VirtualSwitch
+	1,   // 14: catalog.service.v1.ListVirtualSwitchesResponse.items:type_name -> catalog.service.v1.VirtualSwitch
+	1,   // 15: catalog.service.v1.DeleteVirtualSwitchResponse.resource:type_name -> catalog.service.v1.VirtualSwitch
+	102, // 16: catalog.service.v1.NodeInterface.observed_at:type_name -> google.protobuf.Timestamp
+	12,  // 17: catalog.service.v1.NetworkDevice.nodes:type_name -> catalog.service.v1.NodeInterface
+	2,   // 18: catalog.service.v1.VlanNetwork.nodes:type_name -> catalog.service.v1.VirtualSwitchNode
+	21,  // 19: catalog.service.v1.PublicAddressPool.verification:type_name -> catalog.service.v1.PublicPoolVerification
+	18,  // 20: catalog.service.v1.IntranetAddressPool.verification:type_name -> catalog.service.v1.IntranetPoolVerification
+	102, // 21: catalog.service.v1.IntranetPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
+	102, // 22: catalog.service.v1.IntranetPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
+	102, // 23: catalog.service.v1.CapabilityObservation.observed_at:type_name -> google.protobuf.Timestamp
+	19,  // 24: catalog.service.v1.PlatformNetworkCapabilities.base_connectivity:type_name -> catalog.service.v1.CapabilityObservation
+	19,  // 25: catalog.service.v1.PlatformNetworkCapabilities.public_address:type_name -> catalog.service.v1.CapabilityObservation
+	19,  // 26: catalog.service.v1.PlatformNetworkCapabilities.load_balancer:type_name -> catalog.service.v1.CapabilityObservation
+	102, // 27: catalog.service.v1.PublicPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
+	102, // 28: catalog.service.v1.PublicPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
+	102, // 29: catalog.service.v1.PlatformOperation.created_at:type_name -> google.protobuf.Timestamp
+	102, // 30: catalog.service.v1.PlatformOperation.updated_at:type_name -> google.protobuf.Timestamp
+	102, // 31: catalog.service.v1.PlatformOperation.completed_at:type_name -> google.protobuf.Timestamp
+	102, // 32: catalog.service.v1.PlatformOperation.next_attempt_at:type_name -> google.protobuf.Timestamp
+	12,  // 33: catalog.service.v1.ListNodeInterfacesResponse.items:type_name -> catalog.service.v1.NodeInterface
+	25,  // 34: catalog.service.v1.AdoptNetworkDeviceRequest.data:type_name -> catalog.service.v1.AdoptNetworkDeviceData
+	0,   // 35: catalog.service.v1.AdoptNetworkDeviceResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 36: catalog.service.v1.GetNetworkDeviceResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	30,  // 37: catalog.service.v1.CreateVlanNetworkRequest.data:type_name -> catalog.service.v1.CreateVlanNetworkData
+	0,   // 38: catalog.service.v1.CreateVlanNetworkResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 39: catalog.service.v1.GetVlanNetworkResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 40: catalog.service.v1.ListVlanNetworksResponse.items:type_name -> catalog.service.v1.PlatformResource
+	0,   // 41: catalog.service.v1.DeleteVlanNetworkResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	39,  // 42: catalog.service.v1.CreateEgressGatewayRequest.data:type_name -> catalog.service.v1.CreateEgressGatewayData
+	0,   // 43: catalog.service.v1.CreateEgressGatewayResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 44: catalog.service.v1.GetEgressGatewayResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 45: catalog.service.v1.ListEgressGatewaysResponse.items:type_name -> catalog.service.v1.PlatformResource
+	0,   // 46: catalog.service.v1.DeleteEgressGatewayResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	48,  // 47: catalog.service.v1.CreatePublicAddressPoolRequest.data:type_name -> catalog.service.v1.CreatePublicAddressPoolData
+	0,   // 48: catalog.service.v1.CreatePublicAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 49: catalog.service.v1.GetPublicAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 50: catalog.service.v1.ListPublicAddressPoolsResponse.items:type_name -> catalog.service.v1.PlatformResource
+	0,   // 51: catalog.service.v1.DeletePublicAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	21,  // 52: catalog.service.v1.RecordPublicPoolVerificationData.verification:type_name -> catalog.service.v1.PublicPoolVerification
+	57,  // 53: catalog.service.v1.RecordPublicPoolVerificationRequest.data:type_name -> catalog.service.v1.RecordPublicPoolVerificationData
+	0,   // 54: catalog.service.v1.RecordPublicPoolVerificationResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	60,  // 55: catalog.service.v1.SetPublicPoolAllocationEnabledRequest.data:type_name -> catalog.service.v1.SetPublicPoolAllocationEnabledData
+	0,   // 56: catalog.service.v1.SetPublicPoolAllocationEnabledResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	63,  // 57: catalog.service.v1.SetDefaultPublicPoolRequest.data:type_name -> catalog.service.v1.SetDefaultPublicPoolData
+	0,   // 58: catalog.service.v1.SetDefaultPublicPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	66,  // 59: catalog.service.v1.CreateIntranetAddressPoolRequest.data:type_name -> catalog.service.v1.CreateIntranetAddressPoolData
+	0,   // 60: catalog.service.v1.CreateIntranetAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 61: catalog.service.v1.GetIntranetAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	0,   // 62: catalog.service.v1.ListIntranetAddressPoolsResponse.items:type_name -> catalog.service.v1.PlatformResource
+	0,   // 63: catalog.service.v1.DeleteIntranetAddressPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	18,  // 64: catalog.service.v1.RecordIntranetPoolVerificationData.verification:type_name -> catalog.service.v1.IntranetPoolVerification
+	75,  // 65: catalog.service.v1.RecordIntranetPoolVerificationRequest.data:type_name -> catalog.service.v1.RecordIntranetPoolVerificationData
+	0,   // 66: catalog.service.v1.RecordIntranetPoolVerificationResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	78,  // 67: catalog.service.v1.SetIntranetPoolAllocationEnabledRequest.data:type_name -> catalog.service.v1.SetIntranetPoolAllocationEnabledData
+	0,   // 68: catalog.service.v1.SetIntranetPoolAllocationEnabledResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	81,  // 69: catalog.service.v1.SetDefaultIntranetPoolRequest.data:type_name -> catalog.service.v1.SetDefaultIntranetPoolData
+	0,   // 70: catalog.service.v1.SetDefaultIntranetPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
+	20,  // 71: catalog.service.v1.GetPlatformNetworkCapabilitiesResponse.capabilities:type_name -> catalog.service.v1.PlatformNetworkCapabilities
+	22,  // 72: catalog.service.v1.GetPlatformOperationResponse.operation:type_name -> catalog.service.v1.PlatformOperation
+	102, // 73: catalog.service.v1.DeviceRetirement.created_at:type_name -> google.protobuf.Timestamp
+	102, // 74: catalog.service.v1.DeviceRetirement.updated_at:type_name -> google.protobuf.Timestamp
+	102, // 75: catalog.service.v1.DeviceRetirement.completed_at:type_name -> google.protobuf.Timestamp
+	89,  // 76: catalog.service.v1.RetireNetworkDeviceRequest.data:type_name -> catalog.service.v1.RetireNetworkDeviceData
+	88,  // 77: catalog.service.v1.RetireNetworkDeviceResponse.retirement:type_name -> catalog.service.v1.DeviceRetirement
+	88,  // 78: catalog.service.v1.GetNetworkDeviceRetirementResponse.retirement:type_name -> catalog.service.v1.DeviceRetirement
+	102, // 79: catalog.service.v1.DefaultVPCEgress.created_at:type_name -> google.protobuf.Timestamp
+	102, // 80: catalog.service.v1.DefaultVPCEgress.updated_at:type_name -> google.protobuf.Timestamp
+	102, // 81: catalog.service.v1.DefaultVPCEgress.observed_at:type_name -> google.protobuf.Timestamp
+	95,  // 82: catalog.service.v1.CreateDefaultVPCEgressRequest.data:type_name -> catalog.service.v1.CreateDefaultVPCEgressData
+	94,  // 83: catalog.service.v1.CreateDefaultVPCEgressResponse.egress:type_name -> catalog.service.v1.DefaultVPCEgress
+	94,  // 84: catalog.service.v1.GetDefaultVPCEgressResponse.egress:type_name -> catalog.service.v1.DefaultVPCEgress
+	94,  // 85: catalog.service.v1.DeleteDefaultVPCEgressResponse.egress:type_name -> catalog.service.v1.DefaultVPCEgress
+	86,  // [86:86] is the sub-list for method output_type
+	86,  // [86:86] is the sub-list for method input_type
+	86,  // [86:86] is the sub-list for extension type_name
+	86,  // [86:86] is the sub-list for extension extendee
+	0,   // [0:86] is the sub-list for field type_name
 }
 
 func init() { file_catalog_service_v1_platform_network_proto_init() }
@@ -5157,13 +7070,15 @@ func file_catalog_service_v1_platform_network_proto_init() {
 	if File_catalog_service_v1_platform_network_proto != nil {
 		return
 	}
+	file_catalog_service_v1_platform_network_proto_msgTypes[8].OneofWrappers = []any{}
+	file_catalog_service_v1_platform_network_proto_msgTypes[94].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_service_v1_platform_network_proto_rawDesc), len(file_catalog_service_v1_platform_network_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   77,
+			NumMessages:   102,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

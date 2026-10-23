@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
@@ -29,6 +28,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
+	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	authv1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityv1 "go-wind-admin/api/gen/go/identity/service/v1"
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
@@ -36,7 +36,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
-	"go-wind-admin/app/admin/service/internal/data/ent/modeldevreleasebinding"
 	"go-wind-admin/app/admin/service/internal/data/ent/permission"
 	"go-wind-admin/app/admin/service/internal/data/ent/planmodule"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
@@ -55,6 +54,8 @@ import (
 	authzMiddleware "go-wind-admin/pkg/localdeps/kratos-authz/middleware"
 	conf "go-wind-admin/pkg/localdeps/kratos-bootstrap/api/gen/go/conf/v1"
 	"go-wind-admin/pkg/middleware/auth"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -172,43 +173,37 @@ func TestModelDevCreatePersistsBefore202AndReplaysOriginal(t *testing.T) {
 	resolver, closeResolver, err := data.NewModelDevClient(data.ModelDevClientConfig{Address: provider.Address, CAFile: provider.TLS.CAFile, CertFile: provider.TLS.CertFile, KeyFile: provider.TLS.KeyFile, Timeout: 3 * time.Second})
 	require.NoError(t, err, "MODELDEV_CREATE_PREFLIGHT: actual typed ModelDev client")
 	t.Cleanup(closeResolver)
-	preflight, err := resolver.Resolve(ctx, data.ModelDevResolveScope{ResourceTenantID: provider.Scope.ResourceTenantID, Actor: actor}, provider.Intent,
-		data.ModelDevReleaseSelection{ReleaseID: provider.Release.ReleaseID, ReleaseDigest: provider.Release.ReleaseDigest, BindingGeneration: provider.Release.BindingGeneration}, provider.AcceptedAt)
+	selection := testutil.ModelDevContractSelection(t, provider)
+	preflight, err := resolver.ResolvePrepared(ctx, data.ModelDevResolveScope{ResourceTenantID: provider.Scope.ResourceTenantID, Actor: provider.Scope.Actor}, provider.Intent, provider.IdentityRef, selection, provider.AcceptedAt)
 	require.NoError(t, err, "MODELDEV_CREATE_PREFLIGHT: actual ModelDev buildApp/mTLS/READY provider")
 	wantCanonical, wantHash := testutil.ExpectedModelDevContractSnapshot(t)
 	actualCanonical, err := preflight.Snapshot.Canonical()
 	require.NoError(t, err)
 	require.Equal(t, wantCanonical, actualCanonical)
 	require.Equal(t, wantHash, preflight.ExecutionSpecHash)
-	bindings := data.NewModelDevReleaseBindingRepo(runtime)
-	bindingScope := data.ModelDevReleaseBindingScope{TenantID: owner.ID, ResourceTenantID: provider.Scope.ResourceTenantID, PresetID: provider.Intent.PresetID}
-	removeAfterTest(func(c context.Context) error {
-		_, e := writer.Client().ModelDevReleaseBinding.Delete().Where(modeldevreleasebinding.TenantIDEQ(owner.ID)).Exec(c)
-		return e
-	})
-	binding, err := bindings.CompareAndSwap(requestCtx, bindingScope, data.ModelDevReleaseBindingUpdate{
-		Target: data.ModelDevReleaseBindingTarget{ReleaseID: provider.Release.ReleaseID, ReleaseDigest: provider.Release.ReleaseDigest, NewSubmissionsEnabled: true},
-		Actor:  actor, RequestedAt: time.Now().UTC().Truncate(time.Microsecond), Reason: "owned HTTP fixture", EvidenceReference: "contract:cpu-p01:modeldev-http",
-	})
-	require.NoError(t, err)
-	require.Equal(t, uint64(1), binding.After.Generation)
+	computeProvider := &modelDevHTTPComputeFixture{selection: selection}
 	removeAfterTest(func(c context.Context) error {
 		_, e := writer.Client().ModelDevAcceptance.Delete().Where(modeldevacceptance.TenantIDEQ(owner.ID)).Exec(c)
 		return e
 	})
 	acceptances := data.NewModelDevAcceptanceRepo(runtime)
-	bff := service.NewModelDevService(authorization, data.NewTenantRepo(bctx, runtime), acceptances, bindings, resolver)
+	bff := service.NewModelDevService(authorization, data.NewTenantRepo(bctx, runtime), acceptances, resolver, computeProvider)
 	server := khttp.NewServer(khttp.Middleware(auth.CredentialHeaders(), auth.Server(auth.WithAccessTokenChecker(checker), auth.WithTenantAccessChecker(tenantChecker), auth.WithInjectMetadata(false), auth.WithInjectEnt(true)), authzMiddleware.Server(policy.Engine())))
 	registerModelDevHTTP(server, bff)
 	web := httptest.NewServer(server)
 	t.Cleanup(web.Close)
-	post := func(intent cpup01.Intent, key string) (int, []byte) {
+	post := func(intent cpup01.Intent, key string, retiredFields ...map[string]any) (int, []byte) {
 		t.Helper()
 		raw, marshalErr := json.Marshal(intent)
 		require.NoError(t, marshalErr)
 		keyJSON, marshalErr := json.Marshal(key)
 		require.NoError(t, marshalErr)
 		body := append(append(append(bytes.Clone(raw[:len(raw)-1]), []byte(`,"idempotency_key":`)...), keyJSON...), '}')
+		if len(retiredFields) != 0 {
+			legacy, err := json.Marshal(retiredFields[0])
+			require.NoError(t, err)
+			body = append(append(body[:len(body)-1], ','), legacy[1:]...)
+		}
 		request, requestErr := http.NewRequestWithContext(ctx, http.MethodPost, web.URL+"/api/v1/modeldev/executions", bytes.NewReader(body))
 		require.NoError(t, requestErr)
 		request.Header.Set("Content-Type", "application/json")
@@ -222,7 +217,7 @@ func TestModelDevCreatePersistsBefore202AndReplaysOriginal(t *testing.T) {
 		return response.StatusCode, responseBody
 	}
 	observer := openModelDevHTTPPG(t, os.Getenv("ANI_TEST_DATABASE_DSN"))
-	t.Log("MODELDEV_CREATE_PREFLIGHT PASS: actual JWT/Redis, TenantAccess/Casbin/current DB, runtime role, binding and real ModelDev provider")
+	t.Log("MODELDEV_CREATE_PREFLIGHT PASS: actual JWT/Redis, TenantAccess/Casbin/current DB, runtime role, official TRAINING selection and real ModelDev provider")
 	key := uuid.NewString()
 	before := time.Now().UTC()
 	statusCode, responseBody := post(provider.Intent, key)
@@ -249,7 +244,6 @@ func TestModelDevCreatePersistsBefore202AndReplaysOriginal(t *testing.T) {
 	require.NotEqual(t, uuid.Nil, executionID)
 	require.NotEqual(t, operationID, executionID)
 	require.False(t, first.Replayed)
-	require.Equal(t, provider.Release.ReleaseID, first.ResolvedReleaseId)
 	require.Equal(t, "ACCEPTED", first.ComputeState)
 	require.Equal(t, "PENDING", first.DeliveryState)
 	require.Equal(t, "OPEN", first.CloseState)
@@ -270,52 +264,24 @@ func TestModelDevCreatePersistsBefore202AndReplaysOriginal(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, intentCanonical, stored.IntentCanonical)
 	require.Equal(t, intentHash, stored.IntentHash)
-	var expected cpup01.Snapshot
-	require.NoError(t, json.Unmarshal(wantCanonical, &expected))
-	// The actual acceptance time is bounded above. Fixed provider facts and the
-	// 30-minute Release timeout determine the independently expected snapshot.
-	expected.Release.AcceptedBindingGeneration = 1
-	expected.DeadlineAt = stored.AcceptedAt.Add(30 * time.Minute)
-	expectedBytes, err := expected.Canonical()
-	require.NoError(t, err)
-	digest := sha256.Sum256(expectedBytes)
+	expectedBytes, expectedHash := testutil.ExpectedModelDevContractSnapshotAt(t, cpup01.IdentityRef{
+		TenantID: provider.Scope.ResourceTenantID, Actor: actor, OperationID: stored.OperationID, ExecutionID: stored.ExecutionID, IntentHash: stored.IntentHash,
+	}, stored.AcceptedAt)
 	require.Equal(t, expectedBytes, stored.SnapshotCanonical)
-	require.Equal(t, hex.EncodeToString(digest[:]), stored.ExecutionSpecHash)
+	require.Equal(t, expectedHash, stored.ExecutionSpecHash)
+	require.Equal(t, 1, computeProvider.calls)
 
-	sourceIntent := provider.Intent
-	sourceID := uuid.NewString()
-	sourceIntent.SourceExecutionID = &sourceID
-	sourceCanonical, _, err := cpup01.CanonicalIntent(sourceIntent)
-	require.NoError(t, err, "the source-access denial must exercise a shape-valid intent")
-	sourceKey := uuid.NewString()
-	statusCode, responseBody = post(sourceIntent, sourceKey)
+	statusCode, _ = post(provider.Intent, uuid.NewString(), map[string]any{"source_execution_id": uuid.NewString()})
+	require.Equal(t, http.StatusBadRequest, statusCode, "the retired source-execution request must be rejected")
 	count, readErr := observer.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(owner.ID)).Count(sys)
-	require.NoError(t, readErr, "independent source-access persistence observation")
-	if statusCode == http.StatusAccepted {
-		unexpected, readErr := observer.Client().ModelDevAcceptance.Query().Where(
-			modeldevacceptance.TenantIDEQ(owner.ID), modeldevacceptance.IdempotencyKeyEQ(sourceKey),
-		).Only(sys)
-		require.NoError(t, readErr, "HTTP202 alone is insufficient for the planned source-access RED")
-		require.Equal(t, 2, count)
-		require.Equal(t, sourceCanonical, unexpected.IntentCanonical)
-		// Existing exact-tenant fixture cleanup removes this unintended row too.
-		t.Fatal("MODELDEV_SOURCE_ACCESS_BEHAVIOR: unverified source_execution_id accepted with HTTP202 and second durable acceptance; want 403 SOURCE_EXECUTION_UNAVAILABLE and one original acceptance")
-	}
-	require.Equal(t, http.StatusForbidden, statusCode, "unexpected status is not the planned source-access RED")
-	var sourceFailure struct {
-		Reason string `json:"reason"`
-	}
-	require.NoError(t, json.Unmarshal(responseBody, &sourceFailure))
-	require.Equal(t, "SOURCE_EXECUTION_UNAVAILABLE", sourceFailure.Reason)
-	require.Equal(t, 1, count, "source-access denial must leave only the original acceptance")
+	require.NoError(t, readErr)
+	require.Equal(t, 1, count, "retired fields must not leave another acceptance")
 
-	_, err = bindings.CompareAndSwap(requestCtx, bindingScope, data.ModelDevReleaseBindingUpdate{
-		ExpectedGeneration: 1, Target: data.ModelDevReleaseBindingTarget{ReleaseID: provider.Release.ReleaseID, ReleaseDigest: provider.Release.ReleaseDigest, NewSubmissionsEnabled: false},
-		Actor: actor, RequestedAt: time.Now().UTC().Truncate(time.Microsecond), Reason: "pause only new fixture admissions", EvidenceReference: "contract:cpu-p01:modeldev-http-paused",
-	})
-	require.NoError(t, err)
+	// The original key must resolve from persisted facts even after the current
+	// external Res catalogue is unavailable. No Release/generation gate exists.
+	computeProvider.unavailable = true
 	statusCode, responseBody = post(provider.Intent, key)
-	require.Equal(t, http.StatusAccepted, statusCode, "pause must not block an authorized original-key replay")
+	require.Equal(t, http.StatusAccepted, statusCode, "current catalogue failure must not block an authorized original-key replay")
 	var replay modeldevv1.CreateExecutionResponse
 	require.NoError(t, protojson.Unmarshal(responseBody, &replay))
 	require.True(t, replay.Replayed)
@@ -351,7 +317,7 @@ func TestModelDevCreatePersistsBefore202AndReplaysOriginal(t *testing.T) {
 	require.NoError(t, protojson.Unmarshal(responseBody, &unknownReply))
 	wantProjection := &modeldevv1.CreateExecutionResponse{
 		OperationId: stored.OperationID, ExecutionId: stored.ExecutionID,
-		ResolvedReleaseId: provider.Release.ReleaseID, Replayed: true,
+		Replayed:     true,
 		ComputeState: "ACCEPTED", DeliveryState: "PENDING", ResourceState: "NOT_APPLICABLE", CloseState: "OPEN",
 	}
 	require.True(t, proto.Equal(wantProjection, &unknownReply), "UNKNOWN exposes original acceptance knowledge, not an invented owner ACK")
@@ -488,4 +454,23 @@ func openModelDevHTTPPG(t *testing.T, dsn string) *entCrud.EntClient[*ent.Client
 		t.Fatal("MODELDEV_CREATE_PREFLIGHT: PG unavailable")
 	}
 	return entCrud.NewEntClient(client, driver)
+}
+
+// Only the external Resource RPC boundary is a fixture. Admission authorization,
+// Prepare/Finalize, persistence and HTTP/session handling remain real.
+type modelDevHTTPComputeFixture struct {
+	selection   *compute.ComputeSelection
+	unavailable bool
+	calls       int
+}
+
+func (f *modelDevHTTPComputeFixture) ResolveComputePreset(ctx context.Context, tenant, actor string, request *compute.ResolveComputePresetRequest) (*compute.ComputeSelection, error) {
+	f.calls++
+	if f.unavailable {
+		return nil, status.Error(codes.Unavailable, "external Res fixture unavailable")
+	}
+	if request == nil || request.TenantId != tenant || actor == "" || request.Usage != compute.Usage_TRAINING || request.PresetId != f.selection.PresetId {
+		return nil, status.Error(codes.InvalidArgument, "invalid official TRAINING selection request")
+	}
+	return proto.Clone(f.selection).(*compute.ComputeSelection), ctx.Err()
 }

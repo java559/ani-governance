@@ -99,9 +99,9 @@ func (s *ModelDevService) GetExecutionLogs(ctx context.Context, in *modeldevv1.G
 }
 
 func modelDevPublicExecution(execution *modeldevcontractv1.ExecutionView) *modeldevv1.ExecutionView {
-	return &modeldevv1.ExecutionView{
+	out := &modeldevv1.ExecutionView{
 		OperationId: execution.Identity.OperationId, ExecutionId: execution.Identity.ExecutionId, Name: execution.Name,
-		Kind: strings.TrimPrefix(execution.Kind.String(), "EXECUTION_KIND_"), PresetId: execution.PresetId, ReleaseId: execution.ReleaseId,
+		Kind: strings.TrimPrefix(execution.Kind.String(), "EXECUTION_KIND_"), ImplementationId: execution.ImplementationId, ComputePresetId: execution.ComputePresetId,
 		InputVersionId: execution.InputVersionId, ImageVersionId: execution.ImageVersionId,
 		ComputeState:  strings.TrimPrefix(execution.States.ComputeState.String(), "COMPUTE_STATE_"),
 		DeliveryState: strings.TrimPrefix(execution.States.DeliveryState.String(), "DELIVERY_STATE_"),
@@ -111,6 +111,24 @@ func modelDevPublicExecution(execution *modeldevcontractv1.ExecutionView) *model
 		AcceptedAt: execution.AcceptedAt.AsTime().UTC().Format(time.RFC3339Nano), DeadlineAt: execution.DeadlineAt.AsTime().UTC().Format(time.RFC3339Nano),
 		ObservedAt: execution.ObservedAt.AsTime().UTC().Format(time.RFC3339Nano),
 	}
+	out.ParameterContractVersion = execution.ParameterContractVersion
+	out.ResolvedConfigurationSha256 = execution.ResolvedConfigurationSha256
+	for _, parameter := range execution.ResolvedParameters {
+		out.ResolvedParameters = append(out.ResolvedParameters, modelDevPublicParameter(parameter))
+	}
+	if c := execution.ComputeOrigin; c != nil {
+		out.Compute = &modeldevv1.ExecutionComputeView{ComputePresetId: c.ComputePresetId, SelectionDigest: c.SelectionDigest, CpuMillis: c.CpuMillis, MemoryMib: c.MemoryMib, DeviceMode: c.DeviceMode}
+	}
+	if timing := execution.Timing; timing != nil {
+		out.Timing = &modeldevv1.ExecutionTimingView{ExecutionTimeoutSeconds: timing.ExecutionTimeoutSeconds, ExecutionTimeoutMaxSeconds: timing.ExecutionTimeoutMaxSeconds, StepTimeoutSeconds: timing.StepTimeoutSeconds}
+	}
+	if p := execution.ExplicitMlp; p != nil {
+		out.ExplicitParameters = &modeldevv1.ExecutionParameters{LearningRate: p.LearningRate, Epochs: p.Epochs, BatchSize: p.BatchSize, Seed: p.Seed}
+	}
+	if p := execution.ExplicitFinetuning; p != nil {
+		out.ExplicitParameters = &modeldevv1.ExecutionParameters{LearningRate: p.LearningRate, MaxSteps: p.MaxSteps, PerDeviceTrainBatchSize: p.PerDeviceTrainBatchSize, GradientAccumulationSteps: p.GradientAccumulationSteps, CutoffLen: p.CutoffLen, LoraRank: p.LoraRank, LoraAlpha: p.LoraAlpha, LoraDropout: p.LoraDropout, Seed: p.Seed}
+	}
+	return out
 }
 
 func (s *ModelDevService) ListExecutionArtifacts(ctx context.Context, in *modeldevv1.ListExecutionArtifactsRequest) (*modeldevv1.ListExecutionArtifactsResponse, error) {

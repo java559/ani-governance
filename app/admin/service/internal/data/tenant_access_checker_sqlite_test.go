@@ -52,6 +52,31 @@ func forbiddenMessage(t *testing.T, err error) string {
 	return e.GetMessage()
 }
 
+// TestTenantAccessCheckerPathTemplateNormalization 目录路径来自 OpenAPI（驼峰参数名），
+// 请求 path 是运行时路由模板（proto 蛇形）；参数名不同时按归一化命中，
+// 归一化命中多条时无法判定业务模块，保持 fail-closed。
+func TestTenantAccessCheckerPathTemplateNormalization(t *testing.T) {
+	t.Run("驼峰目录_蛇形请求_放行", func(t *testing.T) {
+		checker, client, sysCtx := newCheckerSqlite(t)
+		p := client.Plan.Create().SetExpiryPolicy(plan.ExpiryPolicyReadonly).SaveX(sysCtx)
+		tid := client.Tenant.Create().SetName("t-camel").SetStatus(tenant.StatusOn).SetPlanID(p.ID).SaveX(sysCtx).ID
+		_ = client.Api.Create().SetPath("/api/v1/admin/users/{userId}/password").SetMethod("POST").SetBusinessModule(api.BusinessModuleOpm).SaveX(sysCtx)
+		_ = client.PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.ModuleOpm).SaveX(sysCtx)
+		require.NoError(t, checker.CheckTenantAccess(context.Background(), tid, "/api/v1/admin/users/{user_id}/password", "POST"))
+	})
+
+	t.Run("归一化命中多条_拒绝", func(t *testing.T) {
+		checker, client, sysCtx := newCheckerSqlite(t)
+		p := client.Plan.Create().SetExpiryPolicy(plan.ExpiryPolicyReadonly).SaveX(sysCtx)
+		tid := client.Tenant.Create().SetName("t-ambiguous").SetStatus(tenant.StatusOn).SetPlanID(p.ID).SaveX(sysCtx).ID
+		_ = client.Api.Create().SetPath("/t/{a}/x").SetMethod("POST").SetBusinessModule(api.BusinessModuleOpm).SaveX(sysCtx)
+		_ = client.Api.Create().SetPath("/t/{b}/x").SetMethod("POST").SetBusinessModule(api.BusinessModuleOpm).SaveX(sysCtx)
+		_ = client.PlanModule.Create().SetPlanID(p.ID).SetModule(planmodule.ModuleOpm).SaveX(sysCtx)
+		err := checker.CheckTenantAccess(context.Background(), tid, "/t/{c}/x", "POST")
+		require.Contains(t, forbiddenMessage(t, err), "access denied")
+	})
+}
+
 // TestTenantAccessCheckerDecisionMatrix 决策矩阵逐分支断言。
 func TestTenantAccessCheckerDecisionMatrix(t *testing.T) {
 	pastTime := time.Now().Add(-24 * time.Hour)

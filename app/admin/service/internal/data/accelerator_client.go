@@ -169,7 +169,12 @@ func acceleratorMetadata(method string, request any) (metadata.MD, error) {
 // service prefix or short method name never grants access to another RPC.
 func acceleratorMethodKind(method string) string {
 	switch method {
-	case acc.AcceleratorAdminService_RegisterCluster_FullMethodName,
+	case acc.AcceleratorAdminService_GetInitialization_FullMethodName,
+		acc.AcceleratorAdminService_ListDiscoveredNodes_FullMethodName,
+		acc.AcceleratorAdminService_CreateInitialization_FullMethodName,
+		acc.AcceleratorAdminService_GetInitializationOperation_FullMethodName,
+		acc.AcceleratorAdminService_RetryInitializationOperation_FullMethodName,
+		acc.AcceleratorAdminService_RegisterCluster_FullMethodName,
 		acc.AcceleratorAdminService_ListClusters_FullMethodName,
 		acc.AcceleratorAdminService_CreatePool_FullMethodName,
 		acc.AcceleratorAdminService_ListPools_FullMethodName,

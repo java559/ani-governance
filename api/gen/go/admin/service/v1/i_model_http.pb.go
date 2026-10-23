@@ -33,6 +33,7 @@ const OperationModelServiceGetModelVersion = "/admin.service.v1.ModelService/Get
 const OperationModelServiceGetUploadURL = "/admin.service.v1.ModelService/GetUploadURL"
 const OperationModelServiceImportModel = "/admin.service.v1.ModelService/ImportModel"
 const OperationModelServiceImportModelBundle = "/admin.service.v1.ModelService/ImportModelBundle"
+const OperationModelServiceListModelOperations = "/admin.service.v1.ModelService/ListModelOperations"
 const OperationModelServiceListModelVersions = "/admin.service.v1.ModelService/ListModelVersions"
 const OperationModelServiceListModels = "/admin.service.v1.ModelService/ListModels"
 const OperationModelServiceRetryImportTask = "/admin.service.v1.ModelService/RetryImportTask"
@@ -51,6 +52,9 @@ type ModelServiceHTTPServer interface {
 	GetUploadURL(context.Context, *v1.GetUploadURLRequest) (*v1.GetUploadURLResponse, error)
 	ImportModel(context.Context, *v1.ImportModelRequest) (*v1.ImportModelResponse, error)
 	ImportModelBundle(context.Context, *v1.ImportModelBundleRequest) (*v1.ImportModelBundleResponse, error)
+	// ListModelOperations Authenticated tenant principal, model:service:read and MODEL plan required.
+	// Model verifies ownership; inaccessible models return 404.
+	ListModelOperations(context.Context, *v1.ListModelOperationsRequest) (*v1.ListModelOperationsResponse, error)
 	ListModelVersions(context.Context, *v1.ListModelVersionsRequest) (*v1.ListModelVersionsResponse, error)
 	ListModels(context.Context, *v1.ListModelsRequest) (*v1.ListModelsResponse, error)
 	RetryImportTask(context.Context, *v1.RetryImportTaskRequest) (*v1.RetryImportTaskResponse, error)
@@ -67,6 +71,7 @@ func RegisterModelServiceHTTPServer(s *http.Server, srv ModelServiceHTTPServer) 
 	r.POST("/api/v1/model-versions", _ModelService_CreateModelVersion0_HTTP_Handler(srv))
 	r.GET("/api/v1/model-versions/{model_version_id}", _ModelService_GetModelVersion0_HTTP_Handler(srv))
 	r.GET("/api/v1/models/{model_id}/versions", _ModelService_ListModelVersions0_HTTP_Handler(srv))
+	r.GET("/api/v1/models/{model_id}/operations", _ModelService_ListModelOperations0_HTTP_Handler(srv))
 	r.DELETE("/api/v1/model-versions/{model_version_id}", _ModelService_DeleteModelVersion0_HTTP_Handler(srv))
 	r.POST("/api/v1/models/{model_id}/upload-url", _ModelService_GetUploadURL0_HTTP_Handler(srv))
 	r.POST("/api/v1/models:import", _ModelService_ImportModel0_HTTP_Handler(srv))
@@ -243,6 +248,28 @@ func _ModelService_ListModelVersions0_HTTP_Handler(srv ModelServiceHTTPServer) f
 			return err
 		}
 		reply := out.(*v1.ListModelVersionsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelService_ListModelOperations0_HTTP_Handler(srv ModelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListModelOperationsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelServiceListModelOperations)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListModelOperations(ctx, req.(*v1.ListModelOperationsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListModelOperationsResponse)
 		return ctx.Result(200, reply)
 	}
 }
@@ -442,6 +469,9 @@ type ModelServiceHTTPClient interface {
 	GetUploadURL(ctx context.Context, req *v1.GetUploadURLRequest, opts ...http.CallOption) (rsp *v1.GetUploadURLResponse, err error)
 	ImportModel(ctx context.Context, req *v1.ImportModelRequest, opts ...http.CallOption) (rsp *v1.ImportModelResponse, err error)
 	ImportModelBundle(ctx context.Context, req *v1.ImportModelBundleRequest, opts ...http.CallOption) (rsp *v1.ImportModelBundleResponse, err error)
+	// ListModelOperations Authenticated tenant principal, model:service:read and MODEL plan required.
+	// Model verifies ownership; inaccessible models return 404.
+	ListModelOperations(ctx context.Context, req *v1.ListModelOperationsRequest, opts ...http.CallOption) (rsp *v1.ListModelOperationsResponse, err error)
 	ListModelVersions(ctx context.Context, req *v1.ListModelVersionsRequest, opts ...http.CallOption) (rsp *v1.ListModelVersionsResponse, err error)
 	ListModels(ctx context.Context, req *v1.ListModelsRequest, opts ...http.CallOption) (rsp *v1.ListModelsResponse, err error)
 	RetryImportTask(ctx context.Context, req *v1.RetryImportTaskRequest, opts ...http.CallOption) (rsp *v1.RetryImportTaskResponse, err error)
@@ -606,6 +636,21 @@ func (c *ModelServiceHTTPClientImpl) ImportModelBundle(ctx context.Context, in *
 	opts = append(opts, http.Operation(OperationModelServiceImportModelBundle))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListModelOperations Authenticated tenant principal, model:service:read and MODEL plan required.
+// Model verifies ownership; inaccessible models return 404.
+func (c *ModelServiceHTTPClientImpl) ListModelOperations(ctx context.Context, in *v1.ListModelOperationsRequest, opts ...http.CallOption) (*v1.ListModelOperationsResponse, error) {
+	var out v1.ListModelOperationsResponse
+	pattern := "/api/v1/models/{model_id}/operations"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelServiceListModelOperations))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ModelDevService_ListPresets_FullMethodName               = "/admin.service.v1.ModelDevService/ListPresets"
+	ModelDevService_ListImplementations_FullMethodName       = "/admin.service.v1.ModelDevService/ListImplementations"
 	ModelDevService_GetInputVersion_FullMethodName           = "/admin.service.v1.ModelDevService/GetInputVersion"
 	ModelDevService_ListInputVersions_FullMethodName         = "/admin.service.v1.ModelDevService/ListInputVersions"
 	ModelDevService_ListExecutions_FullMethodName            = "/admin.service.v1.ModelDevService/ListExecutions"
@@ -38,7 +38,7 @@ const (
 //
 // CPU-P01 entry in the existing Governance BFF.
 type ModelDevServiceClient interface {
-	ListPresets(ctx context.Context, in *v1.ListPresetsRequest, opts ...grpc.CallOption) (*v1.ListPresetsResponse, error)
+	ListImplementations(ctx context.Context, in *v1.ListImplementationsRequest, opts ...grpc.CallOption) (*v1.ListImplementationsResponse, error)
 	GetInputVersion(ctx context.Context, in *v1.GetInputVersionRequest, opts ...grpc.CallOption) (*v1.GetInputVersionResponse, error)
 	ListInputVersions(ctx context.Context, in *v1.ListInputVersionsRequest, opts ...grpc.CallOption) (*v1.ListInputVersionsResponse, error)
 	ListExecutions(ctx context.Context, in *v1.ListExecutionsRequest, opts ...grpc.CallOption) (*v1.ListExecutionsResponse, error)
@@ -58,10 +58,10 @@ func NewModelDevServiceClient(cc grpc.ClientConnInterface) ModelDevServiceClient
 	return &modelDevServiceClient{cc}
 }
 
-func (c *modelDevServiceClient) ListPresets(ctx context.Context, in *v1.ListPresetsRequest, opts ...grpc.CallOption) (*v1.ListPresetsResponse, error) {
+func (c *modelDevServiceClient) ListImplementations(ctx context.Context, in *v1.ListImplementationsRequest, opts ...grpc.CallOption) (*v1.ListImplementationsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(v1.ListPresetsResponse)
-	err := c.cc.Invoke(ctx, ModelDevService_ListPresets_FullMethodName, in, out, cOpts...)
+	out := new(v1.ListImplementationsResponse)
+	err := c.cc.Invoke(ctx, ModelDevService_ListImplementations_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +164,7 @@ func (c *modelDevServiceClient) CreateExecution(ctx context.Context, in *v1.Crea
 //
 // CPU-P01 entry in the existing Governance BFF.
 type ModelDevServiceServer interface {
-	ListPresets(context.Context, *v1.ListPresetsRequest) (*v1.ListPresetsResponse, error)
+	ListImplementations(context.Context, *v1.ListImplementationsRequest) (*v1.ListImplementationsResponse, error)
 	GetInputVersion(context.Context, *v1.GetInputVersionRequest) (*v1.GetInputVersionResponse, error)
 	ListInputVersions(context.Context, *v1.ListInputVersionsRequest) (*v1.ListInputVersionsResponse, error)
 	ListExecutions(context.Context, *v1.ListExecutionsRequest) (*v1.ListExecutionsResponse, error)
@@ -184,8 +184,8 @@ type ModelDevServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedModelDevServiceServer struct{}
 
-func (UnimplementedModelDevServiceServer) ListPresets(context.Context, *v1.ListPresetsRequest) (*v1.ListPresetsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListPresets not implemented")
+func (UnimplementedModelDevServiceServer) ListImplementations(context.Context, *v1.ListImplementationsRequest) (*v1.ListImplementationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListImplementations not implemented")
 }
 func (UnimplementedModelDevServiceServer) GetInputVersion(context.Context, *v1.GetInputVersionRequest) (*v1.GetInputVersionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetInputVersion not implemented")
@@ -235,20 +235,20 @@ func RegisterModelDevServiceServer(s grpc.ServiceRegistrar, srv ModelDevServiceS
 	s.RegisterService(&ModelDevService_ServiceDesc, srv)
 }
 
-func _ModelDevService_ListPresets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.ListPresetsRequest)
+func _ModelDevService_ListImplementations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListImplementationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ModelDevServiceServer).ListPresets(ctx, in)
+		return srv.(ModelDevServiceServer).ListImplementations(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ModelDevService_ListPresets_FullMethodName,
+		FullMethod: ModelDevService_ListImplementations_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ModelDevServiceServer).ListPresets(ctx, req.(*v1.ListPresetsRequest))
+		return srv.(ModelDevServiceServer).ListImplementations(ctx, req.(*v1.ListImplementationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -423,8 +423,8 @@ var ModelDevService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ModelDevServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ListPresets",
-			Handler:    _ModelDevService_ListPresets_Handler,
+			MethodName: "ListImplementations",
+			Handler:    _ModelDevService_ListImplementations_Handler,
 		},
 		{
 			MethodName: "GetInputVersion",

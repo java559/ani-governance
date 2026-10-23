@@ -10,6 +10,15 @@ import (
 
 // Registration is not a grant. User JWT, platform scope, action and Casbin apply.
 var PlatformNetworkOperations = map[string]NetworkOperationPolicy{
+	"/admin.service.v1.PlatformNetworkService/CreateDefaultVPCEgress":           {"POST", "/api/v1/admin/networks/default-vpc-egresses", "network:platform:default-egress:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetDefaultVPCEgress":              {"GET", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:get", true},
+	"/admin.service.v1.PlatformNetworkService/DeleteDefaultVPCEgress":           {"DELETE", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:delete", false},
+	"/admin.service.v1.PlatformNetworkService/RetireNetworkDevice":              {"POST", "/api/v1/admin/networks/devices/{device_id}/retirement", "network:platform:device-retirement:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetNetworkDeviceRetirement":       {"GET", "/api/v1/admin/networks/devices/{device_id}/retirement", "network:platform:device-retirement:get", true},
+	"/admin.service.v1.PlatformNetworkService/CreateVirtualSwitch":              {"POST", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetVirtualSwitch":                 {"GET", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:get", true},
+	"/admin.service.v1.PlatformNetworkService/ListVirtualSwitches":              {"GET", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:list", true},
+	"/admin.service.v1.PlatformNetworkService/DeleteVirtualSwitch":              {"DELETE", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:delete", false},
 	"/admin.service.v1.PlatformNetworkService/ListNodeInterfaces":               {"GET", "/api/v1/admin/networks/node-interfaces", "network:platform:device:list", true},
 	"/admin.service.v1.PlatformNetworkService/AdoptNetworkDevice":               {"POST", "/api/v1/admin/networks/devices", "network:platform:device:adopt", false},
 	"/admin.service.v1.PlatformNetworkService/GetNetworkDevice":                 {"GET", "/api/v1/admin/networks/devices/{device_id}", "network:platform:device:get", true},
@@ -45,11 +54,13 @@ func IsPlatformNetworkOperation(operation string) bool {
 }
 
 var platformNetworkIDPatterns = map[string]*regexp.Regexp{
-	"pool_id":         regexp.MustCompile(`^pool_[0-9a-f]{32}$`),
-	"gateway_id":      regexp.MustCompile(`^egw_[0-9a-f]{32}$`),
-	"vlan_network_id": regexp.MustCompile(`^vlan_[0-9a-f]{32}$`),
-	"device_id":       regexp.MustCompile(`^device_[0-9a-f]{32}$`),
-	"operation_id":    regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`),
+	"egress_id":         regexp.MustCompile(`^dve_[0-9a-f]{32}$`),
+	"virtual_switch_id": regexp.MustCompile(`^vsw_[0-9a-f]{32}$`),
+	"pool_id":           regexp.MustCompile(`^pool_[0-9a-f]{32}$`),
+	"gateway_id":        regexp.MustCompile(`^egw_[0-9a-f]{32}$`),
+	"vlan_network_id":   regexp.MustCompile(`^vlan_[0-9a-f]{32}$`),
+	"device_id":         regexp.MustCompile(`^device_[0-9a-f]{32}$`),
+	"operation_id":      regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`),
 }
 
 func ValidPlatformNetworkID(field, value string) bool {
@@ -58,6 +69,24 @@ func ValidPlatformNetworkID(field, value string) bool {
 }
 func platformNetworkMessage(operation string) proto.Message {
 	switch strings.TrimPrefix(operation, "/admin.service.v1.PlatformNetworkService/") {
+	case "CreateDefaultVPCEgress":
+		return &view.CreateDefaultVPCEgressRequest{}
+	case "GetDefaultVPCEgress":
+		return &view.GetDefaultVPCEgressRequest{}
+	case "DeleteDefaultVPCEgress":
+		return &view.DeleteDefaultVPCEgressRequest{}
+	case "RetireNetworkDevice":
+		return &view.RetireNetworkDeviceRequest{}
+	case "GetNetworkDeviceRetirement":
+		return &view.GetNetworkDeviceRetirementRequest{}
+	case "CreateVirtualSwitch":
+		return &view.CreateVirtualSwitchRequest{}
+	case "GetVirtualSwitch":
+		return &view.GetVirtualSwitchRequest{}
+	case "ListVirtualSwitches":
+		return &view.ListVirtualSwitchesRequest{}
+	case "DeleteVirtualSwitch":
+		return &view.DeleteVirtualSwitchRequest{}
 	case "ListNodeInterfaces":
 		return &view.ListNodeInterfacesRequest{}
 	case "AdoptNetworkDevice":
@@ -143,12 +172,32 @@ func platformNetworkHTTPRoute(r *http.Request) (string, proto.Message, string, s
 func platformNetworkQueryFields(operation string) map[string]bool {
 	fields := map[string]bool{}
 	switch strings.TrimPrefix(operation, "/admin.service.v1.PlatformNetworkService/") {
+	case "ListVirtualSwitches":
+		for _, f := range []string{"name", "state", "page", "pageSize"} {
+			fields[f] = true
+		}
 	case "ListNodeInterfaces":
-		fields["node_name"] = true
+		for _, f := range []string{"node_name", "cluster_id", "virtual_switch_id"} {
+			fields[f] = true
+		}
 	case "ListVlanNetworks", "ListEgressGateways", "ListPublicAddressPools", "ListIntranetAddressPools":
 		for _, f := range []string{"name", "state", "limit", "cursor"} {
 			fields[f] = true
 		}
 	}
 	return fields
+}
+
+// The v1 device request remains replayable, but cannot be mixed with v2 binding.
+func validPlatformNetworkInput(message proto.Message) bool {
+	switch req := message.(type) {
+	case *view.CreateVlanNetworkRequest:
+		if req.Data == nil {
+			return false
+		}
+		d := req.Data
+		v2 := d.ClusterId != "" || d.VirtualSwitchId != "" || d.DeviceName != ""
+		return (!v2 && d.DeviceId != "") || (v2 && d.DeviceId == "" && d.ClusterId != "" && d.VirtualSwitchId != "" && d.DeviceName != "")
+	}
+	return true
 }

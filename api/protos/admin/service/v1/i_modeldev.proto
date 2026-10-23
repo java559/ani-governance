@@ -8,8 +8,8 @@ import "modeldev/service/v1/execution.proto";
 
 // CPU-P01 entry in the existing Governance BFF.
 service ModelDevService {
-  rpc ListPresets (modeldev.service.v1.ListPresetsRequest) returns (modeldev.service.v1.ListPresetsResponse) {
-    option (google.api.http) = { get: "/api/v1/modeldev/presets" };
+  rpc ListImplementations (modeldev.service.v1.ListImplementationsRequest) returns (modeldev.service.v1.ListImplementationsResponse) {
+    option (google.api.http) = { get: "/api/v1/modeldev/implementations" };
   }
   rpc GetInputVersion (modeldev.service.v1.GetInputVersionRequest) returns (modeldev.service.v1.GetInputVersionResponse) {
     option (google.api.http) = { get: "/api/v1/modeldev/input-versions/{input_version_id}" response_body: "input_version" };

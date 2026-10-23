@@ -33,7 +33,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/membershiprole"
 	"go-wind-admin/app/admin/service/internal/data/ent/menu"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
-	"go-wind-admin/app/admin/service/internal/data/ent/modeldevreleasebinding"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
@@ -123,8 +122,6 @@ type Client struct {
 	Menu *MenuClient
 	// ModelDevAcceptance is the client for interacting with the ModelDevAcceptance builders.
 	ModelDevAcceptance *ModelDevAcceptanceClient
-	// ModelDevReleaseBinding is the client for interacting with the ModelDevReleaseBinding builders.
-	ModelDevReleaseBinding *ModelDevReleaseBindingClient
 	// NotificationChannel is the client for interacting with the NotificationChannel builders.
 	NotificationChannel *NotificationChannelClient
 	// OperationAuditLog is the client for interacting with the OperationAuditLog builders.
@@ -224,7 +221,6 @@ func (c *Client) init() {
 	c.MembershipRole = NewMembershipRoleClient(c.config)
 	c.Menu = NewMenuClient(c.config)
 	c.ModelDevAcceptance = NewModelDevAcceptanceClient(c.config)
-	c.ModelDevReleaseBinding = NewModelDevReleaseBindingClient(c.config)
 	c.NotificationChannel = NewNotificationChannelClient(c.config)
 	c.OperationAuditLog = NewOperationAuditLogClient(c.config)
 	c.OrgUnit = NewOrgUnitClient(c.config)
@@ -372,7 +368,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MembershipRole:           NewMembershipRoleClient(cfg),
 		Menu:                     NewMenuClient(cfg),
 		ModelDevAcceptance:       NewModelDevAcceptanceClient(cfg),
-		ModelDevReleaseBinding:   NewModelDevReleaseBindingClient(cfg),
 		NotificationChannel:      NewNotificationChannelClient(cfg),
 		OperationAuditLog:        NewOperationAuditLogClient(cfg),
 		OrgUnit:                  NewOrgUnitClient(cfg),
@@ -447,7 +442,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MembershipRole:           NewMembershipRoleClient(cfg),
 		Menu:                     NewMenuClient(cfg),
 		ModelDevAcceptance:       NewModelDevAcceptanceClient(cfg),
-		ModelDevReleaseBinding:   NewModelDevReleaseBindingClient(cfg),
 		NotificationChannel:      NewNotificationChannelClient(cfg),
 		OperationAuditLog:        NewOperationAuditLogClient(cfg),
 		OrgUnit:                  NewOrgUnitClient(cfg),
@@ -515,14 +509,14 @@ func (c *Client) Use(hooks ...Hook) {
 		c.GpuUsageSync, c.InternalMessage, c.InternalMessageCategory,
 		c.InternalMessageRecipient, c.Language, c.LoginAuditLog, c.LoginPolicy,
 		c.Membership, c.MembershipOrgUnit, c.MembershipPosition, c.MembershipRole,
-		c.Menu, c.ModelDevAcceptance, c.ModelDevReleaseBinding, c.NotificationChannel,
-		c.OperationAuditLog, c.OrgUnit, c.Permission, c.PermissionApi,
-		c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy,
-		c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog, c.Position,
-		c.QuotaAccount, c.QuotaCharge, c.QuotaDefinition, c.QuotaOperation,
-		c.QuotaReleaseReceipt, c.Role, c.RoleFieldPermission, c.RoleMetadata,
-		c.RoleOrgUnit, c.RolePermission, c.SysConfig, c.Task, c.Tenant, c.User,
-		c.UserCredential, c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
+		c.Menu, c.ModelDevAcceptance, c.NotificationChannel, c.OperationAuditLog,
+		c.OrgUnit, c.Permission, c.PermissionApi, c.PermissionAuditLog,
+		c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy, c.Plan, c.PlanModule,
+		c.PlanQuota, c.PolicyEvaluationLog, c.Position, c.QuotaAccount, c.QuotaCharge,
+		c.QuotaDefinition, c.QuotaOperation, c.QuotaReleaseReceipt, c.Role,
+		c.RoleFieldPermission, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission,
+		c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor,
+		c.UserOrgUnit, c.UserPosition, c.UserRole,
 	} {
 		n.Use(hooks...)
 	}
@@ -537,14 +531,14 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.GpuUsageSync, c.InternalMessage, c.InternalMessageCategory,
 		c.InternalMessageRecipient, c.Language, c.LoginAuditLog, c.LoginPolicy,
 		c.Membership, c.MembershipOrgUnit, c.MembershipPosition, c.MembershipRole,
-		c.Menu, c.ModelDevAcceptance, c.ModelDevReleaseBinding, c.NotificationChannel,
-		c.OperationAuditLog, c.OrgUnit, c.Permission, c.PermissionApi,
-		c.PermissionAuditLog, c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy,
-		c.Plan, c.PlanModule, c.PlanQuota, c.PolicyEvaluationLog, c.Position,
-		c.QuotaAccount, c.QuotaCharge, c.QuotaDefinition, c.QuotaOperation,
-		c.QuotaReleaseReceipt, c.Role, c.RoleFieldPermission, c.RoleMetadata,
-		c.RoleOrgUnit, c.RolePermission, c.SysConfig, c.Task, c.Tenant, c.User,
-		c.UserCredential, c.UserMfaFactor, c.UserOrgUnit, c.UserPosition, c.UserRole,
+		c.Menu, c.ModelDevAcceptance, c.NotificationChannel, c.OperationAuditLog,
+		c.OrgUnit, c.Permission, c.PermissionApi, c.PermissionAuditLog,
+		c.PermissionGroup, c.PermissionMenu, c.PermissionPolicy, c.Plan, c.PlanModule,
+		c.PlanQuota, c.PolicyEvaluationLog, c.Position, c.QuotaAccount, c.QuotaCharge,
+		c.QuotaDefinition, c.QuotaOperation, c.QuotaReleaseReceipt, c.Role,
+		c.RoleFieldPermission, c.RoleMetadata, c.RoleOrgUnit, c.RolePermission,
+		c.SysConfig, c.Task, c.Tenant, c.User, c.UserCredential, c.UserMfaFactor,
+		c.UserOrgUnit, c.UserPosition, c.UserRole,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -597,8 +591,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Menu.mutate(ctx, m)
 	case *ModelDevAcceptanceMutation:
 		return c.ModelDevAcceptance.mutate(ctx, m)
-	case *ModelDevReleaseBindingMutation:
-		return c.ModelDevReleaseBinding.mutate(ctx, m)
 	case *NotificationChannelMutation:
 		return c.NotificationChannel.mutate(ctx, m)
 	case *OperationAuditLogMutation:
@@ -3708,140 +3700,6 @@ func (c *ModelDevAcceptanceClient) mutate(ctx context.Context, m *ModelDevAccept
 		return (&ModelDevAcceptanceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown ModelDevAcceptance mutation op: %q", m.Op())
-	}
-}
-
-// ModelDevReleaseBindingClient is a client for the ModelDevReleaseBinding schema.
-type ModelDevReleaseBindingClient struct {
-	config
-}
-
-// NewModelDevReleaseBindingClient returns a client for the ModelDevReleaseBinding from the given config.
-func NewModelDevReleaseBindingClient(c config) *ModelDevReleaseBindingClient {
-	return &ModelDevReleaseBindingClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `modeldevreleasebinding.Hooks(f(g(h())))`.
-func (c *ModelDevReleaseBindingClient) Use(hooks ...Hook) {
-	c.hooks.ModelDevReleaseBinding = append(c.hooks.ModelDevReleaseBinding, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `modeldevreleasebinding.Intercept(f(g(h())))`.
-func (c *ModelDevReleaseBindingClient) Intercept(interceptors ...Interceptor) {
-	c.inters.ModelDevReleaseBinding = append(c.inters.ModelDevReleaseBinding, interceptors...)
-}
-
-// Create returns a builder for creating a ModelDevReleaseBinding entity.
-func (c *ModelDevReleaseBindingClient) Create() *ModelDevReleaseBindingCreate {
-	mutation := newModelDevReleaseBindingMutation(c.config, OpCreate)
-	return &ModelDevReleaseBindingCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of ModelDevReleaseBinding entities.
-func (c *ModelDevReleaseBindingClient) CreateBulk(builders ...*ModelDevReleaseBindingCreate) *ModelDevReleaseBindingCreateBulk {
-	return &ModelDevReleaseBindingCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *ModelDevReleaseBindingClient) MapCreateBulk(slice any, setFunc func(*ModelDevReleaseBindingCreate, int)) *ModelDevReleaseBindingCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &ModelDevReleaseBindingCreateBulk{err: fmt.Errorf("calling to ModelDevReleaseBindingClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*ModelDevReleaseBindingCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &ModelDevReleaseBindingCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for ModelDevReleaseBinding.
-func (c *ModelDevReleaseBindingClient) Update() *ModelDevReleaseBindingUpdate {
-	mutation := newModelDevReleaseBindingMutation(c.config, OpUpdate)
-	return &ModelDevReleaseBindingUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *ModelDevReleaseBindingClient) UpdateOne(_m *ModelDevReleaseBinding) *ModelDevReleaseBindingUpdateOne {
-	mutation := newModelDevReleaseBindingMutation(c.config, OpUpdateOne, withModelDevReleaseBinding(_m))
-	return &ModelDevReleaseBindingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *ModelDevReleaseBindingClient) UpdateOneID(id uint32) *ModelDevReleaseBindingUpdateOne {
-	mutation := newModelDevReleaseBindingMutation(c.config, OpUpdateOne, withModelDevReleaseBindingID(id))
-	return &ModelDevReleaseBindingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for ModelDevReleaseBinding.
-func (c *ModelDevReleaseBindingClient) Delete() *ModelDevReleaseBindingDelete {
-	mutation := newModelDevReleaseBindingMutation(c.config, OpDelete)
-	return &ModelDevReleaseBindingDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *ModelDevReleaseBindingClient) DeleteOne(_m *ModelDevReleaseBinding) *ModelDevReleaseBindingDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ModelDevReleaseBindingClient) DeleteOneID(id uint32) *ModelDevReleaseBindingDeleteOne {
-	builder := c.Delete().Where(modeldevreleasebinding.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &ModelDevReleaseBindingDeleteOne{builder}
-}
-
-// Query returns a query builder for ModelDevReleaseBinding.
-func (c *ModelDevReleaseBindingClient) Query() *ModelDevReleaseBindingQuery {
-	return &ModelDevReleaseBindingQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeModelDevReleaseBinding},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a ModelDevReleaseBinding entity by its id.
-func (c *ModelDevReleaseBindingClient) Get(ctx context.Context, id uint32) (*ModelDevReleaseBinding, error) {
-	return c.Query().Where(modeldevreleasebinding.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *ModelDevReleaseBindingClient) GetX(ctx context.Context, id uint32) *ModelDevReleaseBinding {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *ModelDevReleaseBindingClient) Hooks() []Hook {
-	hooks := c.hooks.ModelDevReleaseBinding
-	return append(hooks[:len(hooks):len(hooks)], modeldevreleasebinding.Hooks[:]...)
-}
-
-// Interceptors returns the client interceptors.
-func (c *ModelDevReleaseBindingClient) Interceptors() []Interceptor {
-	return c.inters.ModelDevReleaseBinding
-}
-
-func (c *ModelDevReleaseBindingClient) mutate(ctx context.Context, m *ModelDevReleaseBindingMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&ModelDevReleaseBindingCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&ModelDevReleaseBindingUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&ModelDevReleaseBindingUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&ModelDevReleaseBindingDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown ModelDevReleaseBinding mutation op: %q", m.Op())
 	}
 }
 
@@ -8422,27 +8280,25 @@ type (
 		DictEntry, DictEntryI18n, DictType, GpuDeleteAcceptance, GpuUsageSync,
 		InternalMessage, InternalMessageCategory, InternalMessageRecipient, Language,
 		LoginAuditLog, LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition,
-		MembershipRole, Menu, ModelDevAcceptance, ModelDevReleaseBinding,
-		NotificationChannel, OperationAuditLog, OrgUnit, Permission, PermissionApi,
-		PermissionAuditLog, PermissionGroup, PermissionMenu, PermissionPolicy, Plan,
-		PlanModule, PlanQuota, PolicyEvaluationLog, Position, QuotaAccount,
-		QuotaCharge, QuotaDefinition, QuotaOperation, QuotaReleaseReceipt, Role,
-		RoleFieldPermission, RoleMetadata, RoleOrgUnit, RolePermission, SysConfig,
-		Task, Tenant, User, UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,
-		UserRole []ent.Hook
+		MembershipRole, Menu, ModelDevAcceptance, NotificationChannel,
+		OperationAuditLog, OrgUnit, Permission, PermissionApi, PermissionAuditLog,
+		PermissionGroup, PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
+		PolicyEvaluationLog, Position, QuotaAccount, QuotaCharge, QuotaDefinition,
+		QuotaOperation, QuotaReleaseReceipt, Role, RoleFieldPermission, RoleMetadata,
+		RoleOrgUnit, RolePermission, SysConfig, Task, Tenant, User, UserCredential,
+		UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Hook
 	}
 	inters struct {
 		AccessKey, AccessKeyIdempotency, Api, ApiAuditLog, DataAccessAuditLog,
 		DictEntry, DictEntryI18n, DictType, GpuDeleteAcceptance, GpuUsageSync,
 		InternalMessage, InternalMessageCategory, InternalMessageRecipient, Language,
 		LoginAuditLog, LoginPolicy, Membership, MembershipOrgUnit, MembershipPosition,
-		MembershipRole, Menu, ModelDevAcceptance, ModelDevReleaseBinding,
-		NotificationChannel, OperationAuditLog, OrgUnit, Permission, PermissionApi,
-		PermissionAuditLog, PermissionGroup, PermissionMenu, PermissionPolicy, Plan,
-		PlanModule, PlanQuota, PolicyEvaluationLog, Position, QuotaAccount,
-		QuotaCharge, QuotaDefinition, QuotaOperation, QuotaReleaseReceipt, Role,
-		RoleFieldPermission, RoleMetadata, RoleOrgUnit, RolePermission, SysConfig,
-		Task, Tenant, User, UserCredential, UserMfaFactor, UserOrgUnit, UserPosition,
-		UserRole []ent.Interceptor
+		MembershipRole, Menu, ModelDevAcceptance, NotificationChannel,
+		OperationAuditLog, OrgUnit, Permission, PermissionApi, PermissionAuditLog,
+		PermissionGroup, PermissionMenu, PermissionPolicy, Plan, PlanModule, PlanQuota,
+		PolicyEvaluationLog, Position, QuotaAccount, QuotaCharge, QuotaDefinition,
+		QuotaOperation, QuotaReleaseReceipt, Role, RoleFieldPermission, RoleMetadata,
+		RoleOrgUnit, RolePermission, SysConfig, Task, Tenant, User, UserCredential,
+		UserMfaFactor, UserOrgUnit, UserPosition, UserRole []ent.Interceptor
 	}
 )

@@ -59,6 +59,9 @@ managed:
     - file_option: go_package
       path: config/service/v1
       value: go-wind-admin/api/gen/go/config/service/v1;configpb
+    - file_option: go_package
+      path: inference/service/v1
+      value: go-wind-admin/api/gen/go/inference/service/v1;inferenceservicepb
 
     # 本地化分页 Proto（api/localdeps/pagination，源码与 go-crud/api@v0.0.7 逐字节一致）。
     # managed 全局前缀 go-wind-admin/api/gen/go 对此 Proto 例外：生成到 pkg/localdeps 目标，

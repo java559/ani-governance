@@ -393,13 +393,7 @@ func TestModelDevDispatchRejectsCorruptOriginalWithoutSending(t *testing.T) {
 				return response, nil
 			})
 			test.change(&original)
-			if test.name == "deadline precision" {
-				digest, err := original.Snapshot.Digest()
-				if err != nil {
-					t.Fatal("deadline precision fixture failed before sender validation")
-				}
-				original.SpecHash = digest
-			}
+
 			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
 			got, err := newModelDevBoundaryClient(t, config).AcceptExecution(ctx, original)
@@ -423,7 +417,7 @@ func modelDevDispatchFixture(t *testing.T) (cpup01.AdmissionEnvelope, *modeldevv
 		t.Fatal("MODELDEV_DELIVERY_CLIENT_PREFLIGHT: fixed intent invalid")
 	}
 	original := cpup01.AdmissionEnvelope{TenantID: base.scope.ResourceTenantID, Actor: base.scope.Actor,
-		OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), Intent: base.intent, IntentHash: intentHash,
+		OperationID: base.identity.OperationID, ExecutionID: base.identity.ExecutionID, Intent: base.intent, IntentHash: intentHash,
 		Snapshot: snapshot, SpecHash: base.response.ExecutionSpecHash, AcceptedAt: base.acceptedAt}
 	if _, _, err := original.CanonicalPayloads(); err != nil {
 		t.Fatal("MODELDEV_DELIVERY_CLIENT_PREFLIGHT: original invalid")

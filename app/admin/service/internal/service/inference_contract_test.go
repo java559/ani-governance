@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	contractv1 "github.com/liangzai006/ani-inference-service/api/inference/contract/v1"
 	runtimev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	modelv1 "github.com/liangzai006/ani-model-service/api/model/v1"
 	"github.com/stretchr/testify/require"
@@ -87,10 +88,10 @@ func TestInferenceStoredCommandVariantsAndDeleteScope(t *testing.T) {
 			_, e = commandcontract.DeleteSnapshot(commandcontract.InferenceOwner, string(raw), string(mutated))
 			require.Error(t, e)
 			c.DeleteScope.CreateCommandDigest = c.CreateCommandDigest
-			business, e := runtimev1.DecodeBusinessPayload(c.BusinessPayload)
+			business, e := contractv1.DecodeBusinessPayload(c.BusinessPayload)
 			require.NoError(t, e)
 			business.Engine.Command = "changed"
-			c.BusinessPayload, e = runtimev1.CanonicalBusinessPayload(business)
+			c.BusinessPayload, e = contractv1.CanonicalBusinessPayload(business)
 			require.NoError(t, e)
 			sum := sha256.Sum256(c.BusinessPayload)
 			c.BusinessPayloadDigest = hex.EncodeToString(sum[:])

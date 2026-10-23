@@ -9,7 +9,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/service"
 )
 
-const modelDevCreateIntentJSON = `"name":"train","kind":"GENERAL_TRAINING","preset_id":"11111111-2222-4333-8444-555555555555","dataset_version_id":"22222222-3333-4444-8555-666666666666"`
+const modelDevCreateIntentJSON = `"name":"train","kind":"GENERAL_TRAINING","implementation_id":"builtin.mlp","compute_preset_id":"11111111-2222-4333-8444-555555555555","parameters":{},"dataset_version_id":"22222222-3333-4444-8555-666666666666"`
 
 func TestDecodeModelDevCreatePreservesParameterPresence(t *testing.T) {
 	for _, test := range []struct {
@@ -17,19 +17,23 @@ func TestDecodeModelDevCreatePreservesParameterPresence(t *testing.T) {
 		extra   string
 		present bool
 	}{
-		{name: "omitted"},
-		{name: "explicit empty", extra: `,"general_parameters":[]`, present: true},
+		{name: "omitted learning rate"},
+		{name: "explicit default", extra: ``, present: true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
-			in, err := decodeModelDevCreate(strings.NewReader(`{` + modelDevCreateIntentJSON + test.extra + `,"idempotency_key":"Case-\uD83D\uDE80"}`))
+			raw := `{` + modelDevCreateIntentJSON + test.extra + `,"idempotency_key":"Case-\uD83D\uDE80"}`
+			if test.present {
+				raw = strings.Replace(raw, `"parameters":{}`, `"parameters":{"learning_rate":"0.01"}`, 1)
+			}
+			in, err := decodeModelDevCreate(strings.NewReader(raw))
 			require.NoError(t, err)
 			require.Equal(t, "Case-🚀", in.IdempotencyKey)
 			require.Equal(t, "train", in.Intent.Name)
 			if test.present {
-				require.NotNil(t, in.Intent.GeneralParameters)
-				require.Empty(t, *in.Intent.GeneralParameters)
+				require.NotNil(t, in.Intent.MLP.LearningRate)
+				require.Equal(t, "0.01", *in.Intent.MLP.LearningRate)
 			} else {
-				require.Nil(t, in.Intent.GeneralParameters)
+				require.Nil(t, in.Intent.MLP.LearningRate)
 			}
 		})
 	}
@@ -49,8 +53,12 @@ func TestDecodeModelDevCreateRejectsAmbiguousOrInjectedJSON(t *testing.T) {
 		{"lone surrogate key", `{` + modelDevCreateIntentJSON + `,"idempotency_key":"secret\uD800"}`},
 		{"duplicate key", strings.TrimSuffix(valid, "}") + `,"idempotency_key":"other"}`},
 		{"escaped duplicate intent field", strings.TrimSuffix(valid, "}") + `,"na\u006de":"other"}`},
-		{"nested duplicate", strings.TrimSuffix(valid, "}") + `,"general_parameters":[{"name":"epochs","type":"INTEGER","value":"3","value":"3"}]}`},
-		{"null parameters", strings.TrimSuffix(valid, "}") + `,"general_parameters":null}`},
+		{"nested duplicate", strings.Replace(valid, `"parameters":{}`, `"parameters":{"epochs":3,"epochs":3}`, 1)},
+		{"null parameters", strings.Replace(valid, `"parameters":{}`, `"parameters":null`, 1)},
+		{"missing parameters", strings.Replace(valid, `,"parameters":{}`, ``, 1)},
+		{"array parameters", strings.Replace(valid, `"parameters":{}`, `"parameters":[]`, 1)},
+		{"legacy preset", strings.TrimSuffix(valid, "}") + `,"preset_id":"11111111-2222-4333-8444-555555555555"}`},
+		{"zero timeout", strings.TrimSuffix(valid, "}") + `,"timeout_seconds":0}`},
 		{"injected tenant", strings.TrimSuffix(valid, "}") + `,"tenant_id":"secret-tenant"}`},
 		{"injected actor", strings.TrimSuffix(valid, "}") + `,"actor":"secret-actor"}`},
 		{"trailing object", valid + `{}`},

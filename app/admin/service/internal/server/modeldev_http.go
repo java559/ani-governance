@@ -21,7 +21,7 @@ import (
 )
 
 // The generated request describes the public schema. This route preserves
-// JSON array presence by passing the shared parsed Intent directly to service.
+// typed parameter presence by passing the shared parsed Intent to service.
 func registerModelDevHTTP(server *http.Server, modeldev *service.ModelDevService) {
 	registerModelDevStopHTTP(server, modeldev)
 	registerModelDevQueryHTTP(server, modeldev)

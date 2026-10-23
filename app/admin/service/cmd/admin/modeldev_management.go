@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -13,7 +12,6 @@ import (
 	modeldevv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
 	authv1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
-	"go-wind-admin/app/admin/service/internal/service"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/localdeps/go-crud/viewer"
 	conf "go-wind-admin/pkg/localdeps/kratos-bootstrap/api/gen/go/conf/v1"
@@ -85,7 +83,7 @@ func runModelDevManagement(ctx context.Context, command string, args []string, s
 	if rdb.Ping(ctx).Err() != nil {
 		return errors.New("modeldev management session store unavailable")
 	}
-	authenticator, err := newModelDevPauseAuthenticator(bctx, data.NewUserTokenCache(bctx, rdb))
+	authenticator, err := newModelDevAuthenticator(bctx, data.NewUserTokenCache(bctx, rdb))
 	if err != nil {
 		return errors.New("modeldev management JWT configuration invalid")
 	}
@@ -102,7 +100,7 @@ func runModelDevManagement(ctx context.Context, command string, args []string, s
 	} else if command == "modeldev-reconcile" || command == "modeldev-cleanup-plan" || command == "modeldev-cleanup-apply" {
 		err = authorization.AuthorizeManageExecution(ctx, principal.TenantID, principal.ID)
 	} else {
-		err = authorization.AuthorizeManageReleaseBinding(ctx, principal.TenantID, principal.ID)
+		err = authorization.AuthorizeManageInput(ctx, principal.TenantID, principal.ID)
 	}
 	if err != nil {
 		return errors.New("modeldev management forbidden or authorization unavailable")
@@ -126,34 +124,8 @@ func runModelDevManagement(ctx context.Context, command string, args []string, s
 	}
 	defer closeClient()
 	scope := data.ModelDevResolveScope{ResourceTenantID: tenant, Actor: actor}
-	if command == "modeldev-enable" {
-		in, err := decodeModelDevPauseRequest(request)
-		if err != nil {
-			return err
-		}
-		change, err := service.NewModelDevBindingService(authorization, tenants, data.NewModelDevReleaseBindingRepo(db), client).Enable(ctx, in)
-		if err != nil {
-			return err
-		}
-		if change == nil || change.After == nil {
-			return errors.New("modeldev binding result unavailable")
-		}
-		var before *modelDevPauseBindingView
-		if change.Before != nil {
-			value := modelDevPauseView(change.Before)
-			before = &value
-		}
-		return json.NewEncoder(stdout).Encode(struct {
-			Operator string                    `json:"operator"`
-			Before   *modelDevPauseBindingView `json:"before"`
-			After    modelDevPauseBindingView  `json:"after"`
-			Replayed bool                      `json:"replayed"`
-		}{actor, before, modelDevPauseView(change.After), change.Replayed})
-	}
 	var message proto.Message
 	switch command {
-	case "modeldev-import-release":
-		message = &modeldevv1.ImportReleaseRequest{}
 	case "modeldev-import-csv":
 		message = &modeldevv1.ImportCSVRequest{}
 	case "modeldev-import-finetuning-dataset":

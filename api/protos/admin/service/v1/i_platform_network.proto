@@ -6,6 +6,45 @@ import "catalog/service/v1/platform_network.proto";
 
 // Platform user JWT, current action permission and Casbin authorization required.
 service PlatformNetworkService {
+  rpc CreateDefaultVPCEgress(catalog.service.v1.CreateDefaultVPCEgressRequest) returns (catalog.service.v1.CreateDefaultVPCEgressResponse) {
+    option (google.api.http) = { post: "/api/v1/admin/networks/default-vpc-egresses" body: "*" response_body: "egress" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "CreateDefaultVPCEgress" description: "Requires platform user JWT and network:platform:default-egress:create. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness." };
+  }
+  rpc GetDefaultVPCEgress(catalog.service.v1.GetDefaultVPCEgressRequest) returns (catalog.service.v1.GetDefaultVPCEgressResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/default-vpc-egresses/{egress_id}" response_body: "egress" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetDefaultVPCEgress" description: "Requires platform user JWT and network:platform:default-egress:get. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness." };
+  }
+  rpc DeleteDefaultVPCEgress(catalog.service.v1.DeleteDefaultVPCEgressRequest) returns (catalog.service.v1.DeleteDefaultVPCEgressResponse) {
+    option (google.api.http) = { delete: "/api/v1/admin/networks/default-vpc-egresses/{egress_id}" response_body: "egress" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "DeleteDefaultVPCEgress" description: "Requires platform user JWT and network:platform:default-egress:delete. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness." };
+  }
+
+  rpc RetireNetworkDevice(catalog.service.v1.RetireNetworkDeviceRequest) returns (catalog.service.v1.RetireNetworkDeviceResponse) {
+    option (google.api.http) = { post: "/api/v1/admin/networks/devices/{device_id}/retirement" body: "*" response_body: "retirement" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "RetireNetworkDevice" description: "Requires platform user JWT and network:platform:device-retirement:create. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied." };
+  }
+  rpc GetNetworkDeviceRetirement(catalog.service.v1.GetNetworkDeviceRetirementRequest) returns (catalog.service.v1.GetNetworkDeviceRetirementResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/devices/{device_id}/retirement" response_body: "retirement" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetNetworkDeviceRetirement" description: "Requires platform user JWT and network:platform:device-retirement:get. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied." };
+  }
+
+  rpc CreateVirtualSwitch(catalog.service.v1.CreateVirtualSwitchRequest) returns (catalog.service.v1.CreateVirtualSwitchResponse) {
+    option (google.api.http) = { post: "/api/v1/admin/networks/virtual-switches" body: "*" response_body: "resource" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "CreateVirtualSwitch" description: "Requires platform user JWT and network:platform:virtual-switch:create. Tenant identities and API keys are denied." };
+  }
+  rpc GetVirtualSwitch(catalog.service.v1.GetVirtualSwitchRequest) returns (catalog.service.v1.GetVirtualSwitchResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}" response_body: "resource" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetVirtualSwitch" description: "Requires platform user JWT and network:platform:virtual-switch:get. Tenant identities and API keys are denied." };
+  }
+  rpc ListVirtualSwitches(catalog.service.v1.ListVirtualSwitchesRequest) returns (catalog.service.v1.ListVirtualSwitchesResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/virtual-switches" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "ListVirtualSwitches" description: "Requires platform user JWT and network:platform:virtual-switch:list. Lists use page/pageSize with direct items/total; total is a decimal string. Tenant identities and API keys are denied." };
+  }
+  rpc DeleteVirtualSwitch(catalog.service.v1.DeleteVirtualSwitchRequest) returns (catalog.service.v1.DeleteVirtualSwitchResponse) {
+    option (google.api.http) = { delete: "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}" response_body: "resource" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "DeleteVirtualSwitch" description: "Requires platform user JWT and network:platform:virtual-switch:delete. Tenant identities and API keys are denied." };
+  }
+
   rpc ListNodeInterfaces(catalog.service.v1.ListNodeInterfacesRequest) returns (catalog.service.v1.ListNodeInterfacesResponse) {
     option (google.api.http) = { get: "/api/v1/admin/networks/node-interfaces" };
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "ListNodeInterfaces" description: "Requires platform user JWT and network:platform:device:list. Tenant identities and API keys are denied." };

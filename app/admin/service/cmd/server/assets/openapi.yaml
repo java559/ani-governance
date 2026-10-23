@@ -407,6 +407,101 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AcceleratorDevices'
+    /api/v1/admin/accelerator/discovered-nodes:
+        get:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_ListDiscoveredNodes
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorDiscoveredNodes'
+    /api/v1/admin/accelerator/initialization:
+        get:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_GetInitialization
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorInitialization'
+    /api/v1/admin/accelerator/initializations:
+        post:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_CreateInitialization
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAcceleratorInitializationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorInitializationOperation'
+    /api/v1/admin/accelerator/initializations/{operation_id}:
+        get:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_GetInitializationOperation
+            parameters:
+                - name: operation_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorInitializationOperation'
+    /api/v1/admin/accelerator/initializations/{operation_id}:retry:
+        post:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_RetryInitializationOperation
+            parameters:
+                - name: operation_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RetryAcceleratorInitializationOperationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorInitializationOperation'
     /api/v1/admin/accelerator/pools:
         get:
             tags:
@@ -3209,6 +3304,71 @@ paths:
                                 $ref: '#/components/schemas/GetPlatformNetworkCapabilitiesResponse'
             security:
                 - BearerAuth: []
+    /api/v1/admin/networks/default-vpc-egresses:
+        post:
+            tags:
+                - PlatformNetworkService
+            summary: CreateDefaultVPCEgress
+            description: Requires platform user JWT and network:platform:default-egress:create. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness.
+            operationId: PlatformNetworkService_CreateDefaultVPCEgress
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateDefaultVPCEgressRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateDefaultVPCEgressResponse'
+            security:
+                - BearerAuth: []
+    /api/v1/admin/networks/default-vpc-egresses/{egress_id}:
+        get:
+            tags:
+                - PlatformNetworkService
+            summary: GetDefaultVPCEgress
+            description: Requires platform user JWT and network:platform:default-egress:get. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness.
+            operationId: PlatformNetworkService_GetDefaultVPCEgress
+            parameters:
+                - name: egress_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetDefaultVPCEgressResponse'
+            security:
+                - BearerAuth: []
+        delete:
+            tags:
+                - PlatformNetworkService
+            summary: DeleteDefaultVPCEgress
+            description: Requires platform user JWT and network:platform:default-egress:delete. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness.
+            operationId: PlatformNetworkService_DeleteDefaultVPCEgress
+            parameters:
+                - name: egress_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteDefaultVPCEgressResponse'
+            security:
+                - BearerAuth: []
     /api/v1/admin/networks/devices:
         post:
             tags:
@@ -3251,6 +3411,55 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GetNetworkDeviceResponse'
+            security:
+                - BearerAuth: []
+    /api/v1/admin/networks/devices/{device_id}/retirement:
+        get:
+            tags:
+                - PlatformNetworkService
+            summary: GetNetworkDeviceRetirement
+            description: Requires platform user JWT and network:platform:device-retirement:get. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_GetNetworkDeviceRetirement
+            parameters:
+                - name: device_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNetworkDeviceRetirementResponse'
+            security:
+                - BearerAuth: []
+        post:
+            tags:
+                - PlatformNetworkService
+            summary: RetireNetworkDevice
+            description: Requires platform user JWT and network:platform:device-retirement:create. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_RetireNetworkDevice
+            parameters:
+                - name: device_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RetireNetworkDeviceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RetireNetworkDeviceResponse'
             security:
                 - BearerAuth: []
     /api/v1/admin/networks/egress-gateways:
@@ -3545,6 +3754,14 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: cluster_id
+                  in: query
+                  schema:
+                    type: string
+                - name: virtual_switch_id
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -3756,6 +3973,105 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/RecordPublicPoolVerificationResponse'
+            security:
+                - BearerAuth: []
+    /api/v1/admin/networks/virtual-switches:
+        get:
+            tags:
+                - PlatformNetworkService
+            summary: ListVirtualSwitches
+            description: Requires platform user JWT and network:platform:virtual-switch:list. Lists use page/pageSize with direct items/total; total is a decimal string. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_ListVirtualSwitches
+            parameters:
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+                - name: state
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListVirtualSwitchesResponse'
+            security:
+                - BearerAuth: []
+        post:
+            tags:
+                - PlatformNetworkService
+            summary: CreateVirtualSwitch
+            description: Requires platform user JWT and network:platform:virtual-switch:create. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_CreateVirtualSwitch
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateVirtualSwitchRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateVirtualSwitchResponse'
+            security:
+                - BearerAuth: []
+    /api/v1/admin/networks/virtual-switches/{virtual_switch_id}:
+        get:
+            tags:
+                - PlatformNetworkService
+            summary: GetVirtualSwitch
+            description: Requires platform user JWT and network:platform:virtual-switch:get. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_GetVirtualSwitch
+            parameters:
+                - name: virtual_switch_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetVirtualSwitchResponse'
+            security:
+                - BearerAuth: []
+        delete:
+            tags:
+                - PlatformNetworkService
+            summary: DeleteVirtualSwitch
+            description: Requires platform user JWT and network:platform:virtual-switch:delete. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_DeleteVirtualSwitch
+            parameters:
+                - name: virtual_switch_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteVirtualSwitchResponse'
             security:
                 - BearerAuth: []
     /api/v1/admin/networks/vlan-networks:
@@ -7608,126 +7924,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/InferenceAcceptance'
-    /api/v1/inference/services/{data.resource_id}:delete:
-        post:
-            tags:
-                - InferenceService
-            operationId: InferenceService_DeleteInference
-            parameters:
-                - name: data.resource_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/DeleteInferenceRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/InferenceAcceptance'
-    /api/v1/inference/services/{data.resource_id}:restart:
-        post:
-            tags:
-                - InferenceService
-            operationId: InferenceService_RestartInference
-            parameters:
-                - name: data.resource_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/InferenceAcceptance'
-    /api/v1/inference/services/{data.resource_id}:start:
-        post:
-            tags:
-                - InferenceService
-            operationId: InferenceService_StartInference
-            parameters:
-                - name: data.resource_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/InferenceAcceptance'
-    /api/v1/inference/services/{data.resource_id}:stop:
-        post:
-            tags:
-                - InferenceService
-            operationId: InferenceService_StopInference
-            parameters:
-                - name: data.resource_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/InferenceAcceptance'
-    /api/v1/inference/services/{data.resource_id}:update:
-        post:
-            tags:
-                - InferenceService
-            operationId: InferenceService_UpdateInference
-            parameters:
-                - name: data.resource_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/UpdateInferenceRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/InferenceAcceptance'
     /api/v1/inference/services/{resource_id}:
         get:
             tags:
@@ -7746,6 +7942,129 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/InferenceView'
+    /api/v1/inference/services/{resource_id}/events:
+        get:
+            tags:
+                - InferenceDiagnosticsService
+            operationId: InferenceDiagnosticsService_ListRuntimeEvents
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: since
+                  in: query
+                  schema:
+                    type: string
+                    format: date-time
+                - name: until
+                  in: query
+                  schema:
+                    type: string
+                    format: date-time
+                - name: type
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListRuntimeEventsResponse'
+    /api/v1/inference/services/{resource_id}/logs:
+        get:
+            tags:
+                - InferenceDiagnosticsService
+            operationId: InferenceDiagnosticsService_GetRuntimeLogs
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: instance
+                  in: query
+                  schema:
+                    type: string
+                - name: container
+                  in: query
+                  schema:
+                    type: string
+                - name: since
+                  in: query
+                  schema:
+                    type: string
+                    format: date-time
+                - name: until
+                  in: query
+                  schema:
+                    type: string
+                    format: date-time
+                - name: tail_lines
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RuntimeLogsResponse'
+    /api/v1/inference/services/{resource_id}/logs:stream:
+        get:
+            tags:
+                - InferenceDiagnosticsService
+            description: Served as bounded SSE by the custom HTTP handler.
+            operationId: InferenceDiagnosticsService_StreamRuntimeLogs
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: instance
+                  in: query
+                  schema:
+                    type: string
+                - name: container
+                  in: query
+                  schema:
+                    type: string
+                - name: since
+                  in: query
+                  schema:
+                    type: string
+                    format: date-time
+                - name: until
+                  in: query
+                  schema:
+                    type: string
+                    format: date-time
+                - name: tail_lines
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RuntimeLogLine'
     /api/v1/inference/services/{resource_id}/operations:
         get:
             tags:
@@ -7774,6 +8093,144 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListInferenceOperationsResponse'
+    /api/v1/inference/services/{resource_id}/runtime:
+        get:
+            tags:
+                - InferenceDiagnosticsService
+            operationId: InferenceDiagnosticsService_GetRuntimeDiagnostics
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RuntimeDiagnostics'
+    /api/v1/inference/services/{resource_id}:delete:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_DeleteInference
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteInferenceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{resource_id}:restart:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_RestartInference
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{resource_id}:start:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_StartInference
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{resource_id}:stop:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_StopInference
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InferenceServiceCommandRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
+    /api/v1/inference/services/{resource_id}:update:
+        post:
+            tags:
+                - InferenceService
+            operationId: InferenceService_UpdateInference
+            parameters:
+                - name: resource_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateInferenceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InferenceAcceptance'
     /api/v1/instance-operations/{operation_id}:
         get:
             tags:
@@ -8334,6 +8791,29 @@ paths:
                                 $ref: '#/components/schemas/StopExecutionResponse'
             security:
                 - BearerAuth: []
+    /api/v1/modeldev/implementations:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_ListImplementations
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListImplementationsResponse'
     /api/v1/modeldev/input-versions:
         get:
             tags:
@@ -8379,29 +8859,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/InputVersionView'
-    /api/v1/modeldev/presets:
-        get:
-            tags:
-                - ModelDevService
-            operationId: ModelDevService_ListPresets
-            parameters:
-                - name: page
-                  in: query
-                  schema:
-                    type: integer
-                    format: uint32
-                - name: pageSize
-                  in: query
-                  schema:
-                    type: integer
-                    format: uint32
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ListPresetsResponse'
     /api/v1/models:
         get:
             tags:
@@ -8550,6 +9007,37 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/models/{model_id}/operations:
+        get:
+            tags:
+                - ModelService
+            description: |-
+                Authenticated tenant principal, model:service:read and MODEL plan required.
+                 Model verifies ownership; inaccessible models return 404.
+            operationId: ModelService_ListModelOperations
+            parameters:
+                - name: model_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListModelOperationsResponse'
     /api/v1/models/{model_id}/upload-url:
         post:
             tags:
@@ -8595,6 +9083,10 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: status
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -9986,6 +10478,68 @@ components:
                         $ref: '#/components/schemas/AcceleratorDevice'
                 next_page_token:
                     type: string
+        AcceleratorDiscoveredBaseline:
+            type: object
+            properties:
+                baseline_ref:
+                    type: string
+                mode:
+                    type: string
+                source:
+                    type: string
+        AcceleratorDiscoveredGPU:
+            type: object
+            properties:
+                uuid:
+                    type: string
+                model_key:
+                    type: string
+                physical_memory_bytes:
+                    type: string
+                safe_memory_budget_mib:
+                    type: string
+                budget_reason:
+                    type: string
+        AcceleratorDiscoveredNode:
+            type: object
+            properties:
+                node:
+                    $ref: '#/components/schemas/AcceleratorNode'
+                group_id:
+                    type: string
+                gpus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorDiscoveredGPU'
+                baselines:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorDiscoveredBaseline'
+                agent_online:
+                    type: boolean
+                agent_lease_expires_at:
+                    type: string
+                sources:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorNodeSource'
+                selectable:
+                    type: boolean
+                blocking_reasons:
+                    type: array
+                    items:
+                        type: string
+        AcceleratorDiscoveredNodes:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorDiscoveredNode'
+                total:
+                    type: string
+                discovery_revision:
+                    type: string
         AcceleratorGpuRequest:
             type: object
             properties:
@@ -10005,6 +10559,191 @@ components:
                     format: uint32
                 container_name:
                     type: string
+        AcceleratorInitialization:
+            type: object
+            properties:
+                registered:
+                    type: boolean
+                connection_ref:
+                    type: string
+                cluster_id:
+                    type: string
+                display_name:
+                    type: string
+                configuration_state:
+                    type: string
+                checks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationCheck'
+                latest_operation:
+                    $ref: '#/components/schemas/AcceleratorInitializationOperation'
+                configuration_complete:
+                    type: boolean
+        AcceleratorInitializationCheck:
+            type: object
+            properties:
+                key:
+                    type: string
+                source:
+                    type: string
+                state:
+                    type: string
+                reason:
+                    type: string
+        AcceleratorInitializationExistingGroup:
+            type: object
+            properties:
+                group_id:
+                    type: string
+                expected_version:
+                    type: string
+        AcceleratorInitializationGroupInput:
+            type: object
+            properties:
+                client_key:
+                    type: string
+                existing_group:
+                    $ref: '#/components/schemas/AcceleratorInitializationExistingGroup'
+                new_group:
+                    $ref: '#/components/schemas/AcceleratorInitializationNewGroup'
+        AcceleratorInitializationGroupResult:
+            type: object
+            properties:
+                client_key:
+                    type: string
+                group_id:
+                    type: string
+                recorded_group_version:
+                    type: string
+                auto_open_result:
+                    type: string
+                admission:
+                    type: string
+        AcceleratorInitializationNewGroup:
+            type: object
+            properties:
+                pool_key:
+                    type: string
+                display_name:
+                    type: string
+                nodes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorNode'
+                baseline_ref:
+                    type: string
+                queue_name:
+                    type: string
+        AcceleratorInitializationNewPool:
+            type: object
+            properties:
+                display_name:
+                    type: string
+        AcceleratorInitializationOperation:
+            type: object
+            properties:
+                operation_id:
+                    type: string
+                version:
+                    type: string
+                state:
+                    type: string
+                created_at:
+                    type: string
+                updated_at:
+                    type: string
+                current_step:
+                    type: string
+                retryable:
+                    type: boolean
+                reason:
+                    type: string
+                required_actions:
+                    type: array
+                    items:
+                        type: string
+                cluster_id:
+                    type: string
+                pools:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationPoolResult'
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationGroupResult'
+                profiles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationProfileResult'
+                steps:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationStep'
+        AcceleratorInitializationPoolInput:
+            type: object
+            properties:
+                client_key:
+                    type: string
+                existing_pool_id:
+                    type: string
+                new_pool:
+                    $ref: '#/components/schemas/AcceleratorInitializationNewPool'
+        AcceleratorInitializationPoolResult:
+            type: object
+            properties:
+                client_key:
+                    type: string
+                pool_id:
+                    type: string
+        AcceleratorInitializationProfileInput:
+            type: object
+            properties:
+                client_key:
+                    type: string
+                group_key:
+                    type: string
+                display_name:
+                    type: string
+                memory_mib_per_device:
+                    type: string
+                core_limit_percent:
+                    type: integer
+                    format: uint32
+                max_devices_per_replica:
+                    type: integer
+                    format: uint32
+        AcceleratorInitializationProfileResult:
+            type: object
+            properties:
+                client_key:
+                    type: string
+                profile_id:
+                    type: string
+                recorded_revision:
+                    type: string
+                recorded_state:
+                    type: string
+        AcceleratorInitializationStep:
+            type: object
+            properties:
+                step_id:
+                    type: string
+                object_key:
+                    type: string
+                kind:
+                    type: string
+                state:
+                    type: string
+                resource_id:
+                    type: string
+                input_group_version:
+                    type: string
+                output_group_version:
+                    type: string
+                reason:
+                    type: string
         AcceleratorNode:
             type: object
             properties:
@@ -10012,6 +10751,21 @@ components:
                     type: string
                 name:
                     type: string
+        AcceleratorNodeSource:
+            type: object
+            properties:
+                source:
+                    type: string
+                observed_at:
+                    type: string
+                received_at:
+                    type: string
+                complete:
+                    type: boolean
+                issues:
+                    type: array
+                    items:
+                        type: string
         AcceleratorObservation:
             type: object
             properties:
@@ -10770,6 +11524,30 @@ components:
                     type: string
                     description: 任务执行类型名，例如 "send_email"、"generate_report" 等，用于区分不同类型的任务
             description: 控制调度任务 - 请求
+        CreateAcceleratorInitializationData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                discovery_revision:
+                    type: string
+                pools:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationPoolInput'
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationGroupInput'
+                profiles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationProfileInput'
+        CreateAcceleratorInitializationRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateAcceleratorInitializationData'
         CreateAcceleratorPoolData:
             type: object
             properties:
@@ -10851,6 +11629,25 @@ components:
                 data:
                     $ref: '#/components/schemas/Config'
             description: 创建系统参数 - 请求
+        CreateDefaultVPCEgressData:
+            type: object
+            properties:
+                name:
+                    type: string
+                pool_id:
+                    type: string
+                idempotency_key:
+                    type: string
+        CreateDefaultVPCEgressRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateDefaultVPCEgressData'
+        CreateDefaultVPCEgressResponse:
+            type: object
+            properties:
+                egress:
+                    $ref: '#/components/schemas/DefaultVPCEgress'
         CreateDictEntryRequest:
             type: object
             properties:
@@ -10900,8 +11697,10 @@ components:
             required:
                 - name
                 - kind
-                - preset_id
+                - implementation_id
+                - compute_preset_id
                 - dataset_version_id
+                - parameters
                 - idempotency_key
             type: object
             properties:
@@ -10909,46 +11708,34 @@ components:
                     type: string
                 kind:
                     type: string
-                    description: GENERAL_TRAINING or FINETUNING. Take the value from the preset's kind; never hardcode it.
-                preset_id:
-                    type: string
                 dataset_version_id:
                     type: string
                 idempotency_key:
                     type: string
-                image_version_id:
-                    type: string
-                general_parameters:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/GeneralParameter'
-                    description: Optional registered parameters; omitted and [] are distinct intents. Null is rejected. GENERAL_TRAINING only.
-                source_execution_id:
-                    type: string
-                    description: Reserved optional association. Currently rejected with 403 SOURCE_EXECUTION_UNAVAILABLE until source execution access can be verified. Omit this field.
                 base_model_version_id:
                     type: string
-                    description: 'Required for FINETUNING: immutable base model version ID the adapter is trained against.'
-                finetuning:
-                    $ref: '#/components/schemas/FinetuningParameters'
                 target_model_id:
                     type: string
-                    description: 'FINETUNING only: existing model to register the merged result under. Mutually exclusive with new_model_name.'
                 new_model_name:
                     type: string
-                    description: 'FINETUNING only: name for a newly created model for the merged result. Mutually exclusive with target_model_id.'
+                implementation_id:
+                    type: string
+                compute_preset_id:
+                    type: string
+                parameters:
+                    $ref: '#/components/schemas/ExecutionParameters'
+                timeout_seconds:
+                    type: integer
+                    format: uint64
             description: |-
-                CPU-P01 public intent. Shared canonicalization and immutable execution
-                 contracts are maintained by ani-modeldev-service/contract/cpup01.
-                 The HTTP adapter preserves omitted versus explicitly empty parameters.
+                The one active public execution intent. Identity comes from authentication.
+                 The custom HTTP adapter preserves optional fields and rejects duplicate keys.
         CreateExecutionResponse:
             type: object
             properties:
                 operation_id:
                     type: string
                 execution_id:
-                    type: string
-                resolved_release_id:
                     type: string
                 replayed:
                     type: boolean
@@ -10963,7 +11750,8 @@ components:
             description: |-
                 Returned only after Governance has durably accepted the frozen intent.
                  Acceptance does not establish a KFP Run or successful training.
-        CreateInferenceData:
+        CreateInferenceRequest:
+            example: {"idempotency_key": "req-001", "name": "qwen-inference", "model_version_id": "version-1", "served_model_name": "qwen2.5-1.5b-instruct", "engine_image": "registry.example/vllm:latest", "engine_type": "vllm", "command": "exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096", "cpu": "8", "memory": "32Gi", "replicas": 1, "preset_id": "40000000-0000-4000-8000-000000000001"}
             type: object
             properties:
                 idempotency_key:
@@ -11001,13 +11789,7 @@ components:
                     format: int32
                 preset_id:
                     type: string
-                    description: Required for new managed creates. Legacy resource fields remain reserved input and are rejected.
-        CreateInferenceRequest:
-            example: {"data": {"idempotency_key": "20000000-0000-4000-8000-000000000001", "name": "qwen-inference", "model_version_id": "30000000-0000-4000-8000-000000000001", "served_model_name": "qwen2.5-1.5b-instruct", "engine_image": "registry.example/vllm:latest", "engine_type": "vllm", "command": "exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096", "replicas": 1, "preset_id": "40000000-0000-4000-8000-000000000001"}}
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/CreateInferenceData'
+                    description: Required for new managed creates. Legacy resource fields remain rejected.
             description: |-
                 Public user intent. Trusted attachments, charges, identity and destination
                  are assembled by Governance and have no representation in this DTO.
@@ -11154,7 +11936,7 @@ components:
                 data:
                     $ref: '#/components/schemas/Menu'
             description: 创建菜单 - 请求
-        CreateModelData:
+        CreateModelRequest:
             type: object
             properties:
                 name:
@@ -11171,17 +11953,12 @@ components:
                     type: string
                 model_id:
                     type: string
-        CreateModelRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/CreateModelData'
         CreateModelResponse:
             type: object
             properties:
                 model:
                     $ref: '#/components/schemas/Model'
-        CreateModelVersionData:
+        CreateModelVersionRequest:
             type: object
             properties:
                 model_id:
@@ -11210,11 +11987,6 @@ components:
                     type: string
                 engine_image:
                     type: string
-        CreateModelVersionRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/CreateModelVersionData'
         CreateModelVersionResponse:
             type: object
             properties:
@@ -11397,6 +12169,23 @@ components:
             properties:
                 vpc:
                     $ref: '#/components/schemas/VPC'
+        CreateVirtualSwitchData:
+            type: object
+            properties:
+                name:
+                    type: string
+                idempotency_key:
+                    type: string
+        CreateVirtualSwitchRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateVirtualSwitchData'
+        CreateVirtualSwitchResponse:
+            type: object
+            properties:
+                resource:
+                    $ref: '#/components/schemas/VirtualSwitch'
         CreateVlanNetworkData:
             type: object
             properties:
@@ -11410,6 +12199,13 @@ components:
                     type: integer
                     format: int32
                 idempotency_key:
+                    type: string
+                cluster_id:
+                    type: string
+                    description: Legacy device_id and the three v2 fields are mutually exclusive.
+                virtual_switch_id:
+                    type: string
+                device_name:
                     type: string
         CreateVlanNetworkRequest:
             type: object
@@ -11613,6 +12409,69 @@ components:
                     type: boolean
                 string:
                     type: string
+        DefaultVPCEgress:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                pool_id:
+                    type: string
+                state:
+                    type: string
+                reason:
+                    type: string
+                version:
+                    type: string
+                last_operation_id:
+                    type: string
+                operation_state:
+                    type: string
+                phase:
+                    type: string
+                pending_unknown:
+                    type: boolean
+                address:
+                    type: string
+                eip_provider_name:
+                    type: string
+                eip_provider_uid:
+                    type: string
+                snat_provider_name:
+                    type: string
+                snat_provider_uid:
+                    type: string
+                desired_enabled:
+                    type: boolean
+                applied_enabled:
+                    type: boolean
+                cluster_id:
+                    type: string
+                cluster_uid:
+                    type: string
+                default_vpc_namespace:
+                    type: string
+                default_vpc_name:
+                    type: string
+                default_vpc_uid:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                updated_at:
+                    type: string
+                    format: date-time
+                observed_at:
+                    type: string
+                    format: date-time
+                target_generation:
+                    type: string
+                pending_action:
+                    type: string
+                observation_stale:
+                    type: boolean
+            description: The system VPC identity is output-only and fixed by Resource configuration.
         DeleteAcceleratorProfileData:
             type: object
             properties:
@@ -11632,6 +12491,11 @@ components:
             properties:
                 status:
                     type: string
+        DeleteDefaultVPCEgressResponse:
+            type: object
+            properties:
+                egress:
+                    $ref: '#/components/schemas/DefaultVPCEgress'
         DeleteEIPResponse:
             type: object
             properties:
@@ -11642,7 +12506,7 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
-        DeleteInferenceData:
+        DeleteInferenceRequest:
             type: object
             properties:
                 idempotency_key:
@@ -11651,11 +12515,6 @@ components:
                     type: string
                 expected_generation:
                     type: string
-        DeleteInferenceRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/DeleteInferenceData'
         DeleteIntranetAddressPoolResponse:
             type: object
             properties:
@@ -11701,6 +12560,11 @@ components:
             properties:
                 snat:
                     $ref: '#/components/schemas/VPCSnat'
+        DeleteVirtualSwitchResponse:
+            type: object
+            properties:
+                resource:
+                    $ref: '#/components/schemas/VirtualSwitch'
         DeleteVlanNetworkResponse:
             type: object
             properties:
@@ -11792,6 +12656,37 @@ components:
                     type: string
                     description: 内核版本
             description: 设备信息
+        DeviceRetirement:
+            type: object
+            properties:
+                device_id:
+                    type: string
+                operation_id:
+                    type: string
+                state:
+                    type: string
+                reason:
+                    type: string
+                version:
+                    type: string
+                expected_version:
+                    type: string
+                config_uid:
+                    type: string
+                fence_version:
+                    type: string
+                pending_unknown:
+                    type: boolean
+                created_at:
+                    type: string
+                    format: date-time
+                updated_at:
+                    type: string
+                    format: date-time
+                completed_at:
+                    type: string
+                    format: date-time
+            description: A restricted legacy registration closure has a durable fence and keeps history.
         DictEntry:
             type: object
             properties:
@@ -12211,12 +13106,71 @@ components:
                     type: string
                 expiresAt:
                     type: string
+        ExecutionComputeView:
+            type: object
+            properties:
+                compute_preset_id:
+                    type: string
+                selection_digest:
+                    type: string
+                cpu_millis:
+                    type: string
+                memory_mib:
+                    type: string
+                device_mode:
+                    type: string
         ExecutionLogLine:
             type: object
             properties:
                 timestamp:
                     type: string
                 text:
+                    type: string
+        ExecutionParameters:
+            type: object
+            properties:
+                learning_rate:
+                    type: string
+                epochs:
+                    type: integer
+                    format: int64
+                batch_size:
+                    type: integer
+                    format: int64
+                seed:
+                    type: integer
+                    format: uint32
+                max_steps:
+                    type: integer
+                    format: int64
+                per_device_train_batch_size:
+                    type: integer
+                    format: int64
+                gradient_accumulation_steps:
+                    type: integer
+                    format: int64
+                cutoff_len:
+                    type: integer
+                    format: int64
+                lora_rank:
+                    type: integer
+                    format: int64
+                lora_alpha:
+                    type: integer
+                    format: int64
+                lora_dropout:
+                    type: string
+            description: |-
+                The implementation's strict parser selects its own typed parameters.
+                 Omitted fields use implementation defaults; null/unknown fields are rejected.
+        ExecutionTimingView:
+            type: object
+            properties:
+                execution_timeout_seconds:
+                    type: string
+                execution_timeout_max_seconds:
+                    type: string
+                step_timeout_seconds:
                     type: string
         ExecutionView:
             type: object
@@ -12229,10 +13183,24 @@ components:
                     type: string
                 kind:
                     type: string
-                preset_id:
+                implementation_id:
                     type: string
-                release_id:
+                compute_preset_id:
                     type: string
+                compute:
+                    $ref: '#/components/schemas/ExecutionComputeView'
+                resolved_parameters:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GeneralParameter'
+                explicit_parameters:
+                    $ref: '#/components/schemas/ExecutionParameters'
+                parameter_contract_version:
+                    type: string
+                resolved_configuration_sha256:
+                    type: string
+                timing:
+                    $ref: '#/components/schemas/ExecutionTimingView'
                 input_version_id:
                     type: string
                 image_version_id:
@@ -12300,19 +13268,6 @@ components:
                 updated_at:
                     type: string
                     format: date-time
-        FinetuningParameters:
-            type: object
-            properties:
-                learning_rate:
-                    type: string
-                max_steps:
-                    type: integer
-                    description: 'Required for FINETUNING: step budget as a JSON number (e.g. 8), never a string. Program range [1, 200]; approved combinations come from the Release rules.'
-                    format: int64
-            description: |-
-                Registered LoRA SFT parameters. learning_rate is a decimal string and
-                 max_steps is an integer; program bounds and approved combinations are
-                 resolved against the Release.
         ForceLogoutSessionRequest:
             type: object
             properties:
@@ -12351,7 +13306,6 @@ components:
                     type: string
                 value:
                     type: string
-                    description: Values are strings, including INTEGER and DECIMAL parameters.
         GenerateCaptchaResponse:
             type: object
             properties:
@@ -12361,6 +13315,11 @@ components:
                 imageBase64:
                     type: string
                     description: 验证码图片的Base64编码字符串，客户端可以解码并显示给用户
+        GetDefaultVPCEgressResponse:
+            type: object
+            properties:
+                egress:
+                    $ref: '#/components/schemas/DefaultVPCEgress'
         GetEIPResponse:
             type: object
             properties:
@@ -12490,6 +13449,11 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
+        GetNetworkDeviceRetirementResponse:
+            type: object
+            properties:
+                retirement:
+                    $ref: '#/components/schemas/DeviceRetirement'
         GetOperationResponse:
             type: object
             properties:
@@ -12573,6 +13537,11 @@ components:
             properties:
                 snat:
                     $ref: '#/components/schemas/VPCSnat'
+        GetVirtualSwitchResponse:
+            type: object
+            properties:
+                resource:
+                    $ref: '#/components/schemas/VirtualSwitch'
         GetVlanNetworkResponse:
             type: object
             properties:
@@ -12801,17 +13770,35 @@ components:
                 updatedAt:
                     type: string
                     format: date-time
-        ImportModelBundleData:
+        ImplementationView:
             type: object
             properties:
-                idempotency_key:
+                name:
                     type: string
-                model:
-                    $ref: '#/components/schemas/ImportModelBundleModelData'
+                kind:
+                    type: string
+                parameter_rules:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ParameterRule'
+                implementation_id:
+                    type: string
                 version:
-                    $ref: '#/components/schemas/ImportModelBundleVersionData'
-                source:
-                    $ref: '#/components/schemas/ImportModelBundleSourceData'
+                    type: string
+                parameter_contract_version:
+                    type: string
+                supported_device_modes:
+                    type: array
+                    items:
+                        type: string
+                available:
+                    type: boolean
+                execution_timeout_default_seconds:
+                    type: string
+                execution_timeout_max_seconds:
+                    type: string
+                step_timeout_seconds:
+                    type: string
         ImportModelBundleModelData:
             type: object
             properties:
@@ -12834,8 +13821,14 @@ components:
         ImportModelBundleRequest:
             type: object
             properties:
-                data:
-                    $ref: '#/components/schemas/ImportModelBundleData'
+                idempotency_key:
+                    type: string
+                model:
+                    $ref: '#/components/schemas/ImportModelBundleModelData'
+                version:
+                    $ref: '#/components/schemas/ImportModelBundleVersionData'
+                source:
+                    $ref: '#/components/schemas/ImportModelBundleSourceData'
         ImportModelBundleResponse:
             type: object
             properties:
@@ -12867,7 +13860,7 @@ components:
                     type: string
                 startup_command:
                     type: string
-        ImportModelData:
+        ImportModelRequest:
             type: object
             properties:
                 source:
@@ -12884,11 +13877,6 @@ components:
                     type: string
                 model_version_id:
                     type: string
-        ImportModelRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/ImportModelData'
         ImportModelResponse:
             type: object
             properties:
@@ -12937,7 +13925,7 @@ components:
                     description: Durable Governance admission; this is not model readiness.
                 dispatch_operation_id:
                     type: string
-        InferenceServiceCommandData:
+        InferenceServiceCommandRequest:
             type: object
             properties:
                 idempotency_key:
@@ -12946,11 +13934,6 @@ components:
                     type: string
                 expected_generation:
                     type: string
-        InferenceServiceCommandRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/InferenceServiceCommandData'
         InferenceView:
             type: object
             properties:
@@ -13012,10 +13995,6 @@ components:
                     type: string
                 selection_digest:
                     type: string
-            description: |-
-                InferenceView is the Governance-owned read projection for UI consumers.
-                 It intentionally keeps the business-facing flat fields while hiding
-                 Inference's resource, runtime, engine, artifact and admission internals.
         InfoEntry:
             type: object
             properties:
@@ -13795,6 +14774,15 @@ components:
                     type: string
                 total:
                     type: string
+        ListImplementationsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ImplementationView'
+                total:
+                    type: string
         ListInferenceOperationsResponse:
             type: object
             properties:
@@ -13913,6 +14901,15 @@ components:
                 total:
                     type: string
             description: 查询菜单列表 - 回应
+        ListModelOperationsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ModelOperation'
+                total:
+                    type: string
         ListModelVersionsResponse:
             type: object
             properties:
@@ -14138,6 +15135,15 @@ components:
                     items:
                         $ref: '#/components/schemas/MenuRouteItem'
             description: 查询路由列表 - 回应
+        ListRuntimeEventsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/RuntimeEvent'
+                total:
+                    type: string
         ListSubnetsResponse:
             type: object
             properties:
@@ -14224,6 +15230,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/VPC'
+                total:
+                    type: string
+        ListVirtualSwitchesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VirtualSwitch'
                 total:
                     type: string
         ListVlanNetworksResponse:
@@ -15063,6 +16078,34 @@ components:
                     format: date-time
                 model_id:
                     type: string
+        ModelOperation:
+            type: object
+            properties:
+                id:
+                    type: string
+                model_id:
+                    type: string
+                model_version_id:
+                    type: string
+                action:
+                    type: string
+                actor:
+                    type: string
+                result:
+                    type: string
+                before_state:
+                    type: string
+                after_state:
+                    type: string
+                error_class:
+                    type: string
+                request_id:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                task_id:
+                    type: string
         ModelVersion:
             type: object
             properties:
@@ -15755,6 +16798,29 @@ components:
                     $ref: '#/components/schemas/Parameter'
                 reference:
                     $ref: '#/components/schemas/Reference'
+        ParameterRule:
+            type: object
+            properties:
+                name:
+                    type: string
+                type:
+                    type: string
+                required:
+                    type: boolean
+                default_value:
+                    $ref: '#/components/schemas/GeneralParameter'
+                allowed_values:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GeneralParameter'
+                minimum:
+                    $ref: '#/components/schemas/GeneralParameter'
+                maximum:
+                    $ref: '#/components/schemas/GeneralParameter'
+                numeric_representation:
+                    type: string
+                validation_description:
+                    type: string
         PasswordLoginRequest:
             type: object
             properties:
@@ -16944,6 +18010,39 @@ components:
                     type: integer
                     format: int32
             description: 重启调度任务 - 回应
+        RetireNetworkDeviceData:
+            type: object
+            properties:
+                expected_version:
+                    type: string
+                idempotency_key:
+                    type: string
+        RetireNetworkDeviceRequest:
+            type: object
+            properties:
+                device_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/RetireNetworkDeviceData'
+        RetireNetworkDeviceResponse:
+            type: object
+            properties:
+                retirement:
+                    $ref: '#/components/schemas/DeviceRetirement'
+        RetryAcceleratorInitializationOperationData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                expected_version:
+                    type: string
+        RetryAcceleratorInitializationOperationRequest:
+            type: object
+            properties:
+                operation_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/RetryAcceleratorInitializationOperationData'
         RetryImportTaskRequest:
             type: object
             properties:
@@ -17126,6 +18225,75 @@ components:
                         type: string
                     description: 隐藏字段列表（proto 字段 json_name，如 email）
             description: 角色字段权限条目：角色在某资源上隐藏的字段集（黑名单语义）
+        RuntimeDiagnostics:
+            type: object
+            properties:
+                invocation_health:
+                    type: string
+                health_reason:
+                    type: string
+                health_observed_at:
+                    type: string
+                    description: Absent until an invocation probe with its own timestamp is recorded.
+                    format: date-time
+                runtime_observed_at:
+                    type: string
+                    format: date-time
+                instances:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/RuntimeInstance'
+                observed_at:
+                    type: string
+                    format: date-time
+        RuntimeEvent:
+            type: object
+            properties:
+                id:
+                    type: string
+                type:
+                    type: string
+                reason:
+                    type: string
+                message:
+                    type: string
+                timestamp:
+                    type: string
+                    format: date-time
+                instance:
+                    type: string
+                count:
+                    type: string
+        RuntimeInstance:
+            type: object
+            properties:
+                name:
+                    type: string
+                uid:
+                    type: string
+                phase:
+                    type: string
+                containers:
+                    type: array
+                    items:
+                        type: string
+        RuntimeLogLine:
+            type: object
+            properties:
+                timestamp:
+                    type: string
+                    format: date-time
+                message:
+                    type: string
+        RuntimeLogsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/RuntimeLogLine'
+                truncated:
+                    type: boolean
         RuntimeMount:
             type: object
             properties:
@@ -18132,7 +19300,7 @@ components:
             properties:
                 image:
                     $ref: '#/components/schemas/ImageRegistration'
-        UpdateInferenceData:
+        UpdateInferenceRequest:
             type: object
             properties:
                 idempotency_key:
@@ -18173,15 +19341,8 @@ components:
                 worker_replicas:
                     type: integer
                     format: int32
-        UpdateInferenceRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/UpdateInferenceData'
-            description: |-
-                UpdateInferenceRequest is the tenant-facing partial update. Fields named by
-                 update_mask are forwarded as supplied; Governance never derives or edits an
-                 engine command.
+                preset_id:
+                    type: string
         UpdateInstanceSchedulingSettingsRequest:
             type: object
             properties:
@@ -18802,6 +19963,60 @@ components:
                     $ref: '#/components/schemas/WebAuthnAssertion'
                 backupCode:
                     type: string
+        VirtualSwitch:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                state:
+                    type: string
+                reason:
+                    type: string
+                reason_message:
+                    type: string
+                version:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                updated_at:
+                    type: string
+                    format: date-time
+                last_operation_id:
+                    type: string
+                cluster_id:
+                    type: string
+                group_name:
+                    type: string
+                binding_state:
+                    type: string
+                binding_version:
+                    type: string
+                membership_fingerprint:
+                    type: string
+                nodes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VirtualSwitchNode'
+            description: A persisted platform switch has no Provider object or cluster before first use.
+        VirtualSwitchNode:
+            type: object
+            properties:
+                node_name:
+                    type: string
+                node_uid:
+                    type: string
+                mac:
+                    type: string
+                priority:
+                    type: integer
+                    format: int32
+                state:
+                    type: string
+                reason:
+                    type: string
         VlanNetwork:
             type: object
             properties:
@@ -18810,6 +20025,16 @@ components:
                 vlan_id:
                     type: integer
                     format: int32
+                virtual_switch_id:
+                    type: string
+                device_name:
+                    type: string
+                group_name:
+                    type: string
+                nodes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VirtualSwitchNode'
         VolumeMount:
             type: object
             properties:
@@ -18932,12 +20157,14 @@ tags:
     - name: DictTypeService
       description: 数据字典分类管理服务
     - name: ImageService
+    - name: InferenceDiagnosticsService
+      description: Tenant-authenticated management diagnostics; inference calls remain on Higress.
     - name: InferenceService
       description: |-
         Requires trusted tenant-user Principal, active tenant and the separately
          registered INFERENCE module/action/role/plan grants. Accelerator read grants
-         cannot admit inference commands. CREATE requires preset_id; only model,
-         served name and whole engine patches may be updated. CRUD retains data.
+         cannot admit inference commands. CREATE requires preset_id; public business
+         fields are top-level and CRUD retains durable resource data.
     - name: InstanceService
     - name: InternalMessageCategoryService
       description: 站内信消息分类管理服务

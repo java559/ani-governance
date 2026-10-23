@@ -4,105 +4,77 @@ package modeldev.service.v1;
 
 import "gnostic/openapi/v3/annotations.proto";
 
-// CPU-P01 public intent. Shared canonicalization and immutable execution
-// contracts are maintained by ani-modeldev-service/contract/cpup01.
-// The HTTP adapter preserves omitted versus explicitly empty parameters.
+// The one active public execution intent. Identity comes from authentication.
+// The custom HTTP adapter preserves optional fields and rejects duplicate keys.
 message CreateExecutionRequest {
   option (gnostic.openapi.v3.schema) = {
-    required: ["name", "kind", "preset_id", "dataset_version_id", "idempotency_key"]
+    required: ["name", "kind", "implementation_id", "compute_preset_id", "dataset_version_id", "parameters", "idempotency_key"]
   };
+  reserved 3, 6, 7, 8, 10;
+  reserved "preset_id", "image_version_id", "general_parameters", "source_execution_id", "finetuning";
   string name = 1;
-  string kind = 2 [(gnostic.openapi.v3.property) = {
-    description: "GENERAL_TRAINING or FINETUNING. Take the value from the preset's kind; never hardcode it."
-  }];
-  string preset_id = 3 [json_name = "preset_id"];
+  string kind = 2;
   string dataset_version_id = 4 [json_name = "dataset_version_id"];
   string idempotency_key = 5 [json_name = "idempotency_key"];
-  optional string image_version_id = 6 [json_name = "image_version_id"];
-  repeated GeneralParameter general_parameters = 7 [
-    json_name = "general_parameters",
-    (gnostic.openapi.v3.property) = {
-      description: "Optional registered parameters; omitted and [] are distinct intents. Null is rejected. GENERAL_TRAINING only."
-    }
-  ];
-  optional string source_execution_id = 8 [
-    json_name = "source_execution_id",
-    (gnostic.openapi.v3.property) = {
-      description: "Reserved optional association. Currently rejected with 403 SOURCE_EXECUTION_UNAVAILABLE until source execution access can be verified. Omit this field."
-    }
-  ];
-  optional string base_model_version_id = 9 [
-    json_name = "base_model_version_id",
-    (gnostic.openapi.v3.property) = {
-      description: "Required for FINETUNING: immutable base model version ID the adapter is trained against."
-    }
-  ];
-  optional FinetuningParameters finetuning = 10 [
-    (gnostic.openapi.v3.property) = {
-      description: "Required for FINETUNING: registered LoRA SFT parameters. Omitted keys take the Release defaults."
-    }
-  ];
-  optional string target_model_id = 11 [
-    json_name = "target_model_id",
-    (gnostic.openapi.v3.property) = {
-      description: "FINETUNING only: existing model to register the merged result under. Mutually exclusive with new_model_name."
-    }
-  ];
-  optional string new_model_name = 12 [
-    json_name = "new_model_name",
-    (gnostic.openapi.v3.property) = {
-      description: "FINETUNING only: name for a newly created model for the merged result. Mutually exclusive with target_model_id."
-    }
-  ];
+  optional string base_model_version_id = 9 [json_name = "base_model_version_id"];
+  optional string target_model_id = 11 [json_name = "target_model_id"];
+  optional string new_model_name = 12 [json_name = "new_model_name"];
+  string implementation_id = 13 [json_name = "implementation_id"];
+  string compute_preset_id = 14 [json_name = "compute_preset_id"];
+  ExecutionParameters parameters = 15;
+  optional uint64 timeout_seconds = 16 [json_name = "timeout_seconds", (gnostic.openapi.v3.property) = {type:"integer" format:"uint64"}];
 }
 
-// Registered LoRA SFT parameters. learning_rate is a decimal string and
-// max_steps is an integer; program bounds and approved combinations are
-// resolved against the Release.
-message FinetuningParameters {
+// The implementation's strict parser selects its own typed parameters.
+// Omitted fields use implementation defaults; null/unknown fields are rejected.
+message ExecutionParameters {
   optional string learning_rate = 1 [json_name = "learning_rate"];
-  // int64 renders as a string under the OpenAPI convention; the shared
-  // contract decodes max_steps as a JSON number, so the type is pinned here.
-  optional int64 max_steps = 2 [
-    json_name = "max_steps",
-    (gnostic.openapi.v3.property) = {
-      type: "integer"
-      format: "int64"
-      description: "Required for FINETUNING: step budget as a JSON number (e.g. 8), never a string. Program range [1, 200]; approved combinations come from the Release rules."
-    }
-  ];
+  optional int64 epochs = 2 [(gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional int64 batch_size = 3 [json_name = "batch_size", (gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional uint32 seed = 4;
+  optional int64 max_steps = 5 [json_name = "max_steps", (gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional int64 per_device_train_batch_size = 6 [json_name = "per_device_train_batch_size", (gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional int64 gradient_accumulation_steps = 7 [json_name = "gradient_accumulation_steps", (gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional int64 cutoff_len = 8 [json_name = "cutoff_len", (gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional int64 lora_rank = 9 [json_name = "lora_rank", (gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional int64 lora_alpha = 10 [json_name = "lora_alpha", (gnostic.openapi.v3.property) = {type:"integer" format:"int64"}];
+  optional string lora_dropout = 11 [json_name = "lora_dropout"];
 }
 
 message GeneralParameter {
   string name = 1;
   string type = 2;
-  // Values are strings, including INTEGER and DECIMAL parameters.
   string value = 3;
 }
 
 // Catalogue metadata exposes selection and registered parameters only.
 // Gov public pagination uses page/pageSize; legacy limit/cursor stay reserved.
-message ListPresetsRequest {
+message ListImplementationsRequest {
   reserved 1, 2;
   reserved "limit", "cursor";
   optional uint32 page = 3 [json_name = "page"];
   optional uint32 page_size = 4 [json_name = "pageSize"];
 }
-message ListPresetsResponse {
-  repeated PresetView items = 1;
+message ListImplementationsResponse {
+  repeated ImplementationView items = 1;
   reserved 2;
   reserved "next_cursor";
   uint64 total = 3 [json_name = "total"];
 }
-message PresetView {
-  string preset_id = 1 [json_name = "preset_id"];
+message ImplementationView {
+  reserved 1, 4, 5, 6, 7;
+  reserved "preset_id", "image_version_ids", "active_release_id", "binding_generation", "new_submissions_enabled";
   string name = 2;
   string kind = 3;
-  string active_release_id = 4 [json_name = "active_release_id"];
-  repeated string image_version_ids = 5 [json_name = "image_version_ids"];
-  repeated ParameterRule parameter_rules = 6 [json_name = "parameter_rules"];
-  uint64 binding_generation = 7 [json_name = "binding_generation"];
-  bool new_submissions_enabled = 8 [json_name = "new_submissions_enabled"];
+  repeated ParameterRule parameter_rules = 8 [json_name = "parameter_rules"];
+  string implementation_id = 9 [json_name = "implementation_id"];
+  string version = 10;
+  string parameter_contract_version = 11 [json_name = "parameter_contract_version"];
+  repeated string supported_device_modes = 12 [json_name = "supported_device_modes"];
+  bool available = 13;
+  uint64 execution_timeout_default_seconds = 14 [json_name = "execution_timeout_default_seconds"];
+  uint64 execution_timeout_max_seconds = 15 [json_name = "execution_timeout_max_seconds"];
+  uint64 step_timeout_seconds = 16 [json_name = "step_timeout_seconds"];
 }
 message ParameterRule {
   string name = 1;
@@ -112,6 +84,8 @@ message ParameterRule {
   repeated GeneralParameter allowed_values = 5 [json_name = "allowed_values"];
   GeneralParameter minimum = 6;
   GeneralParameter maximum = 7;
+  string numeric_representation = 8 [json_name = "numeric_representation"];
+  string validation_description = 9 [json_name = "validation_description"];
 }
 message GetInputVersionRequest { string input_version_id = 1 [json_name = "input_version_id"]; }
 message GetInputVersionResponse { InputVersionView input_version = 1 [json_name = "input_version"]; }
@@ -144,7 +118,8 @@ message InputVersionView {
 message CreateExecutionResponse {
   string operation_id = 1 [json_name = "operation_id"];
   string execution_id = 2 [json_name = "execution_id"];
-  string resolved_release_id = 3 [json_name = "resolved_release_id"];
+  reserved 3;
+  reserved "resolved_release_id";
   bool replayed = 4;
   string compute_state = 5 [json_name = "compute_state"];
   string delivery_state = 6 [json_name = "delivery_state"];
@@ -199,8 +174,16 @@ message ExecutionView {
   string execution_id = 2 [json_name = "execution_id"];
   string name = 3;
   string kind = 4;
-  string preset_id = 5 [json_name = "preset_id"];
-  string release_id = 6 [json_name = "release_id"];
+  reserved 5, 6;
+  reserved "preset_id", "release_id";
+  string implementation_id = 19 [json_name = "implementation_id"];
+  string compute_preset_id = 20 [json_name = "compute_preset_id"];
+  ExecutionComputeView compute = 21;
+  repeated GeneralParameter resolved_parameters = 22 [json_name = "resolved_parameters"];
+  ExecutionParameters explicit_parameters = 23 [json_name = "explicit_parameters"];
+  string parameter_contract_version = 24 [json_name = "parameter_contract_version"];
+  string resolved_configuration_sha256 = 25 [json_name = "resolved_configuration_sha256"];
+  ExecutionTimingView timing = 26;
   string input_version_id = 7 [json_name = "input_version_id"];
   string image_version_id = 8 [json_name = "image_version_id"];
   string compute_state = 9 [json_name = "compute_state"];
@@ -213,6 +196,18 @@ message ExecutionView {
   string accepted_at = 16 [json_name = "accepted_at"];
   string deadline_at = 17 [json_name = "deadline_at"];
   string observed_at = 18 [json_name = "observed_at"];
+}
+message ExecutionComputeView {
+  string compute_preset_id = 1 [json_name = "compute_preset_id"];
+  string selection_digest = 2 [json_name = "selection_digest"];
+  int64 cpu_millis = 3 [json_name = "cpu_millis"];
+  int64 memory_mib = 4 [json_name = "memory_mib"];
+  string device_mode = 5 [json_name = "device_mode"];
+}
+message ExecutionTimingView {
+  uint64 execution_timeout_seconds = 1 [json_name = "execution_timeout_seconds"];
+  uint64 execution_timeout_max_seconds = 2 [json_name = "execution_timeout_max_seconds"];
+  uint64 step_timeout_seconds = 3 [json_name = "step_timeout_seconds"];
 }
 message ListExecutionArtifactsRequest {
   string execution_id = 1 [json_name = "execution_id"];

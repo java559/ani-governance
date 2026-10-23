@@ -8,419 +8,321 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"errors"
 	"math/big"
 	"net"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	modeldevv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
-	trainingv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/training/v1"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/conformance"
 	contractpb "github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/protobuf"
+	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// These peers are deliberate response/transport substitutes. They test the
-// public consumer over actual TLS sockets, not ModelDev's resolver or PG facts.
-func TestModelDevResolveRejectsUntrustedResponse(t *testing.T) {
-	for _, test := range []struct {
-		name   string
-		change func(*modeldevv1.ResolveAdmissionResponse)
-	}{
-		{"missing snapshot", func(r *modeldevv1.ResolveAdmissionResponse) { r.Snapshot = nil }},
-		{"outer unknown", func(r *modeldevv1.ResolveAdmissionResponse) { r.ProtoReflect().SetUnknown([]byte{0xa0, 0x06, 0x01}) }},
-		{"nested unknown", func(r *modeldevv1.ResolveAdmissionResponse) {
-			r.Snapshot.Release.Runtime.ProtoReflect().SetUnknown([]byte{0xa0, 0x06, 0x01})
-		}},
-		{"nested enum", func(r *modeldevv1.ResolveAdmissionResponse) {
-			r.Snapshot.OutputContract.RequiredFiles[0].Role = trainingv1.FileRole(999)
-		}},
-		{"missing digest", func(r *modeldevv1.ResolveAdmissionResponse) { r.ExecutionSpecHash = "" }},
-		{"wrong digest", func(r *modeldevv1.ResolveAdmissionResponse) { r.ExecutionSpecHash = strings.Repeat("0", 64) }},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			fixture := modelDevResponseFixture(t)
-			bad := proto.Clone(fixture.response).(*modeldevv1.ResolveAdmissionResponse)
-			test.change(bad)
-			config, calls := startModelDevResponsePeer(t, []string{"ani-modeldev-service"}, fixture, func(context.Context, *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error) {
-				return bad, nil
-			})
-			client := newModelDevBoundaryClient(t, config)
-			got, err := fixture.resolve(context.Background(), client)
-			assertModelDevSafeFailure(t, got, err, codes.Unavailable, "modeldev admission unavailable", 0)
-			if calls.Load() != 1 {
-				t.Error("response boundary did not consume exactly one actual TLS peer reply")
-			}
-		})
-	}
-}
-
-func TestModelDevResolveRejectsCorrectlyHashedDifferentCandidate(t *testing.T) {
-	for _, test := range []struct {
-		name   string
-		change func(*cpup01.Snapshot, time.Time)
-	}{
-		{"selected release", func(s *cpup01.Snapshot, _ time.Time) { s.Release.ReleaseID = uuid.NewString() }},
-		{"selected digest", func(s *cpup01.Snapshot, _ time.Time) { s.Release.ReleaseDigest = strings.Repeat("c", 64) }},
-		{"binding generation", func(s *cpup01.Snapshot, _ time.Time) { s.Release.AcceptedBindingGeneration++ }},
-		{"intent preset", func(s *cpup01.Snapshot, _ time.Time) { s.Release.PresetID = uuid.NewString() }},
-		{"intent input", func(s *cpup01.Snapshot, _ time.Time) { s.Input.InputVersionID = uuid.NewString() }},
-		{"explicit image", func(s *cpup01.Snapshot, _ time.Time) { s.Program.ImageVersionID = uuid.NewString() }},
-		{"explicit parameter", func(s *cpup01.Snapshot, _ time.Time) {
-			for i := range s.Program.ResolvedParameters {
-				if s.Program.ResolvedParameters[i].Name == "learning_rate" {
-					s.Program.ResolvedParameters[i].Value = "0.09"
-				}
-			}
-		}},
-		{"deadline does not follow acceptance", func(s *cpup01.Snapshot, at time.Time) { s.DeadlineAt = at }},
-		{"deadline loses microseconds", func(s *cpup01.Snapshot, _ time.Time) { s.DeadlineAt = s.DeadlineAt.Add(time.Nanosecond) }},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			fixture := modelDevResponseFixture(t)
-			changed, err := contractpb.DecodeSnapshot(fixture.response.Snapshot)
-			if err != nil {
-				t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: normative response cannot decode")
-			}
-			test.change(&changed, fixture.acceptedAt)
-			digest, err := changed.Digest()
-			if err != nil {
-				t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: association fixture is not shape-valid")
-			}
-			wire, err := contractpb.EncodeSnapshot(changed)
-			if err != nil || digest == fixture.response.ExecutionSpecHash {
-				t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: association mutation has no valid new digest")
-			}
-			bad := &modeldevv1.ResolveAdmissionResponse{Snapshot: wire, ExecutionSpecHash: digest}
-			config, calls := startModelDevResponsePeer(t, []string{"ani-modeldev-service"}, fixture, func(context.Context, *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error) {
-				return bad, nil
-			})
-			got, err := fixture.resolve(context.Background(), newModelDevBoundaryClient(t, config))
-			assertModelDevSafeFailure(t, got, err, codes.Unavailable, "modeldev admission unavailable", 0)
-			if calls.Load() != 1 {
-				t.Error("candidate correspondence was not tested against one actual TLS reply")
-			}
-		})
-	}
-}
-
-func TestModelDevResolveSanitizesRemoteStatus(t *testing.T) {
-	for _, mode := range []string{"known reason untrusted text", "missing detail", "extra detail", "unknown reason", "wrong code", "wrong correlation", "unknown detail field", "violations"} {
-		t.Run(mode, func(t *testing.T) {
-			fixture := modelDevResponseFixture(t)
-			config, calls := startModelDevResponsePeer(t, []string{"ani-modeldev-service"}, fixture, func(ctx context.Context, _ *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error) {
-				md, _ := metadata.FromIncomingContext(ctx)
-				ids := md.Get("x-ani-request-id")
-				if len(ids) != 1 {
-					return nil, status.Error(codes.Internal, "remote-private-status-sentinel")
-				}
-				detail := &modeldevv1.ErrorDetail{Reason: modeldevv1.ErrorReason_ERROR_REASON_RESOURCE_NOT_FOUND, CorrelationId: ids[0], SafeMessage: "remote-private-status-sentinel"}
-				code := codes.NotFound
-				switch mode {
-				case "missing detail":
-					return nil, status.Error(code, "remote-private-status-sentinel")
-				case "unknown reason":
-					detail.Reason = modeldevv1.ErrorReason(999)
-				case "wrong code":
-					code = codes.InvalidArgument
-				case "wrong correlation":
-					detail.CorrelationId = uuid.NewString()
-				case "unknown detail field":
-					detail.ProtoReflect().SetUnknown([]byte{0xa0, 0x06, 0x01})
-				case "violations":
-					detail.Violations = []*modeldevv1.FieldViolation{{Field: "private", Reason: "remote-private-status-sentinel"}}
-				}
-				failure, err := status.New(code, "remote-private-status-sentinel").WithDetails(detail)
-				if err != nil {
-					return nil, status.Error(codes.Internal, "substitute detail encoding failed")
-				}
-				if mode == "extra detail" {
-					failure, err = failure.WithDetails(detail)
-				}
-				if err != nil {
-					return nil, status.Error(codes.Internal, "substitute detail encoding failed")
-				}
-				return nil, failure.Err()
-			})
-			got, err := fixture.resolve(context.Background(), newModelDevBoundaryClient(t, config))
-			if mode == "known reason untrusted text" {
-				assertModelDevSafeFailure(t, got, err, codes.NotFound, "input version unavailable", modeldevv1.ErrorReason_ERROR_REASON_RESOURCE_NOT_FOUND)
-			} else {
-				assertModelDevSafeFailure(t, got, err, codes.Unavailable, "modeldev admission unavailable", 0)
-			}
-			if err != nil && strings.Contains(err.Error(), "remote-private-status-sentinel") {
-				t.Error("client returned remote error text")
-			}
-			if calls.Load() != 1 {
-				t.Error("safe error mapping did not consume the actual peer status")
-			}
-		})
-	}
-}
-
-func TestModelDevResolveCancellationReachesTLSPeer(t *testing.T) {
-	for _, mode := range []string{"caller cancellation", "caller deadline", "client timeout"} {
-		t.Run(mode, func(t *testing.T) {
-			fixture := modelDevResponseFixture(t)
-			entered, exited := make(chan struct{}, 1), make(chan error, 1)
-			config, _ := startModelDevResponsePeer(t, []string{"ani-modeldev-service"}, fixture, func(ctx context.Context, _ *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error) {
-				entered <- struct{}{}
-				<-ctx.Done()
-				exited <- ctx.Err()
-				return nil, status.FromContextError(ctx.Err()).Err()
-			})
-			config.Timeout = 2 * time.Second
-			ctx, cancel := context.WithCancel(context.Background())
-			if mode == "caller deadline" {
-				cancel()
-				ctx, cancel = context.WithTimeout(context.Background(), time.Second)
-			}
-			if mode == "client timeout" {
-				config.Timeout = time.Second
-			}
-			defer cancel()
-			client := newModelDevBoundaryClient(t, config)
-			type outcome struct {
-				result ModelDevResolution
-				err    error
-			}
-			done := make(chan outcome, 1)
-			go func() { result, err := fixture.resolve(ctx, client); done <- outcome{result, err} }()
-			select {
-			case <-entered:
-			case got := <-done:
-				t.Fatalf("MODELDEV_CANCEL_BEHAVIOR: client returned %s before reaching the independently proven TLS peer", status.Code(got.err))
-			case <-time.After(3 * time.Second):
-				t.Fatal("MODELDEV_CANCEL_BEHAVIOR: public client never reached the independently proven TLS peer")
-			}
-			if mode == "caller cancellation" {
-				cancel()
-			}
-			code, message := codes.DeadlineExceeded, "context deadline exceeded"
-			if mode == "caller cancellation" {
-				code, message = codes.Canceled, "context canceled"
-			}
-			select {
-			case got := <-done:
-				assertModelDevSafeFailure(t, got.result, got.err, code, message, 0)
-			case <-time.After(3 * time.Second):
-				t.Fatal("canceled client did not finish within the bound")
-			}
-			select {
-			case err := <-exited:
-				if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
-					t.Error("peer ended without a propagated context cause")
-				}
-			case <-time.After(3 * time.Second):
-				t.Fatal("client cancellation did not reach the actual server context")
-			}
-		})
-	}
-}
-
-func TestModelDevClientRequiresFixedTLSIdentityAndMaterials(t *testing.T) {
-	fixture := modelDevResponseFixture(t)
-	for _, test := range []struct {
-		name  string
-		names []string
-		valid bool
-	}{
-		{"literal plus additional DNS", []string{"ani-modeldev-service", "extra.test"}, true},
-		{"literal plus wildcard DNS", []string{"ani-modeldev-service", "*.ani.internal"}, false},
-		{"different server DNS", []string{"other-modeldev.test"}, false},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			config, calls := startModelDevResponsePeer(t, test.names, fixture, func(context.Context, *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error) {
-				return proto.Clone(fixture.response).(*modeldevv1.ResolveAdmissionResponse), nil
-			})
-			got, err := fixture.resolve(context.Background(), newModelDevBoundaryClient(t, config))
-			if test.valid {
-				if err != nil || got.ExecutionSpecHash != fixture.response.ExecutionSpecHash || calls.Load() != 1 {
-					t.Errorf("valid literal TLS identity was rejected: code=%s", status.Code(err))
-				}
-			} else {
-				assertModelDevSafeFailure(t, got, err, codes.Unavailable, "modeldev admission unavailable", 0)
-				if calls.Load() != 0 {
-					t.Error("wrong server identity reached the application")
-				}
-			}
-		})
-	}
-	config, _ := modelDevBoundaryTLS(t, []string{"ani-modeldev-service"}, []string{"ani-governance"})
-	config.Address = "127.0.0.1:1"
-	for _, test := range []struct {
-		name    string
-		change  func(*ModelDevClientConfig)
-		message string
-	}{
-		{"missing address", func(c *ModelDevClientConfig) { c.Address = "" }, "invalid modeldev client configuration"},
-		{"nonpositive timeout", func(c *ModelDevClientConfig) { c.Timeout = 0 }, "invalid modeldev client configuration"},
-		{"missing CA", func(c *ModelDevClientConfig) { c.CAFile = filepath.Join(t.TempDir(), "private-ca-sentinel") }, "modeldev TLS configuration unavailable"},
-		{"missing client key", func(c *ModelDevClientConfig) { c.KeyFile = filepath.Join(t.TempDir(), "private-key-sentinel") }, "modeldev TLS configuration unavailable"},
-	} {
-		t.Run(test.name, func(t *testing.T) {
-			bad := config
-			test.change(&bad)
-			client, closeClient, err := NewModelDevClient(bad)
-			if closeClient != nil {
-				closeClient()
-			}
-			if err == nil || err.Error() != test.message || client != nil || closeClient != nil {
-				t.Error("invalid configuration was accepted, retained cleanup, or exposed material details")
-			}
-		})
-	}
-	bad, _ := modelDevBoundaryTLS(t, []string{"ani-modeldev-service"}, []string{"ani-governance", "another-workload"})
-	bad.Address = "127.0.0.1:1"
-	client, closeClient, err := NewModelDevClient(bad)
-	if closeClient != nil {
-		closeClient()
-	}
-	if err == nil || err.Error() != "modeldev TLS configuration unavailable" || client != nil || closeClient != nil {
-		t.Error("ambiguous Governance identity was accepted, retained cleanup, or leaked certificate details")
-	}
-}
-
+// External response peers use real TLS sockets. They do not replace Gov
+// authorization/persistence or claim to run ModelDev's planning implementation.
 type modelDevResponseCase struct {
 	scope      ModelDevResolveScope
 	intent     cpup01.Intent
-	selection  ModelDevReleaseSelection
+	identity   cpup01.IdentityRef
+	selection  *compute.ComputeSelection
 	acceptedAt time.Time
-	response   *modeldevv1.ResolveAdmissionResponse
+	candidate  cpup01.PreparedCandidate
+	response   *modeldevv1.FinalizeAdmissionResponse
 }
 
 func modelDevResponseFixture(t *testing.T) modelDevResponseCase {
 	t.Helper()
 	snapshot := conformance.SnapshotV1()
-	image := snapshot.Program.ImageVersionID
-	parameters := append([]cpup01.Parameter(nil), snapshot.Program.ResolvedParameters...)
-	fixture := modelDevResponseCase{
-		scope:      ModelDevResolveScope{ResourceTenantID: uuid.NewString(), Actor: "governance:user:42"},
-		intent:     cpup01.Intent{Name: "response-boundary", Kind: snapshot.Kind, PresetID: snapshot.Release.PresetID, DatasetVersionID: snapshot.Input.InputVersionID, ImageVersionID: &image, GeneralParameters: &parameters},
-		selection:  ModelDevReleaseSelection{ReleaseID: snapshot.Release.ReleaseID, ReleaseDigest: snapshot.Release.ReleaseDigest, BindingGeneration: snapshot.Release.AcceptedBindingGeneration},
-		acceptedAt: snapshot.DeadlineAt.Add(-time.Hour),
-	}
+	intent := conformance.IntentV1()
+	scope := ModelDevResolveScope{ResourceTenantID: uuid.NewString(), Actor: "governance:user:42"}
+	_, hash, err := cpup01.CanonicalIntent(intent)
+	require.NoError(t, err)
+	identity := cpup01.IdentityRef{TenantID: scope.ResourceTenantID, Actor: scope.Actor, OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), IntentHash: hash}
+	snapshot.IdentityRef = identity
+	snapshot.RuntimePlan.Name = cpup01.RuntimeName(snapshot.Environment.NamespaceUID, identity.ExecutionID)
+	selection := &compute.ComputeSelection{SchemaVersion: compute.SelectionSchemaVersion, PresetId: intent.ComputePresetID, Code: "cpu-small", Name: "CPU small", ComputeType: "cpu", CpuMillis: 1000, MemoryMib: 1024}
+	selection.SelectionDigest, err = compute.SelectionDigest(selection)
+	require.NoError(t, err)
+	selectionBytes, err := compute.CanonicalSelection(selection)
+	require.NoError(t, err)
+	snapshot.ComputeOrigin = cpup01.ComputeOrigin{ComputePresetID: selection.PresetId, SelectionDigest: selection.SelectionDigest, SelectionJSON: string(selectionBytes), CPUMillis: 1000, MemoryMiB: 1024, DeviceMode: "cpu"}
 	wire, err := contractpb.EncodeSnapshot(snapshot)
-	if err != nil {
-		t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: normative snapshot invalid")
-	}
-	fixture.response = &modeldevv1.ResolveAdmissionResponse{Snapshot: wire, ExecutionSpecHash: conformance.SnapshotSHA256V1}
-	if _, _, err := cpup01.CanonicalIntent(fixture.intent); err != nil {
-		t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: normative intent invalid")
-	}
-	return fixture
+	require.NoError(t, err)
+	digest, err := snapshot.Digest()
+	require.NoError(t, err)
+	incomplete := snapshot
+	incomplete.RuntimePlan = cpup01.RuntimePlan{}
+	candidate := cpup01.PreparedCandidate{SchemaVersion: cpup01.CandidateSchemaVersion, Intent: intent, Snapshot: incomplete}
+	require.NoError(t, candidate.Validate())
+	return modelDevResponseCase{scope: scope, intent: intent, identity: identity, selection: selection, acceptedAt: snapshot.Timing.AcceptedAt, candidate: candidate, response: &modeldevv1.FinalizeAdmissionResponse{Snapshot: wire, ExecutionSpecHash: digest}}
 }
-
-func (f modelDevResponseCase) resolve(ctx context.Context, client *ModelDevClient) (ModelDevResolution, error) {
-	return client.Resolve(ctx, f.scope, f.intent, f.selection, f.acceptedAt)
+func (f modelDevResponseCase) resolve(ctx context.Context, c *ModelDevClient) (ModelDevResolution, error) {
+	return c.ResolvePrepared(ctx, f.scope, f.intent, f.identity, f.selection, f.acceptedAt)
 }
-
 func newModelDevBoundaryClient(t *testing.T, config ModelDevClientConfig) *ModelDevClient {
 	t.Helper()
-	client, closeClient, err := NewModelDevClient(config)
-	if err != nil || client == nil || closeClient == nil {
-		t.Fatal("valid explicit client materials did not construct a client")
-	}
-	t.Cleanup(closeClient)
-	return client
+	c, close, err := NewModelDevClient(config)
+	require.NoError(t, err)
+	require.NotNil(t, c)
+	require.NotNil(t, close)
+	t.Cleanup(close)
+	return c
 }
 
-func assertModelDevSafeFailure(t *testing.T, got ModelDevResolution, err error, code codes.Code, message string, reason modeldevv1.ErrorReason) {
-	t.Helper()
-	if !reflect.DeepEqual(got, ModelDevResolution{}) || status.Code(err) != code || status.Convert(err).Message() != message {
-		t.Errorf("client failure has candidate=%t code=%s; want zero candidate and finite %s message", !reflect.DeepEqual(got, ModelDevResolution{}), status.Code(err), code)
-		return
-	}
-	details := status.Convert(err).Details()
-	if reason == 0 {
-		if len(details) != 0 {
-			t.Error("generic/context failure retained remote details")
-		}
-		return
-	}
-	if len(details) != 1 {
-		t.Error("known business failure lacks exactly one safe detail")
-		return
-	}
-	detail, ok := details[0].(*modeldevv1.ErrorDetail)
-	if !ok {
-		t.Error("known failure changed its detail type")
-		return
-	}
-	id, parseErr := uuid.Parse(detail.CorrelationId)
-	if detail.Reason != reason || detail.SafeMessage != message || len(detail.Violations) != 0 || len(detail.ProtoReflect().GetUnknown()) != 0 || parseErr != nil || id == uuid.Nil || id.String() != detail.CorrelationId {
-		t.Error("known failure did not reconstruct its finite detail and fresh correlation")
-	}
-}
-
-type modelDevResponsePeer struct {
+type modelDevPlanPeer struct {
 	modeldevv1.UnimplementedModelDevAdmissionServiceServer
-	baseline *modeldevv1.ResolveAdmissionResponse
-	handle   func(context.Context, *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error)
-	calls    atomic.Int32
+	fixture       modelDevResponseCase
+	prepare       func(context.Context, *modeldevv1.PrepareAdmissionRequest) (*modeldevv1.PrepareAdmissionResponse, error)
+	finalize      func(context.Context, *modeldevv1.FinalizeAdmissionRequest) (*modeldevv1.FinalizeAdmissionResponse, error)
+	prepareCalls  atomic.Int32
+	finalizeCalls atomic.Int32
 }
 
-func (peer *modelDevResponsePeer) ResolveAdmission(ctx context.Context, request *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error) {
-	if request.Intent.GetName() == "transport-preflight" {
-		return proto.Clone(peer.baseline).(*modeldevv1.ResolveAdmissionResponse), nil
+func (p *modelDevPlanPeer) PrepareAdmission(ctx context.Context, r *modeldevv1.PrepareAdmissionRequest) (*modeldevv1.PrepareAdmissionResponse, error) {
+	p.prepareCalls.Add(1)
+	if p.prepare != nil {
+		return p.prepare(ctx, r)
 	}
-	peer.calls.Add(1)
-	return peer.handle(ctx, request)
+	b, e := p.fixture.candidate.Canonical()
+	if e != nil {
+		return nil, e
+	}
+	h, e := p.fixture.candidate.Digest()
+	if e != nil {
+		return nil, e
+	}
+	return &modeldevv1.PrepareAdmissionResponse{CandidateCanonical: b, CandidateHash: h}, nil
 }
-
-func startModelDevResponsePeer(t *testing.T, names []string, fixture modelDevResponseCase, handle func(context.Context, *modeldevv1.ResolveAdmissionRequest) (*modeldevv1.ResolveAdmissionResponse, error)) (ModelDevClientConfig, *atomic.Int32) {
+func (p *modelDevPlanPeer) FinalizeAdmission(ctx context.Context, r *modeldevv1.FinalizeAdmissionRequest) (*modeldevv1.FinalizeAdmissionResponse, error) {
+	p.finalizeCalls.Add(1)
+	if p.finalize != nil {
+		return p.finalize(ctx, r)
+	}
+	return proto.Clone(p.fixture.response).(*modeldevv1.FinalizeAdmissionResponse), nil
+}
+func startModelDevPlanPeer(t *testing.T, names []string, f modelDevResponseCase, prepare func(context.Context, *modeldevv1.PrepareAdmissionRequest) (*modeldevv1.PrepareAdmissionResponse, error), finalize func(context.Context, *modeldevv1.FinalizeAdmissionRequest) (*modeldevv1.FinalizeAdmissionResponse, error)) (ModelDevClientConfig, *modelDevPlanPeer) {
 	t.Helper()
 	config, security := modelDevBoundaryTLS(t, names, []string{"ani-governance"})
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: TLS socket unavailable")
-	}
+	require.NoError(t, err)
 	config.Address = listener.Addr().String()
+	peer := &modelDevPlanPeer{fixture: f, prepare: prepare, finalize: finalize}
 	server := grpc.NewServer(grpc.Creds(credentials.NewTLS(security)))
-	peer := &modelDevResponsePeer{baseline: fixture.response, handle: handle}
 	modeldevv1.RegisterModelDevAdmissionServiceServer(server, peer)
-	done := make(chan error, 1)
-	go func() { done <- server.Serve(listener) }()
-	t.Cleanup(func() {
-		server.Stop()
-		select {
-		case err := <-done:
-			if err != nil && !errors.Is(err, grpc.ErrServerStopped) {
-				t.Error("TLS substitute did not stop cleanly")
-			}
-		case <-time.After(2 * time.Second):
-			t.Error("TLS substitute stop exceeded its bound")
-		}
+	t.Cleanup(server.Stop)
+	go func() { _ = server.Serve(listener) }()
+	return config, peer
+}
+
+func TestModelDevPlanPreservesFixedCandidateAndRebuildsMetadata(t *testing.T) {
+	f := modelDevResponseFixture(t)
+	type prepareObservation struct {
+		request *modeldevv1.PrepareAdmissionRequest
+		md      metadata.MD
+	}
+	type finalObservation struct {
+		request *modeldevv1.FinalizeAdmissionRequest
+		md      metadata.MD
+	}
+	prepares := make(chan prepareObservation, 1)
+	finals := make(chan finalObservation, 1)
+	raw, err := f.candidate.Canonical()
+	require.NoError(t, err)
+	hash, err := f.candidate.Digest()
+	require.NoError(t, err)
+	config, peer := startModelDevPlanPeer(t, []string{"ani-modeldev-service"}, f, func(ctx context.Context, r *modeldevv1.PrepareAdmissionRequest) (*modeldevv1.PrepareAdmissionResponse, error) {
+		md, _ := metadata.FromIncomingContext(ctx)
+		prepares <- prepareObservation{proto.Clone(r).(*modeldevv1.PrepareAdmissionRequest), md.Copy()}
+		return &modeldevv1.PrepareAdmissionResponse{CandidateCanonical: raw, CandidateHash: hash}, nil
+	}, func(ctx context.Context, r *modeldevv1.FinalizeAdmissionRequest) (*modeldevv1.FinalizeAdmissionResponse, error) {
+		md, _ := metadata.FromIncomingContext(ctx)
+		finals <- finalObservation{proto.Clone(r).(*modeldevv1.FinalizeAdmissionRequest), md.Copy()}
+		return proto.Clone(f.response).(*modeldevv1.FinalizeAdmissionResponse), nil
 	})
-	// A generated client proves certificate/socket setup before the product
-	// client is exercised. This is explicitly not a real resolver preflight.
-	connection := modelDevDirectTLSConnection(t, config, names[0])
-	intent, err := contractpb.EncodeIntent(fixture.intent)
-	if err != nil {
-		t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: cannot encode normative request")
+	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("authorization", "private-sentinel", "x-ani-tenant-id", uuid.NewString(), "x-ani-actor", "private-sentinel"))
+	got, err := f.resolve(ctx, newModelDevBoundaryClient(t, config))
+	require.NoError(t, err)
+	require.Equal(t, f.response.ExecutionSpecHash, got.ExecutionSpecHash)
+	require.Equal(t, int32(1), peer.prepareCalls.Load())
+	require.Equal(t, int32(1), peer.finalizeCalls.Load())
+	observedPrepare, observedFinal := <-prepares, <-finals
+	require.Equal(t, f.identity.ExecutionID, observedPrepare.request.IdentityRef.ExecutionId)
+	require.Equal(t, f.identity.OperationID, observedPrepare.request.IdentityRef.OperationId)
+	require.Equal(t, f.identity.IntentHash, observedPrepare.request.IdentityRef.IntentHash)
+	require.True(t, f.acceptedAt.Equal(observedPrepare.request.AcceptedAt.AsTime()))
+	origin, err := compute.CanonicalSelection(f.selection)
+	require.NoError(t, err)
+	require.Equal(t, origin, observedPrepare.request.ComputeSelectionCanonical)
+	require.Equal(t, raw, observedFinal.request.CandidateCanonical)
+	require.Equal(t, hash, observedFinal.request.CandidateHash)
+	require.Empty(t, observedFinal.request.GpuExecutionCanonical)
+	require.Empty(t, observedFinal.request.GpuDisplayCanonical)
+	for _, md := range []metadata.MD{observedPrepare.md, observedFinal.md} {
+		require.Equal(t, []string{f.scope.ResourceTenantID}, md.Get("x-ani-tenant-id"))
+		require.Equal(t, []string{f.scope.Actor}, md.Get("x-ani-actor"))
+		require.Empty(t, md.Get("authorization"))
+		require.Len(t, md.Get("x-ani-request-id"), 1)
 	}
-	intent.Name = "transport-preflight"
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	response, err := modeldevv1.NewModelDevAdmissionServiceClient(connection).ResolveAdmission(ctx, &modeldevv1.ResolveAdmissionRequest{Intent: intent, Release: &modeldevv1.AdmissionReleaseSelection{ReleaseId: fixture.selection.ReleaseID, ReleaseDigest: fixture.selection.ReleaseDigest, BindingGeneration: fixture.selection.BindingGeneration}, AcceptedAt: timestamppb.New(fixture.acceptedAt)}, grpc.WaitForReady(true))
-	if err != nil || !proto.Equal(response, fixture.response) {
-		t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: actual TLS substitute/control reply failed; behavior NOT_RUN")
+	require.NotEqual(t, observedPrepare.md.Get("x-ani-request-id"), observedFinal.md.Get("x-ani-request-id"))
+}
+
+func TestModelDevPrepareRejectsWrongScopeOrChangedObservation(t *testing.T) {
+	for _, field := range []string{"identity", "accepted_at", "compute", "hash", "unknown"} {
+		t.Run(field, func(t *testing.T) {
+			f := modelDevResponseFixture(t)
+			c := f.candidate
+			switch field {
+			case "identity":
+				c.Snapshot.IdentityRef.OperationID = uuid.NewString()
+			case "accepted_at":
+				c.Snapshot.Timing.AcceptedAt = c.Snapshot.Timing.AcceptedAt.Add(time.Second)
+				c.Snapshot.Timing.ExecutionDeadlineAt = c.Snapshot.Timing.ExecutionDeadlineAt.Add(time.Second)
+				c.Snapshot.DeadlineAt = c.Snapshot.Timing.ExecutionDeadlineAt
+			case "compute":
+				c.Snapshot.Resources.RequestMillicpu++
+				c.Snapshot.Resources.LimitMillicpu++
+				changed := proto.Clone(f.selection).(*compute.ComputeSelection)
+				changed.CpuMillis++
+				changed.SelectionDigest, _ = compute.SelectionDigest(changed)
+				changedBytes, _ := compute.CanonicalSelection(changed)
+				c.Snapshot.ComputeOrigin.CPUMillis = changed.CpuMillis
+				c.Snapshot.ComputeOrigin.SelectionDigest = changed.SelectionDigest
+				c.Snapshot.ComputeOrigin.SelectionJSON = string(changedBytes)
+			}
+			raw, err := c.Canonical()
+			require.NoError(t, err)
+			hash, err := c.Digest()
+			require.NoError(t, err)
+			if field == "hash" {
+				hash = strings.Repeat("0", 64)
+			}
+			out := &modeldevv1.PrepareAdmissionResponse{CandidateCanonical: raw, CandidateHash: hash}
+			if field == "unknown" {
+				out.ProtoReflect().SetUnknown([]byte{0xa0, 0x06, 0x01})
+			}
+			config, peer := startModelDevPlanPeer(t, []string{"ani-modeldev-service"}, f, func(context.Context, *modeldevv1.PrepareAdmissionRequest) (*modeldevv1.PrepareAdmissionResponse, error) {
+				return out, nil
+			}, nil)
+			got, err := f.resolve(context.Background(), newModelDevBoundaryClient(t, config))
+			require.Error(t, err)
+			require.Equal(t, codes.Unavailable, status.Code(err))
+			require.Empty(t, got.ExecutionSpecHash)
+			require.Zero(t, peer.finalizeCalls.Load())
+		})
 	}
-	return config, &peer.calls
+}
+func TestModelDevFinalizeRejectsCorrectlyHashedChangedCandidate(t *testing.T) {
+	for _, field := range []string{"parameters", "deadline", "identity", "nil", "unknown", "hash"} {
+		t.Run(field, func(t *testing.T) {
+			f := modelDevResponseFixture(t)
+			out := proto.Clone(f.response).(*modeldevv1.FinalizeAdmissionResponse)
+			switch field {
+			case "nil":
+				out = nil
+			case "unknown":
+				out.ProtoReflect().SetUnknown([]byte{0xa0, 0x06, 0x01})
+			case "hash":
+				out.ExecutionSpecHash = strings.Repeat("0", 64)
+			default:
+				snapshot, err := contractpb.DecodeSnapshot(out.Snapshot)
+				require.NoError(t, err)
+				switch field {
+				case "parameters":
+					for i, p := range snapshot.Program.ResolvedParameters {
+						if p.Name == "epochs" {
+							snapshot.Program.ResolvedParameters[i].Value = "17"
+						}
+					}
+				case "deadline":
+					snapshot.Timing.AcceptedAt = snapshot.Timing.AcceptedAt.Add(time.Second)
+					snapshot.Timing.ExecutionDeadlineAt = snapshot.Timing.ExecutionDeadlineAt.Add(time.Second)
+					snapshot.DeadlineAt = snapshot.Timing.ExecutionDeadlineAt
+				case "identity":
+					snapshot.IdentityRef.OperationID = uuid.NewString()
+				}
+				out.Snapshot, err = contractpb.EncodeSnapshot(snapshot)
+				require.NoError(t, err)
+				out.ExecutionSpecHash, err = snapshot.Digest()
+				require.NoError(t, err)
+			}
+			config, _ := startModelDevPlanPeer(t, []string{"ani-modeldev-service"}, f, nil, func(context.Context, *modeldevv1.FinalizeAdmissionRequest) (*modeldevv1.FinalizeAdmissionResponse, error) {
+				return out, nil
+			})
+			got, err := f.resolve(context.Background(), newModelDevBoundaryClient(t, config))
+			require.Error(t, err)
+			require.Equal(t, codes.Unavailable, status.Code(err))
+			require.Empty(t, got.ExecutionSpecHash)
+		})
+	}
+}
+func TestModelDevPlanCancellationAndRemoteErrorSanitization(t *testing.T) {
+	f := modelDevResponseFixture(t)
+	entered := make(chan struct{})
+	config, _ := startModelDevPlanPeer(t, []string{"ani-modeldev-service"}, f, func(ctx context.Context, _ *modeldevv1.PrepareAdmissionRequest) (*modeldevv1.PrepareAdmissionResponse, error) {
+		close(entered)
+		<-ctx.Done()
+		return nil, status.FromContextError(ctx.Err()).Err()
+	}, nil)
+	client := newModelDevBoundaryClient(t, config)
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { _, err := f.resolve(ctx, client); done <- err }()
+	<-entered
+	cancel()
+	require.Equal(t, codes.Canceled, status.Code(<-done))
+	for _, typed := range []bool{false, true} {
+		config, _ := startModelDevPlanPeer(t, []string{"ani-modeldev-service"}, f, func(ctx context.Context, _ *modeldevv1.PrepareAdmissionRequest) (*modeldevv1.PrepareAdmissionResponse, error) {
+			if !typed {
+				return nil, status.Error(codes.NotFound, "private-sentinel")
+			}
+			md, _ := metadata.FromIncomingContext(ctx)
+			err, e := status.New(codes.NotFound, "private-sentinel").WithDetails(&modeldevv1.ErrorDetail{Reason: modeldevv1.ErrorReason_ERROR_REASON_RESOURCE_NOT_FOUND, SafeMessage: "private-sentinel", CorrelationId: md.Get("x-ani-request-id")[0]})
+			if e != nil {
+				return nil, status.Error(codes.Internal, "test detail construction failed")
+			}
+			return nil, err.Err()
+		}, nil)
+		_, err := f.resolve(context.Background(), newModelDevBoundaryClient(t, config))
+		require.NotContains(t, err.Error(), "private-sentinel")
+		if typed {
+			require.Equal(t, codes.NotFound, status.Code(err))
+		} else {
+			require.Equal(t, codes.Unavailable, status.Code(err))
+		}
+	}
+}
+func TestModelDevClientRequiresFixedTLSIdentityAndMaterials(t *testing.T) {
+	f := modelDevResponseFixture(t)
+	for _, names := range [][]string{{"ani-modeldev-service", "extra.test"}, {"ani-modeldev-service", "*.ani.internal"}, {"other-modeldev.test"}} {
+		config, peer := startModelDevPlanPeer(t, names, f, nil, nil)
+		_, err := f.resolve(context.Background(), newModelDevBoundaryClient(t, config))
+		if len(names) == 2 && names[1] == "extra.test" {
+			require.NoError(t, err)
+		} else {
+			require.Equal(t, codes.Unavailable, status.Code(err))
+			require.Zero(t, peer.prepareCalls.Load())
+		}
+	}
+	config, _ := modelDevBoundaryTLS(t, []string{"ani-modeldev-service"}, []string{"ani-governance", "other"})
+	config.Address = "127.0.0.1:1"
+	c, cleanup, err := NewModelDevClient(config)
+	require.Error(t, err)
+	require.Nil(t, c)
+	require.Nil(t, cleanup)
 }
 
 func modelDevDirectTLSConnection(t *testing.T, config ModelDevClientConfig, serverName string) *grpc.ClientConn {

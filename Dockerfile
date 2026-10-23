@@ -3,7 +3,7 @@
 ##################################
 
 # 使用官方的 Go 基础镜像作为构建环境
-ARG GO_VERSION=1.26.9
+ARG GO_VERSION=1.26.10
 # 运行时基础镜像：无 shell、自带 CA 证书，:nonroot 标签默认以 UID 65532 运行
 ARG RUNTIME_IMAGE=gcr.io/distroless/static-debian12:nonroot
 FROM golang:${GO_VERSION}-alpine AS builder

@@ -13,6 +13,15 @@ import (
 
 // NetworkPlatformClient is separate from the tenant surface: no tenant resolver.
 type NetworkPlatformClient interface {
+	CreateVirtualSwitch(context.Context, string, *networkv1.CreateVirtualSwitchRequest) (*networkv1.CreateVirtualSwitchResponse, error)
+	GetVirtualSwitch(context.Context, string, *networkv1.GetVirtualSwitchRequest) (*networkv1.GetVirtualSwitchResponse, error)
+	ListVirtualSwitches(context.Context, string, *networkv1.ListVirtualSwitchesRequest) (*networkv1.ListVirtualSwitchesResponse, error)
+	DeleteVirtualSwitch(context.Context, string, *networkv1.DeleteVirtualSwitchRequest) (*networkv1.DeleteVirtualSwitchResponse, error)
+	RetireNetworkDevice(context.Context, string, *networkv1.RetireNetworkDeviceRequest) (*networkv1.RetireNetworkDeviceResponse, error)
+	GetNetworkDeviceRetirement(context.Context, string, *networkv1.GetNetworkDeviceRetirementRequest) (*networkv1.GetNetworkDeviceRetirementResponse, error)
+	CreateDefaultVPCEgress(context.Context, string, *networkv1.CreateDefaultVPCEgressRequest) (*networkv1.CreateDefaultVPCEgressResponse, error)
+	GetDefaultVPCEgress(context.Context, string, *networkv1.GetDefaultVPCEgressRequest) (*networkv1.GetDefaultVPCEgressResponse, error)
+	DeleteDefaultVPCEgress(context.Context, string, *networkv1.DeleteDefaultVPCEgressRequest) (*networkv1.DeleteDefaultVPCEgressResponse, error)
 	ListNodeInterfaces(context.Context, string, *networkv1.ListNodeInterfacesRequest) (*networkv1.ListNodeInterfacesResponse, error)
 	AdoptNetworkDevice(context.Context, string, *networkv1.AdoptNetworkDeviceRequest) (*networkv1.AdoptNetworkDeviceResponse, error)
 	GetNetworkDevice(context.Context, string, *networkv1.GetNetworkDeviceRequest) (*networkv1.GetNetworkDeviceResponse, error)
@@ -194,8 +203,14 @@ func wireVlanNetwork(v *networkv1.VlanNetwork) *catalogv1.VlanNetwork {
 		return nil
 	}
 	out := &catalogv1.VlanNetwork{
-		DeviceId: v.GetDeviceId(),
-		VlanId:   v.GetVlanId(),
+		DeviceId:        v.GetDeviceId(),
+		VlanId:          v.GetVlanId(),
+		VirtualSwitchId: v.GetVirtualSwitchId(),
+		DeviceName:      v.GetDeviceName(),
+		GroupName:       v.GetGroupName(),
+	}
+	for _, node := range v.GetNodes() {
+		out.Nodes = append(out.Nodes, wireVirtualSwitchNode(node))
 	}
 	return out
 }
@@ -372,7 +387,7 @@ func (s *PlatformNetworkService) ListNodeInterfaces(ctx context.Context, req *ca
 	if req == nil {
 		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "request required")
 	}
-	reply, err := s.client.ListNodeInterfaces(ctx, actor, &networkv1.ListNodeInterfacesRequest{NodeName: req.GetNodeName()})
+	reply, err := s.client.ListNodeInterfaces(ctx, actor, &networkv1.ListNodeInterfacesRequest{NodeName: req.GetNodeName(), ClusterId: req.GetClusterId(), VirtualSwitchId: req.GetVirtualSwitchId()})
 	if err != nil {
 		return nil, mapNetworkError(err)
 	}
@@ -451,7 +466,9 @@ func (s *PlatformNetworkService) CreateVlanNetwork(ctx context.Context, req *cat
 	if req.Data == nil {
 		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "data required")
 	}
-	reply, err := s.client.CreateVlanNetwork(ctx, actor, &networkv1.CreateVlanNetworkRequest{Name: req.Data.GetName(), Description: req.Data.GetDescription(), DeviceId: req.Data.GetDeviceId(), VlanId: req.Data.GetVlanId(), IdempotencyKey: req.Data.GetIdempotencyKey()})
+	// Keep both versions explicit. The existing HTTP validator rejects mixed or
+	// incomplete v2 input, and Resource owns the same admission constraint.
+	reply, err := s.client.CreateVlanNetwork(ctx, actor, &networkv1.CreateVlanNetworkRequest{Name: req.Data.GetName(), Description: req.Data.GetDescription(), DeviceId: req.Data.GetDeviceId(), VlanId: req.Data.GetVlanId(), IdempotencyKey: req.Data.GetIdempotencyKey(), ClusterId: req.Data.GetClusterId(), VirtualSwitchId: req.Data.GetVirtualSwitchId(), DeviceName: req.Data.GetDeviceName()})
 	if err != nil {
 		return nil, mapNetworkError(err)
 	}

@@ -1,0 +1,21 @@
+syntax = "proto3";
+package admin.service.v1;
+import "google/api/annotations.proto";
+import "inference/service/v1/diagnostics.proto";
+
+// Tenant-authenticated management diagnostics; inference calls remain on Higress.
+service InferenceDiagnosticsService {
+  rpc GetRuntimeDiagnostics(inference.service.v1.GetRuntimeDiagnosticsRequest) returns (inference.service.v1.RuntimeDiagnostics) {
+    option (google.api.http) = { get: "/api/v1/inference/services/{resource_id}/runtime" };
+  }
+  rpc GetRuntimeLogs(inference.service.v1.RuntimeLogsRequest) returns (inference.service.v1.RuntimeLogsResponse) {
+    option (google.api.http) = { get: "/api/v1/inference/services/{resource_id}/logs" };
+  }
+  // Served as bounded SSE by the custom HTTP handler.
+  rpc StreamRuntimeLogs(inference.service.v1.RuntimeLogsRequest) returns (inference.service.v1.RuntimeLogLine) {
+    option (google.api.http) = { get: "/api/v1/inference/services/{resource_id}/logs:stream" };
+  }
+  rpc ListRuntimeEvents(inference.service.v1.ListRuntimeEventsRequest) returns (inference.service.v1.ListRuntimeEventsResponse) {
+    option (google.api.http) = { get: "/api/v1/inference/services/{resource_id}/events" };
+  }
+}

@@ -154,7 +154,7 @@ func (r *ModelDevAcceptanceRepo) withModelDevDeliveryClaim(ctx context.Context, 
 		return false, err
 	}
 	for _, id := range []string{a.Scope.ResourceTenantID, a.OperationID} {
-		if canonical, ok := canonicalModelDevBindingUUID(id); !ok || canonical != id {
+		if !modelDevCanonicalUUID(id) {
 			return false, fmt.Errorf("%w: modeldev delivery identity", cpup01.ErrInvalidArgument)
 		}
 	}

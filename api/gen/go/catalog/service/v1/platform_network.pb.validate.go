@@ -387,6 +387,1429 @@ var _ interface {
 	ErrorName() string
 } = PlatformResourceValidationError{}
 
+// Validate checks the field values on VirtualSwitch with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *VirtualSwitch) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VirtualSwitch with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in VirtualSwitchMultiError, or
+// nil if none found.
+func (m *VirtualSwitch) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VirtualSwitch) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Name
+
+	// no validation rules for State
+
+	// no validation rules for Reason
+
+	// no validation rules for ReasonMessage
+
+	// no validation rules for Version
+
+	if all {
+		switch v := interface{}(m.GetCreatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, VirtualSwitchValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, VirtualSwitchValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCreatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return VirtualSwitchValidationError{
+				field:  "CreatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetUpdatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, VirtualSwitchValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, VirtualSwitchValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetUpdatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return VirtualSwitchValidationError{
+				field:  "UpdatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for LastOperationId
+
+	// no validation rules for ClusterId
+
+	// no validation rules for GroupName
+
+	// no validation rules for BindingState
+
+	// no validation rules for BindingVersion
+
+	// no validation rules for MembershipFingerprint
+
+	for idx, item := range m.GetNodes() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VirtualSwitchValidationError{
+						field:  fmt.Sprintf("Nodes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VirtualSwitchValidationError{
+						field:  fmt.Sprintf("Nodes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VirtualSwitchValidationError{
+					field:  fmt.Sprintf("Nodes[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return VirtualSwitchMultiError(errors)
+	}
+
+	return nil
+}
+
+// VirtualSwitchMultiError is an error wrapping multiple validation errors
+// returned by VirtualSwitch.ValidateAll() if the designated constraints
+// aren't met.
+type VirtualSwitchMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VirtualSwitchMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VirtualSwitchMultiError) AllErrors() []error { return m }
+
+// VirtualSwitchValidationError is the validation error returned by
+// VirtualSwitch.Validate if the designated constraints aren't met.
+type VirtualSwitchValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VirtualSwitchValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VirtualSwitchValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VirtualSwitchValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VirtualSwitchValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VirtualSwitchValidationError) ErrorName() string { return "VirtualSwitchValidationError" }
+
+// Error satisfies the builtin error interface
+func (e VirtualSwitchValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVirtualSwitch.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VirtualSwitchValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VirtualSwitchValidationError{}
+
+// Validate checks the field values on VirtualSwitchNode with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *VirtualSwitchNode) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VirtualSwitchNode with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// VirtualSwitchNodeMultiError, or nil if none found.
+func (m *VirtualSwitchNode) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VirtualSwitchNode) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for NodeName
+
+	// no validation rules for NodeUid
+
+	// no validation rules for Mac
+
+	// no validation rules for Priority
+
+	// no validation rules for State
+
+	// no validation rules for Reason
+
+	if len(errors) > 0 {
+		return VirtualSwitchNodeMultiError(errors)
+	}
+
+	return nil
+}
+
+// VirtualSwitchNodeMultiError is an error wrapping multiple validation errors
+// returned by VirtualSwitchNode.ValidateAll() if the designated constraints
+// aren't met.
+type VirtualSwitchNodeMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VirtualSwitchNodeMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VirtualSwitchNodeMultiError) AllErrors() []error { return m }
+
+// VirtualSwitchNodeValidationError is the validation error returned by
+// VirtualSwitchNode.Validate if the designated constraints aren't met.
+type VirtualSwitchNodeValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VirtualSwitchNodeValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VirtualSwitchNodeValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VirtualSwitchNodeValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VirtualSwitchNodeValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VirtualSwitchNodeValidationError) ErrorName() string {
+	return "VirtualSwitchNodeValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e VirtualSwitchNodeValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVirtualSwitchNode.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VirtualSwitchNodeValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VirtualSwitchNodeValidationError{}
+
+// Validate checks the field values on CreateVirtualSwitchData with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateVirtualSwitchData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateVirtualSwitchData with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateVirtualSwitchDataMultiError, or nil if none found.
+func (m *CreateVirtualSwitchData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateVirtualSwitchData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for IdempotencyKey
+
+	if len(errors) > 0 {
+		return CreateVirtualSwitchDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateVirtualSwitchDataMultiError is an error wrapping multiple validation
+// errors returned by CreateVirtualSwitchData.ValidateAll() if the designated
+// constraints aren't met.
+type CreateVirtualSwitchDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateVirtualSwitchDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateVirtualSwitchDataMultiError) AllErrors() []error { return m }
+
+// CreateVirtualSwitchDataValidationError is the validation error returned by
+// CreateVirtualSwitchData.Validate if the designated constraints aren't met.
+type CreateVirtualSwitchDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateVirtualSwitchDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateVirtualSwitchDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateVirtualSwitchDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateVirtualSwitchDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateVirtualSwitchDataValidationError) ErrorName() string {
+	return "CreateVirtualSwitchDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateVirtualSwitchDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateVirtualSwitchData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateVirtualSwitchDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateVirtualSwitchDataValidationError{}
+
+// Validate checks the field values on CreateVirtualSwitchRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateVirtualSwitchRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateVirtualSwitchRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateVirtualSwitchRequestMultiError, or nil if none found.
+func (m *CreateVirtualSwitchRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateVirtualSwitchRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateVirtualSwitchRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateVirtualSwitchRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateVirtualSwitchRequestValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateVirtualSwitchRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateVirtualSwitchRequestMultiError is an error wrapping multiple
+// validation errors returned by CreateVirtualSwitchRequest.ValidateAll() if
+// the designated constraints aren't met.
+type CreateVirtualSwitchRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateVirtualSwitchRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateVirtualSwitchRequestMultiError) AllErrors() []error { return m }
+
+// CreateVirtualSwitchRequestValidationError is the validation error returned
+// by CreateVirtualSwitchRequest.Validate if the designated constraints aren't met.
+type CreateVirtualSwitchRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateVirtualSwitchRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateVirtualSwitchRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateVirtualSwitchRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateVirtualSwitchRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateVirtualSwitchRequestValidationError) ErrorName() string {
+	return "CreateVirtualSwitchRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateVirtualSwitchRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateVirtualSwitchRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateVirtualSwitchRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateVirtualSwitchRequestValidationError{}
+
+// Validate checks the field values on CreateVirtualSwitchResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateVirtualSwitchResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateVirtualSwitchResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateVirtualSwitchResponseMultiError, or nil if none found.
+func (m *CreateVirtualSwitchResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateVirtualSwitchResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetResource()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateVirtualSwitchResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateVirtualSwitchResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetResource()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateVirtualSwitchResponseValidationError{
+				field:  "Resource",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateVirtualSwitchResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateVirtualSwitchResponseMultiError is an error wrapping multiple
+// validation errors returned by CreateVirtualSwitchResponse.ValidateAll() if
+// the designated constraints aren't met.
+type CreateVirtualSwitchResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateVirtualSwitchResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateVirtualSwitchResponseMultiError) AllErrors() []error { return m }
+
+// CreateVirtualSwitchResponseValidationError is the validation error returned
+// by CreateVirtualSwitchResponse.Validate if the designated constraints
+// aren't met.
+type CreateVirtualSwitchResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateVirtualSwitchResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateVirtualSwitchResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateVirtualSwitchResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateVirtualSwitchResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateVirtualSwitchResponseValidationError) ErrorName() string {
+	return "CreateVirtualSwitchResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateVirtualSwitchResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateVirtualSwitchResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateVirtualSwitchResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateVirtualSwitchResponseValidationError{}
+
+// Validate checks the field values on GetVirtualSwitchRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetVirtualSwitchRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetVirtualSwitchRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetVirtualSwitchRequestMultiError, or nil if none found.
+func (m *GetVirtualSwitchRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetVirtualSwitchRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for VirtualSwitchId
+
+	if len(errors) > 0 {
+		return GetVirtualSwitchRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetVirtualSwitchRequestMultiError is an error wrapping multiple validation
+// errors returned by GetVirtualSwitchRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetVirtualSwitchRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetVirtualSwitchRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetVirtualSwitchRequestMultiError) AllErrors() []error { return m }
+
+// GetVirtualSwitchRequestValidationError is the validation error returned by
+// GetVirtualSwitchRequest.Validate if the designated constraints aren't met.
+type GetVirtualSwitchRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetVirtualSwitchRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetVirtualSwitchRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetVirtualSwitchRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetVirtualSwitchRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetVirtualSwitchRequestValidationError) ErrorName() string {
+	return "GetVirtualSwitchRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetVirtualSwitchRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetVirtualSwitchRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetVirtualSwitchRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetVirtualSwitchRequestValidationError{}
+
+// Validate checks the field values on GetVirtualSwitchResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetVirtualSwitchResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetVirtualSwitchResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetVirtualSwitchResponseMultiError, or nil if none found.
+func (m *GetVirtualSwitchResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetVirtualSwitchResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetResource()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, GetVirtualSwitchResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, GetVirtualSwitchResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetResource()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return GetVirtualSwitchResponseValidationError{
+				field:  "Resource",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return GetVirtualSwitchResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetVirtualSwitchResponseMultiError is an error wrapping multiple validation
+// errors returned by GetVirtualSwitchResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetVirtualSwitchResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetVirtualSwitchResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetVirtualSwitchResponseMultiError) AllErrors() []error { return m }
+
+// GetVirtualSwitchResponseValidationError is the validation error returned by
+// GetVirtualSwitchResponse.Validate if the designated constraints aren't met.
+type GetVirtualSwitchResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetVirtualSwitchResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetVirtualSwitchResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetVirtualSwitchResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetVirtualSwitchResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetVirtualSwitchResponseValidationError) ErrorName() string {
+	return "GetVirtualSwitchResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetVirtualSwitchResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetVirtualSwitchResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetVirtualSwitchResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetVirtualSwitchResponseValidationError{}
+
+// Validate checks the field values on ListVirtualSwitchesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListVirtualSwitchesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListVirtualSwitchesRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListVirtualSwitchesRequestMultiError, or nil if none found.
+func (m *ListVirtualSwitchesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListVirtualSwitchesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for State
+
+	if m.Page != nil {
+		// no validation rules for Page
+	}
+
+	if m.PageSize != nil {
+		// no validation rules for PageSize
+	}
+
+	if len(errors) > 0 {
+		return ListVirtualSwitchesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListVirtualSwitchesRequestMultiError is an error wrapping multiple
+// validation errors returned by ListVirtualSwitchesRequest.ValidateAll() if
+// the designated constraints aren't met.
+type ListVirtualSwitchesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListVirtualSwitchesRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListVirtualSwitchesRequestMultiError) AllErrors() []error { return m }
+
+// ListVirtualSwitchesRequestValidationError is the validation error returned
+// by ListVirtualSwitchesRequest.Validate if the designated constraints aren't met.
+type ListVirtualSwitchesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListVirtualSwitchesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListVirtualSwitchesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListVirtualSwitchesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListVirtualSwitchesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListVirtualSwitchesRequestValidationError) ErrorName() string {
+	return "ListVirtualSwitchesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListVirtualSwitchesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListVirtualSwitchesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListVirtualSwitchesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListVirtualSwitchesRequestValidationError{}
+
+// Validate checks the field values on ListVirtualSwitchesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListVirtualSwitchesResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListVirtualSwitchesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListVirtualSwitchesResponseMultiError, or nil if none found.
+func (m *ListVirtualSwitchesResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListVirtualSwitchesResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListVirtualSwitchesResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListVirtualSwitchesResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListVirtualSwitchesResponseValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Total
+
+	if len(errors) > 0 {
+		return ListVirtualSwitchesResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListVirtualSwitchesResponseMultiError is an error wrapping multiple
+// validation errors returned by ListVirtualSwitchesResponse.ValidateAll() if
+// the designated constraints aren't met.
+type ListVirtualSwitchesResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListVirtualSwitchesResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListVirtualSwitchesResponseMultiError) AllErrors() []error { return m }
+
+// ListVirtualSwitchesResponseValidationError is the validation error returned
+// by ListVirtualSwitchesResponse.Validate if the designated constraints
+// aren't met.
+type ListVirtualSwitchesResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListVirtualSwitchesResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListVirtualSwitchesResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListVirtualSwitchesResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListVirtualSwitchesResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListVirtualSwitchesResponseValidationError) ErrorName() string {
+	return "ListVirtualSwitchesResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListVirtualSwitchesResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListVirtualSwitchesResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListVirtualSwitchesResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListVirtualSwitchesResponseValidationError{}
+
+// Validate checks the field values on DeleteVirtualSwitchRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteVirtualSwitchRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteVirtualSwitchRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteVirtualSwitchRequestMultiError, or nil if none found.
+func (m *DeleteVirtualSwitchRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteVirtualSwitchRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for VirtualSwitchId
+
+	if len(errors) > 0 {
+		return DeleteVirtualSwitchRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteVirtualSwitchRequestMultiError is an error wrapping multiple
+// validation errors returned by DeleteVirtualSwitchRequest.ValidateAll() if
+// the designated constraints aren't met.
+type DeleteVirtualSwitchRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteVirtualSwitchRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteVirtualSwitchRequestMultiError) AllErrors() []error { return m }
+
+// DeleteVirtualSwitchRequestValidationError is the validation error returned
+// by DeleteVirtualSwitchRequest.Validate if the designated constraints aren't met.
+type DeleteVirtualSwitchRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteVirtualSwitchRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteVirtualSwitchRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteVirtualSwitchRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteVirtualSwitchRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteVirtualSwitchRequestValidationError) ErrorName() string {
+	return "DeleteVirtualSwitchRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteVirtualSwitchRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteVirtualSwitchRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteVirtualSwitchRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteVirtualSwitchRequestValidationError{}
+
+// Validate checks the field values on DeleteVirtualSwitchResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteVirtualSwitchResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteVirtualSwitchResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteVirtualSwitchResponseMultiError, or nil if none found.
+func (m *DeleteVirtualSwitchResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteVirtualSwitchResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetResource()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeleteVirtualSwitchResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeleteVirtualSwitchResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetResource()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeleteVirtualSwitchResponseValidationError{
+				field:  "Resource",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return DeleteVirtualSwitchResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteVirtualSwitchResponseMultiError is an error wrapping multiple
+// validation errors returned by DeleteVirtualSwitchResponse.ValidateAll() if
+// the designated constraints aren't met.
+type DeleteVirtualSwitchResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteVirtualSwitchResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteVirtualSwitchResponseMultiError) AllErrors() []error { return m }
+
+// DeleteVirtualSwitchResponseValidationError is the validation error returned
+// by DeleteVirtualSwitchResponse.Validate if the designated constraints
+// aren't met.
+type DeleteVirtualSwitchResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteVirtualSwitchResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteVirtualSwitchResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteVirtualSwitchResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteVirtualSwitchResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteVirtualSwitchResponseValidationError) ErrorName() string {
+	return "DeleteVirtualSwitchResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteVirtualSwitchResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteVirtualSwitchResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteVirtualSwitchResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteVirtualSwitchResponseValidationError{}
+
 // Validate checks the field values on NodeInterface with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -707,6 +2130,46 @@ func (m *VlanNetwork) validate(all bool) error {
 	// no validation rules for DeviceId
 
 	// no validation rules for VlanId
+
+	// no validation rules for VirtualSwitchId
+
+	// no validation rules for DeviceName
+
+	// no validation rules for GroupName
+
+	for idx, item := range m.GetNodes() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VlanNetworkValidationError{
+						field:  fmt.Sprintf("Nodes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VlanNetworkValidationError{
+						field:  fmt.Sprintf("Nodes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VlanNetworkValidationError{
+					field:  fmt.Sprintf("Nodes[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
 
 	if len(errors) > 0 {
 		return VlanNetworkMultiError(errors)
@@ -2110,6 +3573,10 @@ func (m *ListNodeInterfacesRequest) validate(all bool) error {
 
 	// no validation rules for NodeName
 
+	// no validation rules for ClusterId
+
+	// no validation rules for VirtualSwitchId
+
 	if len(errors) > 0 {
 		return ListNodeInterfacesRequestMultiError(errors)
 	}
@@ -2968,6 +4435,12 @@ func (m *CreateVlanNetworkData) validate(all bool) error {
 	// no validation rules for VlanId
 
 	// no validation rules for IdempotencyKey
+
+	// no validation rules for ClusterId
+
+	// no validation rules for VirtualSwitchId
+
+	// no validation rules for DeviceName
 
 	if len(errors) > 0 {
 		return CreateVlanNetworkDataMultiError(errors)
@@ -10153,3 +11626,1904 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetPlatformOperationResponseValidationError{}
+
+// Validate checks the field values on DeviceRetirement with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *DeviceRetirement) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeviceRetirement with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeviceRetirementMultiError, or nil if none found.
+func (m *DeviceRetirement) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeviceRetirement) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for DeviceId
+
+	// no validation rules for OperationId
+
+	// no validation rules for State
+
+	// no validation rules for Reason
+
+	// no validation rules for Version
+
+	// no validation rules for ExpectedVersion
+
+	// no validation rules for ConfigUid
+
+	// no validation rules for FenceVersion
+
+	// no validation rules for PendingUnknown
+
+	if all {
+		switch v := interface{}(m.GetCreatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceRetirementValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceRetirementValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCreatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceRetirementValidationError{
+				field:  "CreatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetUpdatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceRetirementValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceRetirementValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetUpdatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceRetirementValidationError{
+				field:  "UpdatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetCompletedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceRetirementValidationError{
+					field:  "CompletedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceRetirementValidationError{
+					field:  "CompletedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCompletedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceRetirementValidationError{
+				field:  "CompletedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return DeviceRetirementMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeviceRetirementMultiError is an error wrapping multiple validation errors
+// returned by DeviceRetirement.ValidateAll() if the designated constraints
+// aren't met.
+type DeviceRetirementMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeviceRetirementMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeviceRetirementMultiError) AllErrors() []error { return m }
+
+// DeviceRetirementValidationError is the validation error returned by
+// DeviceRetirement.Validate if the designated constraints aren't met.
+type DeviceRetirementValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeviceRetirementValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeviceRetirementValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeviceRetirementValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeviceRetirementValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeviceRetirementValidationError) ErrorName() string { return "DeviceRetirementValidationError" }
+
+// Error satisfies the builtin error interface
+func (e DeviceRetirementValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeviceRetirement.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeviceRetirementValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeviceRetirementValidationError{}
+
+// Validate checks the field values on RetireNetworkDeviceData with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RetireNetworkDeviceData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RetireNetworkDeviceData with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RetireNetworkDeviceDataMultiError, or nil if none found.
+func (m *RetireNetworkDeviceData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RetireNetworkDeviceData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ExpectedVersion
+
+	// no validation rules for IdempotencyKey
+
+	if len(errors) > 0 {
+		return RetireNetworkDeviceDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// RetireNetworkDeviceDataMultiError is an error wrapping multiple validation
+// errors returned by RetireNetworkDeviceData.ValidateAll() if the designated
+// constraints aren't met.
+type RetireNetworkDeviceDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RetireNetworkDeviceDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RetireNetworkDeviceDataMultiError) AllErrors() []error { return m }
+
+// RetireNetworkDeviceDataValidationError is the validation error returned by
+// RetireNetworkDeviceData.Validate if the designated constraints aren't met.
+type RetireNetworkDeviceDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RetireNetworkDeviceDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RetireNetworkDeviceDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RetireNetworkDeviceDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RetireNetworkDeviceDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RetireNetworkDeviceDataValidationError) ErrorName() string {
+	return "RetireNetworkDeviceDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RetireNetworkDeviceDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRetireNetworkDeviceData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RetireNetworkDeviceDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RetireNetworkDeviceDataValidationError{}
+
+// Validate checks the field values on RetireNetworkDeviceRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RetireNetworkDeviceRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RetireNetworkDeviceRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RetireNetworkDeviceRequestMultiError, or nil if none found.
+func (m *RetireNetworkDeviceRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RetireNetworkDeviceRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for DeviceId
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, RetireNetworkDeviceRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, RetireNetworkDeviceRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return RetireNetworkDeviceRequestValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return RetireNetworkDeviceRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RetireNetworkDeviceRequestMultiError is an error wrapping multiple
+// validation errors returned by RetireNetworkDeviceRequest.ValidateAll() if
+// the designated constraints aren't met.
+type RetireNetworkDeviceRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RetireNetworkDeviceRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RetireNetworkDeviceRequestMultiError) AllErrors() []error { return m }
+
+// RetireNetworkDeviceRequestValidationError is the validation error returned
+// by RetireNetworkDeviceRequest.Validate if the designated constraints aren't met.
+type RetireNetworkDeviceRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RetireNetworkDeviceRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RetireNetworkDeviceRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RetireNetworkDeviceRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RetireNetworkDeviceRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RetireNetworkDeviceRequestValidationError) ErrorName() string {
+	return "RetireNetworkDeviceRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RetireNetworkDeviceRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRetireNetworkDeviceRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RetireNetworkDeviceRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RetireNetworkDeviceRequestValidationError{}
+
+// Validate checks the field values on RetireNetworkDeviceResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RetireNetworkDeviceResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RetireNetworkDeviceResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RetireNetworkDeviceResponseMultiError, or nil if none found.
+func (m *RetireNetworkDeviceResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RetireNetworkDeviceResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetRetirement()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, RetireNetworkDeviceResponseValidationError{
+					field:  "Retirement",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, RetireNetworkDeviceResponseValidationError{
+					field:  "Retirement",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetRetirement()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return RetireNetworkDeviceResponseValidationError{
+				field:  "Retirement",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return RetireNetworkDeviceResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// RetireNetworkDeviceResponseMultiError is an error wrapping multiple
+// validation errors returned by RetireNetworkDeviceResponse.ValidateAll() if
+// the designated constraints aren't met.
+type RetireNetworkDeviceResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RetireNetworkDeviceResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RetireNetworkDeviceResponseMultiError) AllErrors() []error { return m }
+
+// RetireNetworkDeviceResponseValidationError is the validation error returned
+// by RetireNetworkDeviceResponse.Validate if the designated constraints
+// aren't met.
+type RetireNetworkDeviceResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RetireNetworkDeviceResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RetireNetworkDeviceResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RetireNetworkDeviceResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RetireNetworkDeviceResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RetireNetworkDeviceResponseValidationError) ErrorName() string {
+	return "RetireNetworkDeviceResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RetireNetworkDeviceResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRetireNetworkDeviceResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RetireNetworkDeviceResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RetireNetworkDeviceResponseValidationError{}
+
+// Validate checks the field values on GetNetworkDeviceRetirementRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *GetNetworkDeviceRetirementRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetNetworkDeviceRetirementRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// GetNetworkDeviceRetirementRequestMultiError, or nil if none found.
+func (m *GetNetworkDeviceRetirementRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetNetworkDeviceRetirementRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for DeviceId
+
+	if len(errors) > 0 {
+		return GetNetworkDeviceRetirementRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetNetworkDeviceRetirementRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// GetNetworkDeviceRetirementRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetNetworkDeviceRetirementRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetNetworkDeviceRetirementRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetNetworkDeviceRetirementRequestMultiError) AllErrors() []error { return m }
+
+// GetNetworkDeviceRetirementRequestValidationError is the validation error
+// returned by GetNetworkDeviceRetirementRequest.Validate if the designated
+// constraints aren't met.
+type GetNetworkDeviceRetirementRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetNetworkDeviceRetirementRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetNetworkDeviceRetirementRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetNetworkDeviceRetirementRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetNetworkDeviceRetirementRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetNetworkDeviceRetirementRequestValidationError) ErrorName() string {
+	return "GetNetworkDeviceRetirementRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetNetworkDeviceRetirementRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetNetworkDeviceRetirementRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetNetworkDeviceRetirementRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetNetworkDeviceRetirementRequestValidationError{}
+
+// Validate checks the field values on GetNetworkDeviceRetirementResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *GetNetworkDeviceRetirementResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetNetworkDeviceRetirementResponse
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// GetNetworkDeviceRetirementResponseMultiError, or nil if none found.
+func (m *GetNetworkDeviceRetirementResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetNetworkDeviceRetirementResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetRetirement()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, GetNetworkDeviceRetirementResponseValidationError{
+					field:  "Retirement",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, GetNetworkDeviceRetirementResponseValidationError{
+					field:  "Retirement",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetRetirement()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return GetNetworkDeviceRetirementResponseValidationError{
+				field:  "Retirement",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return GetNetworkDeviceRetirementResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetNetworkDeviceRetirementResponseMultiError is an error wrapping multiple
+// validation errors returned by
+// GetNetworkDeviceRetirementResponse.ValidateAll() if the designated
+// constraints aren't met.
+type GetNetworkDeviceRetirementResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetNetworkDeviceRetirementResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetNetworkDeviceRetirementResponseMultiError) AllErrors() []error { return m }
+
+// GetNetworkDeviceRetirementResponseValidationError is the validation error
+// returned by GetNetworkDeviceRetirementResponse.Validate if the designated
+// constraints aren't met.
+type GetNetworkDeviceRetirementResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetNetworkDeviceRetirementResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetNetworkDeviceRetirementResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetNetworkDeviceRetirementResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetNetworkDeviceRetirementResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetNetworkDeviceRetirementResponseValidationError) ErrorName() string {
+	return "GetNetworkDeviceRetirementResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetNetworkDeviceRetirementResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetNetworkDeviceRetirementResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetNetworkDeviceRetirementResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetNetworkDeviceRetirementResponseValidationError{}
+
+// Validate checks the field values on DefaultVPCEgress with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *DefaultVPCEgress) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DefaultVPCEgress with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DefaultVPCEgressMultiError, or nil if none found.
+func (m *DefaultVPCEgress) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DefaultVPCEgress) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for Name
+
+	// no validation rules for PoolId
+
+	// no validation rules for State
+
+	// no validation rules for Reason
+
+	// no validation rules for Version
+
+	// no validation rules for LastOperationId
+
+	// no validation rules for OperationState
+
+	// no validation rules for Phase
+
+	// no validation rules for PendingUnknown
+
+	// no validation rules for Address
+
+	// no validation rules for EipProviderName
+
+	// no validation rules for EipProviderUid
+
+	// no validation rules for SnatProviderName
+
+	// no validation rules for SnatProviderUid
+
+	// no validation rules for DesiredEnabled
+
+	// no validation rules for ClusterId
+
+	// no validation rules for ClusterUid
+
+	// no validation rules for DefaultVpcNamespace
+
+	// no validation rules for DefaultVpcName
+
+	// no validation rules for DefaultVpcUid
+
+	if all {
+		switch v := interface{}(m.GetCreatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DefaultVPCEgressValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DefaultVPCEgressValidationError{
+					field:  "CreatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetCreatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DefaultVPCEgressValidationError{
+				field:  "CreatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetUpdatedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DefaultVPCEgressValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DefaultVPCEgressValidationError{
+					field:  "UpdatedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetUpdatedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DefaultVPCEgressValidationError{
+				field:  "UpdatedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetObservedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DefaultVPCEgressValidationError{
+					field:  "ObservedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DefaultVPCEgressValidationError{
+					field:  "ObservedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetObservedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DefaultVPCEgressValidationError{
+				field:  "ObservedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	// no validation rules for TargetGeneration
+
+	// no validation rules for PendingAction
+
+	// no validation rules for ObservationStale
+
+	if m.AppliedEnabled != nil {
+		// no validation rules for AppliedEnabled
+	}
+
+	if len(errors) > 0 {
+		return DefaultVPCEgressMultiError(errors)
+	}
+
+	return nil
+}
+
+// DefaultVPCEgressMultiError is an error wrapping multiple validation errors
+// returned by DefaultVPCEgress.ValidateAll() if the designated constraints
+// aren't met.
+type DefaultVPCEgressMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DefaultVPCEgressMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DefaultVPCEgressMultiError) AllErrors() []error { return m }
+
+// DefaultVPCEgressValidationError is the validation error returned by
+// DefaultVPCEgress.Validate if the designated constraints aren't met.
+type DefaultVPCEgressValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DefaultVPCEgressValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DefaultVPCEgressValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DefaultVPCEgressValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DefaultVPCEgressValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DefaultVPCEgressValidationError) ErrorName() string { return "DefaultVPCEgressValidationError" }
+
+// Error satisfies the builtin error interface
+func (e DefaultVPCEgressValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDefaultVPCEgress.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DefaultVPCEgressValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DefaultVPCEgressValidationError{}
+
+// Validate checks the field values on CreateDefaultVPCEgressData with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateDefaultVPCEgressData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateDefaultVPCEgressData with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateDefaultVPCEgressDataMultiError, or nil if none found.
+func (m *CreateDefaultVPCEgressData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateDefaultVPCEgressData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for PoolId
+
+	// no validation rules for IdempotencyKey
+
+	if len(errors) > 0 {
+		return CreateDefaultVPCEgressDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateDefaultVPCEgressDataMultiError is an error wrapping multiple
+// validation errors returned by CreateDefaultVPCEgressData.ValidateAll() if
+// the designated constraints aren't met.
+type CreateDefaultVPCEgressDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateDefaultVPCEgressDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateDefaultVPCEgressDataMultiError) AllErrors() []error { return m }
+
+// CreateDefaultVPCEgressDataValidationError is the validation error returned
+// by CreateDefaultVPCEgressData.Validate if the designated constraints aren't met.
+type CreateDefaultVPCEgressDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateDefaultVPCEgressDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateDefaultVPCEgressDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateDefaultVPCEgressDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateDefaultVPCEgressDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateDefaultVPCEgressDataValidationError) ErrorName() string {
+	return "CreateDefaultVPCEgressDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateDefaultVPCEgressDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateDefaultVPCEgressData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateDefaultVPCEgressDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateDefaultVPCEgressDataValidationError{}
+
+// Validate checks the field values on CreateDefaultVPCEgressRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateDefaultVPCEgressRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateDefaultVPCEgressRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// CreateDefaultVPCEgressRequestMultiError, or nil if none found.
+func (m *CreateDefaultVPCEgressRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateDefaultVPCEgressRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateDefaultVPCEgressRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateDefaultVPCEgressRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateDefaultVPCEgressRequestValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateDefaultVPCEgressRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateDefaultVPCEgressRequestMultiError is an error wrapping multiple
+// validation errors returned by CreateDefaultVPCEgressRequest.ValidateAll()
+// if the designated constraints aren't met.
+type CreateDefaultVPCEgressRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateDefaultVPCEgressRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateDefaultVPCEgressRequestMultiError) AllErrors() []error { return m }
+
+// CreateDefaultVPCEgressRequestValidationError is the validation error
+// returned by CreateDefaultVPCEgressRequest.Validate if the designated
+// constraints aren't met.
+type CreateDefaultVPCEgressRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateDefaultVPCEgressRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateDefaultVPCEgressRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateDefaultVPCEgressRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateDefaultVPCEgressRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateDefaultVPCEgressRequestValidationError) ErrorName() string {
+	return "CreateDefaultVPCEgressRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateDefaultVPCEgressRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateDefaultVPCEgressRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateDefaultVPCEgressRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateDefaultVPCEgressRequestValidationError{}
+
+// Validate checks the field values on CreateDefaultVPCEgressResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateDefaultVPCEgressResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateDefaultVPCEgressResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// CreateDefaultVPCEgressResponseMultiError, or nil if none found.
+func (m *CreateDefaultVPCEgressResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateDefaultVPCEgressResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEgress()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateDefaultVPCEgressResponseValidationError{
+					field:  "Egress",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateDefaultVPCEgressResponseValidationError{
+					field:  "Egress",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEgress()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateDefaultVPCEgressResponseValidationError{
+				field:  "Egress",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateDefaultVPCEgressResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateDefaultVPCEgressResponseMultiError is an error wrapping multiple
+// validation errors returned by CreateDefaultVPCEgressResponse.ValidateAll()
+// if the designated constraints aren't met.
+type CreateDefaultVPCEgressResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateDefaultVPCEgressResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateDefaultVPCEgressResponseMultiError) AllErrors() []error { return m }
+
+// CreateDefaultVPCEgressResponseValidationError is the validation error
+// returned by CreateDefaultVPCEgressResponse.Validate if the designated
+// constraints aren't met.
+type CreateDefaultVPCEgressResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateDefaultVPCEgressResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateDefaultVPCEgressResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateDefaultVPCEgressResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateDefaultVPCEgressResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateDefaultVPCEgressResponseValidationError) ErrorName() string {
+	return "CreateDefaultVPCEgressResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateDefaultVPCEgressResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateDefaultVPCEgressResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateDefaultVPCEgressResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateDefaultVPCEgressResponseValidationError{}
+
+// Validate checks the field values on GetDefaultVPCEgressRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDefaultVPCEgressRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDefaultVPCEgressRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDefaultVPCEgressRequestMultiError, or nil if none found.
+func (m *GetDefaultVPCEgressRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDefaultVPCEgressRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for EgressId
+
+	if len(errors) > 0 {
+		return GetDefaultVPCEgressRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDefaultVPCEgressRequestMultiError is an error wrapping multiple
+// validation errors returned by GetDefaultVPCEgressRequest.ValidateAll() if
+// the designated constraints aren't met.
+type GetDefaultVPCEgressRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDefaultVPCEgressRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDefaultVPCEgressRequestMultiError) AllErrors() []error { return m }
+
+// GetDefaultVPCEgressRequestValidationError is the validation error returned
+// by GetDefaultVPCEgressRequest.Validate if the designated constraints aren't met.
+type GetDefaultVPCEgressRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDefaultVPCEgressRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDefaultVPCEgressRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDefaultVPCEgressRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDefaultVPCEgressRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDefaultVPCEgressRequestValidationError) ErrorName() string {
+	return "GetDefaultVPCEgressRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDefaultVPCEgressRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDefaultVPCEgressRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDefaultVPCEgressRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDefaultVPCEgressRequestValidationError{}
+
+// Validate checks the field values on GetDefaultVPCEgressResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetDefaultVPCEgressResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetDefaultVPCEgressResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// GetDefaultVPCEgressResponseMultiError, or nil if none found.
+func (m *GetDefaultVPCEgressResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetDefaultVPCEgressResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEgress()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, GetDefaultVPCEgressResponseValidationError{
+					field:  "Egress",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, GetDefaultVPCEgressResponseValidationError{
+					field:  "Egress",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEgress()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return GetDefaultVPCEgressResponseValidationError{
+				field:  "Egress",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return GetDefaultVPCEgressResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetDefaultVPCEgressResponseMultiError is an error wrapping multiple
+// validation errors returned by GetDefaultVPCEgressResponse.ValidateAll() if
+// the designated constraints aren't met.
+type GetDefaultVPCEgressResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetDefaultVPCEgressResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetDefaultVPCEgressResponseMultiError) AllErrors() []error { return m }
+
+// GetDefaultVPCEgressResponseValidationError is the validation error returned
+// by GetDefaultVPCEgressResponse.Validate if the designated constraints
+// aren't met.
+type GetDefaultVPCEgressResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetDefaultVPCEgressResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetDefaultVPCEgressResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetDefaultVPCEgressResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetDefaultVPCEgressResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetDefaultVPCEgressResponseValidationError) ErrorName() string {
+	return "GetDefaultVPCEgressResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetDefaultVPCEgressResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetDefaultVPCEgressResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetDefaultVPCEgressResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetDefaultVPCEgressResponseValidationError{}
+
+// Validate checks the field values on DeleteDefaultVPCEgressRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteDefaultVPCEgressRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteDefaultVPCEgressRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// DeleteDefaultVPCEgressRequestMultiError, or nil if none found.
+func (m *DeleteDefaultVPCEgressRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteDefaultVPCEgressRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for EgressId
+
+	if len(errors) > 0 {
+		return DeleteDefaultVPCEgressRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteDefaultVPCEgressRequestMultiError is an error wrapping multiple
+// validation errors returned by DeleteDefaultVPCEgressRequest.ValidateAll()
+// if the designated constraints aren't met.
+type DeleteDefaultVPCEgressRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteDefaultVPCEgressRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteDefaultVPCEgressRequestMultiError) AllErrors() []error { return m }
+
+// DeleteDefaultVPCEgressRequestValidationError is the validation error
+// returned by DeleteDefaultVPCEgressRequest.Validate if the designated
+// constraints aren't met.
+type DeleteDefaultVPCEgressRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteDefaultVPCEgressRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteDefaultVPCEgressRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteDefaultVPCEgressRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteDefaultVPCEgressRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteDefaultVPCEgressRequestValidationError) ErrorName() string {
+	return "DeleteDefaultVPCEgressRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteDefaultVPCEgressRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteDefaultVPCEgressRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteDefaultVPCEgressRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteDefaultVPCEgressRequestValidationError{}
+
+// Validate checks the field values on DeleteDefaultVPCEgressResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteDefaultVPCEgressResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteDefaultVPCEgressResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// DeleteDefaultVPCEgressResponseMultiError, or nil if none found.
+func (m *DeleteDefaultVPCEgressResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteDefaultVPCEgressResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetEgress()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeleteDefaultVPCEgressResponseValidationError{
+					field:  "Egress",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeleteDefaultVPCEgressResponseValidationError{
+					field:  "Egress",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetEgress()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeleteDefaultVPCEgressResponseValidationError{
+				field:  "Egress",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return DeleteDefaultVPCEgressResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteDefaultVPCEgressResponseMultiError is an error wrapping multiple
+// validation errors returned by DeleteDefaultVPCEgressResponse.ValidateAll()
+// if the designated constraints aren't met.
+type DeleteDefaultVPCEgressResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteDefaultVPCEgressResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteDefaultVPCEgressResponseMultiError) AllErrors() []error { return m }
+
+// DeleteDefaultVPCEgressResponseValidationError is the validation error
+// returned by DeleteDefaultVPCEgressResponse.Validate if the designated
+// constraints aren't met.
+type DeleteDefaultVPCEgressResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteDefaultVPCEgressResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteDefaultVPCEgressResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteDefaultVPCEgressResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteDefaultVPCEgressResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteDefaultVPCEgressResponseValidationError) ErrorName() string {
+	return "DeleteDefaultVPCEgressResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteDefaultVPCEgressResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteDefaultVPCEgressResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteDefaultVPCEgressResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteDefaultVPCEgressResponseValidationError{}

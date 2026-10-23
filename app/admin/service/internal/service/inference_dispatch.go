@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	contractv1 "github.com/liangzai006/ani-inference-service/api/inference/contract/v1"
 	runtimev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"google.golang.org/grpc/codes"
@@ -30,7 +31,7 @@ func (b *InferenceGpuBinding) dispatchManaged(ctx context.Context, command *Quot
 	var reply *runtimev1.OperationResponse
 	switch command.Action {
 	case InferenceCreateAction:
-		request, e := runtimev1.DecodeBusinessPayload(c.BusinessPayload)
+		request, e := contractv1.DecodeBusinessPayload(c.BusinessPayload)
 		if e != nil {
 			return nil, e
 		}
@@ -42,7 +43,7 @@ func (b *InferenceGpuBinding) dispatchManaged(ctx context.Context, command *Quot
 		}
 	case InferenceDeleteAction:
 		request := &runtimev1.DeleteInferenceServiceRequest{RequestId: command.OperationID, ResourceId: command.ResourceID, CreateOperationId: command.CreateOperationID, ExpectedGeneration: c.DeleteExpectedGeneration, ManagedDeleteScope: c.DeleteScope, Context: &runtimev1.CommandContext{TenantId: command.ResourceTenantID, ResourceId: command.ResourceID, OperationId: command.OperationID}}
-		hash, e := runtimev1.ManagedDeleteCommandHash(request, command.ResourceTenantID, command.Actor.Type, command.Actor.ID)
+		hash, e := contractv1.ManagedDeleteCommandHash(request, command.ResourceTenantID, command.Actor.Type, command.Actor.ID)
 		if e != nil {
 			return nil, e
 		}

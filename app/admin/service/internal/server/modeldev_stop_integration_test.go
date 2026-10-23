@@ -21,13 +21,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
+	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/conformance"
 	authv1 "go-wind-admin/api/gen/go/authentication/service/v1"
 	identityv1 "go-wind-admin/api/gen/go/identity/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
-	"go-wind-admin/app/admin/service/internal/data/ent/modeldevreleasebinding"
 	"go-wind-admin/app/admin/service/internal/data/ent/permission"
 	"go-wind-admin/app/admin/service/internal/data/ent/planmodule"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
@@ -123,25 +123,24 @@ func TestModelDevStopPersistsBefore202AndReplaysOriginal(t *testing.T) {
 	cleanup(func(c context.Context) error {
 		return cache.RevokeTokenByJti(c, authv1.ClientType_admin, operator.ID, payload.GetJti())
 	})
-	acceptances, bindings := data.NewModelDevAcceptanceRepo(runtime), data.NewModelDevReleaseBindingRepo(runtime)
-	cleanup(func(c context.Context) error {
-		_, e := writer.Client().ModelDevReleaseBinding.Delete().Where(modeldevreleasebinding.TenantIDEQ(owner.ID)).Exec(c)
-		return e
-	})
+	acceptances := data.NewModelDevAcceptanceRepo(runtime)
 	cleanup(func(c context.Context) error {
 		_, e := writer.Client().ModelDevAcceptance.Delete().Where(modeldevacceptance.TenantIDEQ(owner.ID)).Exec(c)
 		return e
 	})
 	snapshot, intent := conformance.SnapshotV1(), conformance.IntentV1()
-	snapshot.Release.AcceptedBindingGeneration = 1
-	intent.PresetID, intent.DatasetVersionID = snapshot.Release.PresetID, snapshot.Input.InputVersionID
-	_, err = bindings.CompareAndSwap(sys, data.ModelDevReleaseBindingScope{TenantID: owner.ID, ResourceTenantID: owner.ResourceTenantID, PresetID: intent.PresetID}, data.ModelDevReleaseBindingUpdate{Target: data.ModelDevReleaseBindingTarget{ReleaseID: snapshot.Release.ReleaseID, ReleaseDigest: snapshot.Release.ReleaseDigest, NewSubmissionsEnabled: true}, Actor: "governance:user:7", RequestedAt: time.Now().UTC().Truncate(time.Microsecond), Reason: "owned Stop fixture", EvidenceReference: "contract:cpu-p01:stop"})
+	acceptedAt := time.Now().UTC().Truncate(time.Microsecond)
+	_, intentHash, err := cpup01.CanonicalIntent(intent)
 	require.NoError(t, err)
-	accepted, replayed, err := acceptances.AcceptFrozen(sys, data.ModelDevAdmissionScope{TenantID: owner.ID, ResourceTenantID: owner.ResourceTenantID, Actor: "governance:user:7", Action: data.ModelDevCreateAction, IdempotencyKey: uuid.NewString()}, data.ModelDevFrozenCandidate{OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), Intent: intent, Snapshot: snapshot, AcceptedAt: snapshot.DeadlineAt.Add(-time.Hour)})
+	snapshot.IdentityRef.TenantID, snapshot.IdentityRef.Actor, snapshot.IdentityRef.IntentHash = owner.ResourceTenantID, "governance:user:7", intentHash
+	snapshot.Timing.AcceptedAt = acceptedAt
+	snapshot.Timing.ExecutionDeadlineAt = acceptedAt.Add(time.Duration(snapshot.Timing.ExecutionTimeoutSeconds) * time.Second)
+	snapshot.DeadlineAt = snapshot.Timing.ExecutionDeadlineAt
+	accepted, replayed, err := acceptances.AcceptFrozen(sys, data.ModelDevAdmissionScope{TenantID: owner.ID, ResourceTenantID: owner.ResourceTenantID, Actor: snapshot.IdentityRef.Actor, Action: data.ModelDevCreateAction, IdempotencyKey: uuid.NewString()}, data.ModelDevFrozenCandidate{OperationID: snapshot.IdentityRef.OperationID, ExecutionID: snapshot.IdentityRef.ExecutionID, Intent: intent, Snapshot: snapshot, AcceptedAt: acceptedAt})
 	require.NoError(t, err)
 	require.False(t, replayed)
 	start := func() *httptest.Server {
-		bff := service.NewModelDevService(data.NewModelDevAuthorizationRepo(runtime), data.NewTenantRepo(bctx, runtime), data.NewModelDevAcceptanceRepo(runtime), bindings, nil)
+		bff := service.NewModelDevService(data.NewModelDevAuthorizationRepo(runtime), data.NewTenantRepo(bctx, runtime), data.NewModelDevAcceptanceRepo(runtime), nil, nil)
 		server := khttp.NewServer(khttp.Middleware(auth.CredentialHeaders(), auth.Server(auth.WithAccessTokenChecker(checker), auth.WithTenantAccessChecker(tenantChecker), auth.WithInjectMetadata(false), auth.WithInjectEnt(true)), authzMiddleware.Server(policy.Engine())))
 		registerModelDevHTTP(server, bff)
 		web := httptest.NewServer(server)

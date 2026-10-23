@@ -88,10 +88,10 @@ func RegisterInferenceHTTPServer(server *http.Server, inference *service.Inferen
 			return err
 		}
 		resourceID := inferenceDeletePathResourceID(ctx.Vars())
-		if resourceID == "" || request.Data == nil || (request.Data.ResourceId != "" && request.Data.ResourceId != resourceID) {
+		if resourceID == "" || (request.ResourceId != "" && request.ResourceId != resourceID) {
 			return errors.BadRequest("INVALID_INFERENCE_REQUEST", "invalid inference resource")
 		}
-		request.Data.ResourceId = resourceID
+		request.ResourceId = resourceID
 		handler := ctx.Middleware(func(call context.Context, in interface{}) (interface{}, error) {
 			return inference.DeleteInference(call, in.(*view.DeleteInferenceRequest))
 		})
@@ -168,27 +168,24 @@ func RegisterInferenceHTTPServer(server *http.Server, inference *service.Inferen
 
 func bindInferenceUpdateResourceID(ctx http.Context, request *view.UpdateInferenceRequest) error {
 	resourceID := inferenceDeletePathResourceID(ctx.Vars())
-	if resourceID == "" || request == nil || request.Data == nil || (request.Data.ResourceId != "" && request.Data.ResourceId != resourceID) {
+	if resourceID == "" || request == nil || (request.ResourceId != "" && request.ResourceId != resourceID) {
 		return errors.BadRequest("INVALID_INFERENCE_REQUEST", "invalid inference resource")
 	}
-	request.Data.ResourceId = resourceID
+	request.ResourceId = resourceID
 	return nil
 }
 
 func bindInferenceCommandResourceID(ctx http.Context, request *view.InferenceServiceCommandRequest) error {
 	resourceID := inferenceDeletePathResourceID(ctx.Vars())
-	if resourceID == "" || request == nil || request.Data == nil || (request.Data.ResourceId != "" && request.Data.ResourceId != resourceID) {
+	if resourceID == "" || request == nil || (request.ResourceId != "" && request.ResourceId != resourceID) {
 		return errors.BadRequest("INVALID_INFERENCE_REQUEST", "invalid inference resource")
 	}
-	request.Data.ResourceId = resourceID
+	request.ResourceId = resourceID
 	return nil
 }
 
 func inferenceDeletePathResourceID(vars url.Values) string {
-	resourceID := vars.Get("data.resource_id")
-	if resourceID == "" {
-		resourceID = vars.Get("resource_id")
-	}
+	resourceID := vars.Get("resource_id")
 	return strings.TrimSpace(resourceID)
 }
 

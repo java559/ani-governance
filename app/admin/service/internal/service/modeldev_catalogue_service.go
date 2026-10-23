@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	stderrors "errors"
 	"strconv"
 	"strings"
 	"time"
@@ -11,11 +10,10 @@ import (
 	trainingv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/training/v1"
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
-	"go-wind-admin/pkg/middleware/auth"
 )
 
-func (s *ModelDevService) ListPresets(ctx context.Context, in *modeldevv1.ListPresetsRequest) (*modeldevv1.ListPresetsResponse, error) {
-	scope, err := s.modelDevQueryScope(ctx, data.ModelDevListPresetsPath)
+func (s *ModelDevService) ListImplementations(ctx context.Context, in *modeldevv1.ListImplementationsRequest) (*modeldevv1.ListImplementationsResponse, error) {
+	scope, err := s.modelDevQueryScope(ctx, data.ModelDevListImplementationsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -26,31 +24,15 @@ func (s *ModelDevService) ListPresets(ctx context.Context, in *modeldevv1.ListPr
 	if err != nil {
 		return nil, err
 	}
-	if s.bindings == nil {
-		return nil, modelDevQueryFailure(nil)
-	}
-	out, err := s.resolver.ListPresets(ctx, scope, page, pageSize)
+	out, err := s.resolver.ListImplementations(ctx, scope, page, pageSize)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
-	principal, err := auth.PrincipalFromContext(ctx)
-	if err != nil {
-		return nil, modelDevQueryFailure(err)
-	}
-	reply := &modeldevv1.ListPresetsResponse{Total: out.Total}
-	for _, preset := range out.Presets {
-		view := &modeldevv1.PresetView{PresetId: preset.PresetId, Name: preset.Name, Kind: strings.TrimPrefix(preset.Kind.String(), "EXECUTION_KIND_"), ImageVersionIds: preset.ImageVersionIds}
-		binding, err := s.bindings.Get(ctx, data.ModelDevReleaseBindingScope{TenantID: principal.TenantID, ResourceTenantID: scope.ResourceTenantID, PresetID: preset.PresetId})
-		if err != nil && !stderrors.Is(err, data.ErrModelDevBindingNotFound) {
-			return nil, modelDevQueryFailure(err)
-		}
-		if binding != nil {
-			view.ActiveReleaseId = binding.Target.ReleaseID
-			view.BindingGeneration = binding.Generation
-			view.NewSubmissionsEnabled = binding.Target.NewSubmissionsEnabled
-		}
+	reply := &modeldevv1.ListImplementationsResponse{Total: out.Total, Items: []*modeldevv1.ImplementationView{}}
+	for _, preset := range out.Implementations {
+		view := &modeldevv1.ImplementationView{ImplementationId: preset.ImplementationId, Name: preset.Name, Kind: strings.TrimPrefix(preset.Kind.String(), "EXECUTION_KIND_"), Version: preset.Version, ParameterContractVersion: preset.ParameterContractVersion, SupportedDeviceModes: preset.SupportedDeviceModes, Available: preset.Available, ExecutionTimeoutDefaultSeconds: preset.ExecutionTimeoutDefaultSeconds, ExecutionTimeoutMaxSeconds: preset.ExecutionTimeoutMaxSeconds, StepTimeoutSeconds: preset.StepTimeoutSeconds}
 		for _, rule := range preset.ParameterRules {
-			view.ParameterRules = append(view.ParameterRules, &modeldevv1.ParameterRule{Name: rule.Name, Type: strings.TrimPrefix(rule.Type.String(), "PARAMETER_TYPE_"), Required: rule.Required, DefaultValue: modelDevPublicParameter(rule.DefaultValue), Minimum: modelDevPublicParameter(rule.Minimum), Maximum: modelDevPublicParameter(rule.Maximum)})
+			view.ParameterRules = append(view.ParameterRules, &modeldevv1.ParameterRule{Name: rule.Name, Type: strings.TrimPrefix(rule.Type.String(), "PARAMETER_TYPE_"), Required: rule.Required, DefaultValue: modelDevPublicParameter(rule.DefaultValue), Minimum: modelDevPublicParameter(rule.Minimum), Maximum: modelDevPublicParameter(rule.Maximum), NumericRepresentation: rule.NumericRepresentation, ValidationDescription: rule.ValidationDescription})
 			for _, allowed := range rule.AllowedValues {
 				n := len(view.ParameterRules) - 1
 				view.ParameterRules[n].AllowedValues = append(view.ParameterRules[n].AllowedValues, modelDevPublicParameter(allowed))

@@ -21,21 +21,26 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AcceleratorAdminService_ListClusters_FullMethodName      = "/admin.service.v1.AcceleratorAdminService/ListClusters"
-	AcceleratorAdminService_RegisterCluster_FullMethodName   = "/admin.service.v1.AcceleratorAdminService/RegisterCluster"
-	AcceleratorAdminService_ListPools_FullMethodName         = "/admin.service.v1.AcceleratorAdminService/ListPools"
-	AcceleratorAdminService_CreatePool_FullMethodName        = "/admin.service.v1.AcceleratorAdminService/CreatePool"
-	AcceleratorAdminService_ListSupplyGroups_FullMethodName  = "/admin.service.v1.AcceleratorAdminService/ListSupplyGroups"
-	AcceleratorAdminService_AdoptSupplyGroup_FullMethodName  = "/admin.service.v1.AcceleratorAdminService/AdoptSupplyGroup"
-	AcceleratorAdminService_SetAdmission_FullMethodName      = "/admin.service.v1.AcceleratorAdminService/SetAdmission"
-	AcceleratorAdminService_AdminListProfiles_FullMethodName = "/admin.service.v1.AcceleratorAdminService/AdminListProfiles"
-	AcceleratorAdminService_CreateProfile_FullMethodName     = "/admin.service.v1.AcceleratorAdminService/CreateProfile"
-	AcceleratorAdminService_PreviewProfile_FullMethodName    = "/admin.service.v1.AcceleratorAdminService/PreviewProfile"
-	AcceleratorAdminService_SetProfileState_FullMethodName   = "/admin.service.v1.AcceleratorAdminService/SetProfileState"
-	AcceleratorAdminService_DeleteProfile_FullMethodName     = "/admin.service.v1.AcceleratorAdminService/DeleteProfile"
-	AcceleratorAdminService_ListDevices_FullMethodName       = "/admin.service.v1.AcceleratorAdminService/ListDevices"
-	AcceleratorAdminService_AdminListBindings_FullMethodName = "/admin.service.v1.AcceleratorAdminService/AdminListBindings"
-	AcceleratorAdminService_AdminGetCapacity_FullMethodName  = "/admin.service.v1.AcceleratorAdminService/AdminGetCapacity"
+	AcceleratorAdminService_GetInitialization_FullMethodName            = "/admin.service.v1.AcceleratorAdminService/GetInitialization"
+	AcceleratorAdminService_ListDiscoveredNodes_FullMethodName          = "/admin.service.v1.AcceleratorAdminService/ListDiscoveredNodes"
+	AcceleratorAdminService_CreateInitialization_FullMethodName         = "/admin.service.v1.AcceleratorAdminService/CreateInitialization"
+	AcceleratorAdminService_GetInitializationOperation_FullMethodName   = "/admin.service.v1.AcceleratorAdminService/GetInitializationOperation"
+	AcceleratorAdminService_RetryInitializationOperation_FullMethodName = "/admin.service.v1.AcceleratorAdminService/RetryInitializationOperation"
+	AcceleratorAdminService_ListClusters_FullMethodName                 = "/admin.service.v1.AcceleratorAdminService/ListClusters"
+	AcceleratorAdminService_RegisterCluster_FullMethodName              = "/admin.service.v1.AcceleratorAdminService/RegisterCluster"
+	AcceleratorAdminService_ListPools_FullMethodName                    = "/admin.service.v1.AcceleratorAdminService/ListPools"
+	AcceleratorAdminService_CreatePool_FullMethodName                   = "/admin.service.v1.AcceleratorAdminService/CreatePool"
+	AcceleratorAdminService_ListSupplyGroups_FullMethodName             = "/admin.service.v1.AcceleratorAdminService/ListSupplyGroups"
+	AcceleratorAdminService_AdoptSupplyGroup_FullMethodName             = "/admin.service.v1.AcceleratorAdminService/AdoptSupplyGroup"
+	AcceleratorAdminService_SetAdmission_FullMethodName                 = "/admin.service.v1.AcceleratorAdminService/SetAdmission"
+	AcceleratorAdminService_AdminListProfiles_FullMethodName            = "/admin.service.v1.AcceleratorAdminService/AdminListProfiles"
+	AcceleratorAdminService_CreateProfile_FullMethodName                = "/admin.service.v1.AcceleratorAdminService/CreateProfile"
+	AcceleratorAdminService_PreviewProfile_FullMethodName               = "/admin.service.v1.AcceleratorAdminService/PreviewProfile"
+	AcceleratorAdminService_SetProfileState_FullMethodName              = "/admin.service.v1.AcceleratorAdminService/SetProfileState"
+	AcceleratorAdminService_DeleteProfile_FullMethodName                = "/admin.service.v1.AcceleratorAdminService/DeleteProfile"
+	AcceleratorAdminService_ListDevices_FullMethodName                  = "/admin.service.v1.AcceleratorAdminService/ListDevices"
+	AcceleratorAdminService_AdminListBindings_FullMethodName            = "/admin.service.v1.AcceleratorAdminService/AdminListBindings"
+	AcceleratorAdminService_AdminGetCapacity_FullMethodName             = "/admin.service.v1.AcceleratorAdminService/AdminGetCapacity"
 )
 
 // AcceleratorAdminServiceClient is the client API for AcceleratorAdminService service.
@@ -45,6 +50,11 @@ const (
 // Governance requires a JWT platform user and current role permission.
 // Accelerator validates the service RPC and its provider-managed cluster scope.
 type AcceleratorAdminServiceClient interface {
+	GetInitialization(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.AcceleratorInitialization, error)
+	ListDiscoveredNodes(ctx context.Context, in *v1.ListAcceleratorDiscoveredNodesRequest, opts ...grpc.CallOption) (*v1.AcceleratorDiscoveredNodes, error)
+	CreateInitialization(ctx context.Context, in *v1.CreateAcceleratorInitializationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error)
+	GetInitializationOperation(ctx context.Context, in *v1.GetAcceleratorInitializationOperationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error)
+	RetryInitializationOperation(ctx context.Context, in *v1.RetryAcceleratorInitializationOperationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error)
 	ListClusters(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorClusters, error)
 	RegisterCluster(ctx context.Context, in *v1.RegisterAcceleratorClusterRequest, opts ...grpc.CallOption) (*v1.AcceleratorCluster, error)
 	ListPools(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorPools, error)
@@ -68,6 +78,56 @@ type acceleratorAdminServiceClient struct {
 
 func NewAcceleratorAdminServiceClient(cc grpc.ClientConnInterface) AcceleratorAdminServiceClient {
 	return &acceleratorAdminServiceClient{cc}
+}
+
+func (c *acceleratorAdminServiceClient) GetInitialization(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*v1.AcceleratorInitialization, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorInitialization)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_GetInitialization_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) ListDiscoveredNodes(ctx context.Context, in *v1.ListAcceleratorDiscoveredNodesRequest, opts ...grpc.CallOption) (*v1.AcceleratorDiscoveredNodes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorDiscoveredNodes)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_ListDiscoveredNodes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) CreateInitialization(ctx context.Context, in *v1.CreateAcceleratorInitializationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorInitializationOperation)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_CreateInitialization_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) GetInitializationOperation(ctx context.Context, in *v1.GetAcceleratorInitializationOperationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorInitializationOperation)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_GetInitializationOperation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) RetryInitializationOperation(ctx context.Context, in *v1.RetryAcceleratorInitializationOperationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorInitializationOperation)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_RetryInitializationOperation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *acceleratorAdminServiceClient) ListClusters(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...grpc.CallOption) (*v1.AcceleratorClusters, error) {
@@ -227,6 +287,11 @@ func (c *acceleratorAdminServiceClient) AdminGetCapacity(ctx context.Context, in
 // Governance requires a JWT platform user and current role permission.
 // Accelerator validates the service RPC and its provider-managed cluster scope.
 type AcceleratorAdminServiceServer interface {
+	GetInitialization(context.Context, *emptypb.Empty) (*v1.AcceleratorInitialization, error)
+	ListDiscoveredNodes(context.Context, *v1.ListAcceleratorDiscoveredNodesRequest) (*v1.AcceleratorDiscoveredNodes, error)
+	CreateInitialization(context.Context, *v1.CreateAcceleratorInitializationRequest) (*v1.AcceleratorInitializationOperation, error)
+	GetInitializationOperation(context.Context, *v1.GetAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error)
+	RetryInitializationOperation(context.Context, *v1.RetryAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error)
 	ListClusters(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorClusters, error)
 	RegisterCluster(context.Context, *v1.RegisterAcceleratorClusterRequest) (*v1.AcceleratorCluster, error)
 	ListPools(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorPools, error)
@@ -252,6 +317,21 @@ type AcceleratorAdminServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAcceleratorAdminServiceServer struct{}
 
+func (UnimplementedAcceleratorAdminServiceServer) GetInitialization(context.Context, *emptypb.Empty) (*v1.AcceleratorInitialization, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInitialization not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) ListDiscoveredNodes(context.Context, *v1.ListAcceleratorDiscoveredNodesRequest) (*v1.AcceleratorDiscoveredNodes, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDiscoveredNodes not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) CreateInitialization(context.Context, *v1.CreateAcceleratorInitializationRequest) (*v1.AcceleratorInitializationOperation, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateInitialization not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) GetInitializationOperation(context.Context, *v1.GetAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInitializationOperation not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) RetryInitializationOperation(context.Context, *v1.RetryAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetryInitializationOperation not implemented")
+}
 func (UnimplementedAcceleratorAdminServiceServer) ListClusters(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorClusters, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListClusters not implemented")
 }
@@ -317,6 +397,96 @@ func RegisterAcceleratorAdminServiceServer(s grpc.ServiceRegistrar, srv Accelera
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AcceleratorAdminService_ServiceDesc, srv)
+}
+
+func _AcceleratorAdminService_GetInitialization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).GetInitialization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_GetInitialization_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).GetInitialization(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_ListDiscoveredNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListAcceleratorDiscoveredNodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).ListDiscoveredNodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_ListDiscoveredNodes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).ListDiscoveredNodes(ctx, req.(*v1.ListAcceleratorDiscoveredNodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_CreateInitialization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateAcceleratorInitializationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).CreateInitialization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_CreateInitialization_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).CreateInitialization(ctx, req.(*v1.CreateAcceleratorInitializationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_GetInitializationOperation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetAcceleratorInitializationOperationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).GetInitializationOperation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_GetInitializationOperation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).GetInitializationOperation(ctx, req.(*v1.GetAcceleratorInitializationOperationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_RetryInitializationOperation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.RetryAcceleratorInitializationOperationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).RetryInitializationOperation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_RetryInitializationOperation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).RetryInitializationOperation(ctx, req.(*v1.RetryAcceleratorInitializationOperationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AcceleratorAdminService_ListClusters_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -596,6 +766,26 @@ var AcceleratorAdminService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "admin.service.v1.AcceleratorAdminService",
 	HandlerType: (*AcceleratorAdminServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetInitialization",
+			Handler:    _AcceleratorAdminService_GetInitialization_Handler,
+		},
+		{
+			MethodName: "ListDiscoveredNodes",
+			Handler:    _AcceleratorAdminService_ListDiscoveredNodes_Handler,
+		},
+		{
+			MethodName: "CreateInitialization",
+			Handler:    _AcceleratorAdminService_CreateInitialization_Handler,
+		},
+		{
+			MethodName: "GetInitializationOperation",
+			Handler:    _AcceleratorAdminService_GetInitializationOperation_Handler,
+		},
+		{
+			MethodName: "RetryInitializationOperation",
+			Handler:    _AcceleratorAdminService_RetryInitializationOperation_Handler,
+		},
 		{
 			MethodName: "ListClusters",
 			Handler:    _AcceleratorAdminService_ListClusters_Handler,

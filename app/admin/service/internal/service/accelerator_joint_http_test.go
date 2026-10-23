@@ -22,6 +22,7 @@ import (
 	entsql "entgo.io/ent/dialect/sql"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/google/uuid"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
@@ -102,18 +103,30 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 	policy := authorizer.NewAuthorizer(bctx, data.NewAuthorizerProvider(bctx, roles, apis))
 	catalog, e := dbbootstrap.Catalog(assets.OpenApiData)
 	require.NoError(t, e)
+	if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" {
+		_, e = dbbootstrap.Initialize(ctx, fixtureDB, catalog, "initialization-joint-owner", hex.EncodeToString(randomKey)+"-Aa@2026")
+		require.NoError(t, e)
+	}
 	tx, e := fixtureDB.BeginTx(ctx, nil)
 	require.NoError(t, e)
 	_, e = dbbootstrap.SyncAPIs(ctx, tx, catalog, true)
 	require.NoError(t, e)
 	require.NoError(t, tx.Rollback())
 	require.NoError(t, data.NewApiRepo(bctx, fixtureEC).SyncOpenAPI(sys, assets.OpenApiData))
-	permissionSQL, e := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "sql", "patches", "20260923_accelerator_permissions.sql"))
+	permissionSQL, e := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "scripts", "ops", "sql", "register-accelerator-permissions.sql"))
 	require.NoError(t, e)
 	_, e = fixtureDB.ExecContext(ctx, string(permissionSQL))
 	require.NoError(t, e)
 	tenantID := uint32(1)
 	otherTenantID := uint32(9102)
+	if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" {
+		if _, e := client.Tenant.Get(sys, tenantID); ent.IsNotFound(e) {
+			_, e = client.Tenant.Create().SetID(tenantID).SetName("initialization joint tenant").SetCode("initialization-joint-tenant").SetResourceTenantID("11111111-1111-4111-8111-111111111111").SetStatus(tenant.StatusOn).SetPlanID(1).Save(sys)
+			require.NoError(t, e)
+		} else {
+			require.NoError(t, e)
+		}
+	}
 	otherTenant, e := client.Tenant.Get(sys, otherTenantID)
 	if ent.IsNotFound(e) {
 		otherTenant, e = client.Tenant.Create().SetID(otherTenantID).SetName("BFF cross-tenant fixture").SetCode("gov-acc-bff-other").SetResourceTenantID("22222222-2222-4222-8222-222222222222").SetStatus(tenant.StatusOn).SetPlanID(1).Save(sys)
@@ -143,6 +156,10 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 	platformRole := seedRole(0, "gov-acc-bff-platform", role.TypeSystem)
 	tenantRole := seedRole(tenantID, "gov-acc-bff-user", role.TypeTenant)
 	otherRole := seedRole(otherTenantID, "gov-acc-bff-user", role.TypeTenant)
+	if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" {
+		_, e = client.RolePermission.Delete().Where(rolepermission.RoleIDIn(platformRole.ID, tenantRole.ID, otherRole.ID)).Exec(sys)
+		require.NoError(t, e)
+	}
 	services := admin.File_admin_service_v1_i_accelerator_proto.Services()
 	for i := 0; i < services.Len(); i++ {
 		methods := services.Get(i).Methods()
@@ -152,12 +169,15 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 			if path == "" {
 				path, method = rule.GetPost(), "POST"
 			}
+			if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" && !initializationJointGrant(method, path) {
+				continue
+			}
 			a, e := client.Api.Query().Where(apiEntity.PathEQ(path), apiEntity.MethodEQ(method)).Only(sys)
 			require.NoError(t, e)
 			pa, e := client.PermissionApi.Query().Where(permissionapi.APIIDEQ(a.ID)).Only(sys)
 			require.NoError(t, e)
 			grantRoles := []*ent.Role{tenantRole, otherRole}
-			if strings.HasPrefix(path, "/admin/") {
+			if strings.HasPrefix(path, "/api/v1/admin/") {
 				grantRoles = []*ent.Role{platformRole}
 			}
 			for _, r := range grantRoles {
@@ -173,6 +193,11 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 			}
 		}
 	}
+	if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" {
+		grants, err := client.RolePermission.Query().Where(rolepermission.RoleIDEQ(platformRole.ID)).Count(sys)
+		require.NoError(t, err)
+		require.Equal(t, 8, grants)
+	}
 	// Existing administrator quota route remains a separately authorized API.
 	quotaAPI, e := client.Api.Query().Where(apiEntity.PathEQ("/api/v1/admin/tenants/{id}/quota-accounts"), apiEntity.MethodEQ("GET")).Only(sys)
 	require.NoError(t, e)
@@ -187,6 +212,9 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 		require.NoError(t, err)
 	}
 	for _, r := range []*ent.Role{platformRole, tenantRole} {
+		if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" {
+			continue
+		}
 		if exists, err := client.RolePermission.Query().Where(rolepermission.RoleIDEQ(r.ID), rolepermission.PermissionIDEQ(quotaPermission.ID)).Exist(sys); !exists {
 			require.NoError(t, err)
 			_, err = client.RolePermission.Create().SetTenantID(*r.TenantID).SetRoleID(r.ID).SetPermissionID(quotaPermission.ID).SetStatus(rolepermission.StatusOn).SetEffect(rolepermission.EffectAllow).Save(sys)
@@ -198,7 +226,12 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 	})
 	require.NoError(t, policy.ResetPolicies(ctx))
 	createToken := func(tid uint32, roleCode string) string {
-		p := &authv1.UserTokenPayload{UserId: 1, TenantId: trans.Ptr(tid), Roles: []string{roleCode}}
+		application := authv1.ApplicationType_console
+		if tid == 0 {
+			application = authv1.ApplicationType_boss
+		}
+		sid := uuid.NewString()
+		p := &authv1.UserTokenPayload{UserId: 1, TenantId: trans.Ptr(tid), Roles: []string{roleCode}, Application: application.Enum(), Sid: &sid}
 		token, _, e := authenticator.CreateUserToken(ctx, authv1.ClientType_admin, p)
 		require.NoError(t, e)
 		return token
@@ -207,13 +240,16 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 	otherToken := createToken(otherTenantID, *otherRole.Code)
 	downstreamCfg, e := data.AcceleratorConfigFromEnv()
 	require.NoError(t, e)
+	if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" {
+		downstreamCfg = initializationJointConfig(t)
+	}
 	downstream, closeDownstream, e := data.NewAcceleratorClient(downstreamCfg)
 	require.NoError(t, e)
 	defer closeDownstream()
 	ledger := data.NewQuotaLedgerRepo(bctx, ec)
 	quotaAccounts := data.NewQuotaAdminRepo(bctx, ec)
 	bridge := NewGpuBffLedgerBridge(ledger, quotaAccounts)
-	service := NewAcceleratorService(downstream, data.NewTenantRepo(bctx, ec), bridge, bridge, quotaAccounts, NewQuotaAdapterRegistry())
+	service := NewAcceleratorService(downstream, data.NewTenantRepo(bctx, ec), bridge, bridge, quotaAccounts, NewQuotaAdapterRegistry(), policy.Engine())
 	server := khttp.NewServer(khttp.Middleware(auth.CredentialHeaders(), auth.Server(auth.WithAccessTokenChecker(checker), auth.WithTenantAccessChecker(tenantChecker), auth.WithInjectMetadata(false)), authzMiddleware.Server(policy.Engine())))
 	admin.RegisterAcceleratorAdminServiceHTTPServer(server, service)
 	admin.RegisterAcceleratorServiceHTTPServer(server, service)
@@ -254,6 +290,10 @@ func TestAcceleratorJointHTTP(t *testing.T) {
 		var out map[string]any
 		require.NoError(t, json.Unmarshal(result, &out))
 		return out
+	}
+	if os.Getenv("GOV_ACC_INITIALIZATION_JOINT_SEED_FILE") != "" {
+		runAcceleratorInitializationJointHTTP(t, request, platformToken, tenantToken)
+		return
 	}
 	var seed struct {
 		Cluster  acc.Cluster                `json:"cluster"`

@@ -9,30 +9,25 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (c *ModelDevClient) ListPresets(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32) (*modeldevv1.ListPresetsResponse, error) {
-	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListPresets_FullMethodName)
+func (c *ModelDevClient) ListImplementations(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32) (*modeldevv1.ListImplementationsResponse, error) {
+	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListImplementations_FullMethodName)
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListPresets(call, &modeldevv1.ListPresetsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListImplementations(call, &modeldevv1.ListImplementationsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
-	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Presets) > 100 {
+	if out == nil || modelDevUnknownFields(out.ProtoReflect()) || len(out.Implementations) > 100 {
 		return nil, modelDevQueryUnavailable()
 	}
 	seen := map[string]bool{}
-	for _, preset := range out.Presets {
-		if preset == nil || !modelDevCanonicalUUID(preset.PresetId) || seen[preset.PresetId] || preset.Name == "" || len(preset.Name) > 256 || strings.ContainsAny(preset.Name, "\r\n\t") || !modelDevSupportedExecutionKind(preset.Kind) || len(preset.ImageVersionIds) > 32 || len(preset.ParameterRules) > 32 {
+	for _, preset := range out.Implementations {
+		if preset == nil || (preset.ImplementationId != "builtin.mlp" && preset.ImplementationId != "builtin.sft_lora") || seen[preset.ImplementationId] || preset.Name == "" || len(preset.Name) > 256 || strings.ContainsAny(preset.Name, "\r\n\t") || !modelDevSupportedExecutionKind(preset.Kind) || len(preset.ParameterRules) > 32 {
 			return nil, modelDevQueryUnavailable()
 		}
-		seen[preset.PresetId] = true
-		for _, id := range preset.ImageVersionIds {
-			if !modelDevCanonicalUUID(id) {
-				return nil, modelDevQueryUnavailable()
-			}
-		}
+		seen[preset.ImplementationId] = true
 		names := map[string]bool{}
 		for _, rule := range preset.ParameterRules {
 			if rule == nil || rule.Name == "" || len(rule.Name) > 64 || names[rule.Name] || rule.Type == modeldevv1.ParameterType_PARAMETER_TYPE_UNSPECIFIED || len(rule.AllowedValues) > 32 {
@@ -96,13 +91,13 @@ func modelDevValidInput(in *modeldevv1.InputVersionView) bool {
 	if in.State != modeldevv1.InputState_INPUT_STATE_READY {
 		return true
 	}
-	// READY inputs carry a fixed verified shape per format: the CPU baseline
-	// is CSV 1024x16 and the managed finetuning import is JSON Alpaca 64x0.
+	// READY inputs preserve the importer-verified nonempty shape. Baseline
+	// sample counts are ordinary test data and cannot gate legitimate inputs.
 	switch in.Format {
 	case "CSV":
-		return in.RowCount == 1024 && in.FeatureCount == 16
+		return in.RowCount > 0 && in.FeatureCount == 16
 	case "JSON":
-		return in.RowCount == 64 && in.FeatureCount == 0
+		return in.RowCount > 0 && in.FeatureCount == 0
 	default:
 		return false
 	}

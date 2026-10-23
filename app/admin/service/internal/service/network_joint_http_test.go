@@ -159,11 +159,13 @@ func TestNetworkJointHTTP(t *testing.T) {
 			require.NoError(t, err)
 		}
 	}
-	platformSeed, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "sql", "data", "20261012_platform_network_permissions.sql"))
-	require.NoError(t, err)
-	for i := 0; i < 2; i++ {
-		_, err = fixtureDB.ExecContext(ctx, string(platformSeed))
+	for _, seed := range []string{"20261012_platform_network_permissions.sql", "20261021_virtual_switch_permissions.sql", "20261021_device_retirement_permissions.sql", "20261021_default_egress_permissions.sql"} {
+		platformSeed, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "sql", "data", seed))
 		require.NoError(t, err)
+		for i := 0; i < 2; i++ {
+			_, err = fixtureDB.ExecContext(ctx, string(platformSeed))
+			require.NoError(t, err)
+		}
 	}
 	platformRole, err := client.Role.Create().SetTenantID(0).SetCode("platform:network-fixture").SetName("platform-network-fixture").SetType(role.TypeSystem).SetStatus(role.StatusOn).Save(sys)
 	require.NoError(t, err)
@@ -222,6 +224,7 @@ func TestNetworkJointHTTP(t *testing.T) {
 	// lifecycle APIs, retaining the original failure and reporting cleanup apart.
 	type admittedResource struct{ path, bearer string }
 	admitted := map[string]map[string]admittedResource{}
+	observedDeleted := map[string]bool{}
 	track := func(id identity, method, path string, out map[string]any) {
 		resource := out
 		if combined, ok := out["load_balancer"].(map[string]any); ok {
@@ -232,12 +235,13 @@ func TestNetworkJointHTTP(t *testing.T) {
 			return
 		}
 		if resource["state"] == "deleted" {
+			observedDeleted[resourceID] = true
 			for _, entries := range admitted {
 				delete(entries, resourceID)
 			}
 			return
 		}
-		if method != "POST" {
+		if method != "POST" || observedDeleted[resourceID] {
 			return
 		}
 		kind, resourcePath := "", ""
@@ -257,6 +261,21 @@ func TestNetworkJointHTTP(t *testing.T) {
 		case strings.HasSuffix(path, "/snat/bindings"):
 			kind = "snat"
 			resourcePath = "/api/v1/networks/snat/bindings/" + resourceID
+		case path == "/api/v1/admin/networks/default-vpc-egresses":
+			kind = "platform-default-egress"
+			resourcePath = path + "/" + resourceID
+		case path == "/api/v1/admin/networks/public-address-pools" || path == "/api/v1/admin/networks/intranet-address-pools":
+			kind = "platform-pool"
+			resourcePath = path + "/" + resourceID
+		case path == "/api/v1/admin/networks/vlan-networks":
+			kind = "platform-vlan"
+			resourcePath = path + "/" + resourceID
+		case path == "/api/v1/admin/networks/egress-gateways":
+			kind = "platform-gateway"
+			resourcePath = path + "/" + resourceID
+		case path == "/api/v1/admin/networks/virtual-switches":
+			kind = "platform-switch"
+			resourcePath = path + "/" + resourceID
 		}
 		if kind == "" {
 			return
@@ -265,7 +284,9 @@ func TestNetworkJointHTTP(t *testing.T) {
 			admitted[kind] = map[string]admittedResource{}
 		}
 		bearer := publisherToken
-		if id.bearer == otherToken || id.key == otherAK {
+		if strings.HasPrefix(path, "/api/v1/admin/networks/") {
+			bearer = platformToken
+		} else if id.bearer == otherToken || id.key == otherAK {
 			bearer = otherToken
 		}
 		admitted[kind][resourceID] = admittedResource{resourcePath, bearer}
@@ -300,8 +321,8 @@ func TestNetworkJointHTTP(t *testing.T) {
 			err = json.Unmarshal(payload, &out)
 			return response.StatusCode, out, err
 		}
-		deadline := time.Now().Add(20 * time.Second)
-		for _, kind := range []string{"load-balancer", "snat", "subnet", "eip", "vpc"} {
+		deadline := time.Now().Add(40 * time.Second)
+		for _, kind := range []string{"load-balancer", "snat", "subnet", "eip", "vpc", "platform-default-egress", "platform-pool", "platform-vlan", "platform-gateway", "platform-switch"} {
 			for resourceID, resource := range admitted[kind] {
 				finished := false
 				lastStatus := 0
@@ -374,10 +395,11 @@ func TestNetworkJointHTTP(t *testing.T) {
 	get := func(t *testing.T, id identity, path string) map[string]any {
 		return request(t, id, "GET", path, "", nil, 200)
 	}
-	poll := func(t *testing.T, id identity, path string, ready func(map[string]any) bool) map[string]any {
+	lbFailureSnapshotTaken := false
+	pollWithin := func(t *testing.T, timeout time.Duration, id identity, path string, ready func(map[string]any) bool) map[string]any {
 		t.Helper()
 		var last map[string]any
-		for deadline := time.Now().Add(15 * time.Second); time.Now().Before(deadline); {
+		for deadline := time.Now().Add(timeout); time.Now().Before(deadline); {
 			out := get(t, id, path)
 			last = out
 			if ready(out) {
@@ -385,8 +407,59 @@ func TestNetworkJointHTTP(t *testing.T) {
 			}
 			time.Sleep(40 * time.Millisecond)
 		}
+		lastJSON, _ := json.Marshal(last)
+		t.Logf("asynchronous Resource worker last business response: path=%s response=%s", path, lastJSON)
+		failureCtx, failureCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer failureCancel()
+		if operationID, _ := last["last_operation_id"].(string); operationID != "" {
+			operationBase := "/api/v1/networks/operations/"
+			switch {
+			case strings.HasPrefix(path, "/api/v1/networks/load-balancers/"):
+				operationBase = "/api/v1/networks/load-balancers/operations/"
+			case strings.HasPrefix(path, "/api/v1/admin/networks/"):
+				operationBase = "/api/v1/admin/networks/operations/"
+			}
+			operationPath := operationBase + url.PathEscape(operationID)
+			// This single diagnostic read runs only after the readiness deadline;
+			// its failure must not replace the original convergence assertion.
+			diagnosticCtx, cancel := context.WithTimeout(failureCtx, 2*time.Second)
+			req, err := http.NewRequestWithContext(diagnosticCtx, "GET", host.URL+operationPath, nil)
+			if err == nil {
+				if id.bearer != "" {
+					req.Header.Set("Authorization", "Bearer "+id.bearer)
+				}
+				if id.key != nil {
+					ts := strconv.FormatInt(time.Now().Unix(), 10)
+					req.Header.Set("X-Access-Key", id.key.AccessKey)
+					req.Header.Set("X-Timestamp", ts)
+					req.Header.Set("X-Signature", auth.NetworkSignature(id.secret, "GET", req.URL.Path, req.URL.RawQuery, id.key.AccessKey, ts, nil))
+				}
+				var response *http.Response
+				response, err = host.Client().Do(req)
+				if err == nil {
+					var operation map[string]any
+					err = json.NewDecoder(response.Body).Decode(&operation)
+					_ = response.Body.Close()
+					if err == nil {
+						operationJSON, _ := json.Marshal(operation)
+						t.Logf("asynchronous Resource worker operation response: last_operation_id=%s path=%s status=%d response=%s", operationID, operationPath, response.StatusCode, operationJSON)
+					}
+				}
+			}
+			cancel()
+			if err != nil {
+				t.Logf("asynchronous Resource worker operation diagnostic unavailable: last_operation_id=%s path=%s error=%v", operationID, operationPath, err)
+			}
+		}
+		if lbID, _ := last["id"].(string); !lbFailureSnapshotTaken && lbID != "" && path == "/api/v1/networks/load-balancers/"+lbID {
+			lbFailureSnapshotTaken = true
+			snapshotNetworkLBFailure(failureCtx, t, peer, lbID)
+		}
 		t.Fatalf("asynchronous Resource worker must converge: %s state=%v reason=%v desired=%v applied=%v", path, last["state"], last["reason"], last["desired_version"], last["applied_version"])
 		return nil
+	}
+	poll := func(t *testing.T, id identity, path string, ready func(map[string]any) bool) map[string]any {
+		return pollWithin(t, 15*time.Second, id, path, ready)
 	}
 	state := func(want string) func(map[string]any) bool {
 		return func(v map[string]any) bool { return v["state"] == want }
@@ -404,7 +477,14 @@ func TestNetworkJointHTTP(t *testing.T) {
 	}
 	beforeSideEffects := func(t *testing.T) int {
 		var count int
-		require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT (SELECT count(*) FROM network_operations)+(SELECT count(*) FROM network_platform_operations)").Scan(&count))
+		// Count durable admission rows, not periodic worker history/lease updates.
+		// Rejected HTTP actions must not create a new aggregate, replay or operation.
+		require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT
+ (SELECT count(*) FROM network_operations)+(SELECT count(*) FROM network_platform_operations)+
+ (SELECT count(*) FROM network_virtual_switches)+(SELECT count(*) FROM network_virtual_switch_operations)+(SELECT count(*) FROM network_virtual_switch_idempotency)+(SELECT count(*) FROM network_virtual_switch_reconciliations)+
+ (SELECT count(*) FROM network_virtual_switch_history WHERE event IN('created','vlan_accepted','delete_accepted'))+
+ (SELECT count(*) FROM network_legacy_device_retirements)+(SELECT count(*) FROM network_legacy_device_retirement_idempotency)+(SELECT count(*) FROM network_legacy_device_retirement_history WHERE event='registration_closed')+
+ (SELECT count(*) FROM network_default_vpc_egresses)+(SELECT count(*) FROM network_default_vpc_egress_operations)+(SELECT count(*) FROM network_default_vpc_egress_idempotency)+(SELECT count(*) FROM network_default_vpc_egress_history WHERE event IN('create_accepted','delete_accepted'))`).Scan(&count))
 		return count
 	}
 	const base = "/api/v1/networks"
@@ -550,6 +630,8 @@ func TestNetworkJointHTTP(t *testing.T) {
 			poll(t, jwtIdentity, path, state("deleted"))
 			require.Equal(t, before, mutations(), "never-activated save/delete must not mutate Provider")
 			require.Equal(t, accepted, request(t, akIdentity, "POST", base+"/load-balancers", body, nil, 200), "accepted receipt remains unchanged after deletion")
+			require.True(t, observedDeleted[lbID])
+			require.NotContains(t, admitted["load-balancer"], lbID, "replaying an acceptance receipt must not enroll a deleted load balancer for compensation")
 			var retained, occupied int
 			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_lb_configurations WHERE tenant_id=$1 AND lb_id=$2),(SELECT count(*) FROM network_lb_vip_intents WHERE tenant_id=$1 AND lb_id=$2 AND released_at IS NULL)+(SELECT count(*) FROM network_lb_subnet_refs WHERE tenant_id=$1 AND lb_id=$2 AND released_at IS NULL)`, peer.TenantID, lbID).Scan(&retained, &occupied))
 			require.Equal(t, 1, retained)
@@ -677,11 +759,28 @@ func TestNetworkJointHTTP(t *testing.T) {
 			require.Equal(t, "available", get(t, jwtIdentity, base+"/vpcs/"+peer.ParentVPC)["state"])
 			require.Equal(t, "available", get(t, akIdentity, base+"/subnets/"+peer.BackendSubnet)["state"])
 			require.Equal(t, accepted, request(t, akIdentity, "POST", base+"/load-balancers", body, nil, 200), "original receipt must remain stable through runtime incarnations")
+			require.True(t, observedDeleted[lbID])
+			require.NotContains(t, admitted["load-balancer"], lbID, "replaying an acceptance receipt must not enroll a deleted load balancer for compensation")
 		})
 	})
 	t.Run("platform_network", func(t *testing.T) {
 		const platformBase = "/api/v1/admin/networks"
 		caller := identity{bearer: platformToken}
+		jsonBody := func(data any) string {
+			raw, err := json.Marshal(map[string]any{"data": data})
+			require.NoError(t, err)
+			return string(raw)
+		}
+		providerObject := func(t *testing.T, path string, want int) map[string]any {
+			t.Helper()
+			response, err := http.Get(peer.ProviderURL + path)
+			require.NoError(t, err)
+			defer response.Body.Close()
+			require.Equal(t, want, response.StatusCode)
+			out := map[string]any{}
+			require.NoError(t, json.NewDecoder(response.Body).Decode(&out))
+			return out
+		}
 		t.Run("denials", func(t *testing.T) {
 			before := beforeSideEffects(t)
 			for _, id := range []identity{jwtIdentity, akIdentity, {bearer: readerToken}, {bearer: otherToken}, {bearer: deniedPlatformToken}} {
@@ -694,6 +793,47 @@ func TestNetworkJointHTTP(t *testing.T) {
 			request(t, caller, "GET", platformBase+"/capabilities", "", func(r *http.Request) { r.Header.Set("X-Ani-Scope", "platform") }, 400)
 			request(t, caller, "POST", platformBase+"/egress-gateways", `{"name":"flat","idempotency_key":"flat"}`, nil, 400)
 			request(t, caller, "POST", platformBase+"/egress-gateways", `{"data":{"name":"forged","tenant_id":0}}`, nil, 400)
+			// Exercise every new action through JWT/AK authentication and the real
+			// Casbin relation. Valid IDs avoid mistaking input rejection for denial.
+			missingClaims := identity{bearer: token(platformRole, 11)}
+			const switchID = "vsw_11111111111111111111111111111111"
+			const deviceID = "device_11111111111111111111111111111111"
+			const egressID = "dve_11111111111111111111111111111111"
+			for _, action := range []struct{ operation, method, path, body string }{
+				{"CreateVirtualSwitch", "POST", "/virtual-switches", `{"data":{"name":"denied-switch","idempotency_key":"denied-switch"}}`},
+				{"GetVirtualSwitch", "GET", "/virtual-switches/" + switchID, ""},
+				{"ListVirtualSwitches", "GET", "/virtual-switches?page=1&pageSize=2", ""},
+				{"DeleteVirtualSwitch", "DELETE", "/virtual-switches/" + switchID, ""},
+				{"RetireNetworkDevice", "POST", "/devices/" + deviceID + "/retirement", `{"data":{"expected_version":"1","idempotency_key":"denied-retirement"}}`},
+				{"GetNetworkDeviceRetirement", "GET", "/devices/" + deviceID + "/retirement", ""},
+				{"CreateDefaultVPCEgress", "POST", "/default-vpc-egresses", `{"data":{"name":"denied-egress","pool_id":"pool_11111111111111111111111111111111","idempotency_key":"denied-egress"}}`},
+				{"GetDefaultVPCEgress", "GET", "/default-vpc-egresses/" + egressID, ""},
+				{"DeleteDefaultVPCEgress", "DELETE", "/default-vpc-egresses/" + egressID, ""},
+			} {
+				t.Run(action.operation, func(t *testing.T) {
+					for _, id := range []identity{jwtIdentity, akIdentity, {bearer: otherToken}, {bearer: deniedPlatformToken}, missingClaims} {
+						request(t, id, action.method, platformBase+action.path, action.body, nil, 403)
+					}
+					request(t, identity{}, action.method, platformBase+action.path, action.body, nil, 401)
+					permissionCode := auth.PlatformNetworkOperations["/admin.service.v1.PlatformNetworkService/"+action.operation].Permission
+					perm, err := client.Permission.Query().Where(permission.CodeEQ(permissionCode)).Only(sys)
+					require.NoError(t, err)
+					grant, err := client.RolePermission.Query().Where(rolepermission.RoleIDEQ(platformRole.ID), rolepermission.PermissionIDEQ(perm.ID)).Only(sys)
+					require.NoError(t, err)
+					t.Cleanup(func() {
+						_, err := client.RolePermission.UpdateOneID(grant.ID).SetStatus(rolepermission.StatusOn).Save(sys)
+						require.NoError(t, err)
+						require.NoError(t, policy.ResetPolicies(ctx))
+					})
+					_, err = client.RolePermission.UpdateOneID(grant.ID).SetStatus(rolepermission.StatusOff).Save(sys)
+					require.NoError(t, err)
+					require.NoError(t, policy.ResetPolicies(ctx))
+					request(t, caller, action.method, platformBase+action.path, action.body, nil, 403)
+				})
+			}
+			for _, forged := range []string{`"tenant_id":"forged"`, `"vpc_id":"vpc_11111111111111111111111111111111"`, `"namespace":"kcn-system"`, `"uid":"forged"`} {
+				request(t, caller, "POST", platformBase+"/default-vpc-egresses", `{"data":{"name":"forged","pool_id":"pool_11111111111111111111111111111111","idempotency_key":"forged",`+forged+`}}`, nil, 400)
+			}
 			require.Equal(t, before, beforeSideEffects(t))
 		})
 		t.Run("gateway_vertical_flow", func(t *testing.T) {
@@ -733,48 +873,345 @@ func TestNetworkJointHTTP(t *testing.T) {
 		})
 
 		t.Run("layer2_lifecycle", func(t *testing.T) {
-			inventory := get(t, caller, platformBase+"/node-interfaces")
-			var usable map[string]any
+			const group = "gov-kcn-switch"
+			const deviceName = "phys1"
+			require.Equal(t, "test-cluster", peer.ClusterID)
+			switches := []string{}
+			body := jsonBody(map[string]any{"name": group, "idempotency_key": "gov-kcn-switch"})
+			created := request(t, caller, "POST", platformBase+"/virtual-switches", body, nil, 200)
+			sid := created["id"].(string)
+			switches = append(switches, sid)
+			require.Equal(t, created, request(t, caller, "POST", platformBase+"/virtual-switches", body, nil, 200))
+			require.Equal(t, "available", created["state"])
+			require.Equal(t, "unbound", created["binding_state"])
+			require.Empty(t, created["cluster_id"])
+			require.Empty(t, created["nodes"])
+			require.NotContains(t, created, "provider_uid")
+			require.Equal(t, created, get(t, caller, platformBase+"/virtual-switches/"+sid))
+			createOperation := get(t, caller, platformBase+"/operations/"+created["last_operation_id"].(string))
+			require.Equal(t, "succeeded", createOperation["state"])
+			require.Equal(t, "create_virtual_switch", createOperation["kind"])
+			require.Equal(t, sid, createOperation["resource_id"])
+			for i := 0; i < 4; i++ {
+				name := fmt.Sprintf("%s-page-%d", group, i)
+				v := request(t, caller, "POST", platformBase+"/virtual-switches", jsonBody(map[string]any{"name": name, "idempotency_key": name}), nil, 200)
+				switches = append(switches, v["id"].(string))
+			}
+			// The first list request jumps directly to the third page.
+			third := get(t, caller, platformBase+"/virtual-switches?name="+group+"&page=3&pageSize=2")
+			require.Equal(t, "5", third["total"])
+			require.NotContains(t, third, "next_cursor")
+			require.Len(t, third["items"], 1)
+			require.Equal(t, sid, third["items"].([]any)[0].(map[string]any)["id"])
+			second := get(t, caller, platformBase+"/virtual-switches?name="+group+"&page=2&pageSize=2")
+			require.Equal(t, "5", second["total"])
+			require.Len(t, second["items"], 2)
+			for _, query := range []string{"page=0", "pageSize=0", "page=01", "page=1&page=2", "pageSize=101", "cursor=x", "limit=2"} {
+				request(t, caller, "GET", platformBase+"/virtual-switches?"+query, "", nil, 400)
+			}
+			for _, id := range switches[1:] {
+				request(t, caller, "DELETE", platformBase+"/virtual-switches/"+id, "", nil, 200)
+				poll(t, caller, platformBase+"/virtual-switches/"+id, state("deleted"))
+			}
+			inventory := get(t, caller, platformBase+"/node-interfaces?cluster_id="+peer.ClusterID+"&virtual_switch_id="+sid)
+			found := 0
 			for _, raw := range inventory["items"].([]any) {
 				v := raw.(map[string]any)
-				if v["name"] == "phys0" {
-					usable = v
+				if v["name"] == deviceName {
+					require.Equal(t, true, v["selectable"])
+					found++
 				}
 			}
-			require.NotNil(t, usable)
-			require.Equal(t, true, usable["selectable"])
-			data := map[string]any{"name": "gov-physical-device", "device_name": "phys0", "inventory_fingerprint": inventory["inventory_fingerprint"], "idempotency_key": "gov-device"}
-			encoded, err := json.Marshal(map[string]any{"data": data})
-			require.NoError(t, err)
-			device := request(t, caller, "POST", platformBase+"/devices", string(encoded), nil, 200)
-			did := device["id"].(string)
-			require.Equal(t, did, request(t, caller, "POST", platformBase+"/devices", string(encoded), nil, 200)["id"])
-			poll(t, caller, platformBase+"/devices/"+did, state("available"))
-			data = map[string]any{"name": "gov-layer2", "device_id": did, "vlan_id": 100, "idempotency_key": "gov-layer2"}
-			encoded, err = json.Marshal(map[string]any{"data": data})
-			require.NoError(t, err)
-			vlan := request(t, caller, "POST", platformBase+"/vlan-networks", string(encoded), nil, 200)
+			require.Positive(t, found)
+			wiring := func(ready bool) {
+				raw, err := json.Marshal(map[string]any{"ready": ready})
+				require.NoError(t, err)
+				response, err := http.Post(peer.ProviderURL+"/network-joint/switch-wiring", "application/json", bytes.NewReader(raw))
+				require.NoError(t, err)
+				defer response.Body.Close()
+				require.Equal(t, 200, response.StatusCode)
+			}
+			wiring(false)
+			t.Cleanup(func() { wiring(true) })
+			var registrationsBefore int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT count(*) FROM network_device_adoptions").Scan(&registrationsBefore))
+			vlanBody := jsonBody(map[string]any{"name": "gov-layer2", "cluster_id": peer.ClusterID, "virtual_switch_id": sid, "device_name": deviceName, "vlan_id": 0, "idempotency_key": "gov-layer2-v2"})
+			vlan := request(t, caller, "POST", platformBase+"/vlan-networks", vlanBody, nil, 200)
 			vid := vlan["id"].(string)
-			defer func() {
-				request(t, caller, "DELETE", platformBase+"/vlan-networks/"+vid, "", nil, 200)
-				poll(t, caller, platformBase+"/vlan-networks/"+vid, state("deleted"))
-			}()
-			current := poll(t, caller, platformBase+"/vlan-networks/"+vid, state("available"))
-			require.Equal(t, did, current["vlan"].(map[string]any)["device_id"])
-			require.Equal(t, float64(100), current["vlan"].(map[string]any)["vlan_id"])
-			page := get(t, caller, platformBase+"/vlan-networks?limit=1")
-			require.Equal(t, "1", page["total"])
-			require.Empty(t, page["next_cursor"])
-			var state, actor string
-			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT r.state,h.actor_ref FROM network_platform_resources r JOIN network_platform_history h ON h.operation_id=r.last_operation_id WHERE r.resource_id=$1 AND h.event='create_vlan_accepted'`, vid).Scan(&state, &actor))
-			require.Equal(t, "available", state)
+			require.Equal(t, vlan, request(t, caller, "POST", platformBase+"/vlan-networks", vlanBody, nil, 200))
+			bound := poll(t, caller, platformBase+"/virtual-switches/"+sid, func(v map[string]any) bool { return v["binding_state"] == "configured" && len(v["nodes"].([]any)) > 0 })
+			require.Equal(t, peer.ClusterID, bound["cluster_id"])
+			require.Equal(t, group, bound["group_name"])
+			require.Equal(t, "1", bound["binding_version"])
+			nodes := bound["nodes"].([]any)
+			for _, raw := range nodes {
+				node := raw.(map[string]any)
+				require.NotEmpty(t, node["node_uid"])
+				require.NotEmpty(t, node["mac"])
+				require.Equal(t, float64(100), node["priority"])
+				require.Equal(t, "applied", node["state"])
+			}
+			var registered, version int
+			var persistedNodes []byte
+			var actor, directCaller, operationState string
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_device_adoptions),fingerprint_version FROM network_platform_idempotency WHERE cluster_id=$1 AND operation_kind='create_vlan' AND idempotency_key='gov-layer2-v2'`, peer.ClusterID).Scan(&registered, &version))
+			require.Equal(t, registrationsBefore+1, registered, "one VLAN admission owns the internal device registration; no Adopt request")
+			require.Equal(t, 2, version)
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT s.nodes,h.actor_ref,h.caller_ref FROM network_virtual_switches s JOIN network_virtual_switch_history h ON h.resource_id=s.resource_id WHERE s.resource_id=$1 AND h.event='vlan_accepted'`, sid).Scan(&persistedNodes, &actor, &directCaller))
+			var savedNodes []any
+			require.NoError(t, json.Unmarshal(persistedNodes, &savedNodes))
+			require.Len(t, savedNodes, len(nodes))
 			require.Equal(t, "governance:user:9", actor)
+			require.Equal(t, "ani-governance", directCaller)
+			require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT state FROM network_platform_operations WHERE operation_id=$1 AND resource_id=$2", vlan["last_operation_id"], vid).Scan(&operationState))
+			require.Contains(t, []string{"queued", "running", "retrying", "blocked"}, operationState)
+			require.NotEqual(t, "available", get(t, caller, platformBase+"/vlan-networks/"+vid)["state"], "configured group membership cannot manufacture physical wiring")
+			wiring(true)
+			current := poll(t, caller, platformBase+"/vlan-networks/"+vid, state("available"))
+			config := current["vlan"].(map[string]any)
+			require.Equal(t, sid, config["virtual_switch_id"])
+			require.Equal(t, deviceName, config["device_name"])
+			require.Equal(t, group, config["group_name"])
+			require.Len(t, config["nodes"], len(nodes))
+			if value, present := config["vlan_id"]; present {
+				require.Equal(t, float64(0), value)
+			}
+			poll(t, caller, platformBase+"/operations/"+vlan["last_operation_id"].(string), state("succeeded"))
+			var providerName, providerUID string
+			require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT provider_name,provider_uid FROM network_platform_resources WHERE resource_id=$1", vid).Scan(&providerName, &providerUID))
+			native := providerObject(t, "/apis/networking.kubercloud.com/v1/vlannetworks/"+providerName, 200)
+			require.Equal(t, providerUID, native["metadata"].(map[string]any)["uid"])
+			require.Equal(t, float64(0), native["spec"].(map[string]any)["vlanID"])
+			require.Equal(t, group, native["spec"].(map[string]any)["vClusterName"])
+			require.NotEmpty(t, peer.GatewayID)
+			pool := request(t, caller, "POST", platformBase+"/public-address-pools", jsonBody(map[string]any{"name": "gov-layer2-reference-pool", "mode": "underlay", "gateway_id": peer.GatewayID, "cidr": "198.51.101.0/24", "ovn_gateway_ip": "198.51.101.254", "upstream_gateway_ip": "198.51.101.1", "vlan_network_id": vid, "idempotency_key": "gov-layer2-reference-pool"}), nil, 200)
+			pid := pool["id"].(string)
+			poll(t, caller, platformBase+"/public-address-pools/"+pid, state("available"))
+			request(t, caller, "DELETE", platformBase+"/vlan-networks/"+vid, "", nil, 412)
+			request(t, caller, "DELETE", platformBase+"/virtual-switches/"+sid, "", nil, 412)
+			request(t, caller, "DELETE", platformBase+"/public-address-pools/"+pid, "", nil, 200)
+			poll(t, caller, platformBase+"/public-address-pools/"+pid, state("deleted"))
+			request(t, caller, "DELETE", platformBase+"/vlan-networks/"+vid, "", nil, 200)
+			poll(t, caller, platformBase+"/vlan-networks/"+vid, state("deleted"))
+			for _, raw := range nodes {
+				node := raw.(map[string]any)
+				nativeNode := providerObject(t, "/api/v1/nodes/"+node["node_name"].(string), 200)
+				require.Equal(t, "100", nativeNode["metadata"].(map[string]any)["labels"].(map[string]any)["vcluster.networking.kubercloud.com/"+group], "VLAN deletion preserves the switch group")
+			}
+			request(t, caller, "DELETE", platformBase+"/virtual-switches/"+sid, "", nil, 200)
+			// Drain the existing 20s switch lease and allow 15s for bound cleanup.
+			deleted := pollWithin(t, 35*time.Second, caller, platformBase+"/virtual-switches/"+sid, state("deleted"))
+			require.Equal(t, "cleaned", deleted["binding_state"])
+			deleteOperation := poll(t, caller, platformBase+"/operations/"+deleted["last_operation_id"].(string), state("succeeded"))
+			require.Equal(t, "delete_virtual_switch", deleteOperation["kind"])
+			for _, raw := range nodes {
+				node := raw.(map[string]any)
+				nativeNode := providerObject(t, "/api/v1/nodes/"+node["node_name"].(string), 200)
+				labels, _ := nativeNode["metadata"].(map[string]any)["labels"].(map[string]any)
+				require.NotContains(t, labels, "vcluster.networking.kubercloud.com/"+group)
+			}
+			var active int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT count(*) FROM network_device_adoptions WHERE virtual_switch_id=$1 AND NOT retired", sid).Scan(&active))
+			require.Zero(t, active)
+			// The old receipt stays immutable and cannot revive a cleaned binding.
+			require.Equal(t, created, request(t, caller, "POST", platformBase+"/virtual-switches", body, nil, 200))
+			require.Equal(t, "deleted", get(t, caller, platformBase+"/virtual-switches/"+sid)["state"])
+		})
+		t.Run("device_retirement_lifecycle", func(t *testing.T) {
+			require.Regexp(t, `^device_[0-9a-f]{32}$`, peer.LegacyDeviceID, "the Resource fixture supplies one real legacy registration")
+			devicePath := platformBase + "/devices/" + peer.LegacyDeviceID
+			retirementPath := devicePath + "/retirement"
+			configBefore := providerObject(t, "/api/v1/namespaces/kcn-system/configmaps/kcn-config", 200)
+			configUID := configBefore["metadata"].(map[string]any)["uid"]
+			body := ""
+			retiredDone := false
+			t.Cleanup(func() {
+				if !retiredDone && body != "" {
+					request(t, caller, "POST", retirementPath, body, nil, 200)
+					pollWithin(t, 90*time.Second, caller, retirementPath, state("retired"))
+				}
+			})
+			var accepted map[string]any
+			for attempt := 0; attempt < 3; attempt++ {
+				device := get(t, caller, devicePath)
+				body = jsonBody(map[string]any{"expected_version": device["version"], "idempotency_key": "gov-legacy-retirement"})
+				status, out := send(t, caller, "POST", retirementPath, body, nil)
+				if status == 412 && out["reason"] == "RESOURCE_BUSY" {
+					continue
+				}
+				require.Equal(t, 200, status, "retirement admission response=%v", out)
+				accepted = out
+				break
+			}
+			require.NotNil(t, accepted, "fresh retirement version must be admitted")
+			require.Equal(t, peer.LegacyDeviceID, accepted["device_id"])
+			require.NotEmpty(t, accepted["operation_id"])
+			require.Equal(t, accepted, request(t, caller, "POST", retirementPath, body, nil, 200))
+			var actor, savedOperation, directCaller string
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT r.operation_id::text,h.actor_ref,h.caller_ref FROM network_legacy_device_retirements r JOIN network_legacy_device_retirement_history h ON h.resource_id=r.resource_id AND h.operation_id=r.operation_id WHERE r.resource_id=$1 AND h.event='registration_closed'`, peer.LegacyDeviceID).Scan(&savedOperation, &actor, &directCaller))
+			require.Equal(t, accepted["operation_id"], savedOperation)
+			require.Equal(t, "governance:user:9", actor)
+			require.Equal(t, "ani-governance", directCaller)
+			// The durable executor-drain guard is 15s. Poll the real result rather
+			// than changing its timestamp or forcing the registration state.
+			retired := pollWithin(t, 90*time.Second, caller, retirementPath, state("retired"))
+			require.NotEqual(t, true, retired["pending_unknown"])
+			require.NotEmpty(t, retired["completed_at"])
+			require.Equal(t, configUID, retired["config_uid"])
+			expected, err := strconv.ParseInt(retired["expected_version"].(string), 10, 64)
+			require.NoError(t, err)
+			fence, err := strconv.ParseInt(retired["fence_version"].(string), 10, 64)
+			require.NoError(t, err)
+			require.Greater(t, fence, expected)
+			var closed, retained, noLease, epochFenced bool
+			var resourceState, pendingAction string
+			var resourceVersion, fenceVersion int64
+			// Watch wakeups may advance next_run_at. Resource's real PostgreSQL
+			// TestLegacyDeviceRetirementFencesUnknownAdoptionAndReplays verifies
+			// Claim/old-Finish/dispatch rejection after those wakeups; inspect the
+			// durable lease and generation fence here instead of its schedule.
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT d.registration_closed,d.retired,r.state,r.pending_action,(x.lease_owner IS NULL AND x.lease_until IS NULL),(x.lease_epoch=j.executor_epoch),r.version,j.fence_version FROM network_device_adoptions d JOIN network_platform_resources r USING(resource_id) JOIN network_platform_reconciliations x USING(resource_id) JOIN network_legacy_device_retirements j USING(resource_id) WHERE d.resource_id=$1`, peer.LegacyDeviceID).Scan(&closed, &retained, &resourceState, &pendingAction, &noLease, &epochFenced, &resourceVersion, &fenceVersion))
+			require.True(t, closed)
+			require.True(t, retained)
+			require.True(t, noLease)
+			require.True(t, epochFenced)
+			require.Equal(t, "deleted", resourceState)
+			require.Empty(t, pendingAction)
+			require.Greater(t, resourceVersion, fenceVersion)
+			require.Equal(t, accepted, request(t, caller, "POST", retirementPath, body, nil, 200), "retirement replay preserves its acceptance receipt")
+			require.Equal(t, configUID, providerObject(t, "/api/v1/namespaces/kcn-system/configmaps/kcn-config", 200)["metadata"].(map[string]any)["uid"])
+			retiredDone = true
+		})
+		t.Run("default_vpc_egress_lifecycle", func(t *testing.T) {
+			require.Equal(t, "test-cluster", peer.ClusterID)
+			require.NotEmpty(t, peer.ClusterUID)
+			require.Equal(t, "kcn-system", peer.DefaultVPCNamespace)
+			require.Equal(t, "kcn-cluster", peer.DefaultVPCName)
+			require.NotEmpty(t, peer.DefaultVPCUID)
+			defaultPath := "/apis/networking.kubercloud.com/v1/namespaces/" + peer.DefaultVPCNamespace + "/vpcs/" + peer.DefaultVPCName
+			defaultBefore := providerObject(t, defaultPath, 200)
+			require.Equal(t, peer.DefaultVPCUID, defaultBefore["metadata"].(map[string]any)["uid"])
+			var tenantRowsBefore int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT (SELECT count(*) FROM network_vpcs)+(SELECT count(*) FROM network_eips)+(SELECT count(*) FROM network_snat_bindings)").Scan(&tenantRowsBefore))
+			require.NotEmpty(t, peer.QualifiedPublicPoolID)
+			require.NotEmpty(t, peer.GatewayID)
+			existing := get(t, caller, platformBase+"/public-address-pools/"+peer.QualifiedPublicPoolID)["pool"].(map[string]any)
+			poolBody := jsonBody(map[string]any{"name": "gov-default-egress-pool", "mode": "overlay", "gateway_id": peer.GatewayID, "cidr": "198.51.102.0/24", "ovn_gateway_ip": "198.51.102.1", "idempotency_key": "gov-default-egress-pool"})
+			pool := request(t, caller, "POST", platformBase+"/public-address-pools", poolBody, nil, 200)
+			pid := pool["id"].(string)
+			poolPath := platformBase + "/public-address-pools/" + pid
+			pool = poll(t, caller, poolPath, state("available"))
+			poolConfig := pool["pool"].(map[string]any)
+			require.NotEqual(t, true, poolConfig["allocation_enabled"], "platform pre-acceptance must not open tenant allocation")
+			sourceVerification, ok := existing["verification"].(map[string]any)
+			require.True(t, ok, "qualified fixture pool must carry real provider-snapshot evidence")
+			verification := make(map[string]any, len(sourceVerification))
+			for key, value := range sourceVerification {
+				verification[key] = value
+			}
+			verification["topology_fingerprint"] = poolConfig["topology_fingerprint"]
+			verification["evidence_reference"] = "controlled Governance HTTP/Kubernetes boundary fixture; not physical public-egress proof"
+			verifyBody := jsonBody(map[string]any{"expected_version": pool["version"], "idempotency_key": "gov-default-egress-verification", "verification": verification})
+			request(t, caller, "POST", poolPath+"/verification", verifyBody, nil, 200)
+			createBody := jsonBody(map[string]any{"name": "gov-default-vpc-egress", "pool_id": pid, "idempotency_key": "gov-default-vpc-egress"})
+			accepted := request(t, caller, "POST", platformBase+"/default-vpc-egresses", createBody, nil, 200)
+			id := accepted["id"].(string)
+			path := platformBase + "/default-vpc-egresses/" + id
+			require.Regexp(t, `^dve_[0-9a-f]{32}$`, id)
+			require.NotContains(t, accepted, "egress")
+			require.Empty(t, accepted["eip_provider_uid"])
+			require.Empty(t, accepted["snat_provider_uid"])
+			require.Empty(t, accepted["applied_enabled"])
+			require.Equal(t, accepted, request(t, caller, "POST", platformBase+"/default-vpc-egresses", createBody, nil, 200))
+			var cluster, clusterUID, namespace, name, vpcUID, actor, directCaller, operation string
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT r.cluster_id,r.cluster_uid,r.default_vpc_namespace,r.default_vpc_name,r.default_vpc_uid,r.last_operation_id::text,h.actor_ref,h.caller_ref FROM network_default_vpc_egresses r JOIN network_default_vpc_egress_history h ON h.resource_id=r.resource_id AND h.operation_id=r.last_operation_id WHERE r.resource_id=$1 AND h.event='create_accepted'`, id).Scan(&cluster, &clusterUID, &namespace, &name, &vpcUID, &operation, &actor, &directCaller))
+			require.Equal(t, peer.ClusterID, cluster)
+			require.Equal(t, peer.ClusterUID, clusterUID)
+			require.Equal(t, peer.DefaultVPCNamespace, namespace)
+			require.Equal(t, peer.DefaultVPCName, name)
+			require.Equal(t, peer.DefaultVPCUID, vpcUID)
+			require.Equal(t, "governance:user:9", actor)
+			require.Equal(t, "ani-governance", directCaller)
+			require.Equal(t, accepted["last_operation_id"], operation)
+			available := poll(t, caller, path, func(v map[string]any) bool { return v["state"] == "available" && v["applied_enabled"] == true })
+			require.Equal(t, true, available["desired_enabled"])
+			require.NotEqual(t, true, available["observation_stale"])
+			require.NotEqual(t, true, available["pending_unknown"])
+			require.Empty(t, available["pending_action"])
+			require.Equal(t, peer.ClusterID, available["cluster_id"])
+			require.Equal(t, peer.ClusterUID, available["cluster_uid"])
+			require.Equal(t, peer.DefaultVPCNamespace, available["default_vpc_namespace"])
+			require.Equal(t, peer.DefaultVPCName, available["default_vpc_name"])
+			require.Equal(t, peer.DefaultVPCUID, available["default_vpc_uid"])
+			require.Equal(t, accepted["eip_provider_name"], available["eip_provider_name"])
+			require.Equal(t, accepted["snat_provider_name"], available["snat_provider_name"])
+			require.NotEmpty(t, available["address"])
+			require.NotEmpty(t, available["eip_provider_uid"])
+			require.NotEmpty(t, available["snat_provider_uid"])
+			require.NotEmpty(t, available["observed_at"])
+			generation, err := strconv.ParseInt(available["target_generation"].(string), 10, 64)
+			require.NoError(t, err)
+			require.Positive(t, generation)
+			objectsPath := "/apis/networking.kubercloud.com/v1/namespaces/" + peer.DefaultVPCNamespace
+			eipPath := objectsPath + "/eips/" + available["eip_provider_name"].(string)
+			snatPath := objectsPath + "/snats/" + available["snat_provider_name"].(string)
+			eip := providerObject(t, eipPath, 200)
+			snat := providerObject(t, snatPath, 200)
+			require.Equal(t, available["eip_provider_uid"], eip["metadata"].(map[string]any)["uid"])
+			require.Equal(t, available["snat_provider_uid"], snat["metadata"].(map[string]any)["uid"])
+			require.Equal(t, peer.DefaultVPCName, snat["spec"].(map[string]any)["vpc"])
+			require.Equal(t, "Bound", eip["status"].(map[string]any)["phase"])
+			require.Equal(t, "Bound", snat["status"].(map[string]any)["phase"])
+			require.NotContains(t, eip["metadata"].(map[string]any)["labels"].(map[string]any), "network.ani.io/tenant-id")
+			require.NotContains(t, snat["metadata"].(map[string]any)["labels"].(map[string]any), "network.ani.io/tenant-id")
+			bound := eip["status"].(map[string]any)["boundResource"].(map[string]any)
+			require.Equal(t, peer.DefaultVPCNamespace+"/"+peer.DefaultVPCName, bound["vpc"])
+			require.Equal(t, snat["metadata"].(map[string]any)["generation"], bound["observedGeneration"])
+			var tenantRowsAfter, fakeSystemVPCs int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT (SELECT count(*) FROM network_vpcs)+(SELECT count(*) FROM network_eips)+(SELECT count(*) FROM network_snat_bindings)").Scan(&tenantRowsAfter))
+			require.Equal(t, tenantRowsBefore, tenantRowsAfter)
+			require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT count(*) FROM network_provider_bindings WHERE resource_kind='vpc' AND namespace=$1 AND provider_name=$2", peer.DefaultVPCNamespace, peer.DefaultVPCName).Scan(&fakeSystemVPCs))
+			require.Zero(t, fakeSystemVPCs, "no synthetic tenant VPC represents the system VPC")
+			request(t, caller, "DELETE", poolPath, "", nil, 412)
+			request(t, caller, "DELETE", path, "", nil, 200)
+			deleted := poll(t, caller, path, state("deleted"))
+			require.NotEqual(t, true, deleted["pending_unknown"])
+			require.Empty(t, deleted["pending_action"])
+			require.Equal(t, "succeeded", deleted["operation_state"])
+			providerObject(t, snatPath, 404)
+			providerObject(t, eipPath, 404)
+			var active, completed int
+			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_default_vpc_egresses WHERE resource_id=$1 AND retired_at IS NULL),(SELECT count(*) FROM network_default_vpc_egress_operations WHERE resource_id=$1 AND kind='delete_default_vpc_egress' AND state='succeeded' AND completed_at IS NOT NULL)`, id).Scan(&active, &completed))
+			require.Zero(t, active)
+			require.Equal(t, 1, completed)
+			defaultAfter := providerObject(t, defaultPath, 200)
+			require.Equal(t, peer.DefaultVPCUID, defaultAfter["metadata"].(map[string]any)["uid"])
+			require.Equal(t, defaultBefore["spec"], defaultAfter["spec"], "system VPC/natOutgoing remains read-only")
+			require.Equal(t, accepted, request(t, caller, "POST", platformBase+"/default-vpc-egresses", createBody, nil, 200))
+			require.Equal(t, "deleted", get(t, caller, path)["state"])
+			request(t, caller, "DELETE", poolPath, "", nil, 200)
+			poll(t, caller, poolPath, state("deleted"))
 		})
 		t.Run("address_pool_lifecycles", func(t *testing.T) {
 			for _, scope := range []string{"public", "intranet"} {
 				t.Run(scope, func(t *testing.T) {
 					path := platformBase + "/" + scope + "-address-pools"
-					existing := get(t, caller, path)["items"].([]any)[0].(map[string]any)
+					before := get(t, caller, path)
+					baselineTotal, err := strconv.ParseInt(before["total"].(string), 10, 64)
+					require.NoError(t, err)
+					var existing map[string]any
+					if scope == "public" {
+						existing = get(t, caller, path+"/"+peer.QualifiedPublicPoolID)
+					} else {
+						for _, raw := range before["items"].([]any) {
+							item := raw.(map[string]any)
+							if item["state"] == "available" {
+								existing = item
+								break
+							}
+						}
+					}
+					require.NotNil(t, existing, "the fixture supplies an available original pool")
 					oldID := existing["id"].(string)
 					configKey := "pool"
 					if scope == "intranet" {
@@ -809,11 +1246,29 @@ func TestNetworkJointHTTP(t *testing.T) {
 					require.NoError(t, peer.DB.QueryRowContext(ctx, "SELECT r.kind,p.scope FROM network_platform_resources r JOIN network_public_pools p ON p.resource_id=r.resource_id WHERE r.resource_id=$1", pid).Scan(&stored, &storedScope))
 					require.Equal(t, "public_pool", stored)
 					require.Equal(t, scope, storedScope)
-					first := get(t, caller, path+"?limit=1")
-					require.Equal(t, "2", first["total"])
-					next := get(t, caller, path+"?limit=1&cursor="+url.QueryEscape(first["next_cursor"].(string)))
-					require.Equal(t, "2", next["total"])
-					require.Empty(t, next["next_cursor"])
+					seen := map[string]bool{}
+					cursor := ""
+					for {
+						pagePath := path + "?limit=1"
+						if cursor != "" {
+							pagePath += "&cursor=" + url.QueryEscape(cursor)
+						}
+						page := get(t, caller, pagePath)
+						require.Equal(t, strconv.FormatInt(baselineTotal+1, 10), page["total"])
+						items := page["items"].([]any)
+						require.Len(t, items, 1)
+						pageID := items[0].(map[string]any)["id"].(string)
+						require.False(t, seen[pageID], "pagination must not repeat a pool")
+						seen[pageID] = true
+						require.LessOrEqual(t, int64(len(seen)), baselineTotal+1)
+						cursor, _ = page["next_cursor"].(string)
+						if cursor == "" {
+							break
+						}
+					}
+					require.Equal(t, baselineTotal+1, int64(len(seen)))
+					require.Contains(t, seen, pid)
+					require.Contains(t, seen, oldID)
 					// Exercise the existing default pool's real evidence and commands, preserving
 					// the fixture's original default and allocation state for tenant regressions.
 					current := get(t, caller, path+"/"+oldID)
@@ -1144,8 +1599,25 @@ func TestNetworkJointHTTP(t *testing.T) {
 			poll(t, id, base+"/operations/"+snat["last_operation_id"].(string), state("succeeded"))
 			snat = get(t, id, base+"/snat/bindings/"+snatID)
 			for _, enabled := range []bool{false, true} {
-				body := fmt.Sprintf(`{"enabled":%t,"expected_version":%q,"idempotency_key":%q}`, enabled, snat["version"], fmt.Sprintf("toggle-%s-%t", mode.name, enabled))
-				accepted := request(t, id, "PATCH", base+"/snat/bindings/"+snatID, body, nil, 200)
+				var body string
+				var accepted map[string]any
+				for deadline := time.Now().Add(15 * time.Second); time.Now().Before(deadline); {
+					snat = get(t, id, base+"/snat/bindings/"+snatID)
+					if snat["state"] != "available" || get(t, id, base+"/eips/"+eipID)["state"] != "available" || get(t, id, base+"/vpcs/"+vpcID)["state"] != "available" {
+						time.Sleep(40 * time.Millisecond)
+						continue
+					}
+					body = fmt.Sprintf(`{"enabled":%t,"expected_version":%q,"idempotency_key":%q}`, enabled, snat["version"], fmt.Sprintf("toggle-%s-%t", mode.name, enabled))
+					status, out := send(t, id, "PATCH", base+"/snat/bindings/"+snatID, body, nil)
+					if status == 412 && out["reason"] == "RESOURCE_BUSY" {
+						time.Sleep(40 * time.Millisecond)
+						continue
+					}
+					require.Equal(t, 200, status, "SNAT toggle admission response=%v", out)
+					accepted = out
+					break
+				}
+				require.NotNil(t, accepted, "a fresh version and ready dependencies must admit the SNAT toggle")
 				require.Equal(t, enabled, accepted["desired_enabled"])
 				require.NotEqual(t, accepted["desired_enabled"], accepted["applied_enabled"], "accepted intent must retain independently observed applied value")
 				require.Equal(t, accepted, request(t, id, "PATCH", base+"/snat/bindings/"+snatID, body, nil, 200))
@@ -1191,7 +1663,8 @@ func TestNetworkJointHTTP(t *testing.T) {
 			removed := request(t, id, "DELETE", base+"/load-balancers/"+lbID, "", nil, 200)
 			require.Contains(t, removed, "operation")
 			require.Contains(t, removed, "load_balancer")
-			poll(t, id, base+"/load-balancers/"+lbID, state("deleted"))
+			// Configured deletion cleans route, policy and backend components serially.
+			pollWithin(t, 60*time.Second, id, base+"/load-balancers/"+lbID, state("deleted"))
 			var claims, refs, vips int
 			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM network_eip_claims WHERE tenant_id=$1 AND eip_id=$2 AND released_at IS NULL),(SELECT count(*) FROM network_lb_subnet_refs WHERE tenant_id=$1 AND lb_id=$3 AND released_at IS NULL),(SELECT count(*) FROM network_lb_vip_intents WHERE tenant_id=$1 AND lb_id=$3 AND released_at IS NULL)`, peer.TenantID, eipID, lbID).Scan(&claims, &refs, &vips))
 			require.Zero(t, claims)
@@ -1294,6 +1767,18 @@ func TestNetworkJointHTTP(t *testing.T) {
 		_, err = client.RolePermission.Update().Where(rolepermission.RoleIDEQ(publisher.ID)).SetStatus(rolepermission.StatusOn).Save(sys)
 		require.NoError(t, err)
 		require.NoError(t, policy.ResetPolicies(ctx))
+		var originalModule []byte
+		require.NoError(t, fixtureDB.QueryRowContext(ctx, `SELECT to_jsonb(m) FROM sys_plan_modules m WHERE m.id=$1 AND m.plan_id=$2`, module.ID, plan.ID).Scan(&originalModule))
+		t.Cleanup(func() {
+			result, err := fixtureDB.ExecContext(ctx, `INSERT INTO sys_plan_modules SELECT (jsonb_populate_record(NULL::sys_plan_modules,$1::jsonb)).* ON CONFLICT(id) DO NOTHING`, string(originalModule))
+			require.NoError(t, err, "restore this fixture's original plan module before parent compensation")
+			restored, err := result.RowsAffected()
+			require.NoError(t, err)
+			require.Contains(t, []int64{0, 1}, restored)
+			var restoredModule []byte
+			require.NoError(t, fixtureDB.QueryRowContext(ctx, `SELECT to_jsonb(m) FROM sys_plan_modules m WHERE m.id=$1 AND m.plan_id=$2`, module.ID, plan.ID).Scan(&restoredModule))
+			require.JSONEq(t, string(originalModule), string(restoredModule), "restore the original row's ID, relationship and all fields")
+		})
 		require.NoError(t, client.PlanModule.DeleteOneID(module.ID).Exec(sys))
 		request(t, akIdentity, "GET", base+"/vpc-cidr-presets", "", nil, 403)
 		request(t, jwtIdentity, "GET", base+"/vpc-cidr-presets", "", nil, 403)

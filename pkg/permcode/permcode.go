@@ -1,6 +1,6 @@
 // Package permcode 承载权限码规范（docs/contracts/permission-code.md）的运行时查表层。
 //
-// 架构决策（实施文档 §B3.3/§B4/§B8.3）：管理面 190 条与各业务域/Quota 119 条的期望码
+// 架构决策（实施文档 §B3.3/§B4/§B8.3）：管理面 194 条与各业务域/Quota 125 条的期望码
 // 已在生成期产出、经人工评审后固化进权威表；运行时只按 (method, path) 查表取码，
 // 不重新执行推导。查不到即"缺项"，报错停止。
 //
@@ -107,6 +107,15 @@ func normalizePath(path string) string {
 
 func nkey(method, path string) string {
 	return strings.ToUpper(strings.TrimSpace(method)) + " " + normalizePath(strings.TrimSpace(path))
+}
+
+// NormalizePath 对外暴露参数段归一化：把路径模板中的 {任意参数名} 统一为 {}。
+//
+// 授权策略与租户闸门也用同一规则比较"目录登记路径"（OpenAPI 产出的驼峰参数名，
+// 如 {userId}）与"运行时路由模板"（proto 蛇形，如 {user_id}）；不归一化时两者
+// 按字面比较不相等，会导致已授权的接口被 403 拒绝。
+func NormalizePath(path string) string {
+	return normalizePath(strings.TrimSpace(path))
 }
 
 // 归一化索引：normalized key -> expectation。若同一 normalized key 命中多个不同码，

@@ -10,7 +10,6 @@ import (
 	inferencev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	modelv1 "github.com/liangzai006/ani-model-service/api/model/v1"
 	"github.com/stretchr/testify/require"
-	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	view "go-wind-admin/api/gen/go/inference/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
@@ -90,7 +89,6 @@ func newInferenceGPUFixture(t *testing.T) *inferenceGPUFixture {
 	require.NoError(t, err)
 	require.NoError(t, c.Client().PlanQuota.Create().SetPlanID(planRow.ID).SetQuotaCode(GpuSharedQuotaCode).SetQuotaValue(20000).Exec(sys))
 	require.NoError(t, c.Client().PlanModule.Create().SetPlanID(planRow.ID).SetModule(planmodule.Module("INFERENCE")).Exec(sys))
-	require.NoError(t, c.Client().PlanModule.Create().SetPlanID(planRow.ID).SetModule(planmodule.Module("ACCELERATOR")).Exec(sys))
 	operator, err := c.Client().User.Create().SetTenantID(tenant.ID).SetUsername("inference-" + id).SetStatus(user.StatusNormal).Save(sys)
 	require.NoError(t, err)
 	r, err := c.Client().Role.Create().SetTenantID(tenant.ID).SetName("inference-" + id).SetCode("tenant:inference:" + id).SetType(role.TypeTenant).SetStatus(role.StatusOn).SetDataScope(role.DataScopeAll).Save(sys)
@@ -120,21 +118,17 @@ func newInferenceGPUFixture(t *testing.T) *inferenceGPUFixture {
 	model := &inferenceModelProbe{response: &modelv1.GetModelVersionResponse{Model: &modelv1.Model{TenantId: tenant.ResourceTenantID}, Version: &modelv1.ModelVersion{Id: modelVersionID, Status: "ready"}}}
 	owner := &inferenceMissingOwner{}
 	plans := &instancePlanPeer{plan: plan}
-	selection := inferenceCPUSelection(t)
-	selection.ComputeType = "gpu"
-	selection.Gpu = &compute.GpuSelection{ProfileId: plan.Request.ProfileId, ProfileVersion: plan.Request.ProfileVersion, SpecDigest: plan.Profile.SpecDigest, DevicesPerUnit: plan.Request.DevicesPerReplica, ClusterId: plan.Request.ClusterId, PoolId: plan.Request.PoolId, Mode: plan.Resolved.Selection.Mode, ModelKey: plan.Resolved.Selection.ModelKey, MemoryMibPerDevice: 8192, CoreLimitPercent: 25}
-	selection.SelectionDigest, err = compute.SelectionDigest(selection)
-	require.NoError(t, err)
-	binding := NewInferenceComputeBinding(owner, data.NewInferenceAuthorizationRepo(c), model, &inferenceComputeProbe{selection: selection})
+	binding := NewInferenceGpuBindingWithModel(owner, data.NewInferenceAuthorizationRepo(c), model)
 	registry := NewQuotaAdapterRegistry()
 	require.NoError(t, registry.Register(binding))
 	ledger := data.NewQuotaLedgerRepo(bctx, c)
 	acceptance, err := NewGpuAcceptance(ledger, registry, data.NewTenantRepo(bctx, c), plans, binding, nil)
 	require.NoError(t, err)
 	service := NewInferenceServiceWithOwnerAndModel(acceptance, owner, data.NewTenantRepo(bctx, c), model)
-	request := &view.CreateInferenceRequest{Data: &view.CreateInferenceData{
-		IdempotencyKey: uuid.NewString(), Name: "qwen", ModelVersionId: modelVersionID, ServedModelName: "qwen", EngineType: "vllm", EngineImage: "registry.invalid/vllm:fixture", Command: "exec vllm serve /models", PresetId: selection.PresetId, Replicas: 2,
-	}}
+	request := &view.CreateInferenceRequest{
+		IdempotencyKey: uuid.NewString(), Name: "qwen", ModelVersionId: modelVersionID, ServedModelName: "qwen", EngineType: "vllm", EngineImage: "registry.invalid/vllm:fixture", Command: "exec vllm serve /models", Cpu: "1", Memory: "2Gi", Replicas: 2,
+		Gpu: &view.GpuSelection{ClusterId: plan.Request.ClusterId, PoolId: plan.Request.PoolId, ProfileId: plan.Request.ProfileId, ProfileVersion: plan.Request.ProfileVersion},
+	}
 	return &inferenceGPUFixture{service: service, ledger: ledger, client: c.Client(), model: model, plans: plans, owner: owner, ctx: requestCtx, tenantID: tenant.ID, membership: membership, request: request, planID: planRow.ID, permissions: permissions}
 }
 
@@ -188,7 +182,7 @@ func TestInferenceCPUActorsRemainTrusted(t *testing.T) {
 	for _, subject := range []auth.SubjectType{auth.SubjectUser, auth.SubjectAPIKey} {
 		ctx := auth.NewPrincipalContext(f.ctx, &auth.Principal{Type: subject, ID: principal.ID, TenantID: principal.TenantID})
 		f.owner.service = &inferencev1.InferenceService{Id: "cpu-" + uuid.NewString(), Generation: 7}
-		_, err := f.service.DeleteInference(ctx, &view.DeleteInferenceRequest{Data: &view.DeleteInferenceData{IdempotencyKey: uuid.NewString(), ResourceId: f.owner.service.Id}})
+		_, err := f.service.DeleteInference(ctx, &view.DeleteInferenceRequest{IdempotencyKey: uuid.NewString(), ResourceId: f.owner.service.Id})
 		require.NoError(t, err)
 		actor, err := (&auth.Principal{Type: subject, ID: principal.ID, TenantID: principal.TenantID}).Actor()
 		require.NoError(t, err)

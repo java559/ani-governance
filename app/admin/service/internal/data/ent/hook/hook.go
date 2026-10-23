@@ -272,18 +272,6 @@ func (f ModelDevAcceptanceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ModelDevAcceptanceMutation", m)
 }
 
-// The ModelDevReleaseBindingFunc type is an adapter to allow the use of ordinary
-// function as ModelDevReleaseBinding mutator.
-type ModelDevReleaseBindingFunc func(context.Context, *ent.ModelDevReleaseBindingMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f ModelDevReleaseBindingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.ModelDevReleaseBindingMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ModelDevReleaseBindingMutation", m)
-}
-
 // The NotificationChannelFunc type is an adapter to allow the use of ordinary
 // function as NotificationChannel mutator.
 type NotificationChannelFunc func(context.Context, *ent.NotificationChannelMutation) (ent.Value, error)

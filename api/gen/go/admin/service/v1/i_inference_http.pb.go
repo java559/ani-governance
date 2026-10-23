@@ -48,14 +48,14 @@ type InferenceServiceHTTPServer interface {
 func RegisterInferenceServiceHTTPServer(s *http.Server, srv InferenceServiceHTTPServer) {
 	r := s.Route("/")
 	r.POST("/api/v1/inference/services", _InferenceService_CreateInference0_HTTP_Handler(srv))
-	r.POST("/api/v1/inference/services/{data.resource_id}:delete", _InferenceService_DeleteInference0_HTTP_Handler(srv))
+	r.POST("/api/v1/inference/services/{resource_id}:delete", _InferenceService_DeleteInference0_HTTP_Handler(srv))
 	r.GET("/api/v1/inference/services/{resource_id}", _InferenceService_GetInference0_HTTP_Handler(srv))
 	r.GET("/api/v1/inference/services", _InferenceService_ListInference0_HTTP_Handler(srv))
 	r.GET("/api/v1/inference/operations/{operation_id}", _InferenceService_GetInferenceOperation0_HTTP_Handler(srv))
-	r.POST("/api/v1/inference/services/{data.resource_id}:update", _InferenceService_UpdateInference0_HTTP_Handler(srv))
-	r.POST("/api/v1/inference/services/{data.resource_id}:start", _InferenceService_StartInference0_HTTP_Handler(srv))
-	r.POST("/api/v1/inference/services/{data.resource_id}:stop", _InferenceService_StopInference0_HTTP_Handler(srv))
-	r.POST("/api/v1/inference/services/{data.resource_id}:restart", _InferenceService_RestartInference0_HTTP_Handler(srv))
+	r.POST("/api/v1/inference/services/{resource_id}:update", _InferenceService_UpdateInference0_HTTP_Handler(srv))
+	r.POST("/api/v1/inference/services/{resource_id}:start", _InferenceService_StartInference0_HTTP_Handler(srv))
+	r.POST("/api/v1/inference/services/{resource_id}:stop", _InferenceService_StopInference0_HTTP_Handler(srv))
+	r.POST("/api/v1/inference/services/{resource_id}:restart", _InferenceService_RestartInference0_HTTP_Handler(srv))
 	r.GET("/api/v1/inference/services/{resource_id}/operations", _InferenceService_ListInferenceOperations0_HTTP_Handler(srv))
 }
 
@@ -327,7 +327,7 @@ func (c *InferenceServiceHTTPClientImpl) CreateInference(ctx context.Context, in
 
 func (c *InferenceServiceHTTPClientImpl) DeleteInference(ctx context.Context, in *v1.DeleteInferenceRequest, opts ...http.CallOption) (*v1.InferenceAcceptance, error) {
 	var out v1.InferenceAcceptance
-	pattern := "/api/v1/inference/services/{data.resource_id}:delete"
+	pattern := "/api/v1/inference/services/{resource_id}:delete"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInferenceServiceDeleteInference))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -392,7 +392,7 @@ func (c *InferenceServiceHTTPClientImpl) ListInferenceOperations(ctx context.Con
 
 func (c *InferenceServiceHTTPClientImpl) RestartInference(ctx context.Context, in *v1.InferenceServiceCommandRequest, opts ...http.CallOption) (*v1.InferenceAcceptance, error) {
 	var out v1.InferenceAcceptance
-	pattern := "/api/v1/inference/services/{data.resource_id}:restart"
+	pattern := "/api/v1/inference/services/{resource_id}:restart"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInferenceServiceRestartInference))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -405,7 +405,7 @@ func (c *InferenceServiceHTTPClientImpl) RestartInference(ctx context.Context, i
 
 func (c *InferenceServiceHTTPClientImpl) StartInference(ctx context.Context, in *v1.InferenceServiceCommandRequest, opts ...http.CallOption) (*v1.InferenceAcceptance, error) {
 	var out v1.InferenceAcceptance
-	pattern := "/api/v1/inference/services/{data.resource_id}:start"
+	pattern := "/api/v1/inference/services/{resource_id}:start"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInferenceServiceStartInference))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -418,7 +418,7 @@ func (c *InferenceServiceHTTPClientImpl) StartInference(ctx context.Context, in 
 
 func (c *InferenceServiceHTTPClientImpl) StopInference(ctx context.Context, in *v1.InferenceServiceCommandRequest, opts ...http.CallOption) (*v1.InferenceAcceptance, error) {
 	var out v1.InferenceAcceptance
-	pattern := "/api/v1/inference/services/{data.resource_id}:stop"
+	pattern := "/api/v1/inference/services/{resource_id}:stop"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInferenceServiceStopInference))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -431,7 +431,7 @@ func (c *InferenceServiceHTTPClientImpl) StopInference(ctx context.Context, in *
 
 func (c *InferenceServiceHTTPClientImpl) UpdateInference(ctx context.Context, in *v1.UpdateInferenceRequest, opts ...http.CallOption) (*v1.InferenceAcceptance, error) {
 	var out v1.InferenceAcceptance
-	pattern := "/api/v1/inference/services/{data.resource_id}:update"
+	pattern := "/api/v1/inference/services/{resource_id}:update"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationInferenceServiceUpdateInference))
 	opts = append(opts, http.PathTemplate(pattern))

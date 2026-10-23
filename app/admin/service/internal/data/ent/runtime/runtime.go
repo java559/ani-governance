@@ -27,7 +27,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/membershiprole"
 	"go-wind-admin/app/admin/service/internal/data/ent/menu"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
-	"go-wind-admin/app/admin/service/internal/data/ent/modeldevreleasebinding"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
 	"go-wind-admin/app/admin/service/internal/data/ent/operationauditlog"
 	"go-wind-admin/app/admin/service/internal/data/ent/orgunit"
@@ -898,66 +897,6 @@ func init() {
 	modeldevacceptanceDescID := modeldevacceptanceMixinFields0[0].Descriptor()
 	// modeldevacceptance.IDValidator is a validator for the "id" field. It is called by the builders before save.
 	modeldevacceptance.IDValidator = modeldevacceptanceDescID.Validators[0].(func(uint32) error)
-	modeldevreleasebindingMixin := schema.ModelDevReleaseBinding{}.Mixin()
-	modeldevreleasebinding.Policy = privacy.NewPolicies(modeldevreleasebindingMixin[1], schema.ModelDevReleaseBinding{})
-	modeldevreleasebinding.Hooks[0] = func(next ent.Mutator) ent.Mutator {
-		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-			if err := modeldevreleasebinding.Policy.EvalMutation(ctx, m); err != nil {
-				return nil, err
-			}
-			return next.Mutate(ctx, m)
-		})
-	}
-	modeldevreleasebindingMixinFields0 := modeldevreleasebindingMixin[0].Fields()
-	_ = modeldevreleasebindingMixinFields0
-	modeldevreleasebindingMixinFields1 := modeldevreleasebindingMixin[1].Fields()
-	_ = modeldevreleasebindingMixinFields1
-	modeldevreleasebindingFields := schema.ModelDevReleaseBinding{}.Fields()
-	_ = modeldevreleasebindingFields
-	// modeldevreleasebindingDescTenantID is the schema descriptor for tenant_id field.
-	modeldevreleasebindingDescTenantID := modeldevreleasebindingMixinFields1[0].Descriptor()
-	// modeldevreleasebinding.TenantIDValidator is a validator for the "tenant_id" field. It is called by the builders before save.
-	modeldevreleasebinding.TenantIDValidator = modeldevreleasebindingDescTenantID.Validators[0].(func(uint32) error)
-	// modeldevreleasebindingDescResourceTenantID is the schema descriptor for resource_tenant_id field.
-	modeldevreleasebindingDescResourceTenantID := modeldevreleasebindingFields[0].Descriptor()
-	// modeldevreleasebinding.ResourceTenantIDValidator is a validator for the "resource_tenant_id" field. It is called by the builders before save.
-	modeldevreleasebinding.ResourceTenantIDValidator = modeldevreleasebindingDescResourceTenantID.Validators[0].(func(string) error)
-	// modeldevreleasebindingDescPresetID is the schema descriptor for preset_id field.
-	modeldevreleasebindingDescPresetID := modeldevreleasebindingFields[1].Descriptor()
-	// modeldevreleasebinding.PresetIDValidator is a validator for the "preset_id" field. It is called by the builders before save.
-	modeldevreleasebinding.PresetIDValidator = modeldevreleasebindingDescPresetID.Validators[0].(func(string) error)
-	// modeldevreleasebindingDescReleaseID is the schema descriptor for release_id field.
-	modeldevreleasebindingDescReleaseID := modeldevreleasebindingFields[2].Descriptor()
-	// modeldevreleasebinding.ReleaseIDValidator is a validator for the "release_id" field. It is called by the builders before save.
-	modeldevreleasebinding.ReleaseIDValidator = modeldevreleasebindingDescReleaseID.Validators[0].(func(string) error)
-	// modeldevreleasebindingDescReleaseDigest is the schema descriptor for release_digest field.
-	modeldevreleasebindingDescReleaseDigest := modeldevreleasebindingFields[3].Descriptor()
-	// modeldevreleasebinding.ReleaseDigestValidator is a validator for the "release_digest" field. It is called by the builders before save.
-	modeldevreleasebinding.ReleaseDigestValidator = modeldevreleasebindingDescReleaseDigest.Validators[0].(func(string) error)
-	// modeldevreleasebindingDescGeneration is the schema descriptor for generation field.
-	modeldevreleasebindingDescGeneration := modeldevreleasebindingFields[4].Descriptor()
-	// modeldevreleasebinding.GenerationValidator is a validator for the "generation" field. It is called by the builders before save.
-	modeldevreleasebinding.GenerationValidator = modeldevreleasebindingDescGeneration.Validators[0].(func(uint64) error)
-	// modeldevreleasebindingDescNewSubmissionsEnabled is the schema descriptor for new_submissions_enabled field.
-	modeldevreleasebindingDescNewSubmissionsEnabled := modeldevreleasebindingFields[5].Descriptor()
-	// modeldevreleasebinding.DefaultNewSubmissionsEnabled holds the default value on creation for the new_submissions_enabled field.
-	modeldevreleasebinding.DefaultNewSubmissionsEnabled = modeldevreleasebindingDescNewSubmissionsEnabled.Default.(bool)
-	// modeldevreleasebindingDescUpdatedBy is the schema descriptor for updated_by field.
-	modeldevreleasebindingDescUpdatedBy := modeldevreleasebindingFields[6].Descriptor()
-	// modeldevreleasebinding.UpdatedByValidator is a validator for the "updated_by" field. It is called by the builders before save.
-	modeldevreleasebinding.UpdatedByValidator = modeldevreleasebindingDescUpdatedBy.Validators[0].(func(string) error)
-	// modeldevreleasebindingDescReason is the schema descriptor for reason field.
-	modeldevreleasebindingDescReason := modeldevreleasebindingFields[8].Descriptor()
-	// modeldevreleasebinding.ReasonValidator is a validator for the "reason" field. It is called by the builders before save.
-	modeldevreleasebinding.ReasonValidator = modeldevreleasebindingDescReason.Validators[0].(func(string) error)
-	// modeldevreleasebindingDescEvidenceReference is the schema descriptor for evidence_reference field.
-	modeldevreleasebindingDescEvidenceReference := modeldevreleasebindingFields[9].Descriptor()
-	// modeldevreleasebinding.EvidenceReferenceValidator is a validator for the "evidence_reference" field. It is called by the builders before save.
-	modeldevreleasebinding.EvidenceReferenceValidator = modeldevreleasebindingDescEvidenceReference.Validators[0].(func(string) error)
-	// modeldevreleasebindingDescID is the schema descriptor for id field.
-	modeldevreleasebindingDescID := modeldevreleasebindingMixinFields0[0].Descriptor()
-	// modeldevreleasebinding.IDValidator is a validator for the "id" field. It is called by the builders before save.
-	modeldevreleasebinding.IDValidator = modeldevreleasebindingDescID.Validators[0].(func(uint32) error)
 	notificationchannelMixin := schema.NotificationChannel{}.Mixin()
 	notificationchannelMixinFields0 := notificationchannelMixin[0].Fields()
 	_ = notificationchannelMixinFields0

@@ -20,8 +20,8 @@ func TestModelDevAcceptanceCanonicalUUIDIdentity(t *testing.T) {
 	executionID := "fedc" + uuid.NewString()[4:]
 	candidate.OperationID = strings.ToUpper(operationID)
 	candidate.ExecutionID = strings.ToUpper(executionID)
-	bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
 
+	candidate = freezeModelDevFixture(t, scope, candidate)
 	accepted, replayed, err := NewModelDevAcceptanceRepo(client).AcceptFrozen(ctx, scope, candidate)
 	require.NoError(t, err)
 	require.False(t, replayed)
@@ -60,7 +60,7 @@ func TestModelDevAcceptanceUUIDAliasesCannotQueueTwice(t *testing.T) {
 				candidate.OperationID = strings.ToUpper(operationID)
 				candidate.ExecutionID = strings.ToUpper(executionID)
 			}
-			bindModelDevAcceptanceFixture(t, ctx, client, scope, candidate)
+			candidate = freezeModelDevFixture(t, scope, candidate)
 			repo := NewModelDevAcceptanceRepo(client)
 			original, replayed, err := repo.AcceptFrozen(ctx, scope, candidate)
 			require.NoError(t, err)
@@ -69,6 +69,7 @@ func TestModelDevAcceptanceUUIDAliasesCannotQueueTwice(t *testing.T) {
 			otherScope, alias := scope, candidate
 			otherScope.IdempotencyKey = uuid.NewString()
 			alias.OperationID, alias.ExecutionID = uuid.NewString(), uuid.NewString()
+			alias = freezeModelDevFixture(t, otherScope, alias)
 			aliasedID := executionID
 			if test.operation {
 				aliasedID = operationID
@@ -83,6 +84,7 @@ func TestModelDevAcceptanceUUIDAliasesCannotQueueTwice(t *testing.T) {
 			}
 			// This is a valid shared envelope. Its failure must arise from reusing
 			// a UUID identity, not an invalid shape, binding or public intent.
+			alias = freezeModelDevFixture(t, otherScope, alias)
 			_, intentHash, err := cpup01.CanonicalIntent(alias.Intent)
 			require.NoError(t, err)
 			specHash, err := alias.Snapshot.Digest()
@@ -113,6 +115,7 @@ func TestModelDevAcceptanceUUIDAliasesCannotQueueTwice(t *testing.T) {
 
 			// The failed insert must roll back the key as well as the queue entry.
 			alias.OperationID, alias.ExecutionID = uuid.NewString(), uuid.NewString()
+			alias = freezeModelDevFixture(t, otherScope, alias)
 			accepted, replayed, err := NewModelDevAcceptanceRepo(reader).AcceptFrozen(ctx, otherScope, alias)
 			require.NoError(t, err)
 			require.False(t, replayed)

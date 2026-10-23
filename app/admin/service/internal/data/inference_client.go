@@ -38,8 +38,9 @@ func InferenceConfigFromEnv() (InferenceClientConfig, error) {
 }
 
 type InferenceClient struct {
-	client  runtimev1.InferenceServiceManagerClient
-	timeout time.Duration
+	client      runtimev1.InferenceServiceManagerClient
+	diagnostics runtimev1.InferenceDiagnosticsClient
+	timeout     time.Duration
 }
 
 func NewInferenceClient(c InferenceClientConfig) (*InferenceClient, func(), error) {
@@ -77,7 +78,7 @@ func NewInferenceClient(c InferenceClientConfig) (*InferenceClient, func(), erro
 	if err != nil {
 		return nil, nil, errors.New("invalid inference client address")
 	}
-	return &InferenceClient{client: runtimev1.NewInferenceServiceManagerClient(connection), timeout: c.Timeout}, func() { _ = connection.Close() }, nil
+	return &InferenceClient{client: runtimev1.NewInferenceServiceManagerClient(connection), diagnostics: runtimev1.NewInferenceDiagnosticsClient(connection), timeout: c.Timeout}, func() { _ = connection.Close() }, nil
 }
 
 func (c *InferenceClient) Create(ctx context.Context, request *runtimev1.CreateInferenceServiceRequest) (*runtimev1.OperationResponse, error) {
