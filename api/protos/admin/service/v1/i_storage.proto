@@ -1,0 +1,122 @@
+// Storage 页面接口（Gov BFF）。路由不接入推理 Higress；对象列表是分页合同的
+// 唯一显式例外（limit/cursor，无 total）。
+syntax = "proto3";
+
+package admin.service.v1;
+
+import "google/api/annotations.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "storage/service/v1/storage.proto";
+
+service StorageService {
+  rpc ListStorageClasses(storage.service.v1.ListStorageClassesRequest) returns (storage.service.v1.ListStorageClassesResponse) {
+    option (google.api.http) = { get: "/api/v1/storage/classes" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "ListStorageClasses"
+      description: "Requires active tenant, STORAGE module and storage:volume:create. page/pageSize with items/total. See docs/contracts/storage-api.md."
+    };
+  }
+  rpc CreateVolume(storage.service.v1.CreateVolumeRequest) returns (storage.service.v1.CreateVolumeResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/volumes" body: "*" response_body: "volume" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "CreateVolume"
+      description: "Requires storage:volume:create. create_token is the idempotency key for one create intent. See docs/contracts/storage-api.md."
+    };
+  }
+  rpc ListVolumes(storage.service.v1.ListVolumesRequest) returns (storage.service.v1.ListVolumesResponse) {
+    option (google.api.http) = { get: "/api/v1/storage/volumes" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "ListVolumes"
+      description: "Requires storage:volume:list. page/pageSize with items/total."
+    };
+  }
+  rpc GetVolume(storage.service.v1.GetVolumeRequest) returns (storage.service.v1.GetVolumeResponse) {
+    option (google.api.http) = { get: "/api/v1/storage/volumes/{pvc_name}" response_body: "volume" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "GetVolume"
+      description: "Requires storage:volume:get. Cross-tenant and unmanaged volumes are hidden."
+    };
+  }
+  rpc UpdateVolume(storage.service.v1.UpdateVolumeRequest) returns (storage.service.v1.UpdateVolumeResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/volumes/{data.pvc_name}:update" body: "*" response_body: "volume" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "UpdateVolume"
+      description: "Requires storage:volume:update. Only capacity_gb is supported. expected_uid is mandatory."
+    };
+  }
+  rpc DeleteVolume(storage.service.v1.DeleteVolumeRequest) returns (storage.service.v1.DeleteVolumeResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/volumes/{data.pvc_name}:delete" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "DeleteVolume"
+      description: "Requires storage:volume:delete. expected_uid binds the delete to the selected object; known consumers block deletion."
+    };
+  }
+  rpc ListBuckets(storage.service.v1.ListBucketsRequest) returns (storage.service.v1.ListBucketsResponse) {
+    option (google.api.http) = { get: "/api/v1/storage/buckets" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "ListBuckets"
+      description: "Requires storage:bucket:list. Only buckets configured for the authenticated tenant are returned."
+    };
+  }
+  rpc ListObjects(storage.service.v1.ListObjectsRequest) returns (storage.service.v1.ListObjectsResponse) {
+    option (google.api.http) = { get: "/api/v1/storage/buckets/{bucket_id}/objects" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "ListObjects"
+      description: "Requires storage:object:list. Domain cursor exception: limit 1..100 (omitted means 100), opaque cursor bound to bucket and prefix; page/pageSize/offset/token are rejected with 400; no total."
+    };
+  }
+  rpc HeadObject(storage.service.v1.HeadObjectRequest) returns (storage.service.v1.HeadObjectResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/buckets/{data.bucket_id}/objects:head" body: "*" response_body: "object" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "HeadObject"
+      description: "Requires storage:object:get. key is passed verbatim; no client-side escaping is required."
+    };
+  }
+  rpc GetDownloadURL(storage.service.v1.GetDownloadURLRequest) returns (storage.service.v1.GetDownloadURLResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/buckets/{data.bucket_id}/objects:download-url" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] },
+        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+      ]
+      summary: "GetDownloadURL"
+      description: "Requires storage:object:download. Returns a short-lived GET URL for the fixed object; the URL may be reused until expiry."
+    };
+  }
+}

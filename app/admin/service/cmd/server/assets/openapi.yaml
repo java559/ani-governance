@@ -10286,6 +10286,326 @@ paths:
                 - AccessKeyAuth: []
                   SignatureAuth: []
                   SignatureTime: []
+    /api/v1/storage/buckets:
+        get:
+            tags:
+                - StorageService
+            summary: ListBuckets
+            description: Requires storage:bucket:list. Only buckets configured for the authenticated tenant are returned.
+            operationId: StorageService_ListBuckets
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListBucketsResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/buckets/{bucket_id}/objects:
+        get:
+            tags:
+                - StorageService
+            summary: ListObjects
+            description: 'Requires storage:object:list. Domain cursor exception: limit 1..100 (omitted means 100), opaque cursor bound to bucket and prefix; page/pageSize/offset/token are rejected with 400; no total.'
+            operationId: StorageService_ListObjects
+            parameters:
+                - name: bucket_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: prefix
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: cursor
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  description: 对象列表不接受页码/偏移/旧游标参数；显式声明只为识别后返回 400。
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: offset
+                  in: query
+                  schema:
+                    type: string
+                - name: token
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListObjectsResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/buckets/{data.bucket_id}/objects:download-url:
+        post:
+            tags:
+                - StorageService
+            summary: GetDownloadURL
+            description: Requires storage:object:download. Returns a short-lived GET URL for the fixed object; the URL may be reused until expiry.
+            operationId: StorageService_GetDownloadURL
+            parameters:
+                - name: data.bucket_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GetDownloadURLRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetDownloadURLResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/buckets/{data.bucket_id}/objects:head:
+        post:
+            tags:
+                - StorageService
+            summary: HeadObject
+            description: Requires storage:object:get. key is passed verbatim; no client-side escaping is required.
+            operationId: StorageService_HeadObject
+            parameters:
+                - name: data.bucket_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/HeadObjectRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/HeadObjectResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/classes:
+        get:
+            tags:
+                - StorageService
+            summary: ListStorageClasses
+            description: Requires active tenant, STORAGE module and storage:volume:create. page/pageSize with items/total. See docs/contracts/storage-api.md.
+            operationId: StorageService_ListStorageClasses
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListStorageClassesResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/volumes:
+        get:
+            tags:
+                - StorageService
+            summary: ListVolumes
+            description: Requires storage:volume:list. page/pageSize with items/total.
+            operationId: StorageService_ListVolumes
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListVolumesResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+        post:
+            tags:
+                - StorageService
+            summary: CreateVolume
+            description: Requires storage:volume:create. create_token is the idempotency key for one create intent. See docs/contracts/storage-api.md.
+            operationId: StorageService_CreateVolume
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateVolumeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateVolumeResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/volumes/{data.pvc_name}:delete:
+        post:
+            tags:
+                - StorageService
+            summary: DeleteVolume
+            description: Requires storage:volume:delete. expected_uid binds the delete to the selected object; known consumers block deletion.
+            operationId: StorageService_DeleteVolume
+            parameters:
+                - name: data.pvc_name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteVolumeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteVolumeResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/volumes/{data.pvc_name}:update:
+        post:
+            tags:
+                - StorageService
+            summary: UpdateVolume
+            description: Requires storage:volume:update. Only capacity_gb is supported. expected_uid is mandatory.
+            operationId: StorageService_UpdateVolume
+            parameters:
+                - name: data.pvc_name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateVolumeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateVolumeResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/storage/volumes/{pvc_name}:
+        get:
+            tags:
+                - StorageService
+            summary: GetVolume
+            description: Requires storage:volume:get. Cross-tenant and unmanaged volumes are hidden.
+            operationId: StorageService_GetVolume
+            parameters:
+                - name: pvc_name
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetVolumeResponse'
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
     /api/v1/instances/{instance_id}/logs:
         get:
             tags:
@@ -11213,6 +11533,7 @@ components:
                         - IMAGE
                         - INFERENCE
                         - INSTANCE
+                        - STORAGE
                     type: string
                     description: 所属业务功能模块（用于套餐白名单过滤）
                     format: enum
@@ -11433,6 +11754,13 @@ components:
             properties:
                 snat:
                     $ref: '#/components/schemas/VPCSnat'
+        Bucket:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
         Callback:
             type: object
             properties:
@@ -12301,6 +12629,33 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
+        CreateVolumeData:
+            type: object
+            properties:
+                create_token:
+                    type: string
+                display_name:
+                    type: string
+                capacity_gb:
+                    type: string
+                storage_class_name:
+                    type: string
+                volume_mode:
+                    type: string
+                access_modes:
+                    type: array
+                    items:
+                        type: string
+        CreateVolumeRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateVolumeData'
+        CreateVolumeResponse:
+            type: object
+            properties:
+                volume:
+                    $ref: '#/components/schemas/Volume'
         CsrfRequest:
             type: object
             properties:
@@ -12654,6 +13009,26 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
+        DeleteVolumeData:
+            type: object
+            properties:
+                pvc_name:
+                    type: string
+                expected_uid:
+                    type: string
+        DeleteVolumeRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/DeleteVolumeData'
+        DeleteVolumeResponse:
+            type: object
+            properties:
+                state:
+                    type: string
+                    description: SUBMITTED、TERMINATING 或 GONE。
+                volume:
+                    $ref: '#/components/schemas/Volume'
         DeviceInfo:
             type: object
             properties:
@@ -13404,6 +13779,26 @@ components:
             properties:
                 egress:
                     $ref: '#/components/schemas/DefaultVPCEgress'
+        GetDownloadURLData:
+            type: object
+            properties:
+                bucket_id:
+                    type: string
+                key:
+                    type: string
+        GetDownloadURLRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/GetDownloadURLData'
+        GetDownloadURLResponse:
+            type: object
+            properties:
+                url:
+                    type: string
+                expires_at:
+                    type: string
+                    format: date-time
         GetEIPResponse:
             type: object
             properties:
@@ -13636,6 +14031,11 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
+        GetVolumeResponse:
+            type: object
+            properties:
+                volume:
+                    $ref: '#/components/schemas/VolumeDetail'
         GoRuntimeInfo:
             type: object
             properties:
@@ -13724,6 +14124,23 @@ components:
                 core_limit_percent:
                     type: integer
                     format: uint32
+        HeadObjectData:
+            type: object
+            properties:
+                bucket_id:
+                    type: string
+                key:
+                    type: string
+        HeadObjectRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/HeadObjectData'
+        HeadObjectResponse:
+            type: object
+            properties:
+                object:
+                    $ref: '#/components/schemas/ObjectMeta'
         Header:
             type: object
             properties:
@@ -14794,6 +15211,15 @@ components:
                 total:
                     type: string
             description: 查询列表 - 回应
+        ListBucketsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Bucket'
+                total:
+                    type: string
         ListConfigResponse:
             type: object
             properties:
@@ -15083,6 +15509,21 @@ components:
                 total:
                     type: string
             description: 查询通知渠道列表 - 回应
+        ListObjectsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ObjectItem'
+                common_prefixes:
+                    type: array
+                    items:
+                        type: string
+                next_cursor:
+                    type: string
+                is_truncated:
+                    type: boolean
         ListOnlineSessionResponse:
             type: object
             properties:
@@ -15269,6 +15710,15 @@ components:
                         $ref: '#/components/schemas/RuntimeEvent'
                 total:
                     type: string
+        ListStorageClassesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/StorageClass'
+                total:
+                    type: string
         ListSubnetsResponse:
             type: object
             properties:
@@ -15375,6 +15825,15 @@ components:
                         $ref: '#/components/schemas/PlatformResource'
                 next_cursor:
                     type: string
+                total:
+                    type: string
+        ListVolumesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/Volume'
                 total:
                     type: string
         LoadBalancer:
@@ -16016,6 +16475,7 @@ components:
                         - IMAGE
                         - INFERENCE
                         - INSTANCE
+                        - STORAGE
                     type: string
                     description: 所属业务功能模块
                     format: enum
@@ -16551,6 +17011,32 @@ components:
                     type: string
                     format: date-time
             description: 通知渠道
+        ObjectItem:
+            type: object
+            properties:
+                key:
+                    type: string
+                size:
+                    type: string
+                etag:
+                    type: string
+                last_modified:
+                    type: string
+                    format: date-time
+        ObjectMeta:
+            type: object
+            properties:
+                key:
+                    type: string
+                size:
+                    type: string
+                etag:
+                    type: string
+                content_type:
+                    type: string
+                last_modified:
+                    type: string
+                    format: date-time
         OnlineSession:
             type: object
             properties:
@@ -17307,6 +17793,7 @@ components:
                         - IMAGE
                         - INFERENCE
                         - INSTANCE
+                        - STORAGE
                     type: string
                     description: 功能模块
                     format: enum
@@ -18979,6 +19466,21 @@ components:
                 replayed:
                     type: boolean
             description: Governance acceptance only. ModelDev owns the creation fence and CLOSED.
+        StorageClass:
+            type: object
+            properties:
+                name:
+                    type: string
+                provisioner:
+                    type: string
+                is_default:
+                    type: boolean
+                allow_volume_expansion:
+                    type: boolean
+                volume_binding_mode:
+                    type: string
+                reclaim_policy:
+                    type: string
         StringArray:
             type: object
             properties:
@@ -19856,6 +20358,29 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新用户 - 请求
+        UpdateVolumeData:
+            type: object
+            properties:
+                pvc_name:
+                    type: string
+                expected_uid:
+                    type: string
+                capacity_gb:
+                    type: string
+        UpdateVolumeRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/UpdateVolumeData'
+                update_mask:
+                    type: string
+                    description: 只允许 capacity_gb。
+                    format: field-mask
+        UpdateVolumeResponse:
+            type: object
+            properties:
+                volume:
+                    $ref: '#/components/schemas/Volume'
         User:
             type: object
             properties:
@@ -20202,6 +20727,94 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/VirtualSwitchNode'
+        Volume:
+            type: object
+            properties:
+                pvc_name:
+                    type: string
+                uid:
+                    type: string
+                display_name:
+                    type: string
+                storage_class_name:
+                    type: string
+                volume_mode:
+                    type: string
+                access_modes:
+                    type: array
+                    items:
+                        type: string
+                requested_capacity_gb:
+                    type: string
+                observed_capacity_bytes:
+                    type: string
+                observed_capacity_known:
+                    type: boolean
+                observed_capacity_quantity:
+                    type: string
+                phase:
+                    type: string
+                deleting:
+                    type: boolean
+                reclaim_policy:
+                    type: string
+                reclaim_policy_known:
+                    type: boolean
+        VolumeCondition:
+            type: object
+            properties:
+                type:
+                    type: string
+                status:
+                    type: string
+                reason:
+                    type: string
+                message:
+                    type: string
+                last_transition_time:
+                    type: string
+                    format: date-time
+        VolumeConsumer:
+            type: object
+            properties:
+                kind:
+                    type: string
+                namespace:
+                    type: string
+                name:
+                    type: string
+        VolumeDetail:
+            type: object
+            properties:
+                volume:
+                    $ref: '#/components/schemas/Volume'
+                conditions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VolumeCondition'
+                events:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VolumeEvent'
+                consumers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VolumeConsumer'
+        VolumeEvent:
+            type: object
+            properties:
+                type:
+                    type: string
+                reason:
+                    type: string
+                message:
+                    type: string
+                count:
+                    type: integer
+                    format: int32
+                last_timestamp:
+                    type: string
+                    format: date-time
         VolumeMount:
             type: object
             properties:
@@ -20398,6 +21011,7 @@ tags:
       description: 角色管理服务
     - name: ServerMonitorService
       description: 服务监控管理服务（只读）
+    - name: StorageService
     - name: TaskService
       description: 调度任务管理服务
     - name: TenantService

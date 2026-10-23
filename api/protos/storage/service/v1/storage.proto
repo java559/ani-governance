@@ -1,0 +1,215 @@
+// Public Storage DTOs. Tenant identity is deliberately absent; tenant comes only
+// from the authenticated principal.
+syntax = "proto3";
+
+package storage.service.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+message StorageClass {
+  string name = 1;
+  string provisioner = 2;
+  bool is_default = 3 [json_name = "is_default"];
+  bool allow_volume_expansion = 4 [json_name = "allow_volume_expansion"];
+  string volume_binding_mode = 5 [json_name = "volume_binding_mode"];
+  string reclaim_policy = 6 [json_name = "reclaim_policy"];
+}
+
+message VolumeCondition {
+  string type = 1;
+  string status = 2;
+  string reason = 3;
+  string message = 4;
+  google.protobuf.Timestamp last_transition_time = 5 [json_name = "last_transition_time"];
+}
+
+message VolumeEvent {
+  string type = 1;
+  string reason = 2;
+  string message = 3;
+  int32 count = 4;
+  google.protobuf.Timestamp last_timestamp = 5 [json_name = "last_timestamp"];
+}
+
+message VolumeConsumer {
+  string kind = 1;
+  string namespace = 2;
+  string name = 3;
+}
+
+message Volume {
+  string pvc_name = 1 [json_name = "pvc_name"];
+  string uid = 2;
+  string display_name = 3 [json_name = "display_name"];
+  string storage_class_name = 4 [json_name = "storage_class_name"];
+  string volume_mode = 5 [json_name = "volume_mode"];
+  repeated string access_modes = 6 [json_name = "access_modes"];
+  int64 requested_capacity_gb = 7 [json_name = "requested_capacity_gb"];
+  int64 observed_capacity_bytes = 8 [json_name = "observed_capacity_bytes"];
+  bool observed_capacity_known = 9 [json_name = "observed_capacity_known"];
+  string observed_capacity_quantity = 10 [json_name = "observed_capacity_quantity"];
+  string phase = 11;
+  bool deleting = 12;
+  string reclaim_policy = 13 [json_name = "reclaim_policy"];
+  bool reclaim_policy_known = 14 [json_name = "reclaim_policy_known"];
+}
+
+message VolumeDetail {
+  Volume volume = 1;
+  repeated VolumeCondition conditions = 2;
+  repeated VolumeEvent events = 3;
+  repeated VolumeConsumer consumers = 4;
+}
+
+message ListStorageClassesRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2 [json_name = "pageSize"];
+}
+
+message ListStorageClassesResponse {
+  repeated StorageClass items = 1;
+  int64 total = 2;
+}
+
+message CreateVolumeData {
+  string create_token = 1 [json_name = "create_token"];
+  string display_name = 2 [json_name = "display_name"];
+  int64 capacity_gb = 3 [json_name = "capacity_gb"];
+  string storage_class_name = 4 [json_name = "storage_class_name"];
+  string volume_mode = 5 [json_name = "volume_mode"];
+  repeated string access_modes = 6 [json_name = "access_modes"];
+}
+
+message CreateVolumeRequest {
+  CreateVolumeData data = 1;
+}
+
+message CreateVolumeResponse {
+  Volume volume = 1;
+}
+
+message ListVolumesRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2 [json_name = "pageSize"];
+}
+
+message ListVolumesResponse {
+  repeated Volume items = 1;
+  int64 total = 2;
+}
+
+message GetVolumeRequest {
+  string pvc_name = 1 [json_name = "pvc_name"];
+}
+
+message GetVolumeResponse {
+  VolumeDetail volume = 1;
+}
+
+message UpdateVolumeData {
+  string pvc_name = 1 [json_name = "pvc_name"];
+  string expected_uid = 2 [json_name = "expected_uid"];
+  int64 capacity_gb = 3 [json_name = "capacity_gb"];
+}
+
+message UpdateVolumeRequest {
+  UpdateVolumeData data = 1;
+  // 只允许 capacity_gb。
+  google.protobuf.FieldMask update_mask = 2 [json_name = "update_mask"];
+}
+
+message UpdateVolumeResponse {
+  Volume volume = 1;
+}
+
+message DeleteVolumeData {
+  string pvc_name = 1 [json_name = "pvc_name"];
+  string expected_uid = 2 [json_name = "expected_uid"];
+}
+
+message DeleteVolumeRequest {
+  DeleteVolumeData data = 1;
+}
+
+message DeleteVolumeResponse {
+  // SUBMITTED、TERMINATING 或 GONE。
+  string state = 1;
+  Volume volume = 2;
+}
+
+message Bucket {
+  string id = 1;
+  string name = 2;
+}
+
+message ListBucketsRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2 [json_name = "pageSize"];
+}
+
+message ListBucketsResponse {
+  repeated Bucket items = 1;
+  int64 total = 2;
+}
+
+message ObjectItem {
+  string key = 1;
+  int64 size = 2;
+  string etag = 3;
+  google.protobuf.Timestamp last_modified = 4 [json_name = "last_modified"];
+}
+
+message ListObjectsRequest {
+  string bucket_id = 1 [json_name = "bucket_id"];
+  string prefix = 2;
+  optional uint32 limit = 3;
+  string cursor = 4;
+  // 对象列表不接受页码/偏移/旧游标参数；显式声明只为识别后返回 400。
+  optional uint32 page = 10;
+  optional uint32 page_size = 11 [json_name = "pageSize"];
+  string offset = 12;
+  string token = 13;
+}
+
+message ListObjectsResponse {
+  repeated ObjectItem items = 1;
+  repeated string common_prefixes = 2 [json_name = "common_prefixes"];
+  string next_cursor = 3 [json_name = "next_cursor"];
+  bool is_truncated = 4 [json_name = "is_truncated"];
+}
+
+message HeadObjectData {
+  string bucket_id = 1 [json_name = "bucket_id"];
+  string key = 2;
+}
+
+message HeadObjectRequest {
+  HeadObjectData data = 1;
+}
+
+message ObjectMeta {
+  string key = 1;
+  int64 size = 2;
+  string etag = 3;
+  string content_type = 4 [json_name = "content_type"];
+  google.protobuf.Timestamp last_modified = 5 [json_name = "last_modified"];
+}
+
+message HeadObjectResponse {
+  ObjectMeta object = 1;
+}
+
+message GetDownloadURLData {
+  string bucket_id = 1 [json_name = "bucket_id"];
+  string key = 2;
+}
+
+message GetDownloadURLRequest {
+  GetDownloadURLData data = 1;
+}
+
+message GetDownloadURLResponse {
+  string url = 1;
+  google.protobuf.Timestamp expires_at = 2 [json_name = "expires_at"];
+}

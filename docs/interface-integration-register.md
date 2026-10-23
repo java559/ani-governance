@@ -26,6 +26,7 @@
 | Gov → Resource 调用规范收敛 | S2S-RES-01；复用 NET-01～NET-25 与既有 Image 11 RPC | Network/Image 调用端与 Resource 接收端已修改；隔离真实业务链路通过，生产验收未执行 | 传输与可信上下文即时修复，见下方结果；不调整 HTTP 风格 |
 | 通用配额、GPU 实例与 Inference 接入 | QUOTA-01～03；INF-01/02；QUOTA-LAB-01～04；复用 PLAN-11～14、TENANT-04/08 | 保留 ACC 目录与 Resource 实例执行/释放合同；Inference 管理由 Governance BFF 接入并通过受信 mTLS 客户端投递；旧模拟 owner 入口退役 | 当前合同见 [GPU owner 指南](contracts/gpu-owner-integration-guide.md)；源码、部署与真实 GPU 验收分别记录 |
 | ModelDev CPU 主干受理及受管入口 | MODELDEV-01～MODELDEV-08；服务间调用登记 S2S-MODELDEV-CPUP01-01 | 当前授权、可信解析、持久受理/投递、查询及受管目录/输入/运行操作已装配；启用/回退经真实鉴权/PG CAS 验证；Gov→ModelDev 传输/身份/白名单三个差异收敛已实施并在 ani-system 真实环境完成正/负向验证 | CPU-P01，进行中 |
+| 存储接入（独立盘与对象只读） | STORAGE-01～STORAGE-10 | 已实现并在 kcn 新环境完成正/负向验证；对象列表是本登记中唯一分页合同例外 | 待指定；前端合同与交付文档另行提供 |
 
 ## 风格改动批次
 
@@ -1735,3 +1736,41 @@ actor 和 request ID 从可信上下文重建。HTTP 入口执行正常认证、
 不再使用 data 包装。真实环境复验使用模型 UUID：status=error 返回 total=0，
 status=ready 返回 total=1/ready，operations 返回 total=1。含斜杠的公开模型名不能
 替代 HTTP path 的资源 UUID。源码修改、部署与前端验收分别记录。
+
+<a id="storage-20261023"></a>
+
+### STORAGE-01～STORAGE-10：存储接入（2026-10-23）
+
+范围：独立盘（PVC）创建、列表、详情、扩容、删除；对象存储只读浏览与短期下载。
+前端合同与样例、实施过程、测试报告和偏离说明另行交付，不在本仓登记。
+
+| 编号 | 方法与路径 | 权限码 |
+| --- | --- | --- |
+| STORAGE-01 | `GET /api/v1/storage/classes` | `storage:volume:create` |
+| STORAGE-02 | `POST /api/v1/storage/volumes` | `storage:volume:create` |
+| STORAGE-03 | `GET /api/v1/storage/volumes` | `storage:volume:list` |
+| STORAGE-04 | `GET /api/v1/storage/volumes/{pvc_name}` | `storage:volume:get` |
+| STORAGE-05 | `POST /api/v1/storage/volumes/{data.pvc_name}:update` | `storage:volume:update` |
+| STORAGE-06 | `POST /api/v1/storage/volumes/{data.pvc_name}:delete` | `storage:volume:delete` |
+| STORAGE-07 | `GET /api/v1/storage/buckets` | `storage:bucket:list` |
+| STORAGE-08 | `GET /api/v1/storage/buckets/{bucket_id}/objects` | `storage:object:list` |
+| STORAGE-09 | `POST /api/v1/storage/buckets/{data.bucket_id}/objects:head` | `storage:object:get` |
+| STORAGE-10 | `POST /api/v1/storage/buckets/{data.bucket_id}/objects:download-url` | `storage:object:download` |
+
+约定：创建/变更使用 `data` 包装；单资源查询直接返回对象；除对象列表外使用
+`page/pageSize` 与 `items/total`（int64 为十进制字符串）。**对象列表是分页合同的
+唯一显式例外**：只接受 `limit`（1–100，缺省 100）与绑定 bucket+prefix 的不透明
+`cursor`；出现 `page/pageSize/offset/token` 一律 400；响应不含 `total`；游标跨桶/
+跨 prefix 复用 400，不降级首页。该例外只适用于 STORAGE-08。
+
+幂等与身份：`create_token` 是业务重试键，一次创建意图一个；删除后重放旧 Create
+可能创建同名新 UID，前端不得在删除后自动重试旧请求。扩容与删除必须携带用户选中
+对象的 `expected_uid`，UID 变化返回 `VOLUME_IDENTITY_CHANGED`。扩容只允许增加，
+与 `spec` 当前申请值比较，不允许缩容。
+
+模块与套餐：STORAGE 为新增业务模块；`sys_plan_modules` 是白名单，迁移默认不为
+存量套餐添加。上线时由运营显式开启，未开启返回 403。权限目录脚本
+`sql/data/20261023_storage_permissions.sql` 只建权限点与 API 关联，不授权、不启模块。
+
+未提供：上传/删除对象、建桶/删桶、用户 S3 AK/SK、桶公开访问、容量配额、重命名。
+独立盘不计入 `storage.bytes` 配额。

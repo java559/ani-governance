@@ -193,6 +193,7 @@ func NewRestServer(
 	platformNetworkService *service.PlatformNetworkService,
 	acceleratorService *service.AcceleratorService,
 	imageService *service.ImageService,
+	storageService *service.StorageService,
 	modeldevService *service.ModelDevService,
 	inferenceService *service.InferenceService,
 	modelService *service.ModelService,
@@ -276,6 +277,7 @@ func NewRestServer(
 	adminV1.RegisterNetworkServiceHTTPServer(srv, networkService)
 	adminV1.RegisterPlatformNetworkServiceHTTPServer(srv, platformNetworkService)
 	adminV1.RegisterImageServiceHTTPServer(srv, imageService)
+	adminV1.RegisterStorageServiceHTTPServer(srv, storageService)
 	adminV1.RegisterAcceleratorAdminServiceHTTPServer(srv, acceleratorService)
 	adminV1.RegisterAcceleratorServiceHTTPServer(srv, acceleratorService)
 	adminV1.RegisterQuotaSelfServiceHTTPServer(srv, acceleratorService)
