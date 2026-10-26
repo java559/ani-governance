@@ -42,7 +42,7 @@ const (
 	Module_IMAGE              Module = 14 // Registered container images and restricted publishing
 	Module_INFERENCE          Module = 15 // Inference service management
 	Module_INSTANCE           Module = 16 // GPU container instances, separate current action grants
-	Module_STORAGE            Module = 17 // Independent volumes and read-only object browsing
+	Module_VIRTUAL_MACHINE    Module = 17 // Virtual machines; feature entitlement, no resource charge
 )
 
 // Enum value maps for Module.
@@ -64,7 +64,7 @@ var (
 		14: "IMAGE",
 		15: "INFERENCE",
 		16: "INSTANCE",
-		17: "STORAGE",
+		17: "VIRTUAL_MACHINE",
 	}
 	Module_value = map[string]int32{
 		"MODULE_UNSPECIFIED": 0,
@@ -83,7 +83,7 @@ var (
 		"IMAGE":              14,
 		"INFERENCE":          15,
 		"INSTANCE":           16,
-		"STORAGE":            17,
+		"VIRTUAL_MACHINE":    17,
 	}
 )
 
@@ -118,7 +118,7 @@ var File_identity_service_v1_module_proto protoreflect.FileDescriptor
 
 const file_identity_service_v1_module_proto_rawDesc = "" +
 	"\n" +
-	" identity/service/v1/module.proto\x12\x13identity.service.v1\x1a$gnostic/openapi/v3/annotations.proto*\xf1\x01\n" +
+	" identity/service/v1/module.proto\x12\x13identity.service.v1\x1a$gnostic/openapi/v3/annotations.proto*\xf9\x01\n" +
 	"\x06Module\x12\x16\n" +
 	"\x12MODULE_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tDASHBOARD\x10\x01\x12\a\n" +
@@ -139,8 +139,8 @@ const file_identity_service_v1_module_proto_rawDesc = "" +
 	"\vACCELERATOR\x10\r\x12\t\n" +
 	"\x05IMAGE\x10\x0e\x12\r\n" +
 	"\tINFERENCE\x10\x0f\x12\f\n" +
-	"\bINSTANCE\x10\x10\x12\v\n" +
-	"\aSTORAGE\x10\x11B\xcd\x01\n" +
+	"\bINSTANCE\x10\x10\x12\x13\n" +
+	"\x0fVIRTUAL_MACHINE\x10\x11B\xcd\x01\n" +
 	"\x17com.identity.service.v1B\vModuleProtoP\x01Z7go-wind-admin/api/gen/go/identity/service/v1;identitypb\xa2\x02\x03ISX\xaa\x02\x13Identity.Service.V1\xca\x02\x13Identity\\Service\\V1\xe2\x02\x1fIdentity\\Service\\V1\\GPBMetadata\xea\x02\x15Identity::Service::V1b\x06proto3"
 
 var (

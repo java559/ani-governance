@@ -263,3 +263,146 @@ func TestModelClientLiteralServerIdentity(t *testing.T) {
 		})
 	}
 }
+
+func TestModelConfigFiniteBusinessTimeout(t *testing.T) {
+	for _, tc := range []struct {
+		name, raw string
+		want      time.Duration
+		valid     bool
+	}{
+		{"default", "", 30 * time.Second, true},
+		{"one hour object verification", "3600s", time.Hour, true},
+		{"maximum", "24h", 24 * time.Hour, true},
+		{"above maximum", "24h1ns", 0, false},
+		{"zero", "0s", 0, false},
+		{"negative", "-1s", 0, false},
+		{"malformed", "unbounded", 0, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("ANI_MODEL_ADDR", "127.0.0.1:1")
+			t.Setenv("ANI_MODEL_CA", "managed-ca.pem")
+			t.Setenv("ANI_MODEL_CERT", "managed-client.pem")
+			t.Setenv("ANI_MODEL_KEY", "managed-client-key.pem")
+			t.Setenv("ANI_MODEL_SERVER_NAME", "downstream.ani.internal")
+			t.Setenv("ANI_MODEL_TIMEOUT", tc.raw)
+			config, err := ModelConfigFromEnv()
+			if tc.valid {
+				if err != nil || config.Timeout != tc.want {
+					t.Fatalf("finite timeout rejected or changed: timeout=%v error=%v", config.Timeout, err)
+				}
+			} else if err == nil {
+				t.Fatal("invalid or unbounded timeout accepted")
+			}
+		})
+	}
+}
+
+func TestModelClientFiniteBusinessTimeout(t *testing.T) {
+	f := resourceClientTestCertificates(t, nil, []string{"downstream.ani.internal"})
+	for _, timeout := range []time.Duration{30 * time.Second, time.Hour, 24 * time.Hour, 24*time.Hour + time.Nanosecond, 0, -time.Second} {
+		t.Run(timeout.String(), func(t *testing.T) {
+			client, closeClient, err := NewModelClient(ModelClientConfig{Address: "127.0.0.1:1", ServerName: "downstream.ani.internal", CAFile: f.caFile, CertFile: f.certFile, KeyFile: f.keyFile, Timeout: timeout})
+			if closeClient != nil {
+				t.Cleanup(closeClient)
+			}
+			valid := timeout > 0 && timeout <= 24*time.Hour
+			if valid && (err != nil || client == nil) {
+				t.Fatalf("finite business budget rejected: %v", err)
+			}
+			if !valid && (err == nil || client != nil || closeClient != nil) {
+				t.Fatal("invalid budget retained a client or cleanup")
+			}
+		})
+	}
+}
+
+type modelVersionBudgetPeer struct {
+	modelv1.UnimplementedModelServiceServer
+	calls       atomic.Int32
+	started     chan time.Time
+	canceled    chan struct{}
+	unavailable bool
+}
+
+func (p *modelVersionBudgetPeer) CreateModelVersion(ctx context.Context, _ *modelv1.CreateModelVersionRequest) (*modelv1.ModelVersion, error) {
+	p.calls.Add(1)
+	deadline, _ := ctx.Deadline()
+	p.started <- deadline
+	if p.unavailable {
+		return nil, status.Error(codes.Unavailable, "original result unavailable")
+	}
+	<-ctx.Done()
+	close(p.canceled)
+	return nil, status.FromContextError(ctx.Err()).Err()
+}
+
+func TestModelClientLongBudgetPreservesParentAndSingleWrite(t *testing.T) {
+	for _, mode := range []string{"parent deadline", "parent cancel", "unavailable is not retried"} {
+		t.Run(mode, func(t *testing.T) {
+			f := resourceClientTestCertificates(t, nil, []string{"downstream.ani.internal"})
+			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatal(err)
+			}
+			peer := &modelVersionBudgetPeer{started: make(chan time.Time, 2), canceled: make(chan struct{}), unavailable: mode == "unavailable is not retried"}
+			server := grpc.NewServer(grpc.Creds(credentials.NewTLS(f.server)))
+			modelv1.RegisterModelServiceServer(server, peer)
+			serving := make(chan error, 1)
+			go func() { serving <- server.Serve(listener) }()
+			t.Cleanup(func() {
+				server.Stop()
+				select {
+				case err := <-serving:
+					if err != nil && err != grpc.ErrServerStopped {
+						t.Errorf("Model peer shutdown: %v", err)
+					}
+				case <-time.After(time.Second):
+					t.Error("Model peer did not stop")
+				}
+			})
+			client, closeClient, err := NewModelClient(ModelClientConfig{Address: listener.Addr().String(), ServerName: "downstream.ani.internal", CAFile: f.caFile, CertFile: f.certFile, KeyFile: f.keyFile, Timeout: time.Hour})
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(closeClient)
+			parent, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+			parentDeadline, _ := parent.Deadline()
+			result := make(chan error, 1)
+			go func() {
+				_, err := client.CreateModelVersion(parent, "11111111-1111-4111-8111-111111111111", "governance:user:7", &modelv1.CreateModelVersionRequest{ModelId: "model-1", Version: "original"})
+				result <- err
+			}()
+			select {
+			case deadline := <-peer.started:
+				if deadline.IsZero() || deadline.After(parentDeadline.Add(20*time.Millisecond)) {
+					t.Fatal("long client budget extended the parent deadline")
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("original RPC did not start")
+			}
+			want := codes.DeadlineExceeded
+			if mode == "parent cancel" {
+				cancel()
+				want = codes.Canceled
+			} else if peer.unavailable {
+				want = codes.Unavailable
+			}
+			select {
+			case err := <-result:
+				if status.Code(err) != want || peer.calls.Load() != 1 {
+					t.Fatalf("original write retried or parent result changed: code=%v calls=%d", status.Code(err), peer.calls.Load())
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("Model client did not respect the finite parent")
+			}
+			if !peer.unavailable {
+				select {
+				case <-peer.canceled:
+				case <-time.After(time.Second):
+					t.Fatal("Model peer did not observe parent cancellation")
+				}
+			}
+		})
+	}
+}

@@ -241,8 +241,26 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	}
 	instanceScheduling := service.NewInstanceSchedulingPolicy(configRepo, tenantRepo, instanceCluster, os.Getenv("ANI_INSTANCE_CLUSTER_ID"))
 	instanceBinding := service.NewInstanceGpuBinding(instanceClient, data.NewInstanceAuthorizationRepo(entClient), os.Getenv("ANI_INSTANCE_CLUSTER_ID"), instanceScheduling)
+	var vmClient service.VMOwnerClient
+	if instanceOwner != nil {
+		vmClient = instanceOwner.VM()
+	}
+	vmGuestCipher, err := crypto.NewVMGuestCipher(accessKeyCipher)
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	vmBinding := service.NewVMBinding(vmClient, data.NewVMAuthorizationRepo(entClient), os.Getenv("ANI_INSTANCE_CLUSTER_ID"), vmGuestCipher)
+	var dispatchInstance *service.InstanceGpuBinding
+	var dispatchVM service.QuotaDispatchAdapter
 	if instanceClient != nil && data.InstanceModuleRegistered() {
-		if err = quotaRegistry.Register(instanceBinding); err != nil {
+		dispatchInstance = instanceBinding
+	}
+	if vmClient != nil && data.VMModuleRegistered() {
+		dispatchVM = vmBinding
+	}
+	if dispatchInstance != nil || dispatchVM != nil {
+		if err = quotaRegistry.Register(service.NewResourceDispatchAdapter(dispatchInstance, dispatchVM)); err != nil {
 			rollback()
 			return nil, nil, err
 		}
@@ -442,8 +460,22 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		computeCatalog.Catalog = acceleratorClient.Catalog
 	}
 	instanceService := service.NewInstanceService(instanceAcceptance, instanceBinding, tenantRepo, quotaLedgerRepo, instanceSessions, instanceCatalog)
+	vmAcceptance, err := service.NewGpuAcceptance(quotaLedgerRepo, quotaRegistry, tenantRepo, nil, vmBinding, quotaWorker)
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	var vmSessions service.VMSessionClient
+	if instanceSession != nil {
+		vmSessions = instanceSession
+	}
+	vmService := service.NewVMService(vmAcceptance, vmBinding, tenantRepo, quotaLedgerRepo, vmSessions)
 	computeService := service.NewComputePresetService(computeClient, computeCatalog)
-	modeldevService := service.NewModelDevService(modeldevAuthorizationRepo, tenantRepo, modeldevAcceptanceRepo, modeldevClient, computeOwner)
+	modeldevGPU := service.ModelDevGPUAdmission{Eligibility: data.NewGpuUseAuthorizationRepo(entClient)}
+	if acceleratorClient != nil {
+		modeldevGPU.Plans = acceleratorClient.Catalog
+	}
+	modeldevService := service.NewModelDevService(modeldevAuthorizationRepo, tenantRepo, modeldevAcceptanceRepo, modeldevClient, computeOwner, modeldevGPU)
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 
@@ -491,7 +523,9 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		rollback()
 		return nil, nil, err
 	}
-
+	if restServer != nil {
+		server.RegisterVMHTTPServer(restServer, vmService)
+	}
 	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService)
 	if err != nil {
 		rollback()

@@ -14,10 +14,20 @@ type capabilityTestBinding struct {
 	actions []string
 }
 
-func (b capabilityTestBinding) OwnerService() string  { return b.owner }
-func (b capabilityTestBinding) Actions() []string     { return b.actions }
-func (capabilityTestBinding) CreateAction() string    { return "CAPABILITY_TEST_CREATE" }
-func (capabilityTestBinding) DeleteAction() string    { return "CAPABILITY_TEST_DELETE" }
+func (b capabilityTestBinding) OwnerService() string { return b.owner }
+func (b capabilityTestBinding) Actions() []string    { return b.actions }
+func (b capabilityTestBinding) CreateAction() string {
+	if b.owner == "ani-inference" {
+		return InferenceCreateAction
+	}
+	return InstanceCreateAction
+}
+func (b capabilityTestBinding) DeleteAction() string {
+	if b.owner == "ani-inference" {
+		return InferenceDeleteAction
+	}
+	return InstanceDeleteAction
+}
 func (capabilityTestBinding) GpuQuotaCodes() []string { return []string{GpuSharedQuotaCode} }
 func (capabilityTestBinding) AuthorizeGpu(context.Context, *auth.Principal, string, string) error {
 	return nil
@@ -35,10 +45,10 @@ func TestGpuCapabilityRequiresSameOwnerActions(t *testing.T) {
 		owned, foreign []string
 		enabled        bool
 	}{
-		{"complete", []string{"CAPABILITY_TEST_CREATE", "CAPABILITY_TEST_DELETE"}, nil, true},
-		{"missing-delete", []string{"CAPABILITY_TEST_CREATE"}, nil, false},
-		{"foreign-delete", []string{"CAPABILITY_TEST_CREATE"}, []string{"CAPABILITY_TEST_DELETE"}, false},
-		{"foreign-create", []string{"CAPABILITY_TEST_DELETE"}, []string{"CAPABILITY_TEST_CREATE"}, false},
+		{"complete", []string{InstanceCreateAction, InstanceDeleteAction}, nil, true},
+		{"missing-delete", []string{InstanceCreateAction}, nil, false},
+		{"foreign-delete", []string{InstanceCreateAction}, []string{InstanceDeleteAction}, false},
+		{"foreign-create", []string{InstanceDeleteAction}, []string{InstanceCreateAction}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := NewQuotaAdapterRegistry()
@@ -65,10 +75,25 @@ func TestGpuCapabilityRequiresSameOwnerActions(t *testing.T) {
 
 func TestGpuCapabilityEnablesInferenceOwner(t *testing.T) {
 	r := NewQuotaAdapterRegistry()
-	if err := r.Register(capabilityTestBinding{owner: "ani-inference", actions: []string{"CAPABILITY_TEST_CREATE", "CAPABILITY_TEST_DELETE"}}); err != nil {
+	if err := r.Register(capabilityTestBinding{owner: "ani-inference", actions: []string{InferenceCreateAction, InferenceDeleteAction}}); err != nil {
 		t.Fatal(err)
 	}
 	if !r.GPUExecutionEnabled("ani-inference") || !r.EnforcesQuota(GpuSharedQuotaCode) || r.EnforcesQuota(GpuPhysicalQuotaCode) {
 		t.Fatal("inference owner GPU admission was not enabled")
+	}
+}
+
+type unregisteredCapabilityBinding struct{ capabilityTestBinding }
+
+func (unregisteredCapabilityBinding) CreateAction() string { return "CAPABILITY_TEST_CREATE" }
+func (unregisteredCapabilityBinding) DeleteAction() string { return "CAPABILITY_TEST_DELETE" }
+func TestGpuCapabilityRejectsUnregisteredActionPair(t *testing.T) {
+	r := NewQuotaAdapterRegistry()
+	b := unregisteredCapabilityBinding{capabilityTestBinding{owner: InstanceOwner, actions: []string{"CAPABILITY_TEST_CREATE", "CAPABILITY_TEST_DELETE"}}}
+	if err := r.Register(b); err != nil {
+		t.Fatal(err)
+	}
+	if r.GPUExecutionEnabled(InstanceOwner) || r.EnforcesQuota(GpuSharedQuotaCode) {
+		t.Fatal("an unregistered action pair must not activate managed capability")
 	}
 }

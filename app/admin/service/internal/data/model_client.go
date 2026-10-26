@@ -28,6 +28,10 @@ type ModelClientConfig struct {
 	Timeout                                        time.Duration
 }
 
+// Uploaded model finalization may synchronously verify the complete object.
+// Calls still inherit any shorter parent deadline and cancellation.
+const maximumModelClientTimeout = 24 * time.Hour
+
 // ModelConfigFromEnv reads the explicit Gov-to-Model connection settings.
 // Leaving all fields empty disables the BFF and makes startup fail only when a
 // model route is actually used.
@@ -48,7 +52,7 @@ func ModelConfigFromEnv() (ModelClientConfig, error) {
 	}
 	if raw := os.Getenv("ANI_MODEL_TIMEOUT"); raw != "" {
 		parsed, err := time.ParseDuration(raw)
-		if err != nil || parsed <= 0 || parsed > 45*time.Second {
+		if err != nil || parsed <= 0 || parsed > maximumModelClientTimeout {
 			return ModelClientConfig{}, errors.New("invalid model client timeout")
 		}
 		c.Timeout = parsed
@@ -63,7 +67,7 @@ type ModelClient struct {
 }
 
 func NewModelClient(c ModelClientConfig) (*ModelClient, func(), error) {
-	if c.Address == "" || strings.TrimSpace(c.Address) != c.Address || c.ServerName == "" || strings.ContainsAny(c.ServerName, "*:/\\ \t\n") || c.Timeout <= 0 || c.Timeout > 45*time.Second {
+	if c.Address == "" || strings.TrimSpace(c.Address) != c.Address || c.ServerName == "" || strings.ContainsAny(c.ServerName, "*:/\\ \t\n") || c.Timeout <= 0 || c.Timeout > maximumModelClientTimeout {
 		return nil, nil, errors.New("invalid model client configuration")
 	}
 	certificate, err := tls.LoadX509KeyPair(c.CertFile, c.KeyFile)

@@ -108,6 +108,9 @@ func (r *ModelDevAcceptanceRepo) AckDelivery(ctx context.Context, claim *ModelDe
 		if err != nil {
 			return false, err
 		}
+		if err := ackModelDevGPUInTx(ctx, tx, row, accepted, canonical); err != nil {
+			return false, err
+		}
 		n, err := tx.ModelDevAcceptance.Update().Where(fence...).
 			SetDispatchState(modeldevacceptance.DispatchStateACKED).SetOwnerReceiptCanonical(canonical).
 			ClearLeaseOwner().ClearLeaseUntil().ClearNextAttemptAt().ClearLastErrorCode().SetRetryBlocked(false).Save(ctx)

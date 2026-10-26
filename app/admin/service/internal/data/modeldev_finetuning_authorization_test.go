@@ -73,9 +73,15 @@ func TestModelDevFinetuningRequiresCurrentModelAPIRights(t *testing.T) {
 	repo := NewModelDevAuthorizationRepo(client)
 	require.NoError(t, repo.AuthorizeFinetuning(ctx, owner.ID, operator.ID, false))
 	require.NoError(t, repo.AuthorizeFinetuning(ctx, owner.ID, operator.ID, true))
+	require.NoError(t, repo.AuthorizeFinetuningArtifacts(ctx, owner.ID, operator.ID))
 	for i, route := range paths[:5] {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
 			require.NoError(t, client.Client().RolePermission.UpdateOneID(grants[i]).SetStatus(rolepermission.StatusOff).Exec(ctx))
+			if i < 2 {
+				require.ErrorIs(t, repo.AuthorizeFinetuningArtifacts(ctx, owner.ID, operator.ID), ErrModelDevAuthorizationDenied)
+			} else {
+				require.NoError(t, repo.AuthorizeFinetuningArtifacts(ctx, owner.ID, operator.ID), "no target means no version write, target read or model create grant")
+			}
 			for _, newModel := range []bool{false, true} {
 				err := repo.AuthorizeFinetuning(ctx, owner.ID, operator.ID, newModel)
 				if i < 3 || i == 3 && !newModel || i == 4 && newModel {

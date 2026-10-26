@@ -126,7 +126,7 @@ func (x *GpuSummary) GetCoreLimitPercent() uint32 {
 
 type ListPresetsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Required: CONTAINER_INSTANCE, TRAINING (including fine-tuning), or INFERENCE.
+	// Required: CONTAINER_INSTANCE, TRAINING (including fine-tuning), INFERENCE, or VIRTUAL_MACHINE.
 	Usage         string  `protobuf:"bytes,7,opt,name=usage,proto3" json:"usage,omitempty"`
 	Page          *uint32 `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
 	PageSize      *uint32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
@@ -1026,10 +1026,10 @@ const file_compute_service_v1_compute_proto_rawDesc = "" +
 	"\x15memory_mib_per_device\x18\t \x01(\x03R\x15memory_mib_per_device\x12*\n" +
 	"\x10memory_mib_total\x18\n" +
 	" \x01(\x03R\x10memory_mib_total\x12.\n" +
-	"\x12core_limit_percent\x18\b \x01(\rR\x12core_limit_percentJ\x04\b\x06\x10\aJ\x04\b\a\x10\bR\x1cshared_memory_mib_per_deviceR\x17shared_memory_mib_total\"\x8d\x03\n" +
-	"\x12ListPresetsRequest\x12\xaf\x01\n" +
-	"\x05usage\x18\a \x01(\tB\x98\x01\xe0A\x02\xbaG\x91\x01\xc2\x01\x14\x12\x12CONTAINER_INSTANCE\xc2\x01\n" +
-	"\x12\bTRAINING\xc2\x01\v\x12\tINFERENCE\x92\x02\\Required business usage; permissions and plan modules are checked separately for each usage.R\x05usage\x12\x17\n" +
+	"\x12core_limit_percent\x18\b \x01(\rR\x12core_limit_percentJ\x04\b\x06\x10\aJ\x04\b\a\x10\bR\x1cshared_memory_mib_per_deviceR\x17shared_memory_mib_total\"\xa1\x03\n" +
+	"\x12ListPresetsRequest\x12\xc3\x01\n" +
+	"\x05usage\x18\a \x01(\tB\xac\x01\xe0A\x02\xbaG\xa5\x01\xc2\x01\x14\x12\x12CONTAINER_INSTANCE\xc2\x01\n" +
+	"\x12\bTRAINING\xc2\x01\v\x12\tINFERENCE\xc2\x01\x11\x12\x0fVIRTUAL_MACHINE\x92\x02\\Required business usage; permissions and plan modules are checked separately for each usage.R\x05usage\x12\x17\n" +
 	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
 	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +

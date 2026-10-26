@@ -11,6 +11,7 @@ import (
 	"time"
 
 	entsql "entgo.io/ent/dialect/sql"
+	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
@@ -46,6 +47,9 @@ type ModelDevFrozenCandidate struct {
 	Intent      cpup01.Intent
 	Snapshot    cpup01.Snapshot
 	AcceptedAt  time.Time
+	// ResolvedGPU is the original ACC observation used by FinalizeAdmission.
+	// It is accounted in the same transaction as the immutable acceptance.
+	ResolvedGPU *acc.ResolvedGpuRequest
 }
 
 type ModelDevAcceptance struct {
@@ -61,14 +65,15 @@ type ModelDevAcceptance struct {
 	OwnerReceipt      *ModelDevOwnerReceipt
 }
 
-// ModelDevAcceptanceRepo persists CPU admission and its queued delivery intent.
-// It has no dependency on the GPU quota ledger and does not start computation.
+// ModelDevAcceptanceRepo commits admission, its delivery intent and any GPU
+// occupancy together. CPU admissions do not create a quota operation.
 type ModelDevAcceptanceRepo struct {
 	entClient *entCrud.EntClient[*ent.Client]
+	quota     *QuotaLedgerRepo
 }
 
 func NewModelDevAcceptanceRepo(client *entCrud.EntClient[*ent.Client]) *ModelDevAcceptanceRepo {
-	return &ModelDevAcceptanceRepo{entClient: client}
+	return &ModelDevAcceptanceRepo{entClient: client, quota: &QuotaLedgerRepo{entClient: client}}
 }
 
 // FindAccepted retrieves the immutable original before resolving the current
@@ -166,6 +171,13 @@ func (r *ModelDevAcceptanceRepo) AcceptFrozen(ctx context.Context, scope ModelDe
 		_, snapshotCanonical, err := envelope.CanonicalPayloads()
 		if err != nil {
 			return err
+		}
+		if candidate.Snapshot.GPU != nil {
+			if _, err := r.quota.OccupyModelDevGPUInTx(ctx, tx, scope, candidate, candidate.ResolvedGPU); err != nil {
+				return err
+			}
+		} else if candidate.ResolvedGPU != nil {
+			return fmt.Errorf("%w: CPU admission contains GPU accounting", cpup01.ErrInvalidArgument)
 		}
 		// The shared envelope rejects sub-microsecond timestamps instead of
 		// silently changing the immutable accepted_at persisted by PostgreSQL.

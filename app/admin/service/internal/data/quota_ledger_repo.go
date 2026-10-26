@@ -85,7 +85,7 @@ type QuotaDeleteInput struct {
 type QuotaDeleteResult struct {
 	OperationID, CreateOperationID, ChargeID, ResourceID string
 	ChargeIDs                                            []string
-	Replayed, LocalCanceled                              bool
+	Replayed, LocalCanceled, OwnerRejected               bool
 }
 type QuotaChargeRef struct {
 	ChargeID, QuotaCode string
@@ -570,6 +570,9 @@ func (r *QuotaLedgerRepo) CreateDeleteOperation(ctx context.Context, in *QuotaDe
 		if e != nil {
 			return e
 		}
+		if commandcontract.ManagedOwner(in.OwnerService) && !commandcontract.PairedActions(in.OwnerService, original.Action, in.Action) {
+			return quotapb.ErrorInvalidQuotaRequest("%s", "delete action does not match original resource kind")
+		}
 		original, e = tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(tid), quotaoperation.OperationIDEQ(original.OperationID)).ForUpdate().Only(ctx)
 		if e != nil {
 			return e
@@ -608,6 +611,15 @@ func (r *QuotaLedgerRepo) CreateDeleteOperation(ctx context.Context, in *QuotaDe
 			}
 			out = deleteResult(existing, charges, true)
 			return nil
+		}
+		if in.Action == commandcontract.VMDeleteAction {
+			active, e := tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(tid), quotaoperation.OwnerServiceEQ(in.OwnerService), quotaoperation.ActionEQ(commandcontract.VMDeleteAction), quotaoperation.ResourceIDEQ(in.ResourceID), quotaoperation.CreateOperationIDEQ(original.OperationID), quotaoperation.DispatchStateNEQ(quotaoperation.DispatchStateRejected)).Exist(ctx)
+			if e != nil {
+				return e
+			}
+			if active {
+				return kratosErrors.Conflict("VM_OPERATION_CONFLICT", "VM final deletion already accepted")
+			}
 		}
 		local := original.DispatchState == "CANCELED_UNSENT" || (original.DispatchState == "QUEUED" && original.AttemptCount == 0)
 		if local {
@@ -654,7 +666,7 @@ func instanceDeleteSnapshot(original, requested string) (string, error) {
 	return commandcontract.DeleteSnapshot(commandcontract.InstanceOwner, original, requested)
 }
 func deleteResult(op *ent.QuotaOperation, charges []*ent.QuotaCharge, replay bool) *QuotaDeleteResult {
-	result := &QuotaDeleteResult{OperationID: op.OperationID, ResourceID: op.ResourceID, ChargeIDs: chargeIDs(charges), Replayed: replay, LocalCanceled: op.DispatchState == "CANCELED_UNSENT"}
+	result := &QuotaDeleteResult{OperationID: op.OperationID, ResourceID: op.ResourceID, ChargeIDs: chargeIDs(charges), Replayed: replay, LocalCanceled: op.DispatchState == "CANCELED_UNSENT", OwnerRejected: op.DispatchState == quotaoperation.DispatchStateRejected}
 	if op.CreateOperationID != nil {
 		result.CreateOperationID = *op.CreateOperationID
 	}

@@ -12,7 +12,17 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type InstanceClient struct{ client pb.InstanceServiceClient }
+type InstanceClient struct {
+	client pb.InstanceServiceClient
+	vm     *VMClient
+}
+
+func (c *InstanceClient) VM() *VMClient {
+	if c == nil {
+		return nil
+	}
+	return c.vm
+}
 
 func instanceCall[T any](c *InstanceClient, ctx context.Context, tenant, actor string, fn func(context.Context) (T, error)) (T, error) {
 	var zero T

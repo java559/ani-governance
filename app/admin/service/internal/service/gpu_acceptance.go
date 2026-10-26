@@ -45,7 +45,7 @@ type GpuAcceptance struct {
 }
 
 func NewGpuAcceptance(ledger *data.QuotaLedgerRepo, registry *QuotaAdapterRegistry, resolver ResourceTenantResolver, plans GpuPlanResolver, binding GpuBusinessBinding, worker *QuotaDispatchWorker) (*GpuAcceptance, error) {
-	if ledger == nil || registry == nil || resolver == nil || binding == nil || !supportedGpuOwner(binding.OwnerService()) || binding.CreateAction() == "" || binding.DeleteAction() == "" || binding.CreateAction() == binding.DeleteAction() {
+	if ledger == nil || registry == nil || resolver == nil || binding == nil || !supportedGpuOwner(binding.OwnerService()) || !commandcontract.PairedActions(binding.OwnerService(), binding.CreateAction(), binding.DeleteAction()) {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid GPU business assembly")
 	}
 	return &GpuAcceptance{ledger: ledger, registry: registry, resolver: resolver, plans: plans, binding: binding, worker: worker}, nil
@@ -54,16 +54,20 @@ func NewGpuAcceptance(ledger *data.QuotaLedgerRepo, registry *QuotaAdapterRegist
 func (r *QuotaAdapterRegistry) GPUExecutionEnabled(owner string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	b, ok := r.byOwner[owner].(GpuBusinessBinding)
-	if !ok || !supportedGpuOwner(owner) || b.CreateAction() == "" || b.DeleteAction() == "" || b.CreateAction() == b.DeleteAction() {
-		return false
+	for _, b := range adapterGpuBindings(r.byOwner[owner]) {
+		if supportedGpuOwner(owner) && b.CreateAction() != "" && b.DeleteAction() != "" && b.CreateAction() != b.DeleteAction() && r.gpuActionsOwnedBy(b) {
+			return true
+		}
 	}
-	return r.gpuActionsOwnedBy(b)
+	return false
 }
 
 // Caller holds r.mu. Register permits only one binding per owner, so checking
 // the registered action owner's identity proves both actions belong to b.
 func (r *QuotaAdapterRegistry) gpuActionsOwnedBy(b GpuBusinessBinding) bool {
+	if !commandcontract.PairedActions(b.OwnerService(), b.CreateAction(), b.DeleteAction()) {
+		return false
+	}
 	for _, action := range []string{b.CreateAction(), b.DeleteAction()} {
 		a := r.byAction[action]
 		if a == nil || a.OwnerService() != b.OwnerService() {
@@ -82,13 +86,14 @@ func (r *QuotaAdapterRegistry) EnforcesQuota(code string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for owner, adapter := range r.byOwner {
-		b, ok := adapter.(GpuBusinessBinding)
-		if !ok || !supportedGpuOwner(owner) || b.CreateAction() == "" || b.DeleteAction() == "" || b.CreateAction() == b.DeleteAction() || !r.gpuActionsOwnedBy(b) {
-			continue
-		}
-		for _, supported := range b.GpuQuotaCodes() {
-			if supported == code {
-				return true
+		for _, b := range adapterGpuBindings(adapter) {
+			if !supportedGpuOwner(owner) || b.CreateAction() == "" || b.DeleteAction() == "" || b.CreateAction() == b.DeleteAction() || !r.gpuActionsOwnedBy(b) {
+				continue
+			}
+			for _, supported := range b.GpuQuotaCodes() {
+				if supported == code {
+					return true
+				}
 			}
 		}
 	}
@@ -117,7 +122,7 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	if err != nil {
 		return nil, err
 	}
-	usage := compute.Usage(compute.Usage_value[commandcontract.Usage(s.binding.OwnerService())])
+	usage := compute.Usage(compute.Usage_value[commandcontract.Usage(s.binding.OwnerService(), s.binding.CreateAction())])
 	grant, err := authorizeGpuBusiness(ctx, p, usage, s.binding.CreateAction(), func() error {
 		return s.binding.AuthorizeGpu(ctx, p, s.binding.CreateAction(), "")
 	})
@@ -141,11 +146,8 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, err
 	}
-	version := uint32(0)
-	if s.binding.OwnerService() == InstanceOwner {
-		version = data.CurrentInstanceContractVersion
-	}
-	if old != nil && old.OwnerService == InstanceOwner && old.InstanceContractVersion != version {
+	version := commandcontract.InstanceVersion(s.binding.OwnerService(), s.binding.CreateAction())
+	if old != nil && version != 0 && old.InstanceContractVersion != version {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
 	}
 	publicBusiness := proto.Clone(business)
@@ -158,7 +160,7 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 		if old != nil {
 			return nil, quotapb.ErrorIdempotencyConflict("%s", "request differs from original acceptance")
 		}
-		if s.binding.OwnerService() == InstanceOwner {
+		if version != 0 {
 			return nil, instanceBusinessError(err)
 		}
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid business payload")
@@ -190,8 +192,13 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 		return &data.QuotaOccupyResult{OperationID: old.OperationID, ResourceID: old.ResourceID, ChargeIDs: ids, Replayed: true}, nil
 
 	}
-	if binding, ok := s.binding.(*InstanceGpuBinding); ok && !binding.newCreateEnabled {
-		return nil, kratoserrors.ServiceUnavailable("INSTANCE_CREATE_DISABLED", "new instance admission is disabled")
+	if binding, ok := s.binding.(interface{ NewCreateEnabled() bool }); ok && !binding.NewCreateEnabled() {
+		definition, _ := commandcontract.LookupAction(s.binding.OwnerService(), s.binding.CreateAction())
+		reason := "INSTANCE_CREATE_DISABLED"
+		if definition.ResourceKind == commandcontract.ResourceKindVM {
+			reason = "VM_CREATE_DISABLED"
+		}
+		return nil, kratoserrors.ServiceUnavailable(reason, "new resource admission is disabled")
 	}
 	if !s.registry.GPUExecutionEnabled(s.binding.OwnerService()) || s.registry.Lookup(s.binding.OwnerService(), s.binding.CreateAction()) == nil {
 		return nil, quotapb.ErrorQuotaAdapterUnavailable("%s", "GPU business owner is not enabled")
@@ -213,11 +220,11 @@ func (s *GpuAcceptance) HasGpuCreate(ctx context.Context, resource string) (bool
 	if err = s.binding.AuthorizeGpu(ctx, p, s.binding.DeleteAction(), resource); err != nil {
 		return false, err
 	}
-	_, err = s.ledger.GetCreateOperationByResource(ctx, p.TenantID, s.binding.OwnerService(), resource)
+	original, err := s.ledger.GetCreateOperationByResource(ctx, p.TenantID, s.binding.OwnerService(), resource)
 	if ent.IsNotFound(err) {
 		return false, nil
 	}
-	return err == nil, err
+	return err == nil && original != nil && original.Action == s.binding.CreateAction(), err
 }
 
 func (s *GpuAcceptance) AcceptGpuDelete(ctx context.Context, key, resource string) (*commandv1.GpuDeleteAcceptance, error) {
@@ -230,6 +237,9 @@ func (s *GpuAcceptance) AcceptGpuDeleteVersion(ctx context.Context, key, resourc
 	return s.acceptGpuDelete(ctx, key, resource, version)
 }
 func (s *GpuAcceptance) acceptGpuDelete(ctx context.Context, key, resource string, version int64) (*commandv1.GpuDeleteAcceptance, error) {
+	return s.acceptGpuDeleteWithReplay(ctx, key, resource, version, nil)
+}
+func (s *GpuAcceptance) acceptGpuDeleteWithReplay(ctx context.Context, key, resource string, version int64, replayed *bool) (*commandv1.GpuDeleteAcceptance, error) {
 	p, err := gpuPrincipal(ctx)
 	if err != nil {
 		return nil, err
@@ -250,11 +260,17 @@ func (s *GpuAcceptance) acceptGpuDelete(ctx context.Context, key, resource strin
 		}
 		return nil, err
 	}
-	if old.OwnerService == InstanceOwner && old.InstanceContractVersion != data.CurrentInstanceContractVersion {
+	if !commandcontract.PairedActions(old.OwnerService, old.Action, s.binding.DeleteAction()) {
+		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "resource kind differs from delete action")
+	}
+	if version := commandcontract.InstanceVersion(old.OwnerService, old.Action); version != 0 && old.InstanceContractVersion != version {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
 	}
 	if old.OwnerService == commandcontract.InferenceOwner && commandcontract.IsInferenceCanonical([]byte(old.CanonicalRequest)) {
 		return s.acceptInferenceDelete(ctx, p, key, resource, version, old)
+	}
+	if old.Action == commandcontract.VMCreateAction {
+		return s.acceptVMDelete(ctx, p, key, resource, version, old, replayed)
 	}
 	if data.IsInstanceCPUCanonical([]byte(old.CanonicalRequest)) {
 		return s.acceptInstanceCPUDelete(ctx, p, key, resource, version, old)
@@ -387,7 +403,7 @@ func gpuAccountingTerminal(op *ent.QuotaOperation, charges []*ent.QuotaCharge) b
 // createRequestHash preserves the existing instance-version call shape while
 // delegating the owner intent to its compiled binding.
 func (s *GpuAcceptance) createRequestHash(tenant, actorType, actorID string, gpu *acc.GpuRequest, business proto.Message, version uint32) (string, error) {
-	if s.binding.OwnerService() == InstanceOwner {
+	if commandcontract.InstanceVersion(s.binding.OwnerService(), s.binding.CreateAction()) != 0 {
 		binding, ok := s.binding.(*InstanceGpuBinding)
 		if !ok {
 			return "", quotapb.ErrorInvalidQuotaRequest("%s", "instance binding unavailable")

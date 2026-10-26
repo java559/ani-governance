@@ -28,7 +28,7 @@ func authorizeGpuBusiness(ctx context.Context, p *auth.Principal, usage compute.
 	if err := ctx.Err(); err != nil {
 		return gpuBusinessGrant{}, err
 	}
-	if !gpuUsePurpose(usage) || action == "" || authorize == nil || !gpuUsePrincipalMatches(ctx, p) {
+	if (!gpuUsePurpose(usage) && usage.String() != "VIRTUAL_MACHINE") || action == "" || authorize == nil || !gpuUsePrincipalMatches(ctx, p) {
 		return gpuBusinessGrant{}, gpuUseDenied()
 	}
 	if err := authorize(); err != nil {

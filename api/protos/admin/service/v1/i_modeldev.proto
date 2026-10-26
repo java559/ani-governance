@@ -34,6 +34,16 @@ service ModelDevService {
       } } }] }
     };
   }
+  rpc ResumeModelRegistration (modeldev.service.v1.ResumeModelRegistrationRequest) returns (modeldev.service.v1.GetExecutionResponse) {
+    option (google.api.http) = { post: "/api/v1/modeldev/executions/{execution_id}:resume-model-registration" response_body: "execution" };
+    option (gnostic.openapi.v3.operation) = {
+      security: { additional_properties: { name: "BearerAuth" value: {} } }
+      responses: { response_or_reference: [{ name: "200" value: { response: {
+        description: "Current original execution and its persisted model-registration observation"
+        content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/ExecutionView" } } } }] }
+      } } }] }
+    };
+  }
   rpc GetExecution (modeldev.service.v1.GetExecutionRequest) returns (modeldev.service.v1.GetExecutionResponse) {
     option (google.api.http) = { get: "/api/v1/modeldev/executions/{execution_id}" response_body: "execution" };
     option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "200" value: { response: { description: "OK" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/ExecutionView" } } } }] } } } }] } };

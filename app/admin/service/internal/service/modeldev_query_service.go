@@ -128,6 +128,25 @@ func modelDevPublicExecution(execution *modeldevcontractv1.ExecutionView) *model
 	if p := execution.ExplicitFinetuning; p != nil {
 		out.ExplicitParameters = &modeldevv1.ExecutionParameters{LearningRate: p.LearningRate, MaxSteps: p.MaxSteps, PerDeviceTrainBatchSize: p.PerDeviceTrainBatchSize, GradientAccumulationSteps: p.GradientAccumulationSteps, CutoffLen: p.CutoffLen, LoraRank: p.LoraRank, LoraAlpha: p.LoraAlpha, LoraDropout: p.LoraDropout, Seed: p.Seed}
 	}
+	if r := execution.ModelRegistration; r != nil {
+		out.ModelRegistration = &modeldevv1.ModelRegistrationView{State: r.State, RegistrationId: r.RegistrationId, ModelId: r.ModelId, ModelVersionId: r.ModelVersionId, FailureCode: r.FailureCode}
+	}
+	if h := execution.History; h != nil {
+		out.History = &modeldevv1.ExecutionHistoryView{RunId: h.RunId, WorkflowUid: h.WorkflowUid, ObservedAt: h.ObservedAt.AsTime().UTC().Format(time.RFC3339Nano), WorkflowResourceVersion: h.WorkflowResourceVersion, WorkflowNodesSha256: h.WorkflowNodesSha256}
+		if h.RunState != 0 {
+			out.History.RunState = strings.TrimPrefix(h.RunState.String(), "KFP_RUN_TERMINAL_STATE_")
+		}
+		if h.WorkflowPhase != 0 {
+			out.History.WorkflowPhase = strings.TrimPrefix(h.WorkflowPhase.String(), "WORKFLOW_TERMINAL_PHASE_")
+		}
+		if h.RunFinishedAt != nil {
+			out.History.RunFinishedAt = h.RunFinishedAt.AsTime().UTC().Format(time.RFC3339Nano)
+		}
+		if h.WorkflowFinishedAt != nil {
+			out.History.WorkflowFinishedAt = h.WorkflowFinishedAt.AsTime().UTC().Format(time.RFC3339Nano)
+		}
+	}
+
 	return out
 }
 

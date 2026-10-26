@@ -129,6 +129,9 @@ message CreateExecutionResponse {
 
 // No public body or caller-supplied tenant, actor, generation or state.
 message StopExecutionRequest { string execution_id = 1 [json_name = "execution_id"]; }
+// Recovery refers only to the original accepted execution. Identity, target,
+// registration key and timeout are retained by the owner and cannot be supplied.
+message ResumeModelRegistrationRequest { string execution_id = 1 [json_name = "execution_id"]; }
 // Governance acceptance only. ModelDev owns the creation fence and CLOSED.
 message StopExecutionResponse {
   string operation_id = 1 [json_name = "operation_id"];
@@ -184,6 +187,8 @@ message ExecutionView {
   string parameter_contract_version = 24 [json_name = "parameter_contract_version"];
   string resolved_configuration_sha256 = 25 [json_name = "resolved_configuration_sha256"];
   ExecutionTimingView timing = 26;
+  ModelRegistrationView model_registration = 27 [json_name = "model_registration"];
+  ExecutionHistoryView history = 28;
   string input_version_id = 7 [json_name = "input_version_id"];
   string image_version_id = 8 [json_name = "image_version_id"];
   string compute_state = 9 [json_name = "compute_state"];
@@ -208,6 +213,15 @@ message ExecutionTimingView {
   uint64 execution_timeout_seconds = 1 [json_name = "execution_timeout_seconds"];
   uint64 execution_timeout_max_seconds = 2 [json_name = "execution_timeout_max_seconds"];
   uint64 step_timeout_seconds = 3 [json_name = "step_timeout_seconds"];
+}
+// Original persisted registration observation; READY IDs come from the verified
+// provider receipt. No live Model lookup or inferred success fills this view.
+message ModelRegistrationView {
+  string state = 1;
+  string registration_id = 2 [json_name = "registration_id"];
+  string model_id = 3 [json_name = "model_id"];
+  string model_version_id = 4 [json_name = "model_version_id"];
+  string failure_code = 5 [json_name = "failure_code"];
 }
 message ListExecutionArtifactsRequest {
   string execution_id = 1 [json_name = "execution_id"];
@@ -238,4 +252,18 @@ message AuthorizeArtifactDownloadResponse {
   // Short-lived secret: served only with Cache-Control: no-store.
   string download_url = 2 [json_name = "download_url"];
   string expires_at = 3 [json_name = "expires_at"];
+}
+
+// Original persisted controller evidence. Empty terminal fields preserve missing
+// evidence; the BFF never infers terminal success from publication or registration.
+message ExecutionHistoryView {
+  string run_id = 1 [json_name = "run_id"];
+  string workflow_uid = 2 [json_name = "workflow_uid"];
+  string observed_at = 3 [json_name = "observed_at"];
+  string run_state = 4 [json_name = "run_state"];
+  string run_finished_at = 5 [json_name = "run_finished_at"];
+  string workflow_phase = 6 [json_name = "workflow_phase"];
+  string workflow_finished_at = 7 [json_name = "workflow_finished_at"];
+  string workflow_resource_version = 8 [json_name = "workflow_resource_version"];
+  string workflow_nodes_sha256 = 9 [json_name = "workflow_nodes_sha256"];
 }

@@ -212,7 +212,15 @@ func NewRestServer(
 	}
 	streamConfig := proto.Clone(cfg).(*conf.Bootstrap)
 	streamConfig.Server.Rest.Timeout = durationpb.New(0)
-	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter},
+	modeldevConfig, err := data.ModelDevConfigFromEnv()
+	if err != nil || modeldevConfig.Timeout > 24*time.Hour {
+		return nil, fmt.Errorf("invalid bounded modeldev HTTP budget")
+	}
+	modelConfig, err := data.ModelConfigFromEnv()
+	if err != nil || modelConfig.Timeout > 24*time.Hour {
+		return nil, fmt.Errorf("invalid bounded model import HTTP budget")
+	}
+	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter},
 		middlewares...,
 	)
 	if err != nil {

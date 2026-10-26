@@ -115,6 +115,7 @@ func (QuotaOperation) Fields() []ent.Field {
 				"Unknown", "UNKNOWN",
 				"Acked", "ACKED",
 				"CanceledUnsent", "CANCELED_UNSENT",
+				"Rejected", "REJECTED",
 			).
 			Default("QUEUED"),
 

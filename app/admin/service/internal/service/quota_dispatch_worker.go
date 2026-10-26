@@ -9,6 +9,9 @@ import (
 	"github.com/google/uuid"
 	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"go-wind-admin/app/admin/service/internal/data"
@@ -232,6 +235,12 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 		return
 	}
 
+	if op.OwnerService == commandcontract.InstanceOwner && op.Action == commandcontract.VMDeleteAction && vmDeleteVersionRejected(derr) {
+		if _, err := w.ledger.RejectVMDeleteVersion(ctx, op.TenantID, op.OperationID, op.LeaseGeneration); err != nil {
+			w.log.Errorf(context.Background(), "VM delete rejection writeback failed: %v", err)
+		}
+		return
+	}
 	// 分类：永久合同错误暂停重试；传输不确定保持占额并退避重试（同 ID 同报文）。
 	perm := isPermanentContractError(derr)
 	next := time.Now().Add(backoffForAttempt(op.AttemptCount))
@@ -249,6 +258,22 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 	} else {
 		w.log.Warnf(context.Background(), "dispatch unknown for operation=%s: %s; will retry with same id/payload", op.OperationID, derr.Error())
 	}
+}
+
+func vmDeleteVersionRejected(err error) bool {
+	st, ok := status.FromError(err)
+	if !ok || (st.Code() != codes.Aborted && st.Code() != codes.FailedPrecondition) {
+		return false
+	}
+	if st.Message() == "VM_VERSION_CONFLICT" {
+		return true
+	}
+	for _, detail := range st.Details() {
+		if info, ok := detail.(*errdetails.ErrorInfo); ok && info.Reason == "VM_VERSION_CONFLICT" {
+			return true
+		}
+	}
+	return false
 }
 
 func (w *QuotaDispatchWorker) deferInvalidCommand(ctx context.Context, op *data.ClaimedOperation, reason string) {

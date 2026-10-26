@@ -23,5 +23,6 @@ enum Module {
   IMAGE = 14;           // Registered container images and restricted publishing
   INFERENCE = 15;        // Inference service management
   INSTANCE = 16;        // GPU container instances, separate current action grants
-  STORAGE = 17;          // Independent volumes and read-only object browsing
+  VIRTUAL_MACHINE = 17; // Virtual machines; feature entitlement, no resource charge
+  STORAGE = 18;         // Independent volumes and read-only object browsing
 }

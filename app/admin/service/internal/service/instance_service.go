@@ -60,9 +60,10 @@ func NewInstanceGpuBinding(c InstanceOwnerClient, a InstanceActionAuthorizer, cl
 	}
 	return b
 }
-func (*InstanceGpuBinding) OwnerService() string { return InstanceOwner }
-func (*InstanceGpuBinding) CreateAction() string { return InstanceCreateAction }
-func (*InstanceGpuBinding) DeleteAction() string { return InstanceDeleteAction }
+func (*InstanceGpuBinding) OwnerService() string     { return InstanceOwner }
+func (b *InstanceGpuBinding) NewCreateEnabled() bool { return b != nil && b.newCreateEnabled }
+func (*InstanceGpuBinding) CreateAction() string     { return InstanceCreateAction }
+func (*InstanceGpuBinding) DeleteAction() string     { return InstanceDeleteAction }
 func (*InstanceGpuBinding) Actions() []string {
 	return []string{InstanceCreateAction, InstanceDeleteAction}
 }

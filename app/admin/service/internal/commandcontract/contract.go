@@ -45,22 +45,22 @@ type Facts struct {
 	Display         *acc.GpuDisplay
 	QuotaItems      []QuotaItem
 	Inference       *InferenceCanonical
+	VM              *VMCanonical
 }
 
-func Invalid(reason string) error    { return quota.ErrorInvalidQuotaRequest("%s", reason) }
-func ManagedOwner(owner string) bool { return owner == InstanceOwner || owner == InferenceOwner }
-func Usage(owner string) string {
-	switch owner {
-	case InstanceOwner:
-		return "CONTAINER_INSTANCE"
-	case InferenceOwner:
-		return "INFERENCE"
-	}
-	return ""
+func Invalid(reason string) error { return quota.ErrorInvalidQuotaRequest("%s", reason) }
+func ManagedOwner(owner string) bool {
+	return owner == InstanceOwner || owner == InferenceOwner || owner == ModelDevOwner
 }
 func ValidateStoredCommand(in StoredCommand) (*Facts, error) {
-	switch in.Owner {
-	case InstanceOwner:
+	definition, ok := LookupAction(in.Owner, in.Action)
+	if !ok {
+		return nil, Invalid("unsupported managed action")
+	}
+	switch definition.ResourceKind {
+	case ResourceKindVM:
+		return validateVMStored(in)
+	case ResourceKindInstance:
 		if (in.Action != InstanceCreateAction && in.Action != InstanceDeleteAction) || in.InstanceContractVersion != CurrentInstanceContractVersion {
 			return nil, Invalid("unsupported instance contract")
 		}
@@ -97,8 +97,10 @@ func ValidateStoredCommand(in StoredCommand) (*Facts, error) {
 			items = append(items, QuotaItem{q.QuotaCode, q.Units})
 		}
 		return &Facts{BusinessPayload: c.BusinessPayload, GpuRequest: c.GpuRequest, Execution: business.GpuExecution, Display: business.GpuDisplay, QuotaItems: items}, nil
-	case InferenceOwner:
+	case ResourceKindInference:
 		return validateInferenceStored(in)
+	case ResourceKindModelDev:
+		return ValidateModelDevStoredCommand(in)
 	default:
 		return nil, Invalid("unsupported managed owner")
 	}
@@ -128,6 +130,9 @@ func validateVector(items []GpuQuotaItem, charges []ChargeRef, requireIDs bool) 
 // DeleteSnapshot accepts only this owner's added deletion control fields. The
 // original resource/business bytes remain exactly as admitted.
 func DeleteSnapshot(owner, original, requested string) (string, error) {
+	if owner == InstanceOwner && IsVMCanonical([]byte(original)) {
+		return VMDeleteSnapshot(original, requested)
+	}
 	if owner == InferenceOwner {
 		before, e := DecodeInferenceCanonical([]byte(original))
 		if e != nil {

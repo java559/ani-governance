@@ -3,16 +3,19 @@ package service
 import (
 	"context"
 	stderrors "errors"
+	"strconv"
 	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
+	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	modeldevcontractv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
 	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
+	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/grpc/codes"
@@ -40,6 +43,12 @@ type ModelDevService struct {
 	acceptances   *data.ModelDevAcceptanceRepo
 	compute       ModelDevComputeResolver
 	resolver      *data.ModelDevClient
+	gpu           ModelDevGPUAdmission
+}
+
+type ModelDevGPUAdmission struct {
+	Plans       GpuPlanResolver
+	Eligibility GpuUseEligibility
 }
 
 func NewModelDevService(
@@ -48,14 +57,19 @@ func NewModelDevService(
 	acceptances *data.ModelDevAcceptanceRepo,
 	resolver *data.ModelDevClient,
 	computeResolver ModelDevComputeResolver,
+	gpu ...ModelDevGPUAdmission,
 ) *ModelDevService {
-	return &ModelDevService{
+	s := &ModelDevService{
 		authorization: authorization,
 		tenants:       tenants,
 		acceptances:   acceptances,
 		resolver:      resolver,
 		compute:       computeResolver,
 	}
+	if len(gpu) == 1 {
+		s.gpu = gpu[0]
+	}
+	return s
 }
 
 // CreateExecution is called by the strict JSON HTTP adapter. It intentionally
@@ -82,7 +96,10 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	}
 	// A still-valid JWT or historical acceptance never substitutes for the
 	// current database grant, including on original-key replay.
-	if err := s.authorization.AuthorizeCreate(ctx, principal.TenantID, principal.ID); err != nil {
+	grant, err := authorizeGpuBusiness(ctx, principal, compute.Usage_TRAINING, data.ModelDevCreateAction, func() error {
+		return s.authorization.AuthorizeCreate(ctx, principal.TenantID, principal.ID)
+	})
+	if err != nil {
 		return nil, modelDevCreateFailure(err)
 	}
 	tenant, err := s.tenants.ResourceTenantID(ctx, principal.TenantID)
@@ -114,7 +131,13 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 		return nil, modelDevCreateUnavailable()
 	}
 	if normalized.Kind == "FINETUNING" {
-		if err := s.authorization.AuthorizeFinetuning(ctx, principal.TenantID, principal.ID, normalized.NewModelName != nil); err != nil {
+		var err error
+		if normalized.NewModelName == nil && normalized.TargetModelID == nil {
+			err = s.authorization.AuthorizeFinetuningArtifacts(ctx, principal.TenantID, principal.ID)
+		} else {
+			err = s.authorization.AuthorizeFinetuning(ctx, principal.TenantID, principal.ID, normalized.NewModelName != nil)
+		}
+		if err != nil {
 			return nil, modelDevCreateFailure(err)
 		}
 	}
@@ -151,18 +174,33 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 		return nil, modelDevCreateUnavailable()
 	}
 	if selection.Gpu != nil {
-		return nil, errors.ServiceUnavailable("MODELDEV_GPU_NOT_READY", "managed GPU admission is not yet available")
+		if s.gpu.Plans == nil || s.gpu.Eligibility == nil {
+			return nil, errors.ServiceUnavailable("MODELDEV_GPU_NOT_READY", "managed GPU admission is not yet available")
+		}
+		if err := authorizeNewGpuUse(ctx, grant, s.gpu.Eligibility); err != nil {
+			return nil, err
+		}
 	}
 	_, intentHash, err := cpup01.CanonicalIntent(normalized)
 	if err != nil {
 		return nil, modelDevCreateInvalid()
 	}
-	resolved, err := s.resolver.ResolvePrepared(ctx, data.ModelDevResolveScope{ResourceTenantID: tenant, Actor: actor}, normalized,
-		cpup01.IdentityRef{TenantID: tenant, Actor: actor, OperationID: candidate.OperationID, ExecutionID: candidate.ExecutionID, IntentHash: intentHash}, selection, candidate.AcceptedAt)
+	var resolveGPU func(context.Context, *cpup01.GPURequest) (*acc.ResolvedGpuRequest, error)
+	if selection.Gpu != nil {
+		resolveGPU = func(call context.Context, frozen *cpup01.GPURequest) (*acc.ResolvedGpuRequest, error) {
+			return s.gpu.Plans.ResolveGpuRequest(call, &acc.ResolveGpuRequestRequest{
+				Context: &acc.TenantContext{RequestId: uuid.NewString(), TenantId: tenant, Actor: &acc.Actor{Type: string(principal.Type), Id: strconv.FormatUint(uint64(principal.ID), 10)}},
+				Gpu:     &acc.GpuRequest{ClusterId: frozen.ClusterID, PoolId: frozen.PoolID, ProfileId: frozen.ProfileID, ProfileVersion: frozen.ProfileVersion, Replicas: frozen.Replicas, DevicesPerReplica: frozen.DevicesPerReplica, ContainerName: frozen.ContainerName},
+			})
+		}
+	}
+	resolved, err := s.resolver.ResolvePreparedWithGPU(ctx, data.ModelDevResolveScope{ResourceTenantID: tenant, Actor: actor}, normalized,
+		cpup01.IdentityRef{TenantID: tenant, Actor: actor, OperationID: candidate.OperationID, ExecutionID: candidate.ExecutionID, IntentHash: intentHash}, selection, candidate.AcceptedAt, resolveGPU)
 	if err != nil {
 		return nil, modelDevCreateResolutionFailure(err)
 	}
 	candidate.Snapshot = resolved.Snapshot
+	candidate.ResolvedGPU = resolved.ResolvedGPU
 	accepted, replayed, err := s.acceptances.AcceptFrozen(ctx, scope, candidate)
 	if err != nil {
 		return nil, modelDevCreateFailure(err)
@@ -223,6 +261,12 @@ func modelDevCreateFailure(err error) error {
 		return errors.Conflict("IDEMPOTENCY_CONFLICT", "idempotency key has a different intent")
 	case stderrors.Is(err, data.ErrModelDevAdmissionExpired):
 		return errors.New(412, "EXECUTION_DEADLINE_EXCEEDED", "candidate execution deadline has passed")
+	case quotapb.IsQuotaExceeded(err):
+		return quotapb.ErrorQuotaExceeded("%s", "GPU quota exceeded")
+	case quotapb.IsQuotaNotConfigured(err):
+		return quotapb.ErrorQuotaNotConfigured("%s", "GPU quota is not configured")
+	case quotapb.IsQuotaAdmissionDenied(err):
+		return quotapb.ErrorQuotaAdmissionDenied("%s", "GPU quota admission denied")
 
 	default:
 		return modelDevCreateUnavailable()

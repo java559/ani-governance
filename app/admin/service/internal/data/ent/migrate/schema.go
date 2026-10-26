@@ -84,7 +84,7 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true, Comment: "描述"},
 		{Name: "module", Type: field.TypeString, Nullable: true, Comment: "所属业务模块"},
 		{Name: "module_description", Type: field.TypeString, Nullable: true, Comment: "业务模块描述"},
-		{Name: "business_module", Type: field.TypeEnum, Nullable: true, Comment: "所属业务功能模块（用于套餐白名单过滤）", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE", "INSTANCE"}},
+		{Name: "business_module", Type: field.TypeEnum, Nullable: true, Comment: "所属业务功能模块（用于套餐白名单过滤）", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE", "VIRTUAL_MACHINE", "INSTANCE"}},
 		{Name: "operation", Type: field.TypeString, Nullable: true, Comment: "接口操作名"},
 		{Name: "path", Type: field.TypeString, Nullable: true, Comment: "接口路径"},
 		{Name: "method", Type: field.TypeString, Nullable: true, Comment: "请求方法"},
@@ -2039,7 +2039,7 @@ var (
 		{Name: "created_by", Type: field.TypeUint32, Nullable: true, Comment: "创建者ID"},
 		{Name: "updated_by", Type: field.TypeUint32, Nullable: true, Comment: "更新者ID"},
 		{Name: "deleted_by", Type: field.TypeUint32, Nullable: true, Comment: "删除者ID"},
-		{Name: "module", Type: field.TypeEnum, Nullable: true, Comment: "功能模块", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE", "INSTANCE"}},
+		{Name: "module", Type: field.TypeEnum, Nullable: true, Comment: "功能模块", Enums: []string{"DASHBOARD", "OPM", "SYSTEM", "DICT", "TENANT", "PERMISSION", "LOG", "INTERNAL_MESSAGE", "TASK", "MODEL", "NETWORK", "ACCELERATOR", "IMAGE", "INFERENCE", "VIRTUAL_MACHINE", "INSTANCE"}},
 		{Name: "plan_id", Type: field.TypeUint32, Nullable: true},
 	}
 	// SysPlanModulesTable holds the schema information for the "sys_plan_modules" table.
@@ -2424,7 +2424,7 @@ var (
 		{Name: "request_hash", Type: field.TypeString, Comment: "规范请求哈希"},
 		{Name: "instance_contract_version", Type: field.TypeUint32, Default: 1},
 		{Name: "canonical_request", Type: field.TypeString, Size: 2147483647, Comment: "规范请求（schema_version=1）"},
-		{Name: "dispatch_state", Type: field.TypeEnum, Comment: "投递状态", Enums: []string{"QUEUED", "DISPATCHING", "UNKNOWN", "ACKED", "CANCELED_UNSENT"}, Default: "QUEUED"},
+		{Name: "dispatch_state", Type: field.TypeEnum, Comment: "投递状态", Enums: []string{"QUEUED", "DISPATCHING", "UNKNOWN", "ACKED", "CANCELED_UNSENT", "REJECTED"}, Default: "QUEUED"},
 		{Name: "attempt_count", Type: field.TypeInt, Comment: "已尝试发送次数", Default: 0},
 		{Name: "lease_generation", Type: field.TypeInt64, Comment: "领取代次", Default: 0},
 		{Name: "retry_blocked", Type: field.TypeBool, Comment: "永久合同错误暂停自动重试", Default: false},

@@ -64,3 +64,9 @@ func (c *InstanceSessionClient) CreateSession(ctx context.Context, r *pb.CreateS
 	defer cancel()
 	return c.client.CreateSession(call, r)
 }
+
+func (c *InstanceSessionClient) GetSessionReplay(ctx context.Context, r *pb.GetSessionReplayRequest) (*pb.GetSessionReplayResponse, error) {
+	call, cancel := context.WithTimeout(metadata.NewOutgoingContext(ctx, metadata.MD{}), 5*time.Second)
+	defer cancel()
+	return c.client.GetSessionReplay(call, r)
+}

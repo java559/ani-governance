@@ -25,7 +25,7 @@
 | Network 租户面读写对接 | NET-01～NET-25；复用 AK-*、AUTH-* | 当前 25 方法支持 JWT/AK；NET-01～24 的历史三条主链验收和 NET-25 增量结果分批记录 | 当前合同见下方增量与 [AK/SK 合同](contracts/aksk-signature.md)；真实环境按批次验收 |
 | Gov → Resource 调用规范收敛 | S2S-RES-01；复用 NET-01～NET-25 与既有 Image 11 RPC | Network/Image 调用端与 Resource 接收端已修改；隔离真实业务链路通过，生产验收未执行 | 传输与可信上下文即时修复，见下方结果；不调整 HTTP 风格 |
 | 通用配额、GPU 实例与 Inference 接入 | QUOTA-01～03；INF-01/02；QUOTA-LAB-01～04；复用 PLAN-11～14、TENANT-04/08 | 保留 ACC 目录与 Resource 实例执行/释放合同；Inference 管理由 Governance BFF 接入并通过受信 mTLS 客户端投递；旧模拟 owner 入口退役 | 当前合同见 [GPU owner 指南](contracts/gpu-owner-integration-guide.md)；源码、部署与真实 GPU 验收分别记录 |
-| ModelDev CPU 主干受理及受管入口 | MODELDEV-01～MODELDEV-08；服务间调用登记 S2S-MODELDEV-CPUP01-01 | 当前授权、可信解析、持久受理/投递、查询及受管目录/输入/运行操作已装配；启用/回退经真实鉴权/PG CAS 验证；Gov→ModelDev 传输/身份/白名单三个差异收敛已实施并在 ani-system 真实环境完成正/负向验证 | CPU-P01，进行中 |
+| ModelDev 训练、微调及原登记恢复 | MODELDEV-01～MODELDEV-08、MODELDEV-12；服务间调用登记 S2S-MODELDEV-CPUP01-01 | 单一 typed 受理/查询及当前授权恢复已实现；原登记 Resume 的 HTTP/JWT/PG/mTLS 边界 GREEN，真实 provider Resume 与完整微调/GPU分别验收；历史 CPU-P01 结果保留原范围 | v2.1，进行中 |
 | 存储接入（独立盘与对象只读） | STORAGE-01～STORAGE-10 | 已实现并在 kcn 新环境完成正/负向验证；对象列表是本登记中唯一分页合同例外 | 待指定；前端合同与交付文档另行提供 |
 
 ## 风格改动批次
@@ -1302,9 +1302,16 @@ Image AK 使用现有 ANI-HMAC-SHA256 七行形式：算法、HTTP method、规�
 
 环境变量为独立 `ANI_IMAGE_ADDR/CA/CERT/KEY/TIMEOUT`，空ADDR保持未配置；固定 Resource server SAN 仍为 `ani-network-service`。本段是源码合同；Fedora测试结果由 Resource 唯一 Image 账本关联，不代表部署或真Harbor通过。
 
-## 功能组：ModelDev 训练与微调（MODELDEV-01～08）
+## 功能组：ModelDev 训练与微调（MODELDEV-01～08、12）
 
 当前活动合同为单一typed Intent，规则查询与请求见[前端合同](frontend-cpu-training-handoff.md)。同键原意图重放先于新目录解析；当前授权→固定候选 operation/execution/accepted_at→Res TRAINING→ModelDev Prepare/Finalize→Gov单事务持久受理及唯一ModelDevDispatch。网络不进入受理事务，CPU不写GPU原账。
+
+FINETUNING 同时省略 `new_model_name` 与 `target_model_id` 表示仅发布训练产物，
+该省略状态进入原 Intent/Snapshot/hash，不增加跳过字段，也不修改已受理意图。
+仍须真实基模版本 READY、当前版本 GET/download-url GET 及训练创建权限；
+无目标不要求模型 POST、版本 POST 或目标模型 GET。恰一目标沿用原登记和写权限，
+同时提交两个目标仍拒绝。仅产物执行没有可恢复的 Model 登记，Resume 返回 412，
+不会发起 ModelDev 登记 RPC；不将 publication 成功表述为 Model READY。
 
 | 编号 | 入口/职责 | 当前合同 |
 | --- | --- | --- |
@@ -1313,8 +1320,30 @@ Image AK 使用现有 ANI-HMAC-SHA256 七行形式：算法、HTTP method、规�
 | MODELDEV-03～06 | 详情、产物、下载、停止、列表、日志 | 原当前授权/租户隔离和正交状态保留；下载不缓存、不存有效URL |
 | MODELDEV-07 | 实现规则与输入 | `/api/v1/modeldev/implementations`；公共compute复用TRAINING目录；输入独立 `modeldev:manage_input`；不要求Release导入批准 |
 | MODELDEV-08 | inspect/reconcile/cleanup | 当前独立execution权限，精确原UID清理；不自动删PVC/publication/模型 |
+| MODELDEV-12 | 恢复原模型登记 | `POST /api/v1/modeldev/executions/{execution_id}:resume-model-registration`；空 body/no query，仅原 CLOSED FINETUNING，当前 manage+GET+Model 原目标分支权限；同详情返回 `model_registration`/`history` |
 
-源码实现、提供方正式模块、Fedora PG/负载、目标集群身份/执行、BFF页面和GPU原账分别验收。本轮具体来源与实际结果在唯一活动方案 records 中，不沿用旧CPU-P01/Release实验作为本轮完成证据。
+源码实现、提供方正式模块、Fedora PG/负载、目标集群身份/执行、BFF/Model独立使用和GPU原账分别验收。用户本轮明确排除前端源码/部署修改；本文件仍交接BFF合同。本轮具体来源与实际结果在唯一活动方案 records 中，不沿用旧CPU-P01/Release实验作为本轮完成证据。
+
+### MODELDEV-12：原登记恢复（2026-10-22）
+
+请求仅原 execution UUID 路径，拒绝任何 body（包括 `{}`）、query/空 `?`、tenant/actor/key/target/参数覆盖。
+Governance 每次复核当前正常租户用户的 `modeldev:manage_execution`、精确 Resume POST/ALL 和原执行 GET，
+再从本租户原持久受理读取 FINETUNING source。当前 Model API 权限另需版本 GET、download-url GET、版本 POST，
+原目标已有模型另需模型 GET，原意图新模型另需模型 POST；当前操作者不必等于历史受理者，但不能借服务身份补权。
+owner 只恢复原 CLOSED 登记/核实原未知结果，沿原 registration key、目标和对象字节，使用持久有限恢复窗口，
+不新建 execution、不重训/export、不续原 Timing。
+
+HTTP 200 直接返回原执行投影：`model_registration` 仅 PENDING（无 IDs/错误）、
+DEPENDENCY_UNAVAILABLE（无 IDs、仅 `MODEL_DEPENDENCY_UNAVAILABLE`）或 READY（三个规范非零 UUID：
+registration_id/model_id/model_version_id，错误为空）。已有目标 READY 仍须等于原 model_id；响应 operation/execution/spec hash、
+implementation/compute、原 accepted_at/deadline/Timing 均与原 source 绑定。
+`history` 只投影 owner 持久的原 Run/Workflow 身份、观察/结束时间、终态、Workflow RV 与 node SHA；缺事实保留未知。
+原 FAILED Run 与后续 registration READY 可以共存，BFF 不以实时 Model/KFP 查询补造成功或覆盖原历史。
+
+当前 HTTP/PG 边界 GREEN 使用真实正常 JWT、Redis 会话、Casbin/当前授权和受限 PG 原受理，仅 MD 为外部 mTLS peer。
+覆盖逐项撤权、跨租户、原目标/hash 绑定、未知响应一次 RPC 和原行/hash 不变；具名证据为唯一 PLAN 的
+`records/workloads-governance-registration.json`。真实 provider Resume 与完整微调独立使用仍 **NOT_RUN**，
+集成完整门禁/镜像部署按其实际固定树另记，不能由此推导业务通过。
 
 ## 服务间调用登记：Governance → ModelDev（CPU-P01，S2S-MODELDEV-CPUP01-01）
 
@@ -1330,10 +1359,10 @@ Image AK 使用现有 ANI-HMAC-SHA256 七行形式：算法、HTTP method、规�
 | 允许清单 | 接收方按精确 `FullMethod` 白名单，未知方法默认 `PermissionDenied`，流式一律拒绝 | `internal/server/governance_command.go` |
 | 用户委托 | `PrepareAdmission`、`FinalizeAdmission`（两次只读计划）；Query/Management/Operations 各方法（新签发 mTLS 委派，附 `x-ani-authorized-method` 与 `x-ani-data-scope=tenant-all`） | 见下 RPC 列表 |
 | 后台事实 | `AcceptExecution`、`ApplyCloseIntent`（持久投递事实，不伪造用户 Principal） | `data/modeldev_dispatch_client.go`、`data/modeldev_close_client.go` |
-| 允许业务范围 | CPU-P01 受管入口 | 本组 |
+| 允许业务范围 | v2.1 单一 typed 普通训练/微调及原登记恢复；历史 CPU-P01 见下节 | 本组 |
 | 租户来源 | Governance 已持久化的内部租户主键 → 业务租户 UUID 映射（ResourceTenantResolver），不使用公网 tenant | MODELDEV-01 |
 | 幂等键 | `operation_id`（受理/投递）；关闭意图 `intent_generation` | — |
-| 超时 | `ANI_MODELDEV_TIMEOUT`（未设置时默认 3s） | `data/modeldev_client_config.go` |
+| 超时 | `ANI_MODELDEV_TIMEOUT` 默认 3s；精确 owner HTTP 入口接受最大24h有限预算，继承更短父 deadline/取消，单次 RPC、不自动 retry | `data/modeldev_client_config.go`、`server/instance_timeout.go` |
 | 出站元数据 | 每次重建 `x-ani-tenant-id`/`x-ani-actor`/`x-ani-request-id`；查询另加 `x-ani-authorized-method`、`x-ani-data-scope`；不透传 Authorization/AK-SK/身份头 | 各 client |
 | 证书轮换 | 客户端与服务器证书仅在启动期读取一次，续期后必须重启 Pod | — |
 
@@ -1343,7 +1372,19 @@ RPC 方法清单（接收方白名单，精确 FullMethod）：
 - `ModelDevCommandService/AcceptExecution`、`ModelDevCommandService/ApplyCloseIntent`
 - `ModelDevQueryService/GetExecution`、`ListExecutions`、`GetExecutionLogs`、`ListExecutionArtifacts`、`AuthorizeArtifactDownload`、`ListImplementations`、`GetInputVersion`、`ListInputVersions`
 - `ModelDevManagementService/ImportCSV`、`ImportFinetuningDataset`
-- `ModelDevOperationsService/InspectExecution`、`ReconcileExecution`、`PlanExecutionCleanup`、`ApplyExecutionCleanup`
+- `ModelDevOperationsService/InspectExecution`、`ReconcileExecution`、`PlanExecutionCleanup`、`ApplyExecutionCleanup`、`ResumeModelRegistration`（完整方法 `/ani.modeldev.v1.ModelDevOperationsService/ResumeModelRegistration`）
+
+Resume 沿 Query/Operations 的当前方法委派重建 tenant/actor/request ID，不发送新的 registration key；
+未知结果先按原 execution 查询或由 owner 核实原 key。严格 mTLS/CA/精确 SAN 和接收方法白名单保持，
+不能以裸 gRPC、客户端重试或原受理时的权限替代当前授权。
+
+Model 和 ModelDev 的 owner RPC/HTTP 预算均为有限配置，部署目标最大24h；Model 默认30s，ModelDev默认3s，
+更短父 deadline 与取消始终生效。当前 Model client 已在 env/构造处拒绝超过24h，有限预算 RED/GREEN 收据为
+任务目录 `contracts/governance-model-budget/receipt.json`。HTTP 仅以下精确入口取对应 owner 配置：
+ModelDev POST executions、GET artifacts/{UUID}/content、POST executions/{UUID}:resume-model-registration；
+Model POST models/{UUID}/upload-url 和 POST model-versions。Model CreateModelVersion 的原存储导入同步校验全量对象，
+因此其调用预算必须贯穿 HTTP/consumer/provider。其他 API 沿原普通短预算，admin/shutdown 不随之放大；
+不因扩大配置上限宣称真实大对象导入或 Resume 已通过。
 
 配置依赖定性（本轮评审确认）：Governance 对 ModelDev 为**可选依赖**。`ANI_MODELDEV_*` 全空时客户端置 nil，仅禁用远程解析/投递并返回不可用，不启动失败。
 
@@ -1774,3 +1815,26 @@ status=ready 返回 total=1/ready，operations 返回 total=1。含斜杠的公�
 
 未提供：上传/删除对象、建桶/删桶、用户 S3 AK/SK、桶公开访问、容量配额、重命名。
 独立盘不计入 `storage.bytes` 配额。
+## VM-MVP-20261023：虚拟机 BFF
+
+正式请求/响应及路由输入为 `api/protos/vm/service/v1/vm.proto`、`api/protos/admin/service/v1/i_vm.proto`。Module `VIRTUAL_MACHINE=17`；权限登记复用 [能力映射](contracts/permission-code-capability-map.tsv)，显式目录准备使用 `scripts/ops/sql/register-vm-permissions.sql`，不自动授予角色、套餐或资源额度。共享 compute 路径按 `usage=VIRTUAL_MACHINE` 检查 `vm:compute-preset:read` 及该模块资格。
+
+创建/删除沿已有 Gov operation/事务/worker，VM 空 items/charges；其他业务变更由当前授权后直接调用 Resource。所有直达新变更及新 console 会话在精确原 VM CREATE→VM DELETE 持久受理栅栏后拒绝；只读 Resource/SG 原键重放先于该栅栏，异意图冲突保持原错误。操作查询先读 Gov 待投递记录，不将 owner 尚未接收误报为资源从未存在。DELETE expected_version 冻结后不得更新为当前版本；明确 owner 冲突保持原 operation/error，不把受理或永久拒绝写成删除完成。
+
+DNS 创建选项由 `CreateVMData.dns` 接收：省略、空对象或 `{"mode":"PLATFORM_DEFAULT"}` 均选择平台默认；该模式不能附带 nameservers。自定义示例：
+
+```json
+{"data":{"idempotencyKey":"原创建幂等键","dns":{"mode":"CUSTOM","nameservers":["223.5.5.5","2001:4860:4860::8888"]}}}
+```
+
+示例省略其他必填创建字段。`CUSTOM` 接受 1–3 个 IP 字符串（IPv4/IPv6，不接受域名、端口或 zone），按首次出现顺序规范化、去重；有效性校验不承诺该 VPC 实际可达。前端可以通过 `GET /api/v1/virtual-machine-dns-defaults` 展示当前默认值，响应直接为 `{"nameservers":["223.5.5.5"]}`。该只读接口无请求体、分页或查询参数，复用创建页的 `vm:create` 权限并校验 `VIRTUAL_MACHINE` 套餐；不给用户开放平台默认值修改或可信租户、DNS 策略、冻结 spec 字段。
+
+Gov 将用户选择规范化后纳入原 CREATE 意图摘要；默认的有效地址由 Resource 解析并冻结在 CreateSpec，Gov 不在公网上接收有效默认值快照。Gov → Resource 的 `/vm.v1.VMService/GetDNSDefaults` 是用户委托只读调用，沿既有受管 mTLS VM 客户端及 30 秒 deadline，从当前 Principal 和持久租户映射重建 tenant/actor metadata，不透传入站身份。详情/列表返回的 `dns` 为 `{mode,nameservers}`，表示该 VM 冻结的有效值；修改平台默认不改变已有 VM 或原幂等键重放，改变自定义地址或顺序仍是异意图冲突。历史没有 DNS 冻结字段的记录保持原表示，不补写当前默认值。实际 Linux、Windows DHCP/DNS 生效仍须分别验证。
+
+Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_INIT_NOCLOUD` 且 `initializationVerified=true` 时接受可选 `guestInitialization`（用户名、控制台密码、用户提供的 SSH 公钥）；ISO、未知能力及未验证媒体拒绝。公开 DTO 不提供方法切换、密钥对生成或私钥管理。路径专用只读请求的 JSON 名显式保持 Proto 路径变量，避免生成目录 `{vmId}` 与实际鉴权 `{vm_id}` 分裂。
+
+密码不进入普通 Resource CreateSpec、operation 查询或日志。Gov 使用既有强制副本共享的 AccessKeyCipher 主密钥分别派生凭据意图 HMAC 和 AES-GCM 子密钥；普通 intent 仅含 PasswordSet 与 HMAC，私密 payload 在受理事务内加密进原 outbox canonical，AAD 绑定可信 tenant、actor、原 operation/resource 与冻结 spec digest。进程重开从同一持久记录解密后，仅随 mTLS AcceptCreate 的独立 guest_credentials 参数投递；原键重放保留原 ciphertext 与原结果，改变密码仍是异意图冲突。DELETE 不解密密码。现有主密钥是该持久 outbox 的恢复依赖，不能在仍有待投递记录时丢失或任意替换。
+
+实际 CODE/PG/BOUNDARY/LIVE/GUEST/BROWSER 结果统一见 Resource `docs/execution/status.md#vm-mvp` 及 `docs/execution/records/VM-MVP/`；此登记不是执行通过记录。
+
+组合编译核验发现既有 ModelDev 根 SDK `v0.0.0-20261021184454-44188466290f` 仍引入 Model 根 SDK `v0.0.0-20261013092523-8951c85bc150`，其 `api/model/v1` 与本仓已固定的 Model/api 子模块同路径冲突。Gov 显式将该间接父模块固定到与现有 Model/api 同一提交的 `v0.0.0-20261021113912-a21befaaa5e5`；该提交含 `api/go.mod`，父模块不再导出该子树。不更改 Model/ModelDev 源码，不回退既有 API，也不以本地 replace 作为正式依赖修复。

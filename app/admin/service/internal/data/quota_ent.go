@@ -114,7 +114,10 @@ func databaseDue(s *entsql.Selector, field string) *entsql.Predicate {
 	return entsql.Or(entsql.IsNull(s.C(field)), entsql.LTE(s.C(field), entsql.Expr("CURRENT_TIMESTAMP")))
 }
 func quotaDispatchDue(s *entsql.Selector) {
-	s.Where(entsql.And(entsql.EQ(s.C(quotaoperation.FieldRetryBlocked), false), databaseDue(s, quotaoperation.FieldNextAttemptAt),
+	// ModelDev has one delivery queue: its immutable acceptance. Its original
+	// quota operation carries accounting only and must never be dispatched here,
+	// including after an unknown response or an expired lease.
+	s.Where(entsql.And(entsql.NEQ(s.C(quotaoperation.FieldOwnerService), commandcontract.ModelDevOwner), entsql.EQ(s.C(quotaoperation.FieldRetryBlocked), false), databaseDue(s, quotaoperation.FieldNextAttemptAt),
 		entsql.Or(entsql.In(s.C(quotaoperation.FieldDispatchState), "QUEUED", "UNKNOWN"),
 			entsql.And(entsql.EQ(s.C(quotaoperation.FieldDispatchState), "DISPATCHING"), entsql.LTE(s.C(quotaoperation.FieldLeaseUntil), entsql.Expr("CURRENT_TIMESTAMP"))))))
 }
@@ -190,7 +193,7 @@ func scanGpuCreatePage(ctx context.Context, tx *ent.Tx, afterID int64, limit int
 		// audit records from the cutover are never parsed as running payloads.
 		s.Where(entsql.P(func(b *entsql.Builder) {
 			column := s.C(quotaoperation.FieldCanonicalRequest)
-			b.WriteString("(" + column + "::jsonb->>'schema_version' = '3' OR (" + column + "::jsonb->>'schema' = ").Arg(commandcontract.InferenceSchema).WriteString(" AND " + column + "::jsonb->>'resource_class' = ").Arg(strconv.FormatInt(int64(commandcontract.InferenceGPUClass), 10)).WriteString("))")
+			b.WriteString("(" + column + "::jsonb->>'schema_version' = '3' OR (" + column + "::jsonb->>'schema' = ").Arg(commandcontract.InferenceSchema).WriteString(" AND " + column + "::jsonb->>'resource_class' = ").Arg(strconv.FormatInt(int64(commandcontract.InferenceGPUClass), 10)).WriteString(") OR (" + s.C(quotaoperation.FieldOwnerService) + " = ").Arg(commandcontract.ModelDevOwner).WriteString(" AND " + column + "::jsonb->>'schema' = ").Arg(commandcontract.ModelDevGPUSchema).WriteString("))")
 		}))
 
 	}).Order(ent.Asc(quotaoperation.FieldID)).Limit(limit).All(ctx)

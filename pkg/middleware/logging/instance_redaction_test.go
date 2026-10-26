@@ -36,3 +36,14 @@ func TestComputePresetAuditKeepsQueryAndBodyRedacted(t *testing.T) {
 	require.Empty(t, record.GetReferer())
 	require.Equal(t, "/case/5", record.GetRequestUri())
 }
+
+func TestVMConsoleAuditDoesNotRetainTicketOrBody(t *testing.T) {
+	env := newAuditServer(t)
+	env.fire(http.MethodPost, "/case/5?ticket=private-vnc-ticket", map[string]string{"X-Test-Operation": "/admin.service.v1.VMService/CreateVMConsoleSession", "Content-Type": "application/json", "Referer": "https://example.test/?ticket=private-vnc-ticket"}, `{"data":{"idempotencyKey":"private-session-key"}}`, "127.0.0.1:1234")
+	require.Len(t, env.capture.api, 1)
+	record := env.capture.api[0]
+	require.Equal(t, "[redacted]", record.GetRequestBody())
+	require.Empty(t, record.GetReferer())
+	require.Equal(t, "/case/5", record.GetRequestUri())
+	require.Empty(t, record.GetResponse())
+}

@@ -61,6 +61,7 @@ func (Api) Fields() []ent.Field {
 				"Accelerator", "ACCELERATOR",
 				"Image", "IMAGE",
 				"Inference", "INFERENCE",
+				"VirtualMachine", "VIRTUAL_MACHINE",
 				"Instance", "INSTANCE",
 				"Storage", "STORAGE",
 			).

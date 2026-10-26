@@ -7519,13 +7519,14 @@ paths:
                 - name: usage
                   in: query
                   required: true
-                  description: 'Required: CONTAINER_INSTANCE, TRAINING (including fine-tuning), or INFERENCE.'
+                  description: 'Required: CONTAINER_INSTANCE, TRAINING (including fine-tuning), INFERENCE, or VIRTUAL_MACHINE.'
                   schema:
                     type: string
                     enum:
                         - CONTAINER_INSTANCE
                         - TRAINING
                         - INFERENCE
+                        - VIRTUAL_MACHINE
                 - name: page
                   in: query
                   schema:
@@ -8855,6 +8856,26 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GetExecutionLogsResponse'
+    /api/v1/modeldev/executions/{execution_id}:resume-model-registration:
+        post:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_ResumeModelRegistration
+            parameters:
+                - name: execution_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: Current original execution and its persisted model-registration observation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExecutionView'
+            security:
+                - BearerAuth: []
     /api/v1/modeldev/executions/{execution_id}:stop:
         post:
             tags:
@@ -10286,13 +10307,35 @@ paths:
                 - AccessKeyAuth: []
                   SignatureAuth: []
                   SignatureTime: []
-    /api/v1/storage/buckets:
+    /api/v1/virtual-machine-dns-defaults:
         get:
             tags:
-                - StorageService
-            summary: ListBuckets
-            description: Requires storage:bucket:list. Only buckets configured for the authenticated tenant are returned.
-            operationId: StorageService_ListBuckets
+                - VMService
+            operationId: VMService_GetVMDNSDefaults
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DNSDefaults'
+    /api/v1/virtual-machine-media:
+        get:
+            tags:
+                - VMService
+            operationId: VMService_ListVMMedia
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListMediaResponse'
+    /api/v1/virtual-machines:
+        get:
+            tags:
+                - VMService
+            operationId: VMService_ListVMs
             parameters:
                 - name: page
                   in: query
@@ -10310,55 +10353,582 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ListBucketsResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/buckets/{bucket_id}/objects:
+                                $ref: '#/components/schemas/ListVMsResponse'
+        post:
+            tags:
+                - VMService
+            operationId: VMService_CreateVM
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMAcceptance'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMAcceptance'
+    /api/v1/virtual-machines/{data.vm_id}:
+        delete:
+            tags:
+                - VMService
+            operationId: VMService_DeleteVM
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMAcceptance'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMAcceptance'
+    /api/v1/virtual-machines/{data.vm_id}/boot:
+        put:
+            tags:
+                - VMService
+            operationId: VMService_SetVMBootDevice
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/console-sessions:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_CreateVMConsoleSession
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMConsoleSession'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMConsoleSession'
+    /api/v1/virtual-machines/{data.vm_id}/disks:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_CreateVMDisk
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/disks/{data.disk_id}:
+        delete:
+            tags:
+                - VMService
+            operationId: VMService_DeleteVMDisk
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.disk_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/disks/{data.disk_id}/attach:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_AttachVMDisk
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.disk_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/disks/{data.disk_id}/detach:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_DetachVMDisk
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.disk_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/force-stop:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_ForceStopVM
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/media/{data.slot}:
+        put:
+            tags:
+                - VMService
+            operationId: VMService_SetVMMedia
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.slot
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+        delete:
+            tags:
+                - VMService
+            operationId: VMService_EjectVMMedia
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.slot
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/restart:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_RestartVM
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/snapshots:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_CreateVMSnapshot
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}:
+        delete:
+            tags:
+                - VMService
+            operationId: VMService_DeleteVMSnapshot
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.snapshot_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}/restore:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_RestoreVMSnapshot
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.snapshot_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}/restore-preview:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_PreviewVMRestore
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: data.snapshot_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMRestorePreview'
+    /api/v1/virtual-machines/{data.vm_id}/start:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_StartVM
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{data.vm_id}/stop:
+        post:
+            tags:
+                - VMService
+            operationId: VMService_StopVM
+            parameters:
+                - name: data.vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeVMRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{vm_id}:
         get:
             tags:
-                - StorageService
-            summary: ListObjects
-            description: 'Requires storage:object:list. Domain cursor exception: limit 1..100 (omitted means 100), opaque cursor bound to bucket and prefix; page/pageSize/offset/token are rejected with 400; no total.'
-            operationId: StorageService_ListObjects
+                - VMService
+            operationId: VMService_GetVM
             parameters:
-                - name: bucket_id
+                - name: vm_id
                   in: path
                   required: true
-                  schema:
-                    type: string
-                - name: prefix
-                  in: query
-                  schema:
-                    type: string
-                - name: limit
-                  in: query
-                  schema:
-                    type: integer
-                    format: uint32
-                - name: cursor
-                  in: query
-                  schema:
-                    type: string
-                - name: page
-                  in: query
-                  description: 对象列表不接受页码/偏移/旧游标参数；显式声明只为识别后返回 400。
-                  schema:
-                    type: integer
-                    format: uint32
-                - name: pageSize
-                  in: query
-                  schema:
-                    type: integer
-                    format: uint32
-                - name: offset
-                  in: query
-                  schema:
-                    type: string
-                - name: token
-                  in: query
                   schema:
                     type: string
             responses:
@@ -10367,229 +10937,55 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ListObjectsResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/buckets/{data.bucket_id}/objects:download-url:
-        post:
-            tags:
-                - StorageService
-            summary: GetDownloadURL
-            description: Requires storage:object:download. Returns a short-lived GET URL for the fixed object; the URL may be reused until expiry.
-            operationId: StorageService_GetDownloadURL
-            parameters:
-                - name: data.bucket_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/GetDownloadURLRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/GetDownloadURLResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/buckets/{data.bucket_id}/objects:head:
-        post:
-            tags:
-                - StorageService
-            summary: HeadObject
-            description: Requires storage:object:get. key is passed verbatim; no client-side escaping is required.
-            operationId: StorageService_HeadObject
-            parameters:
-                - name: data.bucket_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/HeadObjectRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/HeadObjectResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/classes:
+                                $ref: '#/components/schemas/VirtualMachine'
+    /api/v1/virtual-machines/{vm_id}/disks:
         get:
             tags:
-                - StorageService
-            summary: ListStorageClasses
-            description: Requires active tenant, STORAGE module and storage:volume:create. page/pageSize with items/total. See docs/contracts/storage-api.md.
-            operationId: StorageService_ListStorageClasses
+                - VMService
+            operationId: VMService_ListVMDisks
             parameters:
-                - name: page
-                  in: query
+                - name: vm_id
+                  in: path
+                  required: true
                   schema:
-                    type: integer
-                    format: uint32
-                - name: pageSize
-                  in: query
-                  schema:
-                    type: integer
-                    format: uint32
+                    type: string
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ListStorageClassesResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/volumes:
+                                $ref: '#/components/schemas/ListDisksResponse'
+    /api/v1/virtual-machines/{vm_id}/operations/{operation_id}:
         get:
             tags:
-                - StorageService
-            summary: ListVolumes
-            description: Requires storage:volume:list. page/pageSize with items/total.
-            operationId: StorageService_ListVolumes
+                - VMService
+            operationId: VMService_GetVMOperation
             parameters:
-                - name: page
-                  in: query
-                  schema:
-                    type: integer
-                    format: uint32
-                - name: pageSize
-                  in: query
-                  schema:
-                    type: integer
-                    format: uint32
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ListVolumesResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-        post:
-            tags:
-                - StorageService
-            summary: CreateVolume
-            description: Requires storage:volume:create. create_token is the idempotency key for one create intent. See docs/contracts/storage-api.md.
-            operationId: StorageService_CreateVolume
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/CreateVolumeRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/CreateVolumeResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/volumes/{data.pvc_name}:delete:
-        post:
-            tags:
-                - StorageService
-            summary: DeleteVolume
-            description: Requires storage:volume:delete. expected_uid binds the delete to the selected object; known consumers block deletion.
-            operationId: StorageService_DeleteVolume
-            parameters:
-                - name: data.pvc_name
+                - name: vm_id
                   in: path
                   required: true
                   schema:
                     type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/DeleteVolumeRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/DeleteVolumeResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/volumes/{data.pvc_name}:update:
-        post:
-            tags:
-                - StorageService
-            summary: UpdateVolume
-            description: Requires storage:volume:update. Only capacity_gb is supported. expected_uid is mandatory.
-            operationId: StorageService_UpdateVolume
-            parameters:
-                - name: data.pvc_name
+                - name: operation_id
                   in: path
                   required: true
                   schema:
                     type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/UpdateVolumeRequest'
-                required: true
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UpdateVolumeResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
-    /api/v1/storage/volumes/{pvc_name}:
+                                $ref: '#/components/schemas/VMOperation'
+    /api/v1/virtual-machines/{vm_id}/snapshots:
         get:
             tags:
-                - StorageService
-            summary: GetVolume
-            description: Requires storage:volume:get. Cross-tenant and unmanaged volumes are hidden.
-            operationId: StorageService_GetVolume
+                - VMService
+            operationId: VMService_ListVMSnapshots
             parameters:
-                - name: pvc_name
+                - name: vm_id
                   in: path
                   required: true
                   schema:
@@ -10600,12 +10996,30 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/GetVolumeResponse'
-            security:
-                - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
+                                $ref: '#/components/schemas/ListSnapshotsResponse'
+    /api/v1/virtual-machines/{vm_id}/snapshots/{snapshot_id}:
+        get:
+            tags:
+                - VMService
+            operationId: VMService_GetVMSnapshot
+            parameters:
+                - name: vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: snapshot_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMSnapshot'
     /api/v1/instances/{instance_id}/logs:
         get:
             tags:
@@ -11533,7 +11947,7 @@ components:
                         - IMAGE
                         - INFERENCE
                         - INSTANCE
-                        - STORAGE
+                        - VIRTUAL_MACHINE
                     type: string
                     description: 所属业务功能模块（用于套餐白名单过滤）
                     format: enum
@@ -11754,13 +12168,6 @@ components:
             properties:
                 snat:
                     $ref: '#/components/schemas/VPCSnat'
-        Bucket:
-            type: object
-            properties:
-                id:
-                    type: string
-                name:
-                    type: string
         Callback:
             type: object
             properties:
@@ -11823,6 +12230,40 @@ components:
                     type: string
                     description: 新密码
             description: 修改用户密码（需要验证旧密码） - 请求
+        ChangeVMData:
+            type: object
+            properties:
+                vmId:
+                    type: string
+                idempotencyKey:
+                    type: string
+                expectedVersion:
+                    type: string
+                destructiveConfirmation:
+                    type: boolean
+                diskId:
+                    type: string
+                guestPreparedConfirmation:
+                    type: boolean
+                name:
+                    type: string
+                sizeGb:
+                    type: string
+                slot:
+                    type: string
+                mediaKey:
+                    type: string
+                bootDevice:
+                    type: string
+                snapshotId:
+                    type: string
+                previewDigest:
+                    type: string
+        ChangeVMRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ChangeVMData'
         CleanupTenantDataRequest:
             type: object
             properties:
@@ -12162,6 +12603,15 @@ components:
             description: |-
                 Returned only after Governance has durably accepted the frozen intent.
                  Acceptance does not establish a KFP Run or successful training.
+        CreateGuestInitialization:
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+                sshPublicKey:
+                    type: string
         CreateInferenceRequest:
             example: {"idempotency_key": "req-001", "name": "qwen-inference", "model_version_id": "version-1", "served_model_name": "qwen2.5-1.5b-instruct", "engine_image": "registry.example/vllm:latest", "engine_type": "vllm", "command": "exec vllm serve /models --served-model-name qwen2.5-1.5b-instruct --max-model-len 4096", "cpu": "8", "memory": "32Gi", "replicas": 1, "preset_id": "40000000-0000-4000-8000-000000000001"}
             type: object
@@ -12565,6 +13015,38 @@ components:
                     type: string
                     format: enum
             description: 创建用户 - 请求
+        CreateVMData:
+            type: object
+            properties:
+                idempotencyKey:
+                    type: string
+                name:
+                    type: string
+                presetId:
+                    type: string
+                sourceKind:
+                    type: string
+                mediaKey:
+                    type: string
+                systemDiskSizeGb:
+                    type: string
+                dataDisks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/InitialDataDisk'
+                network:
+                    $ref: '#/components/schemas/VMNetworkSelection'
+                startAfterCreate:
+                    type: boolean
+                guestInitialization:
+                    $ref: '#/components/schemas/CreateGuestInitialization'
+                dns:
+                    $ref: '#/components/schemas/VMDNSSelection'
+        CreateVMRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateVMData'
         CreateVPCRequest:
             type: object
             properties:
@@ -12629,33 +13111,6 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
-        CreateVolumeData:
-            type: object
-            properties:
-                create_token:
-                    type: string
-                display_name:
-                    type: string
-                capacity_gb:
-                    type: string
-                storage_class_name:
-                    type: string
-                volume_mode:
-                    type: string
-                access_modes:
-                    type: array
-                    items:
-                        type: string
-        CreateVolumeRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/CreateVolumeData'
-        CreateVolumeResponse:
-            type: object
-            properties:
-                volume:
-                    $ref: '#/components/schemas/Volume'
         CsrfRequest:
             type: object
             properties:
@@ -12682,6 +13137,13 @@ components:
                     type: string
                     description: 绑定当前逻辑会话的 CSRF 证明，写请求时放入 X-CSRF-Token 头；不含身份授权
             description: 获取 CSRF 证明 - 回应
+        DNSDefaults:
+            type: object
+            properties:
+                nameservers:
+                    type: array
+                    items:
+                        type: string
         DashboardOverviewResponse:
             type: object
             properties:
@@ -13009,26 +13471,6 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
-        DeleteVolumeData:
-            type: object
-            properties:
-                pvc_name:
-                    type: string
-                expected_uid:
-                    type: string
-        DeleteVolumeRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/DeleteVolumeData'
-        DeleteVolumeResponse:
-            type: object
-            properties:
-                state:
-                    type: string
-                    description: SUBMITTED、TERMINATING 或 GONE。
-                volume:
-                    $ref: '#/components/schemas/Volume'
         DeviceInfo:
             type: object
             properties:
@@ -13578,6 +14020,30 @@ components:
                     type: string
                 device_mode:
                     type: string
+        ExecutionHistoryView:
+            type: object
+            properties:
+                run_id:
+                    type: string
+                workflow_uid:
+                    type: string
+                observed_at:
+                    type: string
+                run_state:
+                    type: string
+                run_finished_at:
+                    type: string
+                workflow_phase:
+                    type: string
+                workflow_finished_at:
+                    type: string
+                workflow_resource_version:
+                    type: string
+                workflow_nodes_sha256:
+                    type: string
+            description: |-
+                Original persisted controller evidence. Empty terminal fields preserve missing
+                 evidence; the BFF never infers terminal success from publication or registration.
         ExecutionLogLine:
             type: object
             properties:
@@ -13660,6 +14126,10 @@ components:
                     type: string
                 timing:
                     $ref: '#/components/schemas/ExecutionTimingView'
+                model_registration:
+                    $ref: '#/components/schemas/ModelRegistrationView'
+                history:
+                    $ref: '#/components/schemas/ExecutionHistoryView'
                 input_version_id:
                     type: string
                 image_version_id:
@@ -13779,26 +14249,6 @@ components:
             properties:
                 egress:
                     $ref: '#/components/schemas/DefaultVPCEgress'
-        GetDownloadURLData:
-            type: object
-            properties:
-                bucket_id:
-                    type: string
-                key:
-                    type: string
-        GetDownloadURLRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/GetDownloadURLData'
-        GetDownloadURLResponse:
-            type: object
-            properties:
-                url:
-                    type: string
-                expires_at:
-                    type: string
-                    format: date-time
         GetEIPResponse:
             type: object
             properties:
@@ -14031,11 +14481,6 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformResource'
-        GetVolumeResponse:
-            type: object
-            properties:
-                volume:
-                    $ref: '#/components/schemas/VolumeDetail'
         GoRuntimeInfo:
             type: object
             properties:
@@ -14124,23 +14569,6 @@ components:
                 core_limit_percent:
                     type: integer
                     format: uint32
-        HeadObjectData:
-            type: object
-            properties:
-                bucket_id:
-                    type: string
-                key:
-                    type: string
-        HeadObjectRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/HeadObjectData'
-        HeadObjectResponse:
-            type: object
-            properties:
-                object:
-                    $ref: '#/components/schemas/ObjectMeta'
         Header:
             type: object
             properties:
@@ -14570,6 +14998,15 @@ components:
                     type: array
                     items:
                         type: string
+        InitialDataDisk:
+            type: object
+            properties:
+                clientDiskKey:
+                    type: string
+                name:
+                    type: string
+                sizeGb:
+                    type: string
         InputVersionView:
             type: object
             properties:
@@ -15211,15 +15648,6 @@ components:
                 total:
                     type: string
             description: 查询列表 - 回应
-        ListBucketsResponse:
-            type: object
-            properties:
-                items:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Bucket'
-                total:
-                    type: string
         ListConfigResponse:
             type: object
             properties:
@@ -15267,6 +15695,13 @@ components:
                 total:
                     type: string
             description: 查询字典类型列表 - 回应
+        ListDisksResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMDisk'
         ListEIPsResponse:
             type: object
             properties:
@@ -15442,6 +15877,13 @@ components:
                 total:
                     type: string
             description: 查询登录策略列表 - 回应
+        ListMediaResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMMedia'
         ListMenuResponse:
             type: object
             properties:
@@ -15509,21 +15951,6 @@ components:
                 total:
                     type: string
             description: 查询通知渠道列表 - 回应
-        ListObjectsResponse:
-            type: object
-            properties:
-                items:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/ObjectItem'
-                common_prefixes:
-                    type: array
-                    items:
-                        type: string
-                next_cursor:
-                    type: string
-                is_truncated:
-                    type: boolean
         ListOnlineSessionResponse:
             type: object
             properties:
@@ -15710,15 +16137,13 @@ components:
                         $ref: '#/components/schemas/RuntimeEvent'
                 total:
                     type: string
-        ListStorageClassesResponse:
+        ListSnapshotsResponse:
             type: object
             properties:
                 items:
                     type: array
                     items:
-                        $ref: '#/components/schemas/StorageClass'
-                total:
-                    type: string
+                        $ref: '#/components/schemas/VMSnapshot'
         ListSubnetsResponse:
             type: object
             properties:
@@ -15791,6 +16216,15 @@ components:
                     type: string
                     description: 下一页游标：有下一页时返回，末页为空。客户端原样回传，不得解析或修改。
             description: 获取用户列表 - 答复
+        ListVMsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VirtualMachine'
+                total:
+                    type: string
         ListVPCCIDRPresetsResponse:
             type: object
             properties:
@@ -15825,15 +16259,6 @@ components:
                         $ref: '#/components/schemas/PlatformResource'
                 next_cursor:
                     type: string
-                total:
-                    type: string
-        ListVolumesResponse:
-            type: object
-            properties:
-                items:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/Volume'
                 total:
                     type: string
         LoadBalancer:
@@ -16475,7 +16900,7 @@ components:
                         - IMAGE
                         - INFERENCE
                         - INSTANCE
-                        - STORAGE
+                        - VIRTUAL_MACHINE
                     type: string
                     description: 所属业务功能模块
                     format: enum
@@ -16691,6 +17116,22 @@ components:
                     format: date-time
                 task_id:
                     type: string
+        ModelRegistrationView:
+            type: object
+            properties:
+                state:
+                    type: string
+                registration_id:
+                    type: string
+                model_id:
+                    type: string
+                model_version_id:
+                    type: string
+                failure_code:
+                    type: string
+            description: |-
+                Original persisted registration observation; READY IDs come from the verified
+                 provider receipt. No live Model lookup or inferred success fills this view.
         ModelVersion:
             type: object
             properties:
@@ -17011,32 +17452,6 @@ components:
                     type: string
                     format: date-time
             description: 通知渠道
-        ObjectItem:
-            type: object
-            properties:
-                key:
-                    type: string
-                size:
-                    type: string
-                etag:
-                    type: string
-                last_modified:
-                    type: string
-                    format: date-time
-        ObjectMeta:
-            type: object
-            properties:
-                key:
-                    type: string
-                size:
-                    type: string
-                etag:
-                    type: string
-                content_type:
-                    type: string
-                last_modified:
-                    type: string
-                    format: date-time
         OnlineSession:
             type: object
             properties:
@@ -17793,7 +18208,7 @@ components:
                         - IMAGE
                         - INFERENCE
                         - INSTANCE
-                        - STORAGE
+                        - VIRTUAL_MACHINE
                     type: string
                     description: 功能模块
                     format: enum
@@ -19466,21 +19881,6 @@ components:
                 replayed:
                     type: boolean
             description: Governance acceptance only. ModelDev owns the creation fence and CLOSED.
-        StorageClass:
-            type: object
-            properties:
-                name:
-                    type: string
-                provisioner:
-                    type: string
-                is_default:
-                    type: boolean
-                allow_volume_expansion:
-                    type: boolean
-                volume_binding_mode:
-                    type: string
-                reclaim_policy:
-                    type: string
         StringArray:
             type: object
             properties:
@@ -20358,29 +20758,6 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新用户 - 请求
-        UpdateVolumeData:
-            type: object
-            properties:
-                pvc_name:
-                    type: string
-                expected_uid:
-                    type: string
-                capacity_gb:
-                    type: string
-        UpdateVolumeRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/UpdateVolumeData'
-                update_mask:
-                    type: string
-                    description: 只允许 capacity_gb。
-                    format: field-mask
-        UpdateVolumeResponse:
-            type: object
-            properties:
-                volume:
-                    $ref: '#/components/schemas/Volume'
         User:
             type: object
             properties:
@@ -20545,6 +20922,208 @@ components:
                 exist:
                     type: boolean
             description: 用户是否存在 - 答复
+        VMAcceptance:
+            type: object
+            properties:
+                operationId:
+                    type: string
+                resourceId:
+                    type: string
+                replayed:
+                    type: boolean
+                result:
+                    type: string
+        VMConsoleSession:
+            type: object
+            properties:
+                sessionId:
+                    type: string
+                wsUrl:
+                    type: string
+                expiresAt:
+                    type: string
+        VMCurrentAddress:
+            type: object
+            properties:
+                nicName:
+                    type: string
+                address:
+                    type: string
+                observedAt:
+                    type: string
+        VMDNSSelection:
+            type: object
+            properties:
+                mode:
+                    type: string
+                nameservers:
+                    type: array
+                    items:
+                        type: string
+            description: The platform resolves default addresses; callers may only supply a selection.
+        VMDisk:
+            type: object
+            properties:
+                diskId:
+                    type: string
+                role:
+                    type: string
+                name:
+                    type: string
+                sizeGb:
+                    type: string
+                requestedBytes:
+                    type: string
+                observedCapacityBytes:
+                    type: string
+                volumeName:
+                    type: string
+                serial:
+                    type: string
+                attached:
+                    type: boolean
+                preparationState:
+                    type: string
+                reason:
+                    type: string
+        VMFrozenDNS:
+            type: object
+            properties:
+                mode:
+                    type: string
+                nameservers:
+                    type: array
+                    items:
+                        type: string
+        VMMedia:
+            type: object
+            properties:
+                mediaKey:
+                    type: string
+                name:
+                    type: string
+                kind:
+                    type: string
+                osFamily:
+                    type: string
+                osVersion:
+                    type: string
+                architecture:
+                    type: string
+                firmware:
+                    type: string
+                rootBus:
+                    type: string
+                dataBus:
+                    type: string
+                nicModel:
+                    type: string
+                persistentTpm:
+                    type: boolean
+                persistentUefi:
+                    type: boolean
+                driverMediaKey:
+                    type: string
+                virtualCapacityBytes:
+                    type: string
+                initializationCapability:
+                    type: string
+                initializationVerified:
+                    type: boolean
+        VMMediaState:
+            type: object
+            properties:
+                slot:
+                    type: string
+                desiredMedia:
+                    type: string
+                observedMedia:
+                    type: string
+                effectiveNow:
+                    type: boolean
+                pendingRestart:
+                    type: boolean
+        VMNetworkSelection:
+            type: object
+            properties:
+                vpcId:
+                    type: string
+                subnetId:
+                    type: string
+        VMOperation:
+            type: object
+            properties:
+                id:
+                    type: string
+                vmId:
+                    type: string
+                action:
+                    type: string
+                intentVersion:
+                    type: string
+                state:
+                    type: string
+                reason:
+                    type: string
+                observedAt:
+                    type: string
+        VMRestoreDiskImpact:
+            type: object
+            properties:
+                diskId:
+                    type: string
+                action:
+                    type: string
+                reason:
+                    type: string
+        VMRestorePreview:
+            type: object
+            properties:
+                version:
+                    type: string
+                snapshotId:
+                    type: string
+                snapshotUid:
+                    type: string
+                disks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMRestoreDiskImpact'
+                previewDigest:
+                    type: string
+        VMSnapshot:
+            type: object
+            properties:
+                snapshotId:
+                    type: string
+                sourceVmId:
+                    type: string
+                sourceVmUid:
+                    type: string
+                ready:
+                    type: boolean
+                completeness:
+                    type: string
+                included:
+                    type: array
+                    items:
+                        type: string
+                excluded:
+                    type: array
+                    items:
+                        type: string
+                indications:
+                    type: array
+                    items:
+                        type: string
+                disks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMDisk'
+                observedAt:
+                    type: string
+                reason:
+                    type: string
         VPC:
             type: object
             properties:
@@ -20655,6 +21234,59 @@ components:
                     $ref: '#/components/schemas/WebAuthnAssertion'
                 backupCode:
                     type: string
+        VirtualMachine:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                version:
+                    type: string
+                osFamily:
+                    type: string
+                osVersion:
+                    type: string
+                desiredState:
+                    type: string
+                observedState:
+                    type: string
+                reason:
+                    type: string
+                observedAt:
+                    type: string
+                addresses:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMCurrentAddress'
+                lastOperationId:
+                    type: string
+                closing:
+                    type: boolean
+                disks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMDisk'
+                media:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMMediaState'
+                bootDevice:
+                    type: string
+                presetId:
+                    type: string
+                cpuMillis:
+                    type: string
+                memoryMib:
+                    type: string
+                systemDiskSizeGb:
+                    type: string
+                sourceKind:
+                    type: string
+                mediaKey:
+                    type: string
+                dns:
+                    $ref: '#/components/schemas/VMFrozenDNS'
         VirtualSwitch:
             type: object
             properties:
@@ -20727,94 +21359,6 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/VirtualSwitchNode'
-        Volume:
-            type: object
-            properties:
-                pvc_name:
-                    type: string
-                uid:
-                    type: string
-                display_name:
-                    type: string
-                storage_class_name:
-                    type: string
-                volume_mode:
-                    type: string
-                access_modes:
-                    type: array
-                    items:
-                        type: string
-                requested_capacity_gb:
-                    type: string
-                observed_capacity_bytes:
-                    type: string
-                observed_capacity_known:
-                    type: boolean
-                observed_capacity_quantity:
-                    type: string
-                phase:
-                    type: string
-                deleting:
-                    type: boolean
-                reclaim_policy:
-                    type: string
-                reclaim_policy_known:
-                    type: boolean
-        VolumeCondition:
-            type: object
-            properties:
-                type:
-                    type: string
-                status:
-                    type: string
-                reason:
-                    type: string
-                message:
-                    type: string
-                last_transition_time:
-                    type: string
-                    format: date-time
-        VolumeConsumer:
-            type: object
-            properties:
-                kind:
-                    type: string
-                namespace:
-                    type: string
-                name:
-                    type: string
-        VolumeDetail:
-            type: object
-            properties:
-                volume:
-                    $ref: '#/components/schemas/Volume'
-                conditions:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/VolumeCondition'
-                events:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/VolumeEvent'
-                consumers:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/VolumeConsumer'
-        VolumeEvent:
-            type: object
-            properties:
-                type:
-                    type: string
-                reason:
-                    type: string
-                message:
-                    type: string
-                count:
-                    type: integer
-                    format: int32
-                last_timestamp:
-                    type: string
-                    format: date-time
         VolumeMount:
             type: object
             properties:
@@ -21011,7 +21555,6 @@ tags:
       description: 角色管理服务
     - name: ServerMonitorService
       description: 服务监控管理服务（只读）
-    - name: StorageService
     - name: TaskService
       description: 调度任务管理服务
     - name: TenantService
@@ -21020,3 +21563,4 @@ tags:
       description: 用户个人资料服务
     - name: UserService
       description: 用户管理服务
+    - name: VMService

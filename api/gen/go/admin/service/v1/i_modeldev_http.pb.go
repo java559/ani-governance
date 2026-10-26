@@ -29,6 +29,7 @@ const OperationModelDevServiceListExecutionArtifacts = "/admin.service.v1.ModelD
 const OperationModelDevServiceListExecutions = "/admin.service.v1.ModelDevService/ListExecutions"
 const OperationModelDevServiceListImplementations = "/admin.service.v1.ModelDevService/ListImplementations"
 const OperationModelDevServiceListInputVersions = "/admin.service.v1.ModelDevService/ListInputVersions"
+const OperationModelDevServiceResumeModelRegistration = "/admin.service.v1.ModelDevService/ResumeModelRegistration"
 const OperationModelDevServiceStopExecution = "/admin.service.v1.ModelDevService/StopExecution"
 
 type ModelDevServiceHTTPServer interface {
@@ -41,6 +42,7 @@ type ModelDevServiceHTTPServer interface {
 	ListExecutions(context.Context, *v1.ListExecutionsRequest) (*v1.ListExecutionsResponse, error)
 	ListImplementations(context.Context, *v1.ListImplementationsRequest) (*v1.ListImplementationsResponse, error)
 	ListInputVersions(context.Context, *v1.ListInputVersionsRequest) (*v1.ListInputVersionsResponse, error)
+	ResumeModelRegistration(context.Context, *v1.ResumeModelRegistrationRequest) (*v1.GetExecutionResponse, error)
 	StopExecution(context.Context, *v1.StopExecutionRequest) (*v1.StopExecutionResponse, error)
 }
 
@@ -52,6 +54,7 @@ func RegisterModelDevServiceHTTPServer(s *http.Server, srv ModelDevServiceHTTPSe
 	r.GET("/api/v1/modeldev/executions", _ModelDevService_ListExecutions0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/executions/{execution_id}/logs", _ModelDevService_GetExecutionLogs0_HTTP_Handler(srv))
 	r.POST("/api/v1/modeldev/executions/{execution_id}:stop", _ModelDevService_StopExecution0_HTTP_Handler(srv))
+	r.POST("/api/v1/modeldev/executions/{execution_id}:resume-model-registration", _ModelDevService_ResumeModelRegistration0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/executions/{execution_id}", _ModelDevService_GetExecution0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/executions/{execution_id}/artifacts", _ModelDevService_ListExecutionArtifacts0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/artifacts/{artifact_id}/content", _ModelDevService_AuthorizeArtifactDownload0_HTTP_Handler(srv))
@@ -181,6 +184,28 @@ func _ModelDevService_StopExecution0_HTTP_Handler(srv ModelDevServiceHTTPServer)
 	}
 }
 
+func _ModelDevService_ResumeModelRegistration0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ResumeModelRegistrationRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelDevServiceResumeModelRegistration)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResumeModelRegistration(ctx, req.(*v1.ResumeModelRegistrationRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetExecutionResponse)
+		return ctx.Result(200, reply.Execution)
+	}
+}
+
 func _ModelDevService_GetExecution0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in v1.GetExecutionRequest
@@ -279,6 +304,7 @@ type ModelDevServiceHTTPClient interface {
 	ListExecutions(ctx context.Context, req *v1.ListExecutionsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionsResponse, err error)
 	ListImplementations(ctx context.Context, req *v1.ListImplementationsRequest, opts ...http.CallOption) (rsp *v1.ListImplementationsResponse, err error)
 	ListInputVersions(ctx context.Context, req *v1.ListInputVersionsRequest, opts ...http.CallOption) (rsp *v1.ListInputVersionsResponse, err error)
+	ResumeModelRegistration(ctx context.Context, req *v1.ResumeModelRegistrationRequest, opts ...http.CallOption) (rsp *v1.GetExecutionResponse, err error)
 	StopExecution(ctx context.Context, req *v1.StopExecutionRequest, opts ...http.CallOption) (rsp *v1.StopExecutionResponse, err error)
 }
 
@@ -401,6 +427,19 @@ func (c *ModelDevServiceHTTPClientImpl) ListInputVersions(ctx context.Context, i
 	opts = append(opts, http.Operation(OperationModelDevServiceListInputVersions))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelDevServiceHTTPClientImpl) ResumeModelRegistration(ctx context.Context, in *v1.ResumeModelRegistrationRequest, opts ...http.CallOption) (*v1.GetExecutionResponse, error) {
+	var out v1.GetExecutionResponse
+	pattern := "/api/v1/modeldev/executions/{execution_id}:resume-model-registration"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelDevServiceResumeModelRegistration))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, nil, &out.Execution, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -430,7 +430,7 @@ func TestInstancePresetAvailabilityReasons(t *testing.T) {
 }
 
 func TestComputeCatalogForwardsOnlyValidatedUsage(t *testing.T) {
-	for _, usage := range []res.Usage{res.Usage_CONTAINER_INSTANCE, res.Usage_TRAINING, res.Usage_INFERENCE} {
+	for _, usage := range []res.Usage{res.Usage_CONTAINER_INSTANCE, res.Usage_TRAINING, res.Usage_INFERENCE, res.Usage_VIRTUAL_MACHINE} {
 		t.Run(usage.String(), func(t *testing.T) {
 			owner := &instancePresetOwnerProbe{t: t, tenant: presetTenant, usage: usage, reply: func(_ int, _ *res.ListPresetsRequest) (*res.ListPresetsResponse, error) {
 				return &res.ListPresetsResponse{Items: []*res.Preset{instancePresetCPU()}, Total: 1}, nil

@@ -12,6 +12,8 @@ func ComputeCatalogGrant(usage string) (module, code string, ok bool) {
 		return "MODEL", "modeldev:compute-preset:read", true
 	case "INFERENCE":
 		return "INFERENCE", "inference:compute-preset:read", true
+	case "VIRTUAL_MACHINE":
+		return "VIRTUAL_MACHINE", "vm:compute-preset:read", true
 	default:
 		return "", "", false
 	}

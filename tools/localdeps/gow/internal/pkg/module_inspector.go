@@ -1,8 +1,11 @@
 package pkg
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +19,8 @@ type ModuleInspector struct {
 }
 
 // NewModuleInspectorFromGo 使用 `go list -m -json` 在 startDir（或当前目录）执行，
-// 返回模块路径和项目根目录。若在 startDir 执行失败，会向上遍历父目录重试。
+// 返回该目录所属模块的路径和项目根目录。workspace 中只选择 startDir 的模块，
+// 不会将其它 workspace 模块作为兜底。若执行失败，会向上遍历父目录重试。
 func NewModuleInspectorFromGo(ctx context.Context, startDir string) (*ModuleInspector, error) {
 	if startDir == "" {
 		wd, err := os.Getwd()
@@ -25,6 +29,10 @@ func NewModuleInspectorFromGo(ctx context.Context, startDir string) (*ModuleInsp
 		}
 		startDir = wd
 	}
+	startDir, err := filepath.Abs(startDir)
+	if err != nil {
+		return nil, err
+	}
 
 	g := NewGoCmdWithTimeout("", 5*time.Minute)
 	out, err := g.RunUpwardUntilSucceeds(ctx, startDir, "list", "-m", "-json")
@@ -32,31 +40,50 @@ func NewModuleInspectorFromGo(ctx context.Context, startDir string) (*ModuleInsp
 		return nil, err
 	}
 
-	var info struct {
-		Path string `json:"Path"`
-		Dir  string `json:"Dir"`
-	}
-	if err = json.Unmarshal(out, &info); err != nil {
+	// GOMOD identifies the nearest module, including a nested module that is
+	// excluded from the workspace. Directory-prefix matching alone can select
+	// that module's parent incorrectly.
+	goModOut, err := NewGoCmdWithTimeout(startDir, 30*time.Second).Output(ctx, "env", "GOMOD")
+	if err != nil {
 		return nil, err
 	}
+	goMod := strings.TrimSpace(string(goModOut))
+	if filepath.Base(goMod) != "go.mod" {
+		return nil, fmt.Errorf("directory %q does not belong to a module", startDir)
+	}
+	goMod, err = filepath.EvalSymlinks(goMod)
+	if err != nil {
+		return nil, err
+	}
+	root := filepath.Dir(goMod)
 
-	root := info.Dir
-	if root == "" {
-		// 兜底：使用 go env GOMOD 推断
-		g2 := NewGoCmdWithTimeout("", 30*time.Second)
-		if goModOut, e := g2.Output(ctx, "env", "GOMOD"); e == nil {
-			goMod := strings.TrimSpace(string(goModOut))
-			if goMod != "" {
-				root = filepath.Dir(goMod)
-			}
+	// In a workspace, go list emits one JSON object per main module.
+	decoder := json.NewDecoder(bytes.NewReader(out))
+	var inspector *ModuleInspector
+	for {
+		var info struct {
+			Path string `json:"Path"`
+			Dir  string `json:"Dir"`
 		}
-		if root == "" {
-			root = startDir
+		if err := decoder.Decode(&info); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+		if info.Dir == "" || info.Path == "" {
+			continue
+		}
+		dir, err := filepath.EvalSymlinks(info.Dir)
+		if err != nil {
+			return nil, err
+		}
+		if dir == root {
+			inspector = &ModuleInspector{Root: root, ModPath: info.Path}
 		}
 	}
-
-	return &ModuleInspector{
-		Root:    root,
-		ModPath: info.Path,
-	}, nil
+	if inspector == nil {
+		return nil, fmt.Errorf("module for directory %q is not present in go list output", startDir)
+	}
+	return inspector, nil
 }

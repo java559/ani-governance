@@ -35,6 +35,7 @@ func TestResolveAuthoritativeCodes(t *testing.T) {
 		wantSource   string
 	}{
 		{"GET", "/api/v1/models/{model_id}/operations", "model:service:read", SourceCapability},
+		{"GET", "/api/v1/virtual-machine-dns-defaults", "vm:create", SourceCapability},
 		{"GET", "/api/v1/admin/users", "user:view", SourceManagement},
 		{"POST", "/api/v1/admin/users/{user_id}/password", "user:reset-password", SourceManagement},
 		{"GET", "/api/v1/admin/dict/entries/by-type-code", "dict:entry:view", SourceManagement},
@@ -122,7 +123,7 @@ func TestComputePresetPlatformPermissions(t *testing.T) {
 	if _, err := Resolve("GET", "/api/v1/instance-presets"); err == nil {
 		t.Fatal("removed route remains in permission table")
 	}
-	for _, usage := range []string{"CONTAINER_INSTANCE", "TRAINING", "INFERENCE"} {
+	for _, usage := range []string{"CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "VIRTUAL_MACHINE"} {
 		module, code, ok := ComputeCatalogGrant(usage)
 		if !ok || module == "" || code == "" {
 			t.Fatal("missing usage grant", usage)
@@ -173,8 +174,8 @@ func TestCountsAndKeys(t *testing.T) {
 	if ManagementCount() != 199 {
 		t.Errorf("ManagementCount() = %d, want 199", ManagementCount())
 	}
-	if CapabilityCount() != 150 {
-		t.Errorf("CapabilityCount() = %d, want 150", CapabilityCount())
+	if CapabilityCount() != 176 {
+		t.Errorf("CapabilityCount() = %d, want 176", CapabilityCount())
 	}
 	keys := AllKeys()
 	if len(keys) < 272 {

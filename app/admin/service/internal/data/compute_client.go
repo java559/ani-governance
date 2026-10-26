@@ -31,7 +31,7 @@ func computeCall[T any](c *ComputeClient, ctx context.Context, tenant, actor str
 }
 
 func validComputeUsage(usage pb.Usage) bool {
-	return usage == pb.Usage_CONTAINER_INSTANCE || usage == pb.Usage_TRAINING || usage == pb.Usage_INFERENCE
+	return usage == pb.Usage_CONTAINER_INSTANCE || usage == pb.Usage_TRAINING || usage == pb.Usage_INFERENCE || usage.String() == "VIRTUAL_MACHINE"
 }
 
 func (c *ComputeClient) ListPresets(ctx context.Context, tenant, actor string, request *pb.ListPresetsRequest) (*pb.ListPresetsResponse, error) {

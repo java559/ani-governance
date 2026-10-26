@@ -247,9 +247,13 @@ psql -v ON_ERROR_STOP=1 -f scripts/ops/sql/repair-tenant-logout.sql
 
 本轮删除训练 Release 导入、启用、暂停和绑定审批；`modeldev-pause`、`modeldev-enable`、`modeldev-import-release` 不再注册。输入导入保留 `modeldev-import-csv` / `modeldev-import-finetuning-dataset`，当前租户用户需具有独立 `modeldev:manage_input` 与 ALL 范围，导入按实现和固定对象校验。
 
-切换须先停止新受理、备份并盘点原 acceptance/dispatch、未决创建和适用 GPU 原账，再显式运行 Atlas 迁移，发布匹配 ModelDev/Gov 合同、镜像与材料。历史 raw payload 不能交给新 decoder；旧二进制不可与删除 binding schema 的新代码交叉运行。旧记录、PVC/publication/模型的保留和回退以本任务实际备份/清理记录为准，普通进程不执行 DDL。
+切换须先停止新受理、备份并盘点原 acceptance/dispatch、未决创建和适用 GPU 原账，再显式运行 Atlas 迁移，发布匹配 ModelDev/Gov 合同、镜像与材料。历史 raw payload 不能交给新 decoder；历史 binding 表的字段、数据和权限完整保留，新活动合同不再读取该表。原二进制与新合同通过隔离的持久化工作面切换，不能交叉写 codec。旧记录、PVC/publication/模型的保留和回退以本任务实际备份/清理记录为准，普通进程不执行 DDL。
 
 生成 API 后先运行 `admin sync-apis --dry-run`，再按部署授权同步新 implementation 规则查询。新 `(path,method)` 需显式当前权限和套餐关联，目录同步不自动授权。旧 Release 权限和 `/api/v1/modeldev/presets` 退出活动入口。
+
+微调模型登记恢复使用 `POST /api/v1/modeldev/executions/{execution_id}:resume-model-registration`，请求体和查询参数均为空。先同步该精确方法，再通过既有权限管理入口授予当前用户；仍要求原执行读取权限和当前 Model 读取、管理权限。恢复仅读取本租户原冻结受理，向 owner 请求同一 execution 的登记恢复，不创建新训练、受理或注册键。`PENDING`、依赖暂不可用和未知响应保留原状态，后续查询原 execution；只有 owner 的完整模型及版本 READY receipt 可作为登记完成依据。
+
+大模型同步校验需显式配置有限 `ANI_MODEL_TIMEOUT`；默认 30s，客户端拒绝超过 24h。`ANI_MODELDEV_TIMEOUT` 默认 3s，当前客户端校验正值，部署值应在 HTTP owner 预算支持的 24h 以内。HTTP 仅对 Model 的上传 URL、版本创建，以及 ModelDev 的执行创建、产物下载授权、模型登记恢复使用对应 owner 预算，并继承更早的父请求期限和取消；其它 API、日志、管理及关闭预算保持原配置。Model 服务端同步读取整个固定对象后才返回版本 READY，因此 receiver、RPC caller 和这两个 Model HTTP 入口须装配一致的实际预算，不能只延长一层或对未知结果自动重发创建。
 
 ## 6. 日常升级与排错
 
@@ -295,7 +299,7 @@ export ANI_ACCESS_KEY_ENCRYPTION_KEY_FILE=/run/secrets/governance-access-key-enc
 2. `sql/data/20260922_quota_catalog_backfill.sql`：版本数据脚本，插入固定目录（user.count/storage.bytes/api.calls/gpu.count）并精确回填旧行；任何坏数据（NULL/未知类型/重复/越界/悬空 plan）整笔失败，不合并不删除。幂等可重跑。
 3. `migrations/20260922190100_quota_constraints.sql`：回填完成后加 NOT NULL、UNIQUE(plan_id,quota_code)、目录 FK、数值 CHECK。
 
-运行账号仍无 DDL；服务配置保持 `migrate: false`。配额内部退额 listener 默认关闭；Resource 实例启用时显式设置 `ANI_QUOTA_ENABLED=true`、`ANI_QUOTA_INTERNAL_ADDR`、`ANI_QUOTA_CA_FILE`、`ANI_QUOTA_CERT_FILE`、`ANI_QUOTA_KEY_FILE` 和 `ANI_QUOTA_RESOURCE_DNS_SAN`。SAN 映射只允许已装配的 Resource owner；缺凭据或合法映射即启动失败，不降级明文。Inference 管理接口由 Governance BFF 提供；部署 Inference owner 时配置 `ANI_INFERENCE_*` mTLS 客户端参数及精确服务端 DNS SAN，Model 配置保留。完整接线、GPU code 与验收边界见 [GPU owner 接入指南](contracts/gpu-owner-integration-guide.md)；旧 `quota_lab` 模拟路由与构建标签已退役。新账本表的 CHECK 约束已通过 `entsql.Annotation.Checks` 进入 Ent 导出的 schema.sql，与手写迁移同名同义。
+运行账号仍无 DDL；服务配置保持 `migrate: false`。配额内部退额 listener 默认关闭；Resource 实例启用时显式设置 `ANI_QUOTA_ENABLED=true`、`ANI_QUOTA_INTERNAL_ADDR`、`ANI_QUOTA_CA_FILE`、`ANI_QUOTA_CERT_FILE`、`ANI_QUOTA_KEY_FILE` 和 `ANI_QUOTA_RESOURCE_DNS_SAN`。ModelDev GPU owner 另须显式设置 `ANI_QUOTA_MODELDEV_ENABLED=true`，仅注册唯一 DNS SAN `ani-modeldev-service` 到同名 owner，保留原 Resource 映射；不接受别名或复用原创建 UUID 作为关闭 UUID。新 GPU 受理在同一原事务中提交 ModelDev acceptance、唯一投递记录及原 quota operation/charges；通用 quota worker 在扫描和 CAS 时均排除 ModelDev，只由其专属投递队列发送原命令。缺凭据或合法映射即启动失败，不降级明文。Inference 管理接口由 Governance BFF 提供；部署 Inference owner 时配置 `ANI_INFERENCE_*` mTLS 客户端参数及精确服务端 DNS SAN，Model 配置保留。完整接线、GPU code 与验收边界见 [GPU owner 接入指南](contracts/gpu-owner-integration-guide.md)；旧 `quota_lab` 模拟路由与构建标签已退役。新账本表的 CHECK 约束已通过 `entsql.Annotation.Checks` 进入 Ent 导出的 schema.sql，与手写迁移同名同义。
 
 本次 Atlas 检查确认 AK/SK、审计与角色复合约束一致。同时发现实施前初始基线仍保留 `files` 表、`sys_users.avatar` 列，而 Ent 已移除它们；这两项既有偏差不属于本批，未执行删除。今后 `migrate diff` 必须审查这些 DROP 候选，不得直接应用。
 

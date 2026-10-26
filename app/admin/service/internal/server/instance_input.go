@@ -15,6 +15,7 @@ import (
 	"github.com/go-kratos/kratos/v2/errors"
 	computeview "go-wind-admin/api/gen/go/compute/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
+	vmview "go-wind-admin/api/gen/go/vm/service/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -168,6 +169,8 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 	invalid := errors.BadRequest("INVALID_INSTANCE_REQUEST", "invalid instance query")
 	allowed := map[string]bool{}
 	switch message.(type) {
+	case *vmview.ListVMsRequest:
+		allowed["page"], allowed["pageSize"] = true, true
 	case *view.ListMountablePVCsRequest:
 		for _, k := range []string{"page", "pageSize", "name"} {
 			allowed[k] = true
@@ -196,7 +199,7 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 			return invalid
 		}
 		switch values.Get("usage") {
-		case "CONTAINER_INSTANCE", "TRAINING", "INFERENCE":
+		case "CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "VIRTUAL_MACHINE":
 		default:
 			return invalid
 		}

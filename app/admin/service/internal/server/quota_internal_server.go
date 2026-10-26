@@ -23,6 +23,7 @@ import (
 
 	quotapb "github.com/zhangzhe-ctrl/ani-governance/api/quota/gen/go/quota/service/v1"
 
+	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"go-wind-admin/app/admin/service/internal/data"
 )
 
@@ -56,6 +57,18 @@ func QuotaInternalConfigFromEnv() QuotaInternalServerConfig {
 	if name := os.Getenv("ANI_QUOTA_RESOURCE_DNS_SAN"); name != "" {
 		config.CertOwnerMap = map[string]string{name: "ani-resource-service"}
 	}
+	if os.Getenv("ANI_QUOTA_MODELDEV_ENABLED") == "true" {
+		if config.CertOwnerMap == nil {
+			config.CertOwnerMap = make(map[string]string)
+		}
+		if owner, exists := config.CertOwnerMap[commandcontract.ModelDevOwner]; exists && owner != commandcontract.ModelDevOwner {
+			// Retain an invalid registration for Validate to reject; never replace
+			// an existing owner's identity with another compiled owner.
+			config.CertOwnerMap[commandcontract.ModelDevOwner] = ""
+		} else {
+			config.CertOwnerMap[commandcontract.ModelDevOwner] = commandcontract.ModelDevOwner
+		}
+	}
 	return config
 }
 
@@ -73,6 +86,9 @@ func (c *QuotaInternalServerConfig) Validate() error {
 	for name, owner := range c.CertOwnerMap {
 		if !exactQuotaDNSName(name) || owner == "" {
 			return fmt.Errorf("quota internal server requires exact registered DNS SAN identities")
+		}
+		if (owner == commandcontract.ModelDevOwner || name == commandcontract.ModelDevOwner) && owner != name {
+			return fmt.Errorf("ModelDev quota release requires its unique compiled DNS identity")
 		}
 	}
 	return nil
@@ -311,6 +327,9 @@ func (s *QuotaInternalServer) ReportResourceReleased(ctx context.Context, req *q
 		if e != nil || parsed == uuid.Nil || parsed.String() != id {
 			return nil, quotaerrors.ReleaseInvalid("canonical UUID references required")
 		}
+	}
+	if owner == commandcontract.ModelDevOwner && req.ReleaseEventId == req.CreateOperationId {
+		return nil, quotaerrors.ReleaseInvalid("ModelDev release requires a distinct close identity")
 	}
 	if req.Reason != quotapb.ReleaseReason_RESOURCE_RELEASED && req.Reason != quotapb.ReleaseReason_ABORTED_CLEANED {
 		return nil, quotaerrors.ReleaseInvalid("invalid complete release reason")

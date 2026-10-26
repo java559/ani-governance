@@ -1,0 +1,69 @@
+syntax = "proto3";
+package vm.service.v1;
+import "redact/v1/redact.proto";
+
+message VMNetworkSelection { string vpc_id=1; string subnet_id=2; }
+// The platform resolves default addresses; callers may only supply a selection.
+message VMDNSSelection { string mode=1; repeated string nameservers=2; }
+message VMFrozenDNS { string mode=1; repeated string nameservers=2; }
+message GetDNSDefaultsRequest {}
+message DNSDefaults { repeated string nameservers=1; }
+message InitialDataDisk { string client_disk_key=1; string name=2; int64 size_gb=3; }
+message CreateVMData {
+ string idempotency_key=1; string name=2; string preset_id=3; string source_kind=4;
+ string media_key=5; int64 system_disk_size_gb=6; repeated InitialDataDisk data_disks=7;
+ VMNetworkSelection network=8; optional bool start_after_create=9;
+ CreateGuestInitialization guest_initialization=10;
+ VMDNSSelection dns=11;
+}
+message CreateGuestInitialization { string username=1; string password=2 [(redact.value).string=""]; string ssh_public_key=3; }
+message CreateVMRequest { CreateVMData data=1; }
+message ChangeVMData {
+ string vm_id=1; string idempotency_key=2; int64 expected_version=3;
+ bool destructive_confirmation=4; string disk_id=5; bool guest_prepared_confirmation=6;
+ string name=7; int64 size_gb=8; string slot=9; string media_key=10; string boot_device=11;
+ string snapshot_id=12; string preview_digest=13;
+}
+message ChangeVMRequest { ChangeVMData data=1; }
+message GetVMRequest { string vm_id=1 [json_name="vm_id"]; }
+message ListVMsRequest { optional uint32 page=1; optional uint32 page_size=2 [json_name="pageSize"]; }
+message GetOperationRequest { string vm_id=1 [json_name="vm_id"]; string operation_id=2 [json_name="operation_id"]; }
+message GetSnapshotRequest { string vm_id=1 [json_name="vm_id"]; string snapshot_id=2 [json_name="snapshot_id"]; }
+message ListMediaRequest {}
+message VMAcceptance { string operation_id=1; string resource_id=2; bool replayed=3; string result=4; }
+message VMOperation { string id=1; string vm_id=2; string action=3; int64 intent_version=4; string state=5; string reason=6; string observed_at=7; }
+message VMCurrentAddress { string nic_name=1; string address=2; string observed_at=3; }
+message VirtualMachine {
+ string id=1; string name=2; int64 version=3; string os_family=4; string os_version=5;
+ string desired_state=6; string observed_state=7; string reason=8; string observed_at=9;
+ repeated VMCurrentAddress addresses=10; string last_operation_id=11; bool closing=12;
+ repeated VMDisk disks=13; repeated VMMediaState media=14; string boot_device=15;
+ string preset_id=16; int64 cpu_millis=17; int64 memory_mib=18;
+ int64 system_disk_size_gb=19; string source_kind=20; string media_key=21;
+ VMFrozenDNS dns=22;
+}
+message ListVMsResponse { repeated VirtualMachine items=1; int64 total=2; }
+message VMDisk {
+ string disk_id=1; string role=2; string name=3; int64 size_gb=4; int64 requested_bytes=5;
+ int64 observed_capacity_bytes=6; string volume_name=7; string serial=8; bool attached=9;
+ string preparation_state=10; string reason=11;
+}
+message ListDisksResponse { repeated VMDisk items=1; }
+message VMMediaState { string slot=1; string desired_media=2; string observed_media=3; bool effective_now=4; bool pending_restart=5; }
+message VMMedia {
+ string media_key=1; string name=2; string kind=3; string os_family=4; string os_version=5;
+ string architecture=6; string firmware=7; string root_bus=8; string data_bus=9;
+ string nic_model=10; bool persistent_tpm=11; bool persistent_uefi=12; string driver_media_key=13;
+ int64 virtual_capacity_bytes=14;
+ string initialization_capability=15; bool initialization_verified=16;
+}
+message ListMediaResponse { repeated VMMedia items=1; }
+message VMSnapshot {
+ string snapshot_id=1; string source_vm_id=2; string source_vm_uid=3; bool ready=4;
+ string completeness=5; repeated string included=6; repeated string excluded=7;
+ repeated string indications=8; repeated VMDisk disks=9; string observed_at=10; string reason=11;
+}
+message ListSnapshotsResponse { repeated VMSnapshot items=1; }
+message VMRestoreDiskImpact { string disk_id=1; string action=2; string reason=3; }
+message VMRestorePreview { int64 version=1; string snapshot_id=2; string snapshot_uid=3; repeated VMRestoreDiskImpact disks=4; string preview_digest=5; }
+message VMConsoleSession { string session_id=1; string ws_url=2; string expires_at=3; }

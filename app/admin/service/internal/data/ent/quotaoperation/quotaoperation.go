@@ -171,6 +171,7 @@ const (
 	DispatchStateUnknown        DispatchState = "UNKNOWN"
 	DispatchStateAcked          DispatchState = "ACKED"
 	DispatchStateCanceledUnsent DispatchState = "CANCELED_UNSENT"
+	DispatchStateRejected       DispatchState = "REJECTED"
 )
 
 func (ds DispatchState) String() string {
@@ -180,7 +181,7 @@ func (ds DispatchState) String() string {
 // DispatchStateValidator is a validator for the "dispatch_state" field enum values. It is called by the builders before save.
 func DispatchStateValidator(ds DispatchState) error {
 	switch ds {
-	case DispatchStateQueued, DispatchStateDispatching, DispatchStateUnknown, DispatchStateAcked, DispatchStateCanceledUnsent:
+	case DispatchStateQueued, DispatchStateDispatching, DispatchStateUnknown, DispatchStateAcked, DispatchStateCanceledUnsent, DispatchStateRejected:
 		return nil
 	default:
 		return fmt.Errorf("quotaoperation: invalid enum value for dispatch_state field: %q", ds)

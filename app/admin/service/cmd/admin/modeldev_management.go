@@ -25,7 +25,11 @@ import (
 )
 
 func runModelDevManagement(ctx context.Context, command string, args []string, stdout io.Writer) (result error) {
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	timeout := 2 * time.Minute
+	if command == "modeldev-reconcile" {
+		timeout = 5 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	flags := flag.NewFlagSet(command, flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
@@ -117,6 +121,9 @@ func runModelDevManagement(ctx context.Context, command string, args []string, s
 	clientConfig, err := data.ModelDevConfigFromEnv()
 	if err != nil || clientConfig.Address == "" {
 		return errors.New("modeldev management connection unavailable")
+	}
+	if command == "modeldev-reconcile" {
+		clientConfig.Timeout = timeout
 	}
 	client, closeClient, err := data.NewModelDevClient(clientConfig)
 	if err != nil {
