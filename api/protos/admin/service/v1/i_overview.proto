@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package admin.service.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// 首页资源统计卡片聚合服务（只读快照）
+service OverviewService {
+  // 获取首页四张资源卡片的计数（实例 / 推理服务 / 模型 / 知识库）
+  rpc GetOverview (google.protobuf.Empty) returns (ConsoleOverviewResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/overview"
+    };
+  }
+}
+
+// 首页资源统计 - 回应
+message ConsoleOverviewResponse {
+  ConsoleInstanceOverview instances = 1;             // 实例统计
+  ConsoleStatusOverview inference_services = 2;       // 推理服务统计
+  ConsoleStatusOverview models = 3;                   // 模型仓库统计
+  ConsoleStatusOverview knowledge_bases = 4;          // 知识库统计（当前无数据源，恒 0）
+}
+
+// 实例统计：by_state 预置 pending/running/stopped/failed，不含 deleted
+message ConsoleInstanceOverview {
+  int64 total = 1;               // 运行中 + 已停止 + pending（已排除 deleted）
+  map<string, int64> by_state = 2; // 状态分布
+  int64 other = 3;               // total - running - failed
+}
+
+// 状态统计：by_status 按资源预置状态键
+message ConsoleStatusOverview {
+  int64 total = 1;                 // 各状态之和
+  map<string, int64> by_status = 2; // 状态分布
+  int64 other = 3;                 // total - 正常 - 异常
+}

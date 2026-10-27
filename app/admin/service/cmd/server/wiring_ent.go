@@ -460,6 +460,13 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		computeCatalog.Catalog = acceleratorClient.Catalog
 	}
 	instanceService := service.NewInstanceService(instanceAcceptance, instanceBinding, tenantRepo, quotaLedgerRepo, instanceSessions, instanceCatalog)
+	overviewService := service.NewOverviewService(
+		ctx.NewLoggerHelper("overview/service/admin-service"),
+		instanceService,
+		inferenceService,
+		modelService,
+		data.NewInstanceAuthorizationRepo(entClient),
+	)
 	vmAcceptance, err := service.NewGpuAcceptance(quotaLedgerRepo, quotaRegistry, tenantRepo, nil, vmBinding, quotaWorker)
 	if err != nil {
 		rollback()
@@ -517,6 +524,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		inferenceService,
 		modelService,
 		computeService,
+		overviewService,
 		instanceService,
 	)
 	if err != nil {

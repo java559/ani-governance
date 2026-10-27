@@ -16,6 +16,7 @@ func TestServiceTagToBusinessModuleExactMapping(t *testing.T) {
 	expected := map[string]identityV1.Module{
 		"ImageService":            identityV1.Module_IMAGE,
 		"InstanceService":         identityV1.Module_INSTANCE,
+		"OverviewService":         identityV1.Module_INSTANCE,
 		"StorageService":          identityV1.Module_STORAGE,
 		"VMService":               identityV1.Module_VIRTUAL_MACHINE,
 		"ComputePresetService":    identityV1.Module_SYSTEM,
@@ -85,7 +86,7 @@ func TestServiceTagToBusinessModuleExactMapping(t *testing.T) {
 func TestServiceTagToBusinessModuleReverseMapping(t *testing.T) {
 	expected := map[identityV1.Module][]string{
 		identityV1.Module_IMAGE:            {"ImageService"},
-		identityV1.Module_INSTANCE:         {"InstanceService"},
+		identityV1.Module_INSTANCE:         {"InstanceService", "OverviewService"},
 		identityV1.Module_STORAGE:          {"StorageService"},
 		identityV1.Module_VIRTUAL_MACHINE:  {"VMService"},
 		identityV1.Module_DASHBOARD:        {"AdminPortalService", "DashboardService", "AuthenticationService"},

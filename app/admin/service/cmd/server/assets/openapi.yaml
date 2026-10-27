@@ -10344,6 +10344,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/QueryResourceTrendResponse'
+    /api/v1/overview:
+        get:
+            tags:
+                - OverviewService
+            description: 获取首页四张资源卡片的计数（实例 / 推理服务 / 模型 / 知识库）
+            operationId: OverviewService_GetOverview
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ConsoleOverviewResponse'
     /api/v1/storage/buckets:
         get:
             tags:
@@ -12749,6 +12762,42 @@ components:
                     type: boolean
                 credentialId:
                     type: string
+        ConsoleInstanceOverview:
+            type: object
+            properties:
+                total:
+                    type: string
+                byState:
+                    type: object
+                    additionalProperties:
+                        type: string
+                other:
+                    type: string
+            description: 实例统计：by_state 预置 pending/running/stopped/failed，不含 deleted
+        ConsoleOverviewResponse:
+            type: object
+            properties:
+                instances:
+                    $ref: '#/components/schemas/ConsoleInstanceOverview'
+                inferenceServices:
+                    $ref: '#/components/schemas/ConsoleStatusOverview'
+                models:
+                    $ref: '#/components/schemas/ConsoleStatusOverview'
+                knowledgeBases:
+                    $ref: '#/components/schemas/ConsoleStatusOverview'
+            description: 首页资源统计 - 回应
+        ConsoleStatusOverview:
+            type: object
+            properties:
+                total:
+                    type: string
+                byStatus:
+                    type: object
+                    additionalProperties:
+                        type: string
+                other:
+                    type: string
+            description: 状态统计：by_status 按资源预置状态键
         ControlTaskRequest:
             type: object
             properties:
@@ -22278,6 +22327,8 @@ tags:
       description: 操作审计日志管理服务
     - name: OrgUnitService
       description: 组织单元服务
+    - name: OverviewService
+      description: 首页资源统计卡片聚合服务（只读快照）
     - name: PermissionAuditLogService
       description: 权限变更审计日志服务
     - name: PermissionGroupService

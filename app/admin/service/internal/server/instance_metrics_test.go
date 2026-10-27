@@ -232,6 +232,46 @@ func TestInstanceMetricsHTTPRejectsInputBeforeDependencies(t *testing.T) {
 		}
 	}
 }
+func TestInstanceMetricsHTTPAcceptsFutureEnd(t *testing.T) {
+	r, p, a := &metricsResource{}, &metricsPeer{}, &metricsAuthorization{}
+	srv := metricsHTTP(t, r, p, a, true)
+	start := time.Now().UTC().Truncate(time.Second)
+	end := start.Add(2 * time.Minute)
+	body := `{"data":{"metric_codes":["cpu.usage_cores"],"start":"` +
+		start.Format(time.RFC3339) + `","end":"` + end.Format(time.RFC3339) + `"}}`
+	code, object := metricsRequest(t, srv, "POST", "query", body)
+	if code != 200 {
+		t.Fatalf("%d %+v", code, object)
+	}
+	raw := object["data"].(map[string]any)["end"].(string)
+	got, err := time.Parse(time.RFC3339, raw)
+	if err != nil || !got.Equal(end) {
+		t.Fatalf("end=%s err=%v want %v", raw, err, end)
+	}
+	if r.calls != 1 || p.calls != 1 {
+		t.Fatalf("calls=%d/%d", r.calls, p.calls)
+	}
+}
+
+func TestInstanceMetricsHTTPStillRejectsOversizedWindow(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Second)
+	for name, window := range map[string][2]time.Time{
+		"past":   {now.Add(-24 * time.Hour), now.Add(time.Hour)},
+		"future": {now.Add(-23 * time.Hour), now.Add(2 * time.Hour)},
+	} {
+		t.Run(name, func(t *testing.T) {
+			r, p := &metricsResource{}, &metricsPeer{}
+			srv := metricsHTTP(t, r, p, &metricsAuthorization{}, true)
+			body := `{"data":{"metric_codes":["cpu.usage_cores"],"start":"` +
+				window[0].Format(time.RFC3339) + `","end":"` + window[1].Format(time.RFC3339) + `"}}`
+			code, _ := metricsRequest(t, srv, "POST", "query", body)
+			if code != 400 || r.calls != 0 || p.calls != 0 {
+				t.Fatalf("oversized window: %d calls=%d/%d", code, r.calls, p.calls)
+			}
+		})
+	}
+}
+
 func TestInstanceMetricsHTTPAuthorizationScopeAndErrors(t *testing.T) {
 	for _, tc := range []struct {
 		name                string

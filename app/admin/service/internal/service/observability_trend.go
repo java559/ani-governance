@@ -97,7 +97,8 @@ func (s *InstanceService) QueryResourceTrend(ctx context.Context, r *view.QueryR
 			return nil, trendInvalid()
 		}
 		start, end = r.Start.AsTime(), r.End.AsTime()
-		if end.Before(start) || end.After(time.Now()) || end.Sub(start) > tier.span {
+		// 不再拒绝 end 晚于当前时间：客户端时钟漂移会导致稳定越界。
+		if end.Before(start) || end.Sub(start) > tier.span {
 			return nil, trendInvalid()
 		}
 	} else {

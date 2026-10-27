@@ -213,7 +213,7 @@ func TestResourceTrendHTTPRejectsInput(t *testing.T) {
 }
 
 func TestResourceTrendHTTPWindowBounds(t *testing.T) {
-	// 显式窗口必须成对、跨度不超档位；end 晚于当前拒绝。
+	// 显式窗口必须成对、跨度不超档位；end 允许晚于当前时间（客户端时钟漂移）。
 	p := &trendPeer{}
 	srv := trendHTTP(t, p, &trendAuthorization{}, true)
 	end := time.Now().UTC().Truncate(time.Second)
@@ -224,8 +224,8 @@ func TestResourceTrendHTTPWindowBounds(t *testing.T) {
 	}
 	future := time.Now().Add(time.Hour).UTC().Truncate(time.Second)
 	code, _ = trendRequest(t, srv, fmt.Sprintf("?range=1d&start=%s&end=%s", future.Add(-24*time.Hour).Format(time.RFC3339), future.Format(time.RFC3339)))
-	if code != 400 {
-		t.Fatalf("future end accepted: %d", code)
+	if code != 200 || p.step != 300 {
+		t.Fatalf("future end rejected: %d step=%d", code, p.step)
 	}
 	old := end.Add(-25 * time.Hour)
 	code, _ = trendRequest(t, srv, fmt.Sprintf("?range=1d&start=%s&end=%s", old.Format(time.RFC3339), end.Format(time.RFC3339)))

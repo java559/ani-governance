@@ -99,7 +99,9 @@ func (s *InstanceService) QueryInstanceMetrics(ctx context.Context, r *view.Quer
 	}
 	start, end := d.Start.AsTime(), d.End.AsTime()
 	span := end.Sub(start)
-	if end.Before(start) || span > 24*time.Hour || end.After(time.Now()) || int64(span/time.Second)/int64(step)+1 > 3000 {
+	// 不再拒绝 end 晚于服务器当前时间：前端按客户端时钟计算窗口并向上取整，
+	// 秒级时钟漂移会稳定触发该校验。跨度与点数上限仍然生效。
+	if end.Before(start) || span > 24*time.Hour || int64(span/time.Second)/int64(step)+1 > 3000 {
 		return nil, metricInvalid()
 	}
 	t, actor, err := s.metricTarget(ctx, r.InstanceId, data.InstanceMetricsQueryPath, "POST")

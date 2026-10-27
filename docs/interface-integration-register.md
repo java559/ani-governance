@@ -1886,3 +1886,12 @@ Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_
 请求仅接受查询参数 `metric`（`cpu|memory|gpu`，省略时一次返回三条，顺序固定）、`range`（`1d|7d|30d`，必填）；可选 `start/end`（RFC3339 整秒，成对出现且跨度不超过所选档位）、`step`（Go duration 字符串，落在档位 `[min,max]` 内且为 30s 整数倍）。档位约束：1d 档 step 30s–1h（默认 5m）、7d 档 5m–1h（默认 30m）、30d 档 15m–4h（默认 2h）；未声明参数、重复参数、`tenant_id` 等一律 400 `MONITORING_INVALID_QUERY`。租户身份只取自 JWT，前端传 `tenant_id` 不生效。
 
 响应为 `data` 包装（`protojson.EmitUnpopulated`），`series[]` 携带 `metric/metric_code/unit/status/points[]`，缺数点 `value=null` 且 `gap_reason="NO_DATA"`，与实例指标接口同构。obs 侧新增租户级 target（TENANT=3，方案 A 不改 api 子模块 proto）与三个租户级编码（`tenant.cpu.usage_cores` / `tenant.memory.working_set_bytes` / `tenant.gpu.allocated_cores`，GPU 为 volcano vGPU 份额 join 租户标签 /100 的等效卡数），obs 与 gov 必须同批部署；30d 档依赖 Prometheus 保留期 ≥30d，历史数据不回补。
+
+## OVERVIEW-20261027：首页资源统计卡片
+
+新增 `GET /api/v1/overview`（权限码 `overview:resource-count:read`，挂 `INSTANCE` 业务模块，与首页资源趋势同批定案）。正式请求/响应为 `api/protos/admin/service/v1/i_overview.proto`，请求为 `google.protobuf.Empty`，`service OverviewService` 经 `pkg/constants/module_mapping.go` 映射为 `business_module=INSTANCE`。部署时先 `admin sync-apis --dry-run` 审查，再同步并执行 `scripts/ops/sql/register-overview-permissions.sql`（权限点 + API 关联 + 向已持有 `instance:read` 的角色继承授予），最后重启刷新策略。
+
+请求无查询参数、无请求体，多余输入一律 400 `INVALID_OVERVIEW_REQUEST`。响应为**顶层四块、无 `data` 包装**的聚合快照，计数一律 JSON number（不适用列表接口的 64 位字符串约定）：`instances{total,by_state{pending,running,stopped,failed},other}`、`inference_services{total,by_status{pending,deploying,running,stopping,stopped,failed},other}`、`models{total,by_status{pending,importing,ready,error},other}`、`knowledge_bases{total,by_status{active,rebuilding},other}`，每块恒满足 `total = 正常 + 异常 + other`。
+
+数据口径：实例按 `observedState=running|stopped|pending` 三次计数，`pending` 计入异常（`by_state.failed` = pending 数，`by_state.pending` 恒 0），`total` 排除 deleted；推理全量翻页（单页 100、最多 50 页）并按 `desiredState=deleted` 剔除软删记录，`phase` 的 `ready→running`、`stopped→stopped`、其余值（含过渡态与未识别值）→`failed` 并记 WARN；模型按 `pending/importing/ready/error` 四次计数，`other=pending+importing`；知识库无任何数据源，恒为 0。任一数据源失败、403 降级、超时只把对应卡片归零并记 WARN（含 `source` / `tenant_id` / `err`），整体仍 200；入口权限失败整体 403/503。内部聚合预算 8s，落在 REST 10s 传输预算内。
+

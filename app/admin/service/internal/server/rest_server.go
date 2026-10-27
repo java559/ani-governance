@@ -198,6 +198,7 @@ func NewRestServer(
 	inferenceService *service.InferenceService,
 	modelService *service.ModelService,
 	computeService *service.ComputePresetService,
+	overviewService *service.OverviewService,
 	instanceServices ...*service.InstanceService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
@@ -302,6 +303,9 @@ func NewRestServer(
 	}
 	if computeService != nil {
 		RegisterComputeHTTPServer(srv, computeService)
+	}
+	if overviewService != nil {
+		RegisterOverviewHTTP(srv, overviewService)
 	}
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {

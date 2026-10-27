@@ -11,6 +11,8 @@ import (
 var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"ImageService":                identityV1.Module_IMAGE,
 	"InstanceService":             identityV1.Module_INSTANCE,
+	// 首页资源统计卡片为租户级只读聚合，挂 INSTANCE 模块（现有套餐均含 INSTANCE）。
+	"OverviewService": identityV1.Module_INSTANCE,
 	"StorageService":              identityV1.Module_STORAGE,
 	"VMService":                   identityV1.Module_VIRTUAL_MACHINE,
 	"ComputePresetService":        identityV1.Module_SYSTEM,

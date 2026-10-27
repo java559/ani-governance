@@ -27,6 +27,13 @@ const InstanceMetricsLatestPath = "/api/v1/instances/{instance_id}/metrics/lates
 // 权限码为 observability:resource-trend:read，经 InstanceAuthorizationRepo 走租户闸门。
 const ObservabilityResourceTrendPath = "/api/v1/observability/resource-trend"
 
+// OverviewPath 是首页资源统计卡片聚合路由；入口权限码 overview:resource-count:read
+// 同样挂 INSTANCE 模块，数据源二次鉴权复用各自列表路由。
+const OverviewPath = "/api/v1/overview"
+
+// OverviewModelsPath 是首页模型卡片的二次鉴权路由（MODEL 模块）。
+const OverviewModelsPath = "/api/v1/models"
+
 func InstanceModuleRegistered() bool {
 	id, ok := identity.Module_value["INSTANCE"]
 	return ok && id > 0
@@ -51,13 +58,27 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 		allowed = method == "POST"
 	case InstanceGetPath, InstanceOperationPath, InstanceRuntimePath, InstanceEventsPath, InstanceLogsPath, InstanceMountablePVCsPath, InstanceConfigurationPath, InstanceMetricsLatestPath:
 		allowed = method == "GET"
-	case ObservabilityResourceTrendPath:
+	case ObservabilityResourceTrendPath, OverviewPath:
 		allowed = method == "GET"
 	}
 	if !allowed || r == nil || r.current == nil {
 		return ErrActionAuthorizationDenied
 	}
 	return r.current.authorizeRoute(ctx, tenant, user, path, "INSTANCE", method)
+}
+
+// AuthorizeSource 供首页聚合按数据源二次鉴权：只允许 GET，模块由调用方指定
+// （模型 MODEL、推理 INFERENCE），未识别模块按 fail-closed 拒绝。
+func (r *InstanceAuthorizationRepo) AuthorizeSource(ctx context.Context, tenant, user uint32, path, module string) error {
+	switch module {
+	case "MODEL", "INFERENCE":
+	default:
+		return ErrActionAuthorizationDenied
+	}
+	if r == nil || r.current == nil {
+		return ErrActionAuthorizationUnavailable
+	}
+	return r.current.authorizeRoute(ctx, tenant, user, path, module, "GET")
 }
 
 // The GPU catalog intersection uses the caller's current ACC permission and
