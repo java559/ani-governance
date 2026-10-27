@@ -815,9 +815,13 @@ func (x *CreateVolumeResponse) GetVolume() *Volume {
 }
 
 type ListVolumesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	PageSize      *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Page     *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	// 筛选在分页前生效，多个条件为 AND；空串表示不筛该字段。
+	Name          *string `protobuf:"bytes,3,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	Id            *string `protobuf:"bytes,4,opt,name=id,proto3,oneof" json:"id,omitempty"`
+	State         *string `protobuf:"bytes,5,opt,name=state,proto3,oneof" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -864,6 +868,27 @@ func (x *ListVolumesRequest) GetPageSize() uint32 {
 		return *x.PageSize
 	}
 	return 0
+}
+
+func (x *ListVolumesRequest) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
+}
+
+func (x *ListVolumesRequest) GetId() string {
+	if x != nil && x.Id != nil {
+		return *x.Id
+	}
+	return ""
+}
+
+func (x *ListVolumesRequest) GetState() string {
+	if x != nil && x.State != nil {
+		return *x.State
+	}
+	return ""
 }
 
 type ListVolumesResponse struct {
@@ -1365,9 +1390,12 @@ func (x *Bucket) GetName() string {
 }
 
 type ListBucketsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	PageSize      *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Page     *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	// 筛选在分页前生效，多个条件为 AND；空串表示不筛该字段。
+	Name          *string `protobuf:"bytes,3,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	Id            *string `protobuf:"bytes,4,opt,name=id,proto3,oneof" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1414,6 +1442,20 @@ func (x *ListBucketsRequest) GetPageSize() uint32 {
 		return *x.PageSize
 	}
 	return 0
+}
+
+func (x *ListBucketsRequest) GetName() string {
+	if x != nil && x.Name != nil {
+		return *x.Name
+	}
+	return ""
+}
+
+func (x *ListBucketsRequest) GetId() string {
+	if x != nil && x.Id != nil {
+		return *x.Id
+	}
+	return ""
 }
 
 type ListBucketsResponse struct {
@@ -2141,13 +2183,19 @@ const file_storage_service_v1_storage_proto_rawDesc = "" +
 	"\x13CreateVolumeRequest\x128\n" +
 	"\x04data\x18\x01 \x01(\v2$.storage.service.v1.CreateVolumeDataR\x04data\"J\n" +
 	"\x14CreateVolumeResponse\x122\n" +
-	"\x06volume\x18\x01 \x01(\v2\x1a.storage.service.v1.VolumeR\x06volume\"f\n" +
+	"\x06volume\x18\x01 \x01(\v2\x1a.storage.service.v1.VolumeR\x06volume\"\xc9\x01\n" +
 	"\x12ListVolumesRequest\x12\x17\n" +
 	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
-	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x17\n" +
+	"\x04name\x18\x03 \x01(\tH\x02R\x04name\x88\x01\x01\x12\x13\n" +
+	"\x02id\x18\x04 \x01(\tH\x03R\x02id\x88\x01\x01\x12\x19\n" +
+	"\x05state\x18\x05 \x01(\tH\x04R\x05state\x88\x01\x01B\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
-	"_page_size\"]\n" +
+	"_page_sizeB\a\n" +
+	"\x05_nameB\x05\n" +
+	"\x03_idB\b\n" +
+	"\x06_state\"]\n" +
 	"\x13ListVolumesResponse\x120\n" +
 	"\x05items\x18\x01 \x03(\v2\x1a.storage.service.v1.VolumeR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\".\n" +
@@ -2174,13 +2222,17 @@ const file_storage_service_v1_storage_proto_rawDesc = "" +
 	"\x06volume\x18\x02 \x01(\v2\x1a.storage.service.v1.VolumeR\x06volume\",\n" +
 	"\x06Bucket\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"f\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xa4\x01\n" +
 	"\x12ListBucketsRequest\x12\x17\n" +
 	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
-	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x17\n" +
+	"\x04name\x18\x03 \x01(\tH\x02R\x04name\x88\x01\x01\x12\x13\n" +
+	"\x02id\x18\x04 \x01(\tH\x03R\x02id\x88\x01\x01B\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
-	"_page_size\"]\n" +
+	"_page_sizeB\a\n" +
+	"\x05_nameB\x05\n" +
+	"\x03_id\"]\n" +
 	"\x13ListBucketsResponse\x120\n" +
 	"\x05items\x18\x01 \x03(\v2\x1a.storage.service.v1.BucketR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"\x88\x01\n" +

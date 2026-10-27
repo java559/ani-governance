@@ -1829,6 +1829,21 @@ status=ready 返回 total=1/ready，operations 返回 total=1。含斜杠的公�
 `cursor`；出现 `page/pageSize/offset/token` 一律 400；响应不含 `total`；游标跨桶/
 跨 prefix 复用 400，不降级首页。该例外只适用于 STORAGE-08。
 
+查询参数严格校验（STORAGE-01/03/07/08 四个列表 GET）：参数白名单按路由声明，
+每个参数只允许单值；空值、前导零、重复参数、未声明参数一律 400
+`STORAGE_INVALID_REQUEST`，不静默取默认值。其余 storage 路由（含写接口）不接受
+任何查询串。该过滤器位于生成代码解码之前，与 `docs/contracts/frontend-http-api.md`
+的分页合同对齐。
+
+列表筛选（分页前生效，多条件 AND，`total` 为筛选后总数，排序保持既有唯一键）：
+
+- STORAGE-03：`name` 按 `display_name` 不区分大小写包含；`id` 精确匹配 `pvc_name`
+  或 `uid`；`state` 精确匹配 `phase`，仅接受 `Pending`/`Bound`/`Lost`。
+- STORAGE-07：`name` 按展示名不区分大小写包含；`id` 精确匹配逻辑桶 ID。
+
+认证：存储路由只接受 Bearer 用户身份；`allowsAPIKey` 仅覆盖 Network/Image，
+带 AK/SK 签名头调用返回 403 `USER_REQUIRED`，混用返回 400 `MIXED_AUTHENTICATION`。
+
 幂等与身份：`create_token` 是业务重试键，一次创建意图一个；删除后重放旧 Create
 可能创建同名新 UID，前端不得在删除后自动重试旧请求。扩容与删除必须携带用户选中
 对象的 `expected_uid`，UID 变化返回 `VOLUME_IDENTITY_CHANGED`。扩容只允许增加，

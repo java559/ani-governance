@@ -92,6 +92,10 @@ message CreateVolumeResponse {
 message ListVolumesRequest {
   optional uint32 page = 1;
   optional uint32 page_size = 2 [json_name = "pageSize"];
+  // 筛选在分页前生效，多个条件为 AND；空串表示不筛该字段。
+  optional string name = 3;
+  optional string id = 4;
+  optional string state = 5;
 }
 
 message ListVolumesResponse {
@@ -146,6 +150,9 @@ message Bucket {
 message ListBucketsRequest {
   optional uint32 page = 1;
   optional uint32 page_size = 2 [json_name = "pageSize"];
+  // 筛选在分页前生效，多个条件为 AND；空串表示不筛该字段。
+  optional string name = 3;
+  optional string id = 4;
 }
 
 message ListBucketsResponse {

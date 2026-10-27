@@ -231,7 +231,10 @@ func (s *StorageService) ListVolumes(ctx context.Context, r *storagepb.ListVolum
 	if err != nil {
 		return nil, err
 	}
-	reply, err := s.client.ListVolumes(ctx, tenant, actor, &resourcestorage.ListVolumesRequest{Page: page, PageSize: limit})
+	reply, err := s.client.ListVolumes(ctx, tenant, actor, &resourcestorage.ListVolumesRequest{
+		Page: page, PageSize: limit,
+		Name: strings.TrimSpace(r.GetName()), Id: strings.TrimSpace(r.GetId()), State: r.GetState(),
+	})
 	if err != nil {
 		return nil, mapStorageError(err)
 	}
@@ -316,7 +319,9 @@ func (s *StorageService) ListBuckets(ctx context.Context, r *storagepb.ListBucke
 	if err != nil {
 		return nil, err
 	}
-	reply, err := s.client.ListBuckets(ctx, tenant, actor, &resourcestorage.ListBucketsRequest{})
+	reply, err := s.client.ListBuckets(ctx, tenant, actor, &resourcestorage.ListBucketsRequest{
+		Name: strings.TrimSpace(r.GetName()), Id: strings.TrimSpace(r.GetId()),
+	})
 	if err != nil {
 		return nil, mapStorageError(err)
 	}
