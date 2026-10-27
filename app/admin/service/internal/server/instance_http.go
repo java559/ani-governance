@@ -15,6 +15,7 @@ import (
 func RegisterInstanceHTTPServer(server *http.Server, s *service.InstanceService) {
 	RegisterInstanceDiagnosticsHTTP(server, s)
 	RegisterInstanceMetricsHTTP(server, s)
+	RegisterObservabilityTrendHTTP(server, s)
 	type route struct {
 		method, path, operation string
 		request                 func() proto.Message

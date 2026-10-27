@@ -1878,3 +1878,11 @@ Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_
 实际 CODE/PG/BOUNDARY/LIVE/GUEST/BROWSER 结果统一见 Resource `docs/execution/status.md#vm-mvp` 及 `docs/execution/records/VM-MVP/`；此登记不是执行通过记录。
 
 组合编译核验发现既有 ModelDev 根 SDK `v0.0.0-20261021184454-44188466290f` 仍引入 Model 根 SDK `v0.0.0-20261013092523-8951c85bc150`，其 `api/model/v1` 与本仓已固定的 Model/api 子模块同路径冲突。Gov 显式将该间接父模块固定到与现有 Model/api 同一提交的 `v0.0.0-20261021113912-a21befaaa5e5`；该提交含 `api/go.mod`，父模块不再导出该子树。不更改 Model/ModelDev 源码，不回退既有 API，也不以本地 replace 作为正式依赖修复。
+
+## OBS-TREND-20261027：首页资源趋势（租户级聚合）
+
+新增 `GET /api/v1/observability/resource-trend`（权限码 `observability:resource-trend:read`，挂 `INSTANCE` 业务模块——2026-10-27 定案，现有 plan2/plan3 均含 INSTANCE、均无 DASHBOARD，不修改套餐数据）。目录通过生成的 HTTP 路由发现；部署时先 `admin sync-apis --dry-run` 审查，再同步并执行 `scripts/ops/sql/register-observability-permissions.sql`（权限点 + API 关联 + 向已持有 `instance:read` 的角色继承授予），最后重启刷新策略。
+
+请求仅接受查询参数 `metric`（`cpu|memory|gpu`，省略时一次返回三条，顺序固定）、`range`（`1d|7d|30d`，必填）；可选 `start/end`（RFC3339 整秒，成对出现且跨度不超过所选档位）、`step`（Go duration 字符串，落在档位 `[min,max]` 内且为 30s 整数倍）。档位约束：1d 档 step 30s–1h（默认 5m）、7d 档 5m–1h（默认 30m）、30d 档 15m–4h（默认 2h）；未声明参数、重复参数、`tenant_id` 等一律 400 `MONITORING_INVALID_QUERY`。租户身份只取自 JWT，前端传 `tenant_id` 不生效。
+
+响应为 `data` 包装（`protojson.EmitUnpopulated`），`series[]` 携带 `metric/metric_code/unit/status/points[]`，缺数点 `value=null` 且 `gap_reason="NO_DATA"`，与实例指标接口同构。obs 侧新增租户级 target（TENANT=3，方案 A 不改 api 子模块 proto）与三个租户级编码（`tenant.cpu.usage_cores` / `tenant.memory.working_set_bytes` / `tenant.gpu.allocated_cores`，GPU 为 volcano vGPU 份额 join 租户标签 /100 的等效卡数），obs 与 gov 必须同批部署；30d 档依赖 Prometheus 保留期 ≥30d，历史数据不回补。

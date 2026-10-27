@@ -40,6 +40,35 @@ message InstanceMetricPoint {
   optional string gap_reason = 3 [json_name = "gap_reason"];
 }
 
+// 首页资源趋势（租户级聚合）：metric=cpu|memory|gpu，range=1d|7d|30d。
+// start/end/step 显式传入时必须落在所选档位约束内；租户身份只从 JWT 取。
+message QueryResourceTrendRequest {
+  string metric = 1;
+  string range = 2 [json_name = "range"];
+  google.protobuf.Timestamp start = 3;
+  google.protobuf.Timestamp end = 4;
+  optional uint32 step_seconds = 5 [json_name = "step_seconds"];
+}
+message QueryResourceTrendResponse { ResourceTrendData data = 1; }
+message ResourceTrendData {
+  google.protobuf.Timestamp start = 1;
+  google.protobuf.Timestamp end = 2;
+  uint32 step_seconds = 3 [json_name = "step_seconds"];
+  repeated ResourceTrendSeries series = 4;
+}
+message ResourceTrendSeries {
+  string metric = 1;
+  string metric_code = 2 [json_name = "metric_code"];
+  string unit = 3;
+  string status = 4;
+  repeated ResourceTrendPoint points = 5;
+}
+message ResourceTrendPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.DoubleValue value = 2 [(gnostic.openapi.v3.property) = { nullable: true }];
+  optional string gap_reason = 3 [json_name = "gap_reason"];
+}
+
 message SchedulingOptions {
  enum PodPlacement { POD_PLACEMENT_UNSPECIFIED = 0; NONE = 1; COLOCATE_PREFERRED = 2; SPREAD_PREFERRED = 3; }
  optional PodPlacement pod_placement = 1 [json_name = "pod_placement"];

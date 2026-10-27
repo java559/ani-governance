@@ -22,6 +22,11 @@ const InstanceLogsPath = "/api/v1/instances/{instance_id}/logs"
 const InstanceMetricsQueryPath = "/api/v1/instances/{instance_id}/metrics/query"
 const InstanceMetricsLatestPath = "/api/v1/instances/{instance_id}/metrics/latest"
 
+// ObservabilityResourceTrendPath 是首页资源趋势路由。按 2026-10-27 定案挂
+// INSTANCE 模块（现有套餐 plan2/plan3 均含 INSTANCE、均无 DASHBOARD），
+// 权限码为 observability:resource-trend:read，经 InstanceAuthorizationRepo 走租户闸门。
+const ObservabilityResourceTrendPath = "/api/v1/observability/resource-trend"
+
 func InstanceModuleRegistered() bool {
 	id, ok := identity.Module_value["INSTANCE"]
 	return ok && id > 0
@@ -45,6 +50,8 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 	case InstanceStartPath, InstanceStopPath, InstanceExecPath, InstanceMetricsQueryPath:
 		allowed = method == "POST"
 	case InstanceGetPath, InstanceOperationPath, InstanceRuntimePath, InstanceEventsPath, InstanceLogsPath, InstanceMountablePVCsPath, InstanceConfigurationPath, InstanceMetricsLatestPath:
+		allowed = method == "GET"
+	case ObservabilityResourceTrendPath:
 		allowed = method == "GET"
 	}
 	if !allowed || r == nil || r.current == nil {

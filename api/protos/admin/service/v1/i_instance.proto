@@ -9,6 +9,8 @@ service InstanceService {
  rpc GetInstanceConfiguration(instance.service.v1.GetInstanceRequest) returns(instance.service.v1.InstanceConfiguration) { option(google.api.http)={get:"/api/v1/instances/{instance_id}/configuration"}; }
  rpc QueryInstanceMetrics(instance.service.v1.QueryInstanceMetricsRequest) returns(instance.service.v1.QueryInstanceMetricsResponse) { option(google.api.http)={post:"/api/v1/instances/{instance_id}/metrics/query" body:"*"}; }
  rpc GetInstanceLatestMetrics(instance.service.v1.GetInstanceRequest) returns(instance.service.v1.GetInstanceLatestMetricsResponse) { option(google.api.http)={get:"/api/v1/instances/{instance_id}/metrics/latest"}; }
+ // 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
+ rpc QueryResourceTrend(instance.service.v1.QueryResourceTrendRequest) returns(instance.service.v1.QueryResourceTrendResponse) { option(google.api.http)={get:"/api/v1/observability/resource-trend"}; }
  rpc GetInstanceSchedulingSettings(instance.service.v1.InstanceSchedulingSettingsRequest) returns(instance.service.v1.InstanceSchedulingSettings) { option(google.api.http)={get:"/api/v1/admin/instance-scheduling-settings"}; }
  rpc UpdateInstanceSchedulingSettings(instance.service.v1.UpdateInstanceSchedulingSettingsRequest) returns(instance.service.v1.InstanceSchedulingSettings) { option(google.api.http)={put:"/api/v1/admin/instance-scheduling-settings" body:"*"}; }
  rpc GetSchedulerConfig(instance.service.v1.SchedulerConfigRequest) returns(instance.service.v1.SchedulerConfig) { option(google.api.http)={get:"/api/v1/admin/scheduler-config"}; }

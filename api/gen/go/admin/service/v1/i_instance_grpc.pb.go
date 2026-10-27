@@ -24,6 +24,7 @@ const (
 	InstanceService_GetInstanceConfiguration_FullMethodName         = "/admin.service.v1.InstanceService/GetInstanceConfiguration"
 	InstanceService_QueryInstanceMetrics_FullMethodName             = "/admin.service.v1.InstanceService/QueryInstanceMetrics"
 	InstanceService_GetInstanceLatestMetrics_FullMethodName         = "/admin.service.v1.InstanceService/GetInstanceLatestMetrics"
+	InstanceService_QueryResourceTrend_FullMethodName               = "/admin.service.v1.InstanceService/QueryResourceTrend"
 	InstanceService_GetInstanceSchedulingSettings_FullMethodName    = "/admin.service.v1.InstanceService/GetInstanceSchedulingSettings"
 	InstanceService_UpdateInstanceSchedulingSettings_FullMethodName = "/admin.service.v1.InstanceService/UpdateInstanceSchedulingSettings"
 	InstanceService_GetSchedulerConfig_FullMethodName               = "/admin.service.v1.InstanceService/GetSchedulerConfig"
@@ -49,6 +50,8 @@ type InstanceServiceClient interface {
 	GetInstanceConfiguration(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.InstanceConfiguration, error)
 	QueryInstanceMetrics(ctx context.Context, in *v1.QueryInstanceMetricsRequest, opts ...grpc.CallOption) (*v1.QueryInstanceMetricsResponse, error)
 	GetInstanceLatestMetrics(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.GetInstanceLatestMetricsResponse, error)
+	// 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
+	QueryResourceTrend(ctx context.Context, in *v1.QueryResourceTrendRequest, opts ...grpc.CallOption) (*v1.QueryResourceTrendResponse, error)
 	GetInstanceSchedulingSettings(ctx context.Context, in *v1.InstanceSchedulingSettingsRequest, opts ...grpc.CallOption) (*v1.InstanceSchedulingSettings, error)
 	UpdateInstanceSchedulingSettings(ctx context.Context, in *v1.UpdateInstanceSchedulingSettingsRequest, opts ...grpc.CallOption) (*v1.InstanceSchedulingSettings, error)
 	GetSchedulerConfig(ctx context.Context, in *v1.SchedulerConfigRequest, opts ...grpc.CallOption) (*v1.SchedulerConfig, error)
@@ -112,6 +115,16 @@ func (c *instanceServiceClient) GetInstanceLatestMetrics(ctx context.Context, in
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.GetInstanceLatestMetricsResponse)
 	err := c.cc.Invoke(ctx, InstanceService_GetInstanceLatestMetrics_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) QueryResourceTrend(ctx context.Context, in *v1.QueryResourceTrendRequest, opts ...grpc.CallOption) (*v1.QueryResourceTrendResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.QueryResourceTrendResponse)
+	err := c.cc.Invoke(ctx, InstanceService_QueryResourceTrend_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -285,6 +298,8 @@ type InstanceServiceServer interface {
 	GetInstanceConfiguration(context.Context, *v1.GetInstanceRequest) (*v1.InstanceConfiguration, error)
 	QueryInstanceMetrics(context.Context, *v1.QueryInstanceMetricsRequest) (*v1.QueryInstanceMetricsResponse, error)
 	GetInstanceLatestMetrics(context.Context, *v1.GetInstanceRequest) (*v1.GetInstanceLatestMetricsResponse, error)
+	// 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
+	QueryResourceTrend(context.Context, *v1.QueryResourceTrendRequest) (*v1.QueryResourceTrendResponse, error)
 	GetInstanceSchedulingSettings(context.Context, *v1.InstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
 	UpdateInstanceSchedulingSettings(context.Context, *v1.UpdateInstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
 	GetSchedulerConfig(context.Context, *v1.SchedulerConfigRequest) (*v1.SchedulerConfig, error)
@@ -325,6 +340,9 @@ func (UnimplementedInstanceServiceServer) QueryInstanceMetrics(context.Context, 
 }
 func (UnimplementedInstanceServiceServer) GetInstanceLatestMetrics(context.Context, *v1.GetInstanceRequest) (*v1.GetInstanceLatestMetricsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetInstanceLatestMetrics not implemented")
+}
+func (UnimplementedInstanceServiceServer) QueryResourceTrend(context.Context, *v1.QueryResourceTrendRequest) (*v1.QueryResourceTrendResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method QueryResourceTrend not implemented")
 }
 func (UnimplementedInstanceServiceServer) GetInstanceSchedulingSettings(context.Context, *v1.InstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetInstanceSchedulingSettings not implemented")
@@ -460,6 +478,24 @@ func _InstanceService_GetInstanceLatestMetrics_Handler(srv interface{}, ctx cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(InstanceServiceServer).GetInstanceLatestMetrics(ctx, req.(*v1.GetInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_QueryResourceTrend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.QueryResourceTrendRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).QueryResourceTrend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_QueryResourceTrend_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).QueryResourceTrend(ctx, req.(*v1.QueryResourceTrendRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -749,6 +785,10 @@ var InstanceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetInstanceLatestMetrics",
 			Handler:    _InstanceService_GetInstanceLatestMetrics_Handler,
+		},
+		{
+			MethodName: "QueryResourceTrend",
+			Handler:    _InstanceService_QueryResourceTrend_Handler,
 		},
 		{
 			MethodName: "GetInstanceSchedulingSettings",

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"regexp"
 	"time"
+
+	"go-wind-admin/app/admin/service/internal/data"
 )
 
 var instanceLogsHTTPPath = regexp.MustCompile(`^/api/v1/instances/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/logs$`)
@@ -32,6 +34,8 @@ func instanceHTTPTimeoutFilter(ordinary time.Duration, ownerBudgets ...time.Dura
 			ctx := r.Context()
 			var cancel context.CancelFunc
 			metrics := instanceMetricsHTTPPath.MatchString(r.URL.Path) && (r.Method == http.MethodPost && r.URL.Path[len(r.URL.Path)-6:] == "/query" || r.Method == http.MethodGet && r.URL.Path[len(r.URL.Path)-7:] == "/latest")
+			// 首页资源趋势：30d 档 obs 批次预算 15s，gov 客户端 20s，HTTP 预算留余量到 25s。
+			trend := r.Method == http.MethodGet && r.URL.Path == data.ObservabilityResourceTrendPath
 			modeldev := r.Method == http.MethodPost && (r.URL.Path == "/api/v1/modeldev/executions" || modelDevRegistrationHTTPPath.MatchString(r.URL.Path)) || r.Method == http.MethodGet && modelDevArtifactHTTPPath.MatchString(r.URL.Path)
 			modelImport := r.Method == http.MethodPost && (r.URL.Path == "/api/v1/model-versions" || modelUploadHTTPPath.MatchString(r.URL.Path))
 			if modelImport && modelImportBudget > 0 {
@@ -42,6 +46,8 @@ func instanceHTTPTimeoutFilter(ordinary time.Duration, ownerBudgets ...time.Dura
 				// Prepare may verify an immutable base-model archive. Its finite
 				// owner RPC budget also bounds short-lived S3 download grants.
 				ctx, cancel = context.WithTimeout(ctx, admissionBudget)
+			} else if trend {
+				ctx, cancel = context.WithTimeout(ctx, 25*time.Second)
 			} else if metrics {
 				ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
 			} else if ordinary > 0 && !(r.Method == http.MethodGet && instanceLogsHTTPPath.MatchString(r.URL.Path)) {

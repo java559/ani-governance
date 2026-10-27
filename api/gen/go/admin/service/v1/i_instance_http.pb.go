@@ -34,6 +34,7 @@ const OperationInstanceServiceListInstanceEvents = "/admin.service.v1.InstanceSe
 const OperationInstanceServiceListInstances = "/admin.service.v1.InstanceService/ListInstances"
 const OperationInstanceServiceListMountablePVCs = "/admin.service.v1.InstanceService/ListMountablePVCs"
 const OperationInstanceServiceQueryInstanceMetrics = "/admin.service.v1.InstanceService/QueryInstanceMetrics"
+const OperationInstanceServiceQueryResourceTrend = "/admin.service.v1.InstanceService/QueryResourceTrend"
 const OperationInstanceServiceStartInstance = "/admin.service.v1.InstanceService/StartInstance"
 const OperationInstanceServiceStopInstance = "/admin.service.v1.InstanceService/StopInstance"
 const OperationInstanceServiceUpdateInstanceSchedulingSettings = "/admin.service.v1.InstanceService/UpdateInstanceSchedulingSettings"
@@ -56,6 +57,8 @@ type InstanceServiceHTTPServer interface {
 	ListInstances(context.Context, *v1.ListInstancesRequest) (*v1.ListInstancesResponse, error)
 	ListMountablePVCs(context.Context, *v1.ListMountablePVCsRequest) (*v1.ListMountablePVCsResponse, error)
 	QueryInstanceMetrics(context.Context, *v1.QueryInstanceMetricsRequest) (*v1.QueryInstanceMetricsResponse, error)
+	// QueryResourceTrend 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
+	QueryResourceTrend(context.Context, *v1.QueryResourceTrendRequest) (*v1.QueryResourceTrendResponse, error)
 	StartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	StopInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	UpdateInstanceSchedulingSettings(context.Context, *v1.UpdateInstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
@@ -68,6 +71,7 @@ func RegisterInstanceServiceHTTPServer(s *http.Server, srv InstanceServiceHTTPSe
 	r.GET("/api/v1/instances/{instance_id}/configuration", _InstanceService_GetInstanceConfiguration0_HTTP_Handler(srv))
 	r.POST("/api/v1/instances/{instance_id}/metrics/query", _InstanceService_QueryInstanceMetrics0_HTTP_Handler(srv))
 	r.GET("/api/v1/instances/{instance_id}/metrics/latest", _InstanceService_GetInstanceLatestMetrics0_HTTP_Handler(srv))
+	r.GET("/api/v1/observability/resource-trend", _InstanceService_QueryResourceTrend0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/instance-scheduling-settings", _InstanceService_GetInstanceSchedulingSettings0_HTTP_Handler(srv))
 	r.PUT("/api/v1/admin/instance-scheduling-settings", _InstanceService_UpdateInstanceSchedulingSettings0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/scheduler-config", _InstanceService_GetSchedulerConfig0_HTTP_Handler(srv))
@@ -168,6 +172,25 @@ func _InstanceService_GetInstanceLatestMetrics0_HTTP_Handler(srv InstanceService
 			return err
 		}
 		reply := out.(*v1.GetInstanceLatestMetricsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_QueryResourceTrend0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.QueryResourceTrendRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceQueryResourceTrend)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.QueryResourceTrend(ctx, req.(*v1.QueryResourceTrendRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.QueryResourceTrendResponse)
 		return ctx.Result(200, reply)
 	}
 }
@@ -500,6 +523,8 @@ type InstanceServiceHTTPClient interface {
 	ListInstances(ctx context.Context, req *v1.ListInstancesRequest, opts ...http.CallOption) (rsp *v1.ListInstancesResponse, err error)
 	ListMountablePVCs(ctx context.Context, req *v1.ListMountablePVCsRequest, opts ...http.CallOption) (rsp *v1.ListMountablePVCsResponse, err error)
 	QueryInstanceMetrics(ctx context.Context, req *v1.QueryInstanceMetricsRequest, opts ...http.CallOption) (rsp *v1.QueryInstanceMetricsResponse, err error)
+	// QueryResourceTrend 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
+	QueryResourceTrend(ctx context.Context, req *v1.QueryResourceTrendRequest, opts ...http.CallOption) (rsp *v1.QueryResourceTrendResponse, err error)
 	StartInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	StopInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	UpdateInstanceSchedulingSettings(ctx context.Context, req *v1.UpdateInstanceSchedulingSettingsRequest, opts ...http.CallOption) (rsp *v1.InstanceSchedulingSettings, err error)
@@ -692,6 +717,20 @@ func (c *InstanceServiceHTTPClientImpl) QueryInstanceMetrics(ctx context.Context
 	opts = append(opts, http.Operation(OperationInstanceServiceQueryInstanceMetrics))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// QueryResourceTrend 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
+func (c *InstanceServiceHTTPClientImpl) QueryResourceTrend(ctx context.Context, in *v1.QueryResourceTrendRequest, opts ...http.CallOption) (*v1.QueryResourceTrendResponse, error) {
+	var out v1.QueryResourceTrendResponse
+	pattern := "/api/v1/observability/resource-trend"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceQueryResourceTrend))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
