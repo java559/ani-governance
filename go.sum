@@ -406,6 +406,8 @@ github.com/zhangzhe-ctrl/ani-observability-service/api v0.1.1 h1:SEr70/++V17GJrS
 github.com/zhangzhe-ctrl/ani-observability-service/api v0.1.1/go.mod h1:a+WDRsjGC2HUmncHBgkHfUKaRfsfMqvFr+uJzJW2T4A=
 github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261026093918-ece9d5303740 h1:Kahz5kCGLyBOWViI5L1xdlO+Qi7oGBHhQ1ak+NBf04w=
 github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261026093918-ece9d5303740/go.mod h1:ce80VIH0yy5ca08sma0nuIi2badoIwHqAa73pRlpjCU=
+github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261027054328-d7b01167cb92 h1:8KcpDLlWjo0lqa0gX/yJxrWvKSHY/jYd7++m+somnwk=
+github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261027054328-d7b01167cb92/go.mod h1:ce80VIH0yy5ca08sma0nuIi2badoIwHqAa73pRlpjCU=
 github.com/zhangzhe-ctrl/ani-resource-service/api/instance/terminal v0.0.0-20261013075021-0937f5aa9c6c h1:+Z/R4AX9U0RpY+smnrCO9cVFTxLqjjp0r7NbUWdchNE=
 github.com/zhangzhe-ctrl/ani-resource-service/api/instance/terminal v0.0.0-20261013075021-0937f5aa9c6c/go.mod h1:8N+MSiQHH8SrwQ6HOvEunPq37KNHiTr2/78mhzraFSw=
 github.com/zhangzhe-ctrl/ani-resource-service/api/vm/console v0.0.0-20261023185414-0a53b99c8d9f h1:dC5v8SPszcnt5W0pl5rBOSCL85nDJnQJkjy1YcWFZLs=
