@@ -20,6 +20,7 @@
 | `enable-model-access.sql` | 只给显式指定的租户 `tenant:manager` 角色和套餐开放 MODEL；不会修改其他租户、模板角色或配额。 |
 | `grant-quota-platform-read.sql` | 数据修复，给受保护平台管理员角色（`platform:admin`）补授 `quota-definition:view`、`tenant:quota-read`，修复配额目录/租户配额账户对平台管理员 403；不新建/放宽其它角色，不改权限-API 关联、不开套餐。 |
 | `grant-quota-tenant-self-read.sql` | 数据修复，给租户管理员模板 `template:tenant:manager` 与既有 `tenant:manager` 角色补授 `quota:account:self-read`（自助读本人配额账户）；不触碰平台角色与其它角色码，不代表已开通 TENANT 模块。 |
+| `grant-storage-tenant-permissions.sql` | 数据修复，给租户管理员模板 `template:tenant:manager` 与既有 `tenant:manager` 角色补授全部 9 个 `storage:*` 权限码（卷创建/列表/详情/扩容/删除，桶与对象只读浏览/下载），修复存储接口对租户管理员 403（权限与 API 关联本已存在，缺的是角色授予）；逐条校验权限点已绑定对应在线路由，不触碰平台角色与其它角色码，不代表已开通 STORAGE 模块。 |
 | `register-modeldev-execution-detail-permissions.sql` | 数据修复，把执行详情的 `/pods`、`/events`、`/resource-metrics` 关联到 `modeldev:execution:get`、`/logs/stream` 关联到 `modeldev:execution:logs`；不新建权限、不授角色或套餐。须先跑 `admin sync-apis --dry-run` 确认四条路由已入目录，再由迁移 owner 执行；整套前置见 `scripts/ops/apply-modeldev-execution-detail.sh`。 |
 | `register-modeldev-resume-registration-permission.sql` | 数据修复，把 `POST /api/v1/modeldev/executions/{execution_id}:resume-model-registration` 关联到既有的 `modeldev:manage_execution`；不新建权限码、不授角色或套餐。该路由由 `admin sync-apis` 写入目录但不会自动绑定权限，未执行前恢复登记恒返回 403。 |
 

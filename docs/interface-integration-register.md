@@ -1895,6 +1895,15 @@ status=ready 返回 total=1/ready，operations 返回 total=1。含斜杠的公�
 
 未提供：上传/删除对象、建桶/删桶、用户 S3 AK/SK、桶公开访问、容量配额、重命名。
 独立盘不计入 `storage.bytes` 配额。
+
+存量库补授权（2026-10-28）：新环境实测存储全部路由对租户管理员返回 403
+`FORBIDDEN`（Casbin `subject=tenant:manager ... denied`）；权限点、API 关联与
+STORAGE 套餐模块均已在位，缺的是角色授予——只有历史租户角色持码，模板
+`template:tenant:manager` 为空。显式执行
+[`grant-storage-tenant-permissions.sql`](../scripts/ops/sql/grant-storage-tenant-permissions.sql)
+给模板与既有 `tenant:manager` 角色按各自租户补授 9 个 `storage:*` 码，随后重启
+Gov 重载策略。该脚本只补角色授予，不改权限、关联、套餐或平台角色。
+
 ## VM-MVP-20261023：虚拟机 BFF
 
 正式请求/响应及路由输入为 `api/protos/vm/service/v1/vm.proto`、`api/protos/admin/service/v1/i_vm.proto`。Module `VIRTUAL_MACHINE=17`；权限登记复用 [能力映射](contracts/permission-code-capability-map.tsv)，显式目录准备使用 `scripts/ops/sql/register-vm-permissions.sql`，不自动授予角色、套餐或资源额度。共享 compute 路径按 `usage=VIRTUAL_MACHINE` 检查 `vm:compute-preset:read` 及该模块资格。
@@ -1957,6 +1966,7 @@ Obs先计算全租户时间对齐统计，Gov再排序/搜索/分页，全平台
 范围以Gov仍持久的租户目录为准（含停用、过期、冻结及保留的软删标记行）；完全物理删除且无目录映射的历史不作完整覆盖承诺。
 客户端scope/观测快照按用户、窗口和租户范围短时复用15秒，不复用用户授权结果。
 本条为新增实现合同；部署、权限登记和真实跨仓验收由本任务发布步骤分别确认。
+
 ## PLAT-COMP-20261028：平台组件健康快照（PLAT-COMP-01）
 
 BOSS「组件状态」页数据源：`GET /api/v1/platform/components`。Proto 合同
