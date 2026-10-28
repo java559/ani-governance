@@ -23,6 +23,154 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 组件日志流请求。limit 与 interval_seconds 用 optional 区分"未传"与"显式零值"，
+// 显式零值必须报 400 而不是被当成默认值。
+type PlatformComponentLogsRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Component       string                 `protobuf:"bytes,1,opt,name=component,proto3" json:"component,omitempty"`                                           // 路径参数，必须是注册表内的组件名
+	Limit           *int32                 `protobuf:"varint,2,opt,name=limit,proto3,oneof" json:"limit,omitempty"`                                            // 首次回放条数，1..200，默认 100
+	IntervalSeconds *int32                 `protobuf:"varint,3,opt,name=interval_seconds,json=intervalSeconds,proto3,oneof" json:"interval_seconds,omitempty"` // 增量查询间隔秒，1..5，默认 2
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *PlatformComponentLogsRequest) Reset() {
+	*x = PlatformComponentLogsRequest{}
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlatformComponentLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlatformComponentLogsRequest) ProtoMessage() {}
+
+func (x *PlatformComponentLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlatformComponentLogsRequest.ProtoReflect.Descriptor instead.
+func (*PlatformComponentLogsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *PlatformComponentLogsRequest) GetComponent() string {
+	if x != nil {
+		return x.Component
+	}
+	return ""
+}
+
+func (x *PlatformComponentLogsRequest) GetLimit() int32 {
+	if x != nil && x.Limit != nil {
+		return *x.Limit
+	}
+	return 0
+}
+
+func (x *PlatformComponentLogsRequest) GetIntervalSeconds() int32 {
+	if x != nil && x.IntervalSeconds != nil {
+		return *x.IntervalSeconds
+	}
+	return 0
+}
+
+// 组件日志流的一帧。六字段与旧契约完全一致，都是非空 string；
+// kind 只用于区分帧类型，不进入 data 的六字段投影。
+type PlatformComponentLogFrame struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Container     string                 `protobuf:"bytes,1,opt,name=container,proto3" json:"container,omitempty"`
+	Level         string                 `protobuf:"bytes,2,opt,name=level,proto3" json:"level,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	Pod           string                 `protobuf:"bytes,4,opt,name=pod,proto3" json:"pod,omitempty"`
+	Stream        string                 `protobuf:"bytes,5,opt,name=stream,proto3" json:"stream,omitempty"`
+	Timestamp     string                 `protobuf:"bytes,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"` // UTC RFC3339，毫秒精度
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PlatformComponentLogFrame) Reset() {
+	*x = PlatformComponentLogFrame{}
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PlatformComponentLogFrame) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PlatformComponentLogFrame) ProtoMessage() {}
+
+func (x *PlatformComponentLogFrame) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PlatformComponentLogFrame.ProtoReflect.Descriptor instead.
+func (*PlatformComponentLogFrame) Descriptor() ([]byte, []int) {
+	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *PlatformComponentLogFrame) GetContainer() string {
+	if x != nil {
+		return x.Container
+	}
+	return ""
+}
+
+func (x *PlatformComponentLogFrame) GetLevel() string {
+	if x != nil {
+		return x.Level
+	}
+	return ""
+}
+
+func (x *PlatformComponentLogFrame) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *PlatformComponentLogFrame) GetPod() string {
+	if x != nil {
+		return x.Pod
+	}
+	return ""
+}
+
+func (x *PlatformComponentLogFrame) GetStream() string {
+	if x != nil {
+		return x.Stream
+	}
+	return ""
+}
+
+func (x *PlatformComponentLogFrame) GetTimestamp() string {
+	if x != nil {
+		return x.Timestamp
+	}
+	return ""
+}
+
 // 组件状态快照 - 回应
 type PlatformComponentStatusResponse struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
@@ -35,7 +183,7 @@ type PlatformComponentStatusResponse struct {
 
 func (x *PlatformComponentStatusResponse) Reset() {
 	*x = PlatformComponentStatusResponse{}
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[0]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +195,7 @@ func (x *PlatformComponentStatusResponse) String() string {
 func (*PlatformComponentStatusResponse) ProtoMessage() {}
 
 func (x *PlatformComponentStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[0]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +208,7 @@ func (x *PlatformComponentStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformComponentStatusResponse.ProtoReflect.Descriptor instead.
 func (*PlatformComponentStatusResponse) Descriptor() ([]byte, []int) {
-	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{0}
+	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *PlatformComponentStatusResponse) GetObservedAt() string {
@@ -95,7 +243,7 @@ type PlatformComponentGroup struct {
 
 func (x *PlatformComponentGroup) Reset() {
 	*x = PlatformComponentGroup{}
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[1]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -107,7 +255,7 @@ func (x *PlatformComponentGroup) String() string {
 func (*PlatformComponentGroup) ProtoMessage() {}
 
 func (x *PlatformComponentGroup) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[1]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -120,7 +268,7 @@ func (x *PlatformComponentGroup) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformComponentGroup.ProtoReflect.Descriptor instead.
 func (*PlatformComponentGroup) Descriptor() ([]byte, []int) {
-	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{1}
+	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PlatformComponentGroup) GetName() string {
@@ -157,7 +305,7 @@ type PlatformComponent struct {
 
 func (x *PlatformComponent) Reset() {
 	*x = PlatformComponent{}
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[2]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -169,7 +317,7 @@ func (x *PlatformComponent) String() string {
 func (*PlatformComponent) ProtoMessage() {}
 
 func (x *PlatformComponent) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[2]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -182,7 +330,7 @@ func (x *PlatformComponent) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformComponent.ProtoReflect.Descriptor instead.
 func (*PlatformComponent) Descriptor() ([]byte, []int) {
-	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{2}
+	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *PlatformComponent) GetName() string {
@@ -268,7 +416,7 @@ type PlatformComponentDevProfile struct {
 
 func (x *PlatformComponentDevProfile) Reset() {
 	*x = PlatformComponentDevProfile{}
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[3]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -280,7 +428,7 @@ func (x *PlatformComponentDevProfile) String() string {
 func (*PlatformComponentDevProfile) ProtoMessage() {}
 
 func (x *PlatformComponentDevProfile) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[3]
+	mi := &file_admin_service_v1_i_platform_component_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -293,7 +441,7 @@ func (x *PlatformComponentDevProfile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlatformComponentDevProfile.ProtoReflect.Descriptor instead.
 func (*PlatformComponentDevProfile) Descriptor() ([]byte, []int) {
-	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{3}
+	return file_admin_service_v1_i_platform_component_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *PlatformComponentDevProfile) GetMode() string {
@@ -328,7 +476,20 @@ var File_admin_service_v1_i_platform_component_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_platform_component_proto_rawDesc = "" +
 	"\n" +
-	"+admin/service/v1/i_platform_component.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd4\x01\n" +
+	"+admin/service/v1/i_platform_component.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa6\x01\n" +
+	"\x1cPlatformComponentLogsRequest\x12\x1c\n" +
+	"\tcomponent\x18\x01 \x01(\tR\tcomponent\x12\x19\n" +
+	"\x05limit\x18\x02 \x01(\x05H\x00R\x05limit\x88\x01\x01\x12.\n" +
+	"\x10interval_seconds\x18\x03 \x01(\x05H\x01R\x0fintervalSeconds\x88\x01\x01B\b\n" +
+	"\x06_limitB\x13\n" +
+	"\x11_interval_seconds\"\xb1\x01\n" +
+	"\x19PlatformComponentLogFrame\x12\x1c\n" +
+	"\tcontainer\x18\x01 \x01(\tR\tcontainer\x12\x14\n" +
+	"\x05level\x18\x02 \x01(\tR\x05level\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x10\n" +
+	"\x03pod\x18\x04 \x01(\tR\x03pod\x12\x16\n" +
+	"\x06stream\x18\x05 \x01(\tR\x06stream\x12\x1c\n" +
+	"\ttimestamp\x18\x06 \x01(\tR\ttimestamp\"\xd4\x01\n" +
 	"\x1fPlatformComponentStatusResponse\x12\x1f\n" +
 	"\vobserved_at\x18\x01 \x01(\tR\n" +
 	"observedAt\x12@\n" +
@@ -356,9 +517,10 @@ const file_admin_service_v1_i_platform_component_proto_rawDesc = "" +
 	"\x04mode\x18\x01 \x01(\tR\x04mode\x12\x1a\n" +
 	"\bprovider\x18\x02 \x01(\tR\bprovider\x12#\n" +
 	"\rreal_provider\x18\x03 \x01(\bR\frealProvider\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason2\xa5\x01\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason2\x9b\x02\n" +
 	"\x18PlatformComponentService\x12\x88\x01\n" +
-	"\x16ListPlatformComponents\x12\x16.google.protobuf.Empty\x1a1.admin.service.v1.PlatformComponentStatusResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/platform/componentsB\xc4\x01\n" +
+	"\x16ListPlatformComponents\x12\x16.google.protobuf.Empty\x1a1.admin.service.v1.PlatformComponentStatusResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/platform/components\x12t\n" +
+	"\x13StreamComponentLogs\x12..admin.service.v1.PlatformComponentLogsRequest\x1a+.admin.service.v1.PlatformComponentLogFrame0\x01B\xc4\x01\n" +
 	"\x14com.admin.service.v1B\x17IPlatformComponentProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var (
@@ -373,22 +535,26 @@ func file_admin_service_v1_i_platform_component_proto_rawDescGZIP() []byte {
 	return file_admin_service_v1_i_platform_component_proto_rawDescData
 }
 
-var file_admin_service_v1_i_platform_component_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_admin_service_v1_i_platform_component_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_admin_service_v1_i_platform_component_proto_goTypes = []any{
-	(*PlatformComponentStatusResponse)(nil), // 0: admin.service.v1.PlatformComponentStatusResponse
-	(*PlatformComponentGroup)(nil),          // 1: admin.service.v1.PlatformComponentGroup
-	(*PlatformComponent)(nil),               // 2: admin.service.v1.PlatformComponent
-	(*PlatformComponentDevProfile)(nil),     // 3: admin.service.v1.PlatformComponentDevProfile
-	(*emptypb.Empty)(nil),                   // 4: google.protobuf.Empty
+	(*PlatformComponentLogsRequest)(nil),    // 0: admin.service.v1.PlatformComponentLogsRequest
+	(*PlatformComponentLogFrame)(nil),       // 1: admin.service.v1.PlatformComponentLogFrame
+	(*PlatformComponentStatusResponse)(nil), // 2: admin.service.v1.PlatformComponentStatusResponse
+	(*PlatformComponentGroup)(nil),          // 3: admin.service.v1.PlatformComponentGroup
+	(*PlatformComponent)(nil),               // 4: admin.service.v1.PlatformComponent
+	(*PlatformComponentDevProfile)(nil),     // 5: admin.service.v1.PlatformComponentDevProfile
+	(*emptypb.Empty)(nil),                   // 6: google.protobuf.Empty
 }
 var file_admin_service_v1_i_platform_component_proto_depIdxs = []int32{
-	1, // 0: admin.service.v1.PlatformComponentStatusResponse.groups:type_name -> admin.service.v1.PlatformComponentGroup
-	3, // 1: admin.service.v1.PlatformComponentStatusResponse.dev_profile:type_name -> admin.service.v1.PlatformComponentDevProfile
-	2, // 2: admin.service.v1.PlatformComponentGroup.components:type_name -> admin.service.v1.PlatformComponent
-	4, // 3: admin.service.v1.PlatformComponentService.ListPlatformComponents:input_type -> google.protobuf.Empty
-	0, // 4: admin.service.v1.PlatformComponentService.ListPlatformComponents:output_type -> admin.service.v1.PlatformComponentStatusResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
+	3, // 0: admin.service.v1.PlatformComponentStatusResponse.groups:type_name -> admin.service.v1.PlatformComponentGroup
+	5, // 1: admin.service.v1.PlatformComponentStatusResponse.dev_profile:type_name -> admin.service.v1.PlatformComponentDevProfile
+	4, // 2: admin.service.v1.PlatformComponentGroup.components:type_name -> admin.service.v1.PlatformComponent
+	6, // 3: admin.service.v1.PlatformComponentService.ListPlatformComponents:input_type -> google.protobuf.Empty
+	0, // 4: admin.service.v1.PlatformComponentService.StreamComponentLogs:input_type -> admin.service.v1.PlatformComponentLogsRequest
+	2, // 5: admin.service.v1.PlatformComponentService.ListPlatformComponents:output_type -> admin.service.v1.PlatformComponentStatusResponse
+	1, // 6: admin.service.v1.PlatformComponentService.StreamComponentLogs:output_type -> admin.service.v1.PlatformComponentLogFrame
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -399,13 +565,14 @@ func file_admin_service_v1_i_platform_component_proto_init() {
 	if File_admin_service_v1_i_platform_component_proto != nil {
 		return
 	}
+	file_admin_service_v1_i_platform_component_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_service_v1_i_platform_component_proto_rawDesc), len(file_admin_service_v1_i_platform_component_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

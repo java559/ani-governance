@@ -124,6 +124,12 @@ HTTP/1.1 400 Bad Request
 
 响应提供 `X-Request-ID` 或 `metadata.request_id` 时，前端保留该值用于排查；它们不是每个错误都必定存在的业务字段。
 
+本规范有一处显式例外：平台组件日志流
+`GET /api/v1/platform/components/{component}/logs/stream` 为兼容旧版前端，错误体使用旧格式
+`{"code": <字符串>, "message": <字符串>, "request_id": <字符串>}`，不使用数字 `code` 与 `reason`。
+该例外仅限这一条路由，其他接口仍按本节执行。登记见
+[接口集成登记](../interface-integration-register.md) 的 `PLAT-COMP-02`。
+
 ## 6 公共字段与特殊结果
 
 - 64 位整数在 JSON 中使用十进制字符串，例如 `"total": "3"`、`"version": "1"`；其他字段类型以接口定义为准。

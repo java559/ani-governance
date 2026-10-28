@@ -1,0 +1,26 @@
+{
+  "opensearch": {
+    "endpoint": "https://ani-opensearch-master.ani-observability.svc.cluster.local:9200",
+    "server_name": "ani-opensearch-master.ani-observability.svc.cluster.local",
+    "ca_file": "/run/component-logs-credentials/ca.crt",
+    "username_file": "/run/component-logs-credentials/username",
+    "password_file": "/run/component-logs-credentials/password",
+    "index_prefix": "ani-logs-",
+    "retention_days": 3,
+    "query_timeout_seconds": 2,
+    "response_max_bytes": 4194304
+  },
+  "stream": {
+    "open_timeout_seconds": 3,
+    "write_timeout_seconds": 2,
+    "heartbeat_seconds": 2,
+    "replay_limit_max": 200,
+    "increment_max": 500,
+    "overlap_seconds": 30,
+    "max_frame_bytes": 262144,
+    "max_buffered_bytes": 1048576,
+    "process_connections": 16,
+    "user_connections": 4,
+    "component_connections": 4
+  }
+}

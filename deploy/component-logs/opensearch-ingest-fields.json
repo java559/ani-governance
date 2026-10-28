@@ -1,0 +1,34 @@
+{
+  "_comment": [
+    "可选变更：为增量查询提供入库时间。本期线上未应用（见实施过程文档），",
+    "Gov reader 运行时探测该字段：存在则按入库时间窗口，缺失则退化为 @timestamp 窗口。",
+    "应用前必须备份当前 pipeline，并只追加下列 set processor，不得整份覆盖现网 painless 规范化逻辑。",
+    "set processor 必须放在重建 ctx.ani_log 的 painless 脚本之后，否则会被覆盖。"
+  ],
+  "pipeline_id": "ani-component-log-normalize-v1",
+  "append_processors": [
+    {
+      "set": {
+        "field": "ani_log.ingested_at",
+        "value": "{{{_ingest.timestamp}}}",
+        "ignore_failure": false
+      }
+    }
+  ],
+  "mapping_update": {
+    "properties": {
+      "ani_log": {
+        "properties": {
+          "ingested_at": {
+            "type": "date"
+          }
+        }
+      }
+    }
+  },
+  "notes": [
+    "ani_log 是 dynamic:false：模板与现存索引 _mapping 必须同时更新，否则字段被静默丢弃。",
+    "_ingest.timestamp 是纳秒 ISO8601；date 的 strict_date_optional_time 接受最多 9 位小数秒并截断到毫秒，无需改 date_nanos。",
+    "回滚只移除本 set processor，保留此前已修复的原文/固定字段规范化。"
+  ]
+}

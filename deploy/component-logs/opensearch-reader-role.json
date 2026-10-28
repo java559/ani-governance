@@ -1,0 +1,34 @@
+{
+  "_comment": [
+    "Gov 组件日志 reader 的 OpenSearch 只读角色。已在 66 新环境按此最小集合建角色并通过正负测：",
+    "查询 ani-logs-* 200；写文档 / 系统索引 / 删索引 / 改 pipeline / security API 全部 403；错误密码 401。",
+    "只授予 cluster_monitor 与四个 index action，不加 cluster_composite_ops_ro、msearch、settings get 等多余能力。",
+    "建角色后必须另建 rolesmapping 把该角色映射到 backend_role，否则账号仍会 403 no permissions。"
+  ],
+  "role_name": "ani_gov_logs_reader",
+  "description": "ANI governance component log reader: read-only on ani-logs-* plus mapping metadata",
+  "cluster_permissions": [
+    "cluster_monitor"
+  ],
+  "index_permissions": [
+    {
+      "index_patterns": [
+        "ani-logs-*"
+      ],
+      "allowed_actions": [
+        "indices:data/read/search",
+        "indices:data/read/scroll",
+        "indices:admin/mappings/get",
+        "indices:admin/get"
+      ],
+      "dls": "",
+      "fls": [],
+      "masked_fields": []
+    }
+  ],
+  "tenant_permissions": [],
+  "user": {
+    "_comment": "账号与密码单独安全创建，不写入本文件；密码存进 Gov 专属 Secret 的 password key。",
+    "backend_roles": ["ani_gov_logs_reader"]
+  }
+}

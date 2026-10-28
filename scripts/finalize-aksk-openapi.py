@@ -290,6 +290,123 @@ def add_artifact_download(text):
     return text.replace(marker, "\n" + operation + "components:\n", 1)
 
 
+def add_platform_component_log_stream(text):
+    # The component log channel is a hand-written SSE handler next to the
+    # component status snapshot, so the generator cannot infer it. The route is
+    # looked up by template, which means the contract must be declared here.
+    if "            operationId: PlatformComponentService_ListPlatformComponents\n" not in text:
+        return text
+    route = "    /api/v1/platform/components/{component}/logs/stream:\n"
+    if route in text:
+        raise SystemExit("platform component log stream must be declared once as SSE")
+    operation = """    /api/v1/platform/components/{component}/logs/stream:
+        get:
+            tags:
+                - PlatformComponentService
+            operationId: PlatformComponentService_StreamComponentLogs
+            description: Read the six-field log stream of one registered platform component as SSE. Platform identity and component:log:read are verified before HTTP headers; the stream closes normally after 8 seconds and the client reconnects. No cross-connection cursor.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: component
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    description: Must be a name from GET /api/v1/platform/components. Arbitrary pod, namespace or index names are rejected.
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    minimum: 1
+                    maximum: 200
+                    default: 100
+                - name: interval_seconds
+                  in: query
+                  schema:
+                    type: integer
+                    minimum: 1
+                    maximum: 5
+                    default: 2
+            responses:
+                "200":
+                    description: SSE comment heartbeats plus event log frames carrying the six string fields; no-store and proxy buffering disabled. Closing after 8 seconds is normal.
+                    content:
+                        text/event-stream:
+                            schema:
+                                type: string
+                "400":
+                    description: Invalid query, duplicated parameter or unsupported Last-Event-ID
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "403":
+                    description: Platform identity or component - log read capability missing
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "404":
+                    description: Component is not registered
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "429":
+                    description: Concurrent connection limit reached; honour Retry-After
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "503":
+                    description: Log backend not configured or unavailable
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "504":
+                    description: Log query timed out
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+"""
+    # 行首锚定匹配顶层 components:（不能用裸子串：路由 /api/v1/platform/components
+    # 的路径行同样以 "components:\n" 结尾，会被误计入）。
+    marker = "\ncomponents:\n"
+    if text.count(marker) != 1:
+        raise SystemExit("expected one OpenAPI components section")
+    return text.replace(marker, "\n" + operation + "components:\n", 1)
+
+
+def add_platform_component_log_error_schema(text):
+    # 该入口沿用旧版字符串 code 错误体；schema 单独声明一次，供上面 6 个状态码引用。
+    if "            operationId: PlatformComponentService_StreamComponentLogs\n" not in text:
+        return text
+    if "        PlatformComponentLogError:\n" in text:
+        raise SystemExit("platform component log error schema declared twice")
+    schema = """        PlatformComponentLogError:
+            type: object
+            required:
+                - code
+                - message
+                - request_id
+            properties:
+                code:
+                    type: string
+                    description: Legacy string code, such as COMPONENT_DIAGNOSTICS_FAILED. Other Gov routes use a numeric code.
+                message:
+                    type: string
+                request_id:
+                    type: string
+"""
+    marker = "    schemas:\n"
+    if text.count(marker) != 1:
+        raise SystemExit("expected one OpenAPI schemas section")
+    return text.replace(marker, marker + schema, 1)
+
+
 def require_compute_usage(text, proto_source=None):
     # gnostic v0.7.1 does not carry field behavior/property enums into GET
     # query parameters. Keep the emitted contract tied to its Proto input.
@@ -344,7 +461,7 @@ def finalize(text):
             text = remove_synthetic_200(text, route, status, method)
     # response_body endpoints retain their explicit public-object schema,
     # including the Network/Image mutation responses and existing details.
-    return add_artifact_download(add_execution_log_stream(add_instance_log_stream(require_compute_usage(repair_network_operation(remove_shadowed_200(text))))))
+    return add_platform_component_log_error_schema(add_platform_component_log_stream(add_artifact_download(add_execution_log_stream(add_instance_log_stream(require_compute_usage(repair_network_operation(remove_shadowed_200(text))))))))
 
 
 if __name__ == "__main__":

@@ -12386,8 +12386,94 @@ paths:
                     description: Object store unreachable or returned an error
                 "504":
                     description: Object store timed out
+    /api/v1/platform/components/{component}/logs/stream:
+        get:
+            tags:
+                - PlatformComponentService
+            operationId: PlatformComponentService_StreamComponentLogs
+            description: Read the six-field log stream of one registered platform component as SSE. Platform identity and component:log:read are verified before HTTP headers; the stream closes normally after 8 seconds and the client reconnects. No cross-connection cursor.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: component
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    description: Must be a name from GET /api/v1/platform/components. Arbitrary pod, namespace or index names are rejected.
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    minimum: 1
+                    maximum: 200
+                    default: 100
+                - name: interval_seconds
+                  in: query
+                  schema:
+                    type: integer
+                    minimum: 1
+                    maximum: 5
+                    default: 2
+            responses:
+                "200":
+                    description: SSE comment heartbeats plus event log frames carrying the six string fields; no-store and proxy buffering disabled. Closing after 8 seconds is normal.
+                    content:
+                        text/event-stream:
+                            schema:
+                                type: string
+                "400":
+                    description: Invalid query, duplicated parameter or unsupported Last-Event-ID
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "403":
+                    description: Platform identity or component - log read capability missing
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "404":
+                    description: Component is not registered
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "429":
+                    description: Concurrent connection limit reached; honour Retry-After
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "503":
+                    description: Log backend not configured or unavailable
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
+                "504":
+                    description: Log query timed out
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentLogError'
 components:
     schemas:
+        PlatformComponentLogError:
+            type: object
+            required:
+                - code
+                - message
+                - request_id
+            properties:
+                code:
+                    type: string
+                    description: Legacy string code, such as COMPONENT_DIAGNOSTICS_FAILED. Other Gov routes use a numeric code.
+                message:
+                    type: string
+                request_id:
+                    type: string
         NetworkOperation:
             type: object
             properties:

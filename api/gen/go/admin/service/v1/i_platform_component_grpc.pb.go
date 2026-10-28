@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	PlatformComponentService_ListPlatformComponents_FullMethodName = "/admin.service.v1.PlatformComponentService/ListPlatformComponents"
+	PlatformComponentService_StreamComponentLogs_FullMethodName    = "/admin.service.v1.PlatformComponentService/StreamComponentLogs"
 )
 
 // PlatformComponentServiceClient is the client API for PlatformComponentService service.
@@ -33,6 +34,12 @@ type PlatformComponentServiceClient interface {
 	// 单个工作负载读取失败降级为 unknown，不返回 5xx；仅 Kubernetes 客户端
 	// 未配置时返回 500 COMPONENT_STATUS_FAILED。
 	ListPlatformComponents(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PlatformComponentStatusResponse, error)
+	// 读取某个组件的日志流（完成为 8 秒的短连接 SSE，前端自行重连）。
+	//
+	// 刻意不加 google.api.http 注解：HTTP 由 server 层手写 SSE handler 承担，
+	// OpenAPI 由 scripts/finalize-aksk-openapi.py 在生成后补写，与实例日志、
+	// 训练日志同一模式。加上注解会生成第二条同路径 handler。
+	StreamComponentLogs(ctx context.Context, in *PlatformComponentLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[PlatformComponentLogFrame], error)
 }
 
 type platformComponentServiceClient struct {
@@ -53,6 +60,25 @@ func (c *platformComponentServiceClient) ListPlatformComponents(ctx context.Cont
 	return out, nil
 }
 
+func (c *platformComponentServiceClient) StreamComponentLogs(ctx context.Context, in *PlatformComponentLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[PlatformComponentLogFrame], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &PlatformComponentService_ServiceDesc.Streams[0], PlatformComponentService_StreamComponentLogs_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[PlatformComponentLogsRequest, PlatformComponentLogFrame]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PlatformComponentService_StreamComponentLogsClient = grpc.ServerStreamingClient[PlatformComponentLogFrame]
+
 // PlatformComponentServiceServer is the server API for PlatformComponentService service.
 // All implementations must embed UnimplementedPlatformComponentServiceServer
 // for forward compatibility.
@@ -63,6 +89,12 @@ type PlatformComponentServiceServer interface {
 	// 单个工作负载读取失败降级为 unknown，不返回 5xx；仅 Kubernetes 客户端
 	// 未配置时返回 500 COMPONENT_STATUS_FAILED。
 	ListPlatformComponents(context.Context, *emptypb.Empty) (*PlatformComponentStatusResponse, error)
+	// 读取某个组件的日志流（完成为 8 秒的短连接 SSE，前端自行重连）。
+	//
+	// 刻意不加 google.api.http 注解：HTTP 由 server 层手写 SSE handler 承担，
+	// OpenAPI 由 scripts/finalize-aksk-openapi.py 在生成后补写，与实例日志、
+	// 训练日志同一模式。加上注解会生成第二条同路径 handler。
+	StreamComponentLogs(*PlatformComponentLogsRequest, grpc.ServerStreamingServer[PlatformComponentLogFrame]) error
 	mustEmbedUnimplementedPlatformComponentServiceServer()
 }
 
@@ -75,6 +107,9 @@ type UnimplementedPlatformComponentServiceServer struct{}
 
 func (UnimplementedPlatformComponentServiceServer) ListPlatformComponents(context.Context, *emptypb.Empty) (*PlatformComponentStatusResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPlatformComponents not implemented")
+}
+func (UnimplementedPlatformComponentServiceServer) StreamComponentLogs(*PlatformComponentLogsRequest, grpc.ServerStreamingServer[PlatformComponentLogFrame]) error {
+	return status.Error(codes.Unimplemented, "method StreamComponentLogs not implemented")
 }
 func (UnimplementedPlatformComponentServiceServer) mustEmbedUnimplementedPlatformComponentServiceServer() {
 }
@@ -116,6 +151,17 @@ func _PlatformComponentService_ListPlatformComponents_Handler(srv interface{}, c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PlatformComponentService_StreamComponentLogs_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PlatformComponentLogsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(PlatformComponentServiceServer).StreamComponentLogs(m, &grpc.GenericServerStream[PlatformComponentLogsRequest, PlatformComponentLogFrame]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type PlatformComponentService_StreamComponentLogsServer = grpc.ServerStreamingServer[PlatformComponentLogFrame]
+
 // PlatformComponentService_ServiceDesc is the grpc.ServiceDesc for PlatformComponentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -128,6 +174,12 @@ var PlatformComponentService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _PlatformComponentService_ListPlatformComponents_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamComponentLogs",
+			Handler:       _PlatformComponentService_StreamComponentLogs_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "admin/service/v1/i_platform_component.proto",
 }

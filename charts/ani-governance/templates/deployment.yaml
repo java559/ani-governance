@@ -107,6 +107,10 @@ spec:
             - name: ANI_PLATFORM_COMPONENTS_PROMETHEUS_URL
               value: {{ .Values.platformComponents.prometheusURL | quote }}
             {{- end }}
+            {{- if .Values.componentLogs.enabled }}
+            - name: ANI_COMPONENT_LOGS_CONFIG
+              value: {{ .Values.componentLogs.configPath | quote }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.httpPort }}
@@ -145,6 +149,14 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            {{- if .Values.componentLogs.enabled }}
+            - name: component-logs-config
+              mountPath: /run/component-logs
+              readOnly: true
+            - name: component-logs-credentials
+              mountPath: /run/component-logs-credentials
+              readOnly: true
+            {{- end }}
             {{- if .Values.downstream.inference.enabled }}
             - name: inference-identity
               mountPath: /service-identity/inference
@@ -181,6 +193,26 @@ spec:
             defaultMode: 0440
         - name: tmp
           emptyDir: {}
+        {{- if .Values.componentLogs.enabled }}
+        - name: component-logs-config
+          configMap:
+            name: {{ required "componentLogs.configMapName is required when enabled" .Values.componentLogs.configMapName }}
+            items:
+              - key: {{ .Values.componentLogs.configKey }}
+                path: config.json
+            defaultMode: 0440
+        - name: component-logs-credentials
+          secret:
+            secretName: {{ required "componentLogs.secretName is required when enabled" .Values.componentLogs.secretName }}
+            items:
+              - key: {{ .Values.componentLogs.caKey }}
+                path: ca.crt
+              - key: {{ .Values.componentLogs.usernameKey }}
+                path: username
+              - key: {{ .Values.componentLogs.passwordKey }}
+                path: password
+            defaultMode: 0440
+        {{- end }}
         {{- if .Values.downstream.inference.enabled }}
         - name: inference-identity
           projected:

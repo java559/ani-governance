@@ -1,10 +1,95 @@
 package data
 
-import "time"
+import (
+	"regexp"
+	"time"
+)
 
 // PlatformComponentsPath 是 BOSS「组件状态」页的组件清单路由；入口权限码
 // component:status:read，仅平台身份可访问（tenant_id=0 + 平台角色）。
 const PlatformComponentsPath = "/api/v1/platform/components"
+
+// PlatformComponentLogStreamPath 是组件日志流的对外路由模板（GET SSE），
+// 入口权限码 component:log:read。与状态接口共用同一份受控组件清单。
+const PlatformComponentLogStreamPath = "/api/v1/platform/components/{component}/logs/stream"
+
+// PlatformComponentLogStreamOperation 是日志流的 HTTP operation 名，供鉴权
+// 中间件按 operation 取权限码，也供手写 handler 写审计痕迹。
+const PlatformComponentLogStreamOperation = "/admin.service.v1.PlatformComponentService/StreamComponentLogs"
+
+// 日志接口的固定契约常量：8 秒正常关闭是旧前端重连节奏依赖的常量，
+// 刻意不进配置（改动必须与前端同版发布）。
+const (
+	PlatformComponentLogPermission   = "component:log:read"
+	PlatformComponentLogLifetime     = 8 * time.Second
+	PlatformComponentLogDefaultLimit = 100
+	PlatformComponentLogMinLimit     = 1
+	PlatformComponentLogMaxLimit     = 200
+	PlatformComponentLogDefaultInterval = 2
+	PlatformComponentLogMinInterval     = 1
+	PlatformComponentLogMaxInterval     = 5
+	// PlatformComponentLogIgnoredParams 是浏览器/axios 常见的缓存击穿参数，
+	// 整体忽略（不校验取值、允许重复），否则前端日志窗口直接打不开。
+	PlatformComponentLogIgnoredParams = "_"
+)
+
+// platformComponentNamePattern 限定组件名取值域。名字只来自本文件注册表，
+// 但仍显式校验：组件名会被拼进 Lucene regexp，必须确保没有元字符。
+var platformComponentNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]*$`)
+
+// PlatformComponentLogScope 是一个组件对应的日志检索范围。
+// 只由注册表派生，不接受任何请求输入。
+type PlatformComponentLogScope struct {
+	Component string
+	Namespace string
+	Kind      string
+	// PodPattern 是 Lucene regexp（整词匹配，无 ^/$ 锚点），
+	// 按工作负载类型匹配 Pod 名，用于把 sandbox/临时 Deployment 排除在外。
+	PodPattern string
+}
+
+// PlatformComponentLogScopeFor 按组件名构造检索范围。
+// 未注册的组件返回 false，调用方据此返回 404。
+func PlatformComponentLogScopeFor(name string) (PlatformComponentLogScope, bool) {
+	if !platformComponentNamePattern.MatchString(name) {
+		return PlatformComponentLogScope{}, false
+	}
+	for _, entry := range platformComponentRegistry {
+		if entry.Name != name {
+			continue
+		}
+		pattern, ok := platformComponentPodPattern(entry.Name, entry.Kind)
+		if !ok {
+			return PlatformComponentLogScope{}, false
+		}
+		return PlatformComponentLogScope{
+			Component:  entry.Name,
+			Namespace:  entry.Namespace,
+			Kind:       entry.Kind,
+			PodPattern: pattern,
+		}, true
+	}
+	return PlatformComponentLogScope{}, false
+}
+
+// platformComponentPodPattern 按 Kind 生成 Pod 名匹配规则。
+//   - Deployment：<name>-<ReplicaSet 后缀 5~10 位>-<Pod 后缀 5 位>
+//   - StatefulSet：<name>-<序号>
+//   - DaemonSet：<name>-<Pod 后缀 5 位>
+//
+// 不用 `prefix=name-` 这类宽松匹配：`ani-governance-sandbox-...` 同样满足前缀。
+func platformComponentPodPattern(name, kind string) (string, bool) {
+	switch kind {
+	case PlatformComponentKindDeployment:
+		return name + `-[a-z0-9]{5,10}-[a-z0-9]{5}`, true
+	case PlatformComponentKindStatefulSet:
+		return name + `-[0-9]+`, true
+	case PlatformComponentKindDaemonSet:
+		return name + `-[a-z0-9]{5}`, true
+	default:
+		return "", false
+	}
+}
 
 // 组件分组名，顺序即响应中 groups[] 的顺序（契约固定三组、固定顺序）。
 const (

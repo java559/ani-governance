@@ -22,6 +22,11 @@ func TestInstanceLogTimeoutKeepsOrdinaryDeadlineAndClientCancellation(t *testing
 		{"GET", "/api/v1/modeldev/executions/20000000-0000-4000-8000-000000000002/logs/stream", false},
 		{"POST", "/api/v1/modeldev/executions/20000000-0000-4000-8000-000000000002/logs/stream", true},
 		{"GET", "/api/v1/modeldev/executions/20000000-0000-4000-8000-000000000002/logs", true},
+		// 组件日志流同样自带 8 秒契约生命周期；同一路径的 POST 与状态快照
+		// 路由仍受普通超时。
+		{"GET", "/api/v1/platform/components/ani-governance/logs/stream", false},
+		{"POST", "/api/v1/platform/components/ani-governance/logs/stream", true},
+		{"GET", "/api/v1/platform/components", true},
 	} {
 		t.Run(tc.method+tc.path, func(t *testing.T) {
 			parent, cancel := context.WithCancel(context.Background())

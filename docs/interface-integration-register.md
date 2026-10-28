@@ -28,6 +28,7 @@
 | ModelDev 训练、微调及原登记恢复 | MODELDEV-01～MODELDEV-08、MODELDEV-12；服务间调用登记 S2S-MODELDEV-CPUP01-01 | 单一 typed 受理/查询及当前授权恢复已实现；原登记 Resume 的 HTTP/JWT/PG/mTLS 边界 GREEN，真实 provider Resume 与完整微调/GPU分别验收；历史 CPU-P01 结果保留原范围 | v2.1，进行中 |
 | 存储接入（独立盘与对象只读） | STORAGE-01～STORAGE-10 | 已实现并在 kcn 新环境完成正/负向验证；对象列表是本登记中唯一分页合同例外 | 待指定；前端合同与交付文档另行提供 |
 | 平台组件健康快照（BOSS 组件状态页） | PLAT-COMP-01 | 已实现并在 kcn 新环境实测（快照、鉴权、降级、缓存）；前端对接文档见 `local-remote/平台健康/` | 待指定 |
+| 平台组件日志流（BOSS 日志窗口） | PLAT-COMP-02；复用 PLAT-COMP-01 组件清单 | 已实现并在 kcn 新环境直连 30085 实测（SSE 六字段、8 秒生命周期、参数严格校验、鉴权、并发配额、客户端取消）；AUTH-02「平台身份但无日志能力」未取到有效证据 | 待指定；旧格式错误体为本登记唯一例外，见下方小节 |
 
 ## 风格改动批次
 
@@ -1985,3 +1986,54 @@ unknown+reason，仅 K8s client 未配置时 500 `COMPONENT_STATUS_FAILED`。
 `component:status:read`（SYSTEM 模块，仅授予 `platform:admin`，租户闸门 fail-closed）。
 部署侧：ClusterRole 增 apps 三资源 list；ServiceMonitor 白名单抓 6 个 metrics Service
 （ani-resource-service 未暴露 19091，该行恒 unknown，属已知决策）。
+
+## PLAT-COMP-20261028-LOG：平台组件日志流（PLAT-COMP-02）
+
+BOSS 日志窗口数据源：`GET /api/v1/platform/components/{component}/logs/stream`（GET + SSE）。
+Proto 合同 `api/protos/admin/service/v1/i_platform_component.proto` 内声明 `StreamComponentLogs`
+流 RPC（无 `google.api.http` 注解），HTTP 由 `server/platform_component_logs.go` 手写注册。
+组件清单与 `PLAT-COMP-01` 共用 `data/platform_component_catalog.go` 的 26 项注册表，不维护第二份。
+
+请求：两个查询参数 `limit`（默认 100，1～200）与 `interval_seconds`（默认 2，1～5），重复/越界/
+前导零/非整数一律 400；`_`、`_t`、`t` 作为缓存击穿参数整体忽略（不校验取值、允许重复）；
+其余未知参数 400；请求带非空 `Last-Event-ID` 返回 400（本版不支持跨连接续传）。
+响应：`text/event-stream; charset=utf-8` + `Cache-Control: no-store` + `X-Accel-Buffering: no`，
+先发 `: connected`，回放最近 `limit` 条（正序），随后按 `interval_seconds` 轮询增量，
+无日志时每 2 秒发 `: heartbeat` 注释帧，从 `connected` 起 8 秒（代码常量，不可配）正常关闭。
+
+`event: log` 的 `data` 严格六字段、全部为非空 string（不输出 null）：
+`container`（`kubernetes.container_name`）、`level`（`ani_log.level`，缺失为 `unknown`）、
+`message`（`log` → `ani_log.message` → 序列化 `log_payload` 三级回退，全无则跳条并计数）、
+`pod`（`kubernetes.pod_name`）、`stream`（保留 stdout/stderr，缺失为空串、不编造）、
+`timestamp`（UTC RFC3339 **毫秒**精度，取自 `@timestamp`；缺失或不可解析则跳条并计数）。
+与旧版四处取值差异：`level` 不再恒为 `info`；`timestamp` 由纳秒降为毫秒（不得用作去重键）；
+组件名取值域换成新环境 26 项（前端必须从 `GET /api/v1/platform/components` 取，不得硬编码）；
+`message` 来源由 Loki 行内容换成 OpenSearch `log` 字段（存量记录可能只有 `log_payload`）。
+
+错误体为本登记唯一例外：不走全局「数字 code + reason」编码器，改为旧版
+`{"code": <字符串>, "message": <字符串>, "request_id": <字符串>}`，且 handler 写完后返回 nil，
+不让全局编码器在流后追加第二段 JSON。状态码与 code：401 `UNAUTHORIZED`、403
+`PLATFORM_COMPONENT_DENIED`、404 `COMPONENT_DIAGNOSTICS_FAILED`、400
+`INVALID_COMPONENT_LOG_QUERY`、429 `COMPONENT_LOG_CONNECTION_LIMIT`（带 `Retry-After: 8`）、
+503 `COMPONENT_LOG_UNAVAILABLE`、504 `COMPONENT_LOG_QUERY_TIMEOUT`、发头后失败改发
+`event: error`（`COMPONENT_LOG_LIMIT_EXCEEDED` / `COMPONENT_LOG_WINDOW_INCOMPLETE`）。
+
+鉴权：平台身份闸门（用户主体、`tenant_id=0`、claims tenant=0、ID 与 claims 一致、platform 角色前缀）
++ 独立权限码 `component:log:read`（SYSTEM 模块，仅授予 `platform:admin`；`component:status:read`
+不能替代，反向亦然）；JWT-only，不支持 API Key 签名访问；租户用户 403。
+
+OpenSearch 侧使用独立只读身份：仅 `ani-logs-*` 的 search/scroll/mappings get/admin get 与
+`cluster_monitor`，不复用管理员或 Fluent Bit 写身份，地址/CA/凭据全部来自受管配置文件
+（`ANI_COMPONENT_LOGS_CONFIG`），不接受请求指定。查询范围完全由注册表派生
+（`kubernetes.namespace_name.keyword` 精确 + `kubernetes.pod_name.keyword` 正则按 Kind 区分
+Deployment/StatefulSet/DaemonSet），并额外 `must_not` 排除 Pod 名含 `sandbox` 的文档。
+
+增量：连接内按 `_index`+`_id` 去重（回放命中预置进集合），每轮取 `[now-30s, now]` 窗口；
+`ani_log.ingested_at` 存在时按入库时间查询，缺失时运行时探测后退化为 `@timestamp` 事件时间，
+**该退化会漏读迟到超过 30 秒的日志，属已登记已知缺陷**。单轮取满 `increment_max`（500）时
+发 `COMPONENT_LOG_WINDOW_INCOMPLETE` 并结束连接，不截断后冒充完整。
+配额：进程 16 / 每用户 4 / 每组件 4（含打开中），超限 429。
+
+保留期 3 天；一期不含跨连接断点续传、深分页、历史回补、全量导出与日志正文脱敏
+（正文可能含凭据，靠权限授予范围控制，见方案 §4.2 / §14.1）。
+

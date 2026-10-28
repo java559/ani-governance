@@ -24,6 +24,10 @@ var modelDevArtifactDownloadHTTPPath = regexp.MustCompile(`^/api/v1/modeldev/art
 var modelDevRegistrationHTTPPath = regexp.MustCompile(`^/api/v1/modeldev/executions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:resume-model-registration$`)
 var modelUploadHTTPPath = regexp.MustCompile(`^/api/v1/models/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/upload-url$`)
 
+// 组件日志流是第三类 SSE 通道：它自己持有 8 秒契约生命周期，普通 1 秒
+// HTTP 超时不能覆盖它。只豁免这一个 GET 路径，不按 /api/v1/platform/ 前缀放行。
+var platformComponentLogStreamHTTPPath = regexp.MustCompile(`^/api/v1/platform/components/[^/]+/logs/stream$`)
+
 // Kratos' one server timeout also covers streaming handlers. Disable that
 // global timer and retain its configured deadline here for ordinary requests.
 // The dedicated log handler owns its bounded lifetime; neither path detaches
@@ -64,7 +68,7 @@ func instanceHTTPTimeoutFilter(ordinary time.Duration, ownerBudgets ...time.Dura
 				ctx, cancel = context.WithTimeout(ctx, 25*time.Second)
 			} else if metrics {
 				ctx, cancel = context.WithTimeout(ctx, 10*time.Second)
-			} else if ordinary > 0 && !(r.Method == http.MethodGet && (instanceLogsHTTPPath.MatchString(r.URL.Path) || modelDevLogStreamHTTPPath.MatchString(r.URL.Path) || modelDevArtifactDownloadHTTPPath.MatchString(r.URL.Path))) {
+			} else if ordinary > 0 && !(r.Method == http.MethodGet && (instanceLogsHTTPPath.MatchString(r.URL.Path) || modelDevLogStreamHTTPPath.MatchString(r.URL.Path) || modelDevArtifactDownloadHTTPPath.MatchString(r.URL.Path) || platformComponentLogStreamHTTPPath.MatchString(r.URL.Path))) {
 				ctx, cancel = context.WithTimeout(ctx, ordinary)
 			} else {
 				ctx, cancel = context.WithCancel(ctx)

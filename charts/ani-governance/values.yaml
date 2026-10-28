@@ -37,6 +37,21 @@ platformComponents:
     # 由 Prometheus Operator（serviceMonitorSelector release=ani-metrics）发现；
     # 目标集群未装 Operator 时保持 false。
     enabled: false
+
+# 平台组件日志流（GET /api/v1/platform/components/{component}/logs/stream）。
+# 默认关闭：不注入 ANI_COMPONENT_LOGS_CONFIG 时接口返回 503，组件状态接口不受影响。
+# 打开前必须先创建 Secret（CA 与只读凭据）与 ConfigMap（无秘密配置），
+# 见 deploy/component-logs/config.example.json 与 docs/deployment.md。
+componentLogs:
+  enabled: false
+  # 配置文件在容器内的挂载路径；必须在只读根文件系统下可读。
+  configPath: /run/component-logs/config.json
+  configMapName: ""
+  secretName: ""
+  configKey: config.json
+  caKey: ca.crt
+  usernameKey: username
+  passwordKey: password
 podAnnotations: {}
 podLabels: {}
 podSecurityContext:

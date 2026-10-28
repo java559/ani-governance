@@ -15,6 +15,32 @@ service PlatformComponentService {
       get: "/api/v1/platform/components"
     };
   }
+
+  // 读取某个组件的日志流（完成为 8 秒的短连接 SSE，前端自行重连）。
+  //
+  // 刻意不加 google.api.http 注解：HTTP 由 server 层手写 SSE handler 承担，
+  // OpenAPI 由 scripts/finalize-aksk-openapi.py 在生成后补写，与实例日志、
+  // 训练日志同一模式。加上注解会生成第二条同路径 handler。
+  rpc StreamComponentLogs (PlatformComponentLogsRequest) returns (stream PlatformComponentLogFrame);
+}
+
+// 组件日志流请求。limit 与 interval_seconds 用 optional 区分"未传"与"显式零值"，
+// 显式零值必须报 400 而不是被当成默认值。
+message PlatformComponentLogsRequest {
+  string component = 1;                        // 路径参数，必须是注册表内的组件名
+  optional int32 limit = 2;                    // 首次回放条数，1..200，默认 100
+  optional int32 interval_seconds = 3;         // 增量查询间隔秒，1..5，默认 2
+}
+
+// 组件日志流的一帧。六字段与旧契约完全一致，都是非空 string；
+// kind 只用于区分帧类型，不进入 data 的六字段投影。
+message PlatformComponentLogFrame {
+  string container = 1;
+  string level = 2;
+  string message = 3;
+  string pod = 4;
+  string stream = 5;
+  string timestamp = 6;                        // UTC RFC3339，毫秒精度
 }
 
 // 组件状态快照 - 回应

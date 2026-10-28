@@ -3,6 +3,7 @@ package main
 import (
 	dbbootstrap "go-wind-admin/sql/bootstrap"
 
+	"errors"
 	"fmt"
 	"os"
 
@@ -252,10 +253,30 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		rollback()
 		return nil, nil, err
 	}
+	// 平台组件日志：环境变量未设置表示日志接口未启用（接口回 503，状态接口不受影响）；
+	// 已指定但配置非法则启动失败，不静默猜默认值。
+	var platformComponentLogReader service.ComponentLogReader
+	platformComponentLogConfig, err := data.PlatformComponentLogConfigFromEnv()
+	switch {
+	case errors.Is(err, data.ErrPlatformComponentLogNotConfigured):
+		// 未启用：reader 保持 nil。
+	case err != nil:
+		rollback()
+		return nil, nil, err
+	default:
+		reader, buildErr := data.NewPlatformComponentLogReader(platformComponentLogConfig)
+		if buildErr != nil {
+			rollback()
+			return nil, nil, buildErr
+		}
+		cleanups = append(cleanups, reader.Close)
+		platformComponentLogReader = reader
+	}
 	platformComponentService := service.NewPlatformComponentService(
 		ctx.NewLoggerHelper("platform-component/service/admin-service"),
 		platformComponentCluster,
 		data.NewPlatformComponentScrapeReader(platformComponentScrapeConfig),
+		platformComponentLogReader,
 	)
 	instanceScheduling := service.NewInstanceSchedulingPolicy(configRepo, tenantRepo, instanceCluster, os.Getenv("ANI_INSTANCE_CLUSTER_ID"))
 	instanceBinding := service.NewInstanceGpuBinding(instanceClient, data.NewInstanceAuthorizationRepo(entClient), os.Getenv("ANI_INSTANCE_CLUSTER_ID"), instanceScheduling)

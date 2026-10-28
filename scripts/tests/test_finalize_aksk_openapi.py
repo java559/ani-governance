@@ -148,6 +148,66 @@ components:
         with self.assertRaises(SystemExit):
             finalizer.require_compute_usage(text, 'string usage = 7;')
 
+    def test_platform_component_log_stream_is_declared_once_as_sse(self):
+        text = """paths:
+    /api/v1/platform/components:
+        get:
+            operationId: PlatformComponentService_ListPlatformComponents
+            responses:
+                "200": {}
+components:
+    schemas:
+        Existing:
+            type: object
+"""
+        result = finalizer.add_platform_component_log_stream(text)
+        self.assertEqual(result.count("    /api/v1/platform/components/{component}/logs/stream:\n"), 1)
+        self.assertIn("            operationId: PlatformComponentService_StreamComponentLogs\n", result)
+        self.assertIn("                        text/event-stream:\n", result)
+        for code in ['"400"', '"403"', '"404"', '"429"', '"503"', '"504"']:
+            self.assertIn("                " + code + ":\n", result)
+        self.assertIn("                - name: limit\n", result)
+        self.assertIn("                    maximum: 200\n", result)
+        self.assertIn("                - name: interval_seconds\n", result)
+        self.assertIn("                    maximum: 5\n", result)
+        # 状态快照路由必须原样保留。
+        self.assertIn("    /api/v1/platform/components:\n", result)
+        # 二次应用必须 fail closed，不能悄悄写两份。
+        with self.assertRaises(SystemExit):
+            finalizer.add_platform_component_log_stream(result)
+
+    def test_platform_component_log_stream_skips_absent_service(self):
+        text = """paths:
+    /api/v1/health:
+        get:
+            responses:
+                "200": {}
+components:
+    schemas:
+        Existing:
+            type: object
+"""
+        self.assertEqual(finalizer.add_platform_component_log_stream(text), text)
+        self.assertEqual(finalizer.add_platform_component_log_error_schema(text), text)
+
+    def test_platform_component_log_error_schema_keeps_string_code(self):
+        text = """paths:
+    /api/v1/platform/components/{component}/logs/stream:
+        get:
+            operationId: PlatformComponentService_StreamComponentLogs
+components:
+    schemas:
+        Existing:
+            type: object
+"""
+        result = finalizer.add_platform_component_log_error_schema(text)
+        self.assertIn("        PlatformComponentLogError:\n", result)
+        self.assertIn("                code:\n                    type: string\n", result)
+        # 旧格式：code 是字符串，不能写成 integer。
+        self.assertNotIn("                code:\n                    type: integer\n", result)
+        with self.assertRaises(SystemExit):
+            finalizer.add_platform_component_log_error_schema(result)
+
 
 if __name__ == '__main__':
     unittest.main()

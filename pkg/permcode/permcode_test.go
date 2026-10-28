@@ -208,10 +208,15 @@ func TestCountsAndKeys(t *testing.T) {
 	platformComponentReads := map[string]expectation{
 		"GET /api/v1/platform/components": {Code: "component:status:read", Source: platformComponentSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
 	}
+	// 平台组件日志流（BOSS 组件日志窗口）：独立能力码，与状态快照互不替代。
+	const platformComponentLogSource = "scripts/ops/sql/register-platform-component-log-permissions.sql"
+	platformComponentLogStreams := map[string]expectation{
+		"GET /api/v1/platform/components/{component}/logs/stream": {Code: "component:log:read", Source: platformComponentLogSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
+	}
 	if want := 199 + len(gpuReads) + 5 + 3; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
-	if want := 176 + len(platformEIPReadsAndRelease) + len(homepageReads) + len(platformComponentReads) + 5; CapabilityCount() != want {
+	if want := 176 + len(platformEIPReadsAndRelease) + len(homepageReads) + len(platformComponentReads) + len(platformComponentLogStreams) + 5; CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
@@ -263,6 +268,22 @@ func TestCountsAndKeys(t *testing.T) {
 		if !keySet[key] {
 			t.Errorf("AllKeys() missing %q", key)
 		}
+	}
+	for key, want := range platformComponentLogStreams {
+		got, ok := capabilityOperations[key]
+		if !ok || got.Code != want.Code || got.BusinessModule != want.BusinessModule || got.ScopeKind != want.ScopeKind || got.Source != want.Source {
+			t.Errorf("platform component log capability %q = %+v (ok=%v), want %+v", key, got, ok, want)
+		}
+		if !keySet[key] {
+			t.Errorf("AllKeys() missing %q", key)
+		}
+	}
+	// 两条组件能力互不替代：能力码不同，且日志流不能被放进 stream 豁免表。
+	if platformComponentLogStreams["GET /api/v1/platform/components/{component}/logs/stream"].Code == platformComponentReads["GET /api/v1/platform/components"].Code {
+		t.Fatal("component log and status must not share one capability code")
+	}
+	if _, exempt := exemptReasons["GET /api/v1/platform/components/{component}/logs/stream"]; exempt {
+		t.Fatal("component log stream must carry its capability code, not fall into the exempt table")
 	}
 	method, path := SplitKey("GET /api/v1/admin/users")
 	if method != "GET" || path != "/api/v1/admin/users" {

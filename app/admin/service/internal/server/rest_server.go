@@ -310,6 +310,8 @@ func NewRestServer(
 		RegisterOverviewHTTP(srv, overviewService)
 	}
 	RegisterPlatformComponentHTTP(srv, platformComponentService)
+	// 组件日志流与状态查询共用同一份受控组件清单与同一个 service 实例。
+	RegisterPlatformComponentLogHTTP(srv, platformComponentService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {
 		swaggerUI.RegisterSwaggerUIServerWithOption(

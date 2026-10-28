@@ -315,3 +315,50 @@ SQL 原地保留旧 API ID 与原 `instance:preset:read` 授权；新两权限�
 Resource 协议、二进制、数据与实例运行对象无需变更。
 失败时停止 Gov，执行 `restore-instance-catalog-route.sql`，恢复原镜像并刷新策略。
 恢复脚本只删除训练/推理到该路由的映射，保留权限本身及角色、套餐状态；恢复之前检查没有外来路由映射。
+
+## 9. 平台组件日志流（PLAT-COMP-02 增量）
+
+BOSS 日志窗口 `GET /api/v1/platform/components/{component}/logs/stream` 读 OpenSearch 的
+`ani-logs-*`，不经 Higress、不经 Loki。发布顺序固定为：只读身份 → 配置与挂载 → 镜像 →
+`sync-apis` → 权限 SQL → 刷新策略。任一步失败即停止后续发布。
+
+**默认关闭。** `charts/ani-governance/values.yaml` 的 `componentLogs.enabled` 默认 `false`；
+未注入 `ANI_COMPONENT_LOGS_CONFIG` 时该接口返回 503 `COMPONENT_LOG_UNAVAILABLE`，
+组件状态接口与其余接口不受影响。
+
+1. **OpenSearch 只读身份。** 按 `deploy/component-logs/opensearch-reader-role.json` 建角色
+   （`ani-logs-*` 的 search/scroll/mappings get/admin get + `cluster_monitor`），再建
+   rolesmapping 与独立账号；不复用管理员或 Fluent Bit 写身份。用该账号验证：查询允许索引 200，
+   写文档、系统索引、删索引、改 pipeline、security API 全部 403，错误密码 401。
+   写权限负测只能指向本次测试索引，不得触碰正式日志。
+2. **配置与挂载。** 复制 `deploy/component-logs/config.example.json` 到 ConfigMap，CA 与
+   用户名/密码放进专属 Secret，按 `charts/ani-governance/templates/deployment.yaml` 挂到
+   `/run/component-logs` 与 `/run/component-logs-credentials`（`defaultMode: 0440`），
+   并设置 `ANI_COMPONENT_LOGS_CONFIG=/run/component-logs/config.json`。不得挂到只读
+   `/app/configs` 子目录，不得用 `/tmp`（emptyDir、可写、重启即丢），不得按数组下标 patch。
+   配置解析使用 `DisallowUnknownFields`：写出 `lifetime_seconds` 之类未知键会**启动失败**，
+   这是刻意行为——8 秒是契约常量，不可配置。
+3. **发布镜像。** server 与 admin 必须同源同版本，按 §1 构建；只替换 `governance` 容器镜像。
+4. **API 目录与权限。** 用同版 admin 镜像 Job 依次执行 `sync-apis --dry-run`、`sync-apis`、
+   `check`（服务镜像内没有 admin 二进制，不用 `kubectl exec`）。目录只新增一条
+   `GET /api/v1/platform/components/{component}/logs/stream`，默认不绑定任何权限。
+   随后对已核对的 Gov 库显式执行
+   [`register-platform-component-log-permissions.sql`](../scripts/ops/sql/register-platform-component-log-permissions.sql)：
+   单事务、路由必须已同步且唯一、冲突即 `RAISE EXCEPTION`，只授予
+   `sys_roles.code='platform:admin' AND tenant_id=0 AND type='SYSTEM'`，不给租户角色与 API Key 补权。
+   新安装与既有库都要执行这一步；不重跑首次种子、不运行 `SyncPermissions`、不批量打开 SYSTEM 模块。
+5. **刷新策略并复测。** CLI/SQL 变更后滚动重启全部 Gov 实例刷新 Casbin，并重新登录取得新
+   Token（旧 JWT 里的权限码是旧的）。`component:status:read` 与 `component:log:read` 互不替代，
+   分别验证。
+
+**已知缺陷（必须随发布说明登记）**：`ani_log.ingested_at` 由共享 ingest pipeline
+`ani-component-log-normalize-v1` 写入；本环境未修改该 pipeline，reader 在运行时探测该字段，
+缺失时增量窗口退化为按 `@timestamp`（事件时间），**事件时间早于窗口下界（30 秒）的迟到日志会漏读**。
+补齐方式见 `deploy/component-logs/opensearch-ingest-fields.json` 与方案 §6.2.1，修改前须备份并
+`_simulate` 验证，且 processor 必须放在重建 `ctx.ani_log` 之后；模板与现存索引 `_mapping`
+必须同时更新，否则字段被静默丢弃。
+
+**回滚**：先停止推广，按容器名/卷名精确恢复镜像与本次新增的 env/volumeMount/volume，
+分别删除本次新增的 ConfigMap 与 Secret（它们不随 Deployment 回滚），并删除只读角色/账号。
+API 目录行与权限 ID 默认保留；索引侧只移除本次新增的 processor，不删索引、不回退此前已修好的原文规范化。
+

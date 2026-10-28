@@ -9,26 +9,28 @@ import (
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"go-wind-admin/app/admin/service/internal/data"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
-	"go-wind-admin/pkg/middleware/auth"
 )
 
 // PlatformComponentService 提供平台组件健康快照（BOSS「组件状态」页数据源）。
-// 只读聚合：Kubernetes 工作负载状态 + Prometheus 抓取可达性。
+// 只读聚合：Kubernetes 工作负载状态 + Prometheus 抓取可达性，以及组件日志流。
 type PlatformComponentService struct {
-	log    *bLogger.Helper
-	cluster *data.PlatformComponentCluster
-	scrape *data.PlatformComponentScrapeReader
+	log       *bLogger.Helper
+	cluster   *data.PlatformComponentCluster
+	scrape    *data.PlatformComponentScrapeReader
+	logReader ComponentLogReader
 }
 
 // NewPlatformComponentService 构造服务。cluster 必须非 nil（未配置 kubeconfig
 // 时其内部 client 为 nil，Collect 返回 ErrPlatformComponentUnsupported）；
-// scrape 可为 nil，表示 Prometheus 未配置，service 组 scrape_status 全 unknown。
+// scrape 可为 nil，表示 Prometheus 未配置，service 组 scrape_status 全 unknown；
+// logReader 可为 nil，表示组件日志未启用，日志接口返回 503。
 func NewPlatformComponentService(
 	log *bLogger.Helper,
 	cluster *data.PlatformComponentCluster,
 	scrape *data.PlatformComponentScrapeReader,
+	logReader ComponentLogReader,
 ) *PlatformComponentService {
-	return &PlatformComponentService{log: log, cluster: cluster, scrape: scrape}
+	return &PlatformComponentService{log: log, cluster: cluster, scrape: scrape, logReader: logReader}
 }
 
 func (s *PlatformComponentService) warnf(ctx context.Context, format string, args ...any) {
@@ -38,21 +40,17 @@ func (s *PlatformComponentService) warnf(ctx context.Context, format string, arg
 	s.log.Warnf(ctx, format, args...)
 }
 
-// actor 校验平台身份与权限码。与 PlatformNetworkService 同一套闸门：
+// actor 校验平台身份与状态快照权限码。与 PlatformNetworkService 同一套闸门：
 // 用户态主体、tenant_id 为 0、令牌 tenant 为 0、角色码带 platform: 前缀、
 // 持有 component:status:read。
+//
+// 日志接口走 actorWithPermission 加 component:log:read，两条能力不得互相替代。
 func (s *PlatformComponentService) actor(ctx context.Context) (string, error) {
-	p, err := auth.PrincipalFromContext(ctx)
-	if err != nil || p == nil || p.ID == 0 {
-		return "", kratoserrors.Unauthorized("INVALID_LOGIN", "login required")
-	}
-	if p.Type != auth.SubjectUser || p.TenantID != 0 || p.Claims == nil ||
-		p.Claims.GetTenantId() != 0 || p.ID != p.Claims.GetUserId() ||
-		!hasPlatformRole(p.Roles) || !hasPermission(p.Claims, "component:status:read") {
-		return "", kratoserrors.Forbidden("PLATFORM_COMPONENT_DENIED", "platform component permission required")
-	}
-	return p.Actor()
+	return s.actorWithPermission(ctx, platformComponentStatusPermission)
 }
+
+// platformComponentStatusPermission 是组件状态快照的能力码。
+const platformComponentStatusPermission = "component:status:read"
 
 // ListPlatformComponents 返回组件状态快照。
 //
