@@ -22,7 +22,7 @@ type trendMetric struct{ Code, Unit string }
 var trendMetricCodes = map[string]trendMetric{
 	"cpu":    {"tenant.cpu.usage_cores", "cores"},
 	"memory": {"tenant.memory.working_set_bytes", "bytes"},
-	"gpu":    {"tenant.gpu.allocated_cores", "cores"},
+	"gpu":    {"tenant.gpu.memory_usage_bytes", "bytes"},
 }
 
 // trendTrendTiers 按 range 档位分级校验（技术方案 2.6 三档：1d/7d/30d）。

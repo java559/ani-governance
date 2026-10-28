@@ -23,12 +23,12 @@ import (
 )
 
 // trendTestUnits 与 service.trendMetricCodes 的单位映射保持一致（测试侧独立维护）。
-var trendTestUnits = map[string]string{"cpu": "cores", "memory": "bytes", "gpu": "cores"}
+var trendTestUnits = map[string]string{"cpu": "cores", "memory": "bytes", "gpu": "bytes"}
 
 var trendTestCodes = map[string]string{
 	"cpu":    "tenant.cpu.usage_cores",
 	"memory": "tenant.memory.working_set_bytes",
-	"gpu":    "tenant.gpu.allocated_cores",
+	"gpu":    "tenant.gpu.memory_usage_bytes",
 }
 
 type trendPeer struct {
@@ -152,7 +152,7 @@ func TestResourceTrendHTTPDefaultWindowAndSeries(t *testing.T) {
 	if len(series) != 3 || p.calls != 1 || a.calls != 1 || p.kind != 3 || p.clusterID != "" {
 		t.Fatalf("three series expected: %d %+v kind=%d", len(series), d, p.kind)
 	}
-	if p.metric != "tenant.cpu.usage_cores,tenant.memory.working_set_bytes,tenant.gpu.allocated_cores" {
+	if p.metric != "tenant.cpu.usage_cores,tenant.memory.working_set_bytes,tenant.gpu.memory_usage_bytes" {
 		t.Fatalf("code order %s", p.metric)
 	}
 	// 默认窗口：end=当前整秒、start=end-7d、step=30m。
