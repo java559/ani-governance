@@ -1304,7 +1304,7 @@ Image AK 使用现有 ANI-HMAC-SHA256 七行形式：算法、HTTP method、规�
 
 ## 功能组：ModelDev 训练与微调（MODELDEV-01～08、12）
 
-当前活动合同为单一typed Intent，规则查询与请求见[前端合同](frontend-cpu-training-handoff.md)。同键原意图重放先于新目录解析；当前授权→固定候选 operation/execution/accepted_at→Res TRAINING→ModelDev Prepare/Finalize→Gov单事务持久受理及唯一ModelDevDispatch。网络不进入受理事务，CPU不写GPU原账。
+当前活动合同为单一typed Intent，规则查询与请求见[前端合同](frontend-training-handoff.md)。同键原意图重放先于新目录解析；当前授权→固定候选 operation/execution/accepted_at→Res TRAINING→ModelDev Prepare/Finalize→Gov单事务持久受理及唯一ModelDevDispatch。网络不进入受理事务，CPU不写GPU原账。
 
 FINETUNING 同时省略 `new_model_name` 与 `target_model_id` 表示仅发布训练产物，
 该省略状态进入原 Intent/Snapshot/hash，不增加跳过字段，也不修改已受理意图。
@@ -1318,9 +1318,10 @@ FINETUNING 同时省略 `new_model_name` 与 `target_model_id` 表示仅发布�
 | MODELDEV-01 | 创建执行 | implementation/compute/typed parameters/总时长；拒绝旧Release字段；202为持久受理 |
 | MODELDEV-02 | 已退役Release操作 | import-release/enable/pause/binding/generation不再注册；历史证据不作为新受理许可 |
 | MODELDEV-03～06 | 详情、产物、下载、停止、列表、日志 | 原当前授权/租户隔离和正交状态保留；下载不缓存、不存有效URL |
-| MODELDEV-07 | 实现规则与输入 | `/api/v1/modeldev/implementations`；公共compute复用TRAINING目录；输入独立 `modeldev:manage_input`；不要求Release导入批准 |
+| MODELDEV-07 | 实现规则与输入 | `/api/v1/modeldev/implementations`；可选 `kind`（`GENERAL_TRAINING`/`FINETUNING`，分页前筛选，非法值400）；公共compute复用TRAINING目录；输入独立 `modeldev:manage_input`；不要求Release导入批准 |
 | MODELDEV-08 | inspect/reconcile/cleanup | 当前独立execution权限，精确原UID清理；不自动删PVC/publication/模型 |
 | MODELDEV-12 | 恢复原模型登记 | `POST /api/v1/modeldev/executions/{execution_id}:resume-model-registration`；空 body/no query，仅原 CLOSED FINETUNING，当前 manage+GET+Model 原目标分支权限；同详情返回 `model_registration`/`history` |
+| MODELDEV-13 | 资源曲线（一次一个 Pod） | `GET /api/v1/modeldev/executions/{execution_id}/resource-metrics`；必填 `pod_uid`/`container`/`start`/`end`/`metric_codes`，可选 `step_seconds`（30–3600、30 的整数倍）；容器由 layer 钉死（worker=`node`、step=`main`）；namespace 与 cluster 取本租户冻结受理，不接受调用方传值；每租户并发 4，BFF 排队；当前 GPU 无 exporter，`gpu_requested=true` 时 `gpu_available=false` |
 
 源码实现、提供方正式模块、Fedora PG/负载、目标集群身份/执行、BFF/Model独立使用和GPU原账分别验收。用户本轮明确排除前端源码/部署修改；本文件仍交接BFF合同。本轮具体来源与实际结果在唯一活动方案 records 中，不沿用旧CPU-P01/Release实验作为本轮完成证据。
 

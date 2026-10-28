@@ -41,7 +41,24 @@ func TestModelDevListAndLogRejectUnboundedSelectors(t *testing.T) {
 		{"/api/v1/modeldev/executions/id/artifacts?unknown=1", ""},
 		{"/api/v1/modeldev/executions?id=1", "{}"},
 		{"/api/v1/modeldev/executions?tenant_id=other", ""},
-		{"/api/v1/modeldev/executions?compute_state=RUNNING", ""},
+		// The three state selectors are declared, so the malformed shapes below
+		// must still fail at this layer: lower case, empty, duplicated and
+		// over-long values are all rejected rather than forwarded.
+		{"/api/v1/modeldev/executions?compute_state=running", ""},
+		{"/api/v1/modeldev/executions?compute_state=", ""},
+		{"/api/v1/modeldev/executions?compute_state=SUCCEEDED&compute_state=FAILED", ""},
+		{"/api/v1/modeldev/executions?delivery_state=published", ""},
+		{"/api/v1/modeldev/executions?delivery_state=", ""},
+		{"/api/v1/modeldev/executions?close_state=closed", ""},
+		{"/api/v1/modeldev/executions?close_state=", ""},
+		{"/api/v1/modeldev/executions?close_state=" + strings.Repeat("A", 49), ""},
+		// The name selector is declared; malformed shapes must still fail here.
+		{"/api/v1/modeldev/executions?name=", ""},
+		{"/api/v1/modeldev/executions?name=%20%20", ""},
+		{"/api/v1/modeldev/executions?name=" + strings.Repeat("x", 81), ""},
+		{"/api/v1/modeldev/executions?name=a&name=b", ""},
+		{"/api/v1/modeldev/executions?name=a&keyword=b", ""},
+		{"/api/v1/modeldev/executions?unknown_state=SUCCEEDED", ""},
 		{"/api/v1/modeldev/executions", "{}"},
 		{"/api/v1/modeldev/executions/id/logs?tail_lines=1001", ""},
 		{"/api/v1/modeldev/executions/id/logs?max_bytes=65537", ""},
@@ -52,7 +69,24 @@ func TestModelDevListAndLogRejectUnboundedSelectors(t *testing.T) {
 		{"/api/v1/modeldev/executions/id/logs?pod=other", ""},
 		{"/api/v1/modeldev/executions/id/logs?log_id=other", ""},
 		{"/api/v1/modeldev/executions/id/logs?follow=true", ""},
+		{"/api/v1/modeldev/executions/id/logs?podUid=not-a-uuid", ""},
+		{"/api/v1/modeldev/executions/id/logs?container=Node", ""},
+		{"/api/v1/modeldev/executions/id/logs?container=", ""},
+		{"/api/v1/modeldev/executions/id/logs?previous=1", ""},
 		{"/api/v1/modeldev/executions/id/logs", "{}"},
+		{"/api/v1/modeldev/executions/id/pods?layer=other", ""},
+		{"/api/v1/modeldev/executions/id/pods?includeRecycled=yes", ""},
+		{"/api/v1/modeldev/executions/id/pods?podUid=" + strings.Repeat("a", 36), ""},
+		{"/api/v1/modeldev/executions/id/events?scope=other", ""},
+		{"/api/v1/modeldev/executions/id/events?warning_only=true", ""},
+		{"/api/v1/modeldev/executions/id/pods", "{}"},
+		{"/api/v1/modeldev/executions/id/events", "{}"},
+		{"/api/v1/modeldev/executions/id/resource-metrics?scope=other", ""},
+		{"/api/v1/modeldev/executions/id/resource-metrics?step_seconds=0", ""},
+		{"/api/v1/modeldev/executions/id/resource-metrics?step_seconds=abc", ""},
+		{"/api/v1/modeldev/executions/id/resource-metrics?step_seconds=1&step_seconds=2", ""},
+		{"/api/v1/modeldev/executions/id/resource-metrics?pod_uid=a&pod_uid=b", ""},
+		{"/api/v1/modeldev/executions/id/resource-metrics", "{}"},
 	} {
 		t.Run(test.path, func(t *testing.T) {
 			request, err := http.NewRequest(http.MethodGet, web.URL+test.path, strings.NewReader(test.body))
@@ -70,6 +104,13 @@ func TestModelDevListAndLogRoutesEnterAuthentication(t *testing.T) {
 	testModelDevAuthenticatedRoutes(t, []string{
 		"/api/v1/modeldev/executions",
 		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/pods",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/events",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs/stream",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/resource-metrics?pod_uid=66666666-7777-4888-8999-aaaaaaaaaaaa&container=node&start=2026-10-27T00:00:00Z&end=2026-10-27T01:00:00Z&step_seconds=60&metric_codes=cpu.usage_cores",
+		// The byte relay carries the same authentication and artifact
+		// authorization as the URL exchange.
+		"/api/v1/modeldev/artifacts/11111111-2222-4333-8444-555555555555/download",
 	})
 }
 

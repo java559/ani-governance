@@ -5,13 +5,19 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/go-kratos/kratos/v2/errors"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/google/uuid"
 	adminv1 "go-wind-admin/api/gen/go/admin/service/v1"
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/service"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevService) {
@@ -30,6 +36,14 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 				in.Page, err = modelDevPagePointer(values[0])
 			case "pageSize":
 				in.PageSize, err = modelDevPageSizePointer(values[0])
+			case "compute_state":
+				in.ComputeState, err = modelDevStatePointer(values[0])
+			case "delivery_state":
+				in.DeliveryState, err = modelDevStatePointer(values[0])
+			case "close_state":
+				in.CloseState, err = modelDevStatePointer(values[0])
+			case "name":
+				in.Name, err = modelDevNamePointer(values[0])
 			default:
 				return invalidModelDevQueryHTTP()
 			}
@@ -63,6 +77,14 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 				in.TailLines, err = modelDevQueryPositiveBound(values[0], 1000)
 			case "max_bytes":
 				in.MaxBytes, err = modelDevQueryPositiveBound(values[0], 65536)
+			case "logId":
+				in.LogId, err = modelDevQueryUUIDPointer(values[0])
+			case "podUid":
+				in.PodUid, err = modelDevQueryUUIDPointer(values[0])
+			case "container":
+				in.Container, err = modelDevQueryContainerPointer(values[0])
+			case "previous":
+				in.Previous, err = modelDevQueryBoolPointer(values[0])
 			default:
 				return invalidModelDevQueryHTTP()
 			}
@@ -72,6 +94,126 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 		}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.GetExecutionLogs(c, v.(*modeldevv1.GetExecutionLogsRequest))
+		})
+		out, err := handler(ctx, &in)
+		if err != nil {
+			return err
+		}
+		return ctx.Result(http.StatusOK, out)
+	})
+	route.GET(data.ModelDevListExecutionPodsPath, func(ctx khttp.Context) error {
+		modelDevQueryHeaders(ctx)
+		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListExecutionPods)
+		var in modeldevv1.ListExecutionPodsRequest
+		if ctx.BindVars(&in) != nil {
+			return invalidModelDevQueryHTTP()
+		}
+		query, err := modelDevBoundedQuery(ctx.Request())
+		if err != nil {
+			return err
+		}
+		for name, values := range query {
+			switch name {
+			case "layer":
+				layer, valid := data.ParseWorkloadLayer(values[0])
+				if !valid {
+					return invalidModelDevQueryHTTP()
+				}
+				value := string(layer)
+				in.Layer = &value
+			case "includeRecycled":
+				in.IncludeRecycled, err = modelDevQueryBoolPointer(values[0])
+			default:
+				return invalidModelDevQueryHTTP()
+			}
+			if err != nil {
+				return err
+			}
+		}
+		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
+			return modeldev.ListExecutionPods(c, v.(*modeldevv1.ListExecutionPodsRequest))
+		})
+		out, err := handler(ctx, &in)
+		if err != nil {
+			return err
+		}
+		return ctx.Result(http.StatusOK, out)
+	})
+	route.GET(data.ModelDevExecutionMetricsPath, func(ctx khttp.Context) error {
+		modelDevQueryHeaders(ctx)
+		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceQueryExecutionMetrics)
+		var in modeldevv1.QueryExecutionMetricsRequest
+		if ctx.BindVars(&in) != nil || in.ExecutionId == "" {
+			return invalidModelDevQueryHTTP()
+		}
+		query, err := modelDevBoundedQuery(ctx.Request())
+		if err != nil {
+			return err
+		}
+		for name, values := range query {
+			switch name {
+			case "pod_uid":
+				in.PodUid = values[0]
+			case "container":
+				in.Container = values[0]
+			case "start":
+				in.Start = values[0]
+			case "end":
+				in.End = values[0]
+			case "step_seconds":
+				in.StepSeconds, err = modelDevQueryStepPointer(values[0])
+			case "metric_codes":
+				in.MetricCodes = strings.Split(values[0], ",")
+			default:
+				return invalidModelDevQueryHTTP()
+			}
+			if err != nil {
+				return err
+			}
+		}
+		out, err := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
+			return modeldev.QueryExecutionMetrics(c, v.(*modeldevv1.QueryExecutionMetricsRequest))
+		})(ctx, &in)
+		if err != nil {
+			return err
+		}
+		// Every unpopulated field is emitted: a missing point value must stay
+		// absent while gap_reason and the fixed envelope stay visible.
+		raw, err := (protojson.MarshalOptions{EmitUnpopulated: true}).Marshal(out.(proto.Message))
+		if err != nil {
+			return err
+		}
+		ctx.Response().Header().Set("Content-Type", "application/json")
+		ctx.Response().WriteHeader(http.StatusOK)
+		_, err = ctx.Response().Write(raw)
+		return err
+	})
+	route.GET(data.ModelDevListExecutionEventsPath, func(ctx khttp.Context) error {
+		modelDevQueryHeaders(ctx)
+		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListExecutionEvents)
+		var in modeldevv1.ListExecutionEventsRequest
+		if ctx.BindVars(&in) != nil {
+			return invalidModelDevQueryHTTP()
+		}
+		query, err := modelDevBoundedQuery(ctx.Request())
+		if err != nil {
+			return err
+		}
+		for name, values := range query {
+			switch name {
+			case "scope":
+				scope, valid := data.ParseEventScope(values[0])
+				if !valid {
+					return invalidModelDevQueryHTTP()
+				}
+				value := string(scope)
+				in.Scope = &value
+			default:
+				return invalidModelDevQueryHTTP()
+			}
+		}
+		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
+			return modeldev.ListExecutionEvents(c, v.(*modeldevv1.ListExecutionEventsRequest))
 		})
 		out, err := handler(ctx, &in)
 		if err != nil {
@@ -190,6 +332,85 @@ func modelDevPageSizePointer(value string) (*uint32, error) {
 		return nil, err
 	}
 	return &n, nil
+}
+
+// modelDevStatePointer accepts one upper-case enum member name without its
+// prefix, matching the vocabulary the list response returns. Validation of the
+// member itself happens in the service, where the owner enum is available.
+func modelDevStatePointer(value string) (*string, error) {
+	if value == "" || len(value) > 48 {
+		return nil, invalidModelDevQueryHTTP()
+	}
+	for _, character := range value {
+		if !(character >= 'A' && character <= 'Z' || character == '_') {
+			return nil, invalidModelDevQueryHTTP()
+		}
+	}
+	parsed := value
+	return &parsed, nil
+}
+
+// modelDevNamePointer accepts one name substring. The admitted name is at most
+// 80 printable runes, so a longer or control-bearing value cannot match any
+// stored row and is rejected rather than answered with an empty page.
+func modelDevNamePointer(value string) (*string, error) {
+	if strings.TrimSpace(value) == "" || utf8.RuneCountInString(value) > 80 {
+		return nil, invalidModelDevQueryHTTP()
+	}
+	for _, character := range value {
+		if unicode.IsControl(character) {
+			return nil, invalidModelDevQueryHTTP()
+		}
+	}
+	parsed := value
+	return &parsed, nil
+}
+
+// modelDevQueryUUIDPointer accepts one canonical UUID query value.
+func modelDevQueryUUIDPointer(value string) (*string, error) {
+	parsed := value
+	if !modelDevQueryCanonicalUUID(parsed) {
+		return nil, invalidModelDevQueryHTTP()
+	}
+	return &parsed, nil
+}
+
+// modelDevQueryContainerPointer accepts one Kubernetes container name.
+func modelDevQueryContainerPointer(value string) (*string, error) {
+	if value == "" || len(value) > 63 {
+		return nil, invalidModelDevQueryHTTP()
+	}
+	for _, character := range value {
+		if !(character >= 'a' && character <= 'z' || character >= '0' && character <= '9' || character == '-' || character == '.') {
+			return nil, invalidModelDevQueryHTTP()
+		}
+	}
+	parsed := value
+	return &parsed, nil
+}
+
+// modelDevQueryBoolPointer accepts the exact literals `true` and `false`.
+func modelDevQueryBoolPointer(value string) (*bool, error) {
+	if value != "true" && value != "false" {
+		return nil, invalidModelDevQueryHTTP()
+	}
+	parsed := value == "true"
+	return &parsed, nil
+}
+
+// modelDevQueryStepPointer parses a canonical decimal step; the service applies
+// the 30s..1h and multiple-of-30 bounds so both layers agree on the contract.
+func modelDevQueryStepPointer(value string) (*uint32, error) {
+	n, err := modelDevQueryPositiveBound(value, 3600)
+	if err != nil {
+		return nil, err
+	}
+	return &n, nil
+}
+
+func modelDevQueryCanonicalUUID(value string) bool {
+	id, err := uuid.Parse(value)
+	return err == nil && id != uuid.Nil && id.String() == value
 }
 
 func modelDevQueryHeaders(ctx khttp.Context) {

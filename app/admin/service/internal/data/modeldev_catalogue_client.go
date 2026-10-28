@@ -9,13 +9,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-func (c *ModelDevClient) ListImplementations(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32) (*modeldevv1.ListImplementationsResponse, error) {
+func (c *ModelDevClient) ListImplementations(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32, kind *trainingv1.ExecutionKind) (*modeldevv1.ListImplementationsResponse, error) {
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListImplementations_FullMethodName)
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListImplementations(call, &modeldevv1.ListImplementationsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListImplementations(call, &modeldevv1.ListImplementationsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}, Kind: kind}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
@@ -24,7 +24,9 @@ func (c *ModelDevClient) ListImplementations(ctx context.Context, scope ModelDev
 	}
 	seen := map[string]bool{}
 	for _, preset := range out.Implementations {
-		if preset == nil || (preset.ImplementationId != "builtin.mlp" && preset.ImplementationId != "builtin.sft_lora") || seen[preset.ImplementationId] || preset.Name == "" || len(preset.Name) > 256 || strings.ContainsAny(preset.Name, "\r\n\t") || !modelDevSupportedExecutionKind(preset.Kind) || len(preset.ParameterRules) > 32 {
+		// A filtered page must not carry another kind. An owner that ignores the
+		// new field would otherwise silently widen a narrowed request.
+		if preset == nil || (preset.ImplementationId != "builtin.mlp" && preset.ImplementationId != "builtin.sft_lora") || seen[preset.ImplementationId] || preset.Name == "" || len(preset.Name) > 256 || strings.ContainsAny(preset.Name, "\r\n\t") || !modelDevSupportedExecutionKind(preset.Kind) || (kind != nil && preset.Kind != *kind) || len(preset.ParameterRules) > 32 {
 			return nil, modelDevQueryUnavailable()
 		}
 		seen[preset.ImplementationId] = true
@@ -61,13 +63,13 @@ func (c *ModelDevClient) GetInputVersion(ctx context.Context, scope ModelDevReso
 	return out, nil
 }
 
-func (c *ModelDevClient) ListInputVersions(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32, state *modeldevv1.InputState) (*modeldevv1.ListInputVersionsResponse, error) {
+func (c *ModelDevClient) ListInputVersions(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32, state *modeldevv1.InputState, format *string) (*modeldevv1.ListInputVersionsResponse, error) {
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListInputVersions_FullMethodName)
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListInputVersions(call, &modeldevv1.ListInputVersionsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}, State: state}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListInputVersions(call, &modeldevv1.ListInputVersionsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}, State: state, Format: format}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}

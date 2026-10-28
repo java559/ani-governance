@@ -1,4 +1,4 @@
-# Generated with protoc-gen-openapi
+﻿# Generated with protoc-gen-openapi
 # https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
 
 openapi: 3.0.3
@@ -8756,6 +8756,27 @@ paths:
                   schema:
                     type: integer
                     format: uint32
+                - name: compute_state
+                  in: query
+                  description: |-
+                    以下三个筛选与响应里的 compute_state / delivery_state / close_state 同词汇
+                     （不带枚举前缀，如 SUCCEEDED / PUBLISHED / CLOSED）。三者在服务端可叠加，
+                     且都在分页前生效，total 为筛选后的条数。
+                  schema:
+                    type: string
+                - name: delivery_state
+                  in: query
+                  schema:
+                    type: string
+                - name: close_state
+                  in: query
+                  schema:
+                    type: string
+                - name: name
+                  in: query
+                  description: 按任务名做不区分大小写的子串匹配，在分页前生效，total 为筛选后的条数。
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -8828,6 +8849,29 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListExecutionArtifactsResponse'
+    /api/v1/modeldev/executions/{execution_id}/events:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_ListExecutionEvents
+            parameters:
+                - name: execution_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: scope
+                  in: query
+                  description: key / all / warning; absent behaves as key.
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListExecutionEventsResponse'
     /api/v1/modeldev/executions/{execution_id}/logs:
         get:
             tags:
@@ -8849,6 +8893,25 @@ paths:
                   schema:
                     type: integer
                     format: uint32
+                - name: log_id
+                  in: query
+                  description: Opaque owner-issued log ID; container selection stays a separate field.
+                  schema:
+                    type: string
+                - name: pod_uid
+                  in: query
+                  description: Absent keeps the original single-worker behaviour.
+                  schema:
+                    type: string
+                - name: container
+                  in: query
+                  schema:
+                    type: string
+                - name: previous
+                  in: query
+                  description: Reads the last terminated instance of the same container.
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -8856,6 +8919,82 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/GetExecutionLogsResponse'
+    /api/v1/modeldev/executions/{execution_id}/pods:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_ListExecutionPods
+            parameters:
+                - name: execution_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: layer
+                  in: query
+                  description: all / trainer / pipeline; absent behaves as all.
+                  schema:
+                    type: string
+                - name: include_recycled
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListExecutionPodsResponse'
+    /api/v1/modeldev/executions/{execution_id}/resource-metrics:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_QueryExecutionMetrics
+            parameters:
+                - name: execution_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: pod_uid
+                  in: query
+                  description: |-
+                    Pod UID from ListExecutionPods. Kept separate from the pod name so a
+                     recreated Pod never inherits the previous curve.
+                  schema:
+                    type: string
+                - name: container
+                  in: query
+                  description: Container name; "node" for the worker, "main" for a KFP step.
+                  schema:
+                    type: string
+                - name: start
+                  in: query
+                  schema:
+                    type: string
+                - name: end
+                  in: query
+                  schema:
+                    type: string
+                - name: step_seconds
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: metric_codes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/QueryExecutionMetricsResponse'
     /api/v1/modeldev/executions/{execution_id}:resume-model-registration:
         post:
             tags:
@@ -8912,6 +9051,10 @@ paths:
                   schema:
                     type: integer
                     format: uint32
+                - name: kind
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -8929,6 +9072,11 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: format
+                  in: query
+                  schema:
+                    type: string
+                  description: 只接受 CSV / JSON；其它值返回 400。筛选在分页前生效，total 为筛选后条数。
                 - name: page
                   in: query
                   schema:
@@ -11456,6 +11604,95 @@ paths:
                     description: Connection limit reached
                 "503":
                     description: Diagnostic target or upstream unavailable before READY
+    /api/v1/modeldev/executions/{execution_id}/logs/stream:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_StreamExecutionLogs
+            description: Follow one container of one execution. READY is verified before HTTP headers; later failures arrive as control frames. Reconnect with the server-issued sinceBytes offset.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: execution_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - name: podUid
+                  in: query
+                  schema:
+                    type: string
+                    format: uuid
+                - name: container
+                  in: query
+                  schema:
+                    type: string
+                - name: previous
+                  in: query
+                  schema:
+                    type: boolean
+                    default: false
+                - name: sinceBytes
+                  in: query
+                  schema:
+                    type: integer
+                    format: int64
+                    minimum: 0
+                    maximum: 1073741824
+                    default: 0
+            responses:
+                "200":
+                    description: SSE READY/DATA/CLOSED/REJECTED frames with comment heartbeats; no-store and proxy buffering disabled.
+                    content:
+                        text/event-stream:
+                            schema:
+                                type: string
+                "400":
+                    description: Invalid query
+                "403":
+                    description: Execution access denied
+                "404":
+                    description: Execution or selected Pod absent
+                "429":
+                    description: Connection limit reached
+                "503":
+                    description: Upstream frame stream unavailable before READY
+    /api/v1/modeldev/artifacts/{artifact_id}/download:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_DownloadArtifact
+            description: Relay the artifact bytes. The URL exchange returns a signed URL on the object store's in-cluster host, which a browser cannot reach; this endpoint fetches that object server-side and copies it out. Accepts no query.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: artifact_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Artifact bytes as an attachment. The type collapses to application/octet-stream unless it is a known safe textual type.
+                    content:
+                        application/octet-stream:
+                            schema:
+                                type: string
+                                format: binary
+                "400":
+                    description: Invalid UUID or a query was supplied
+                "403":
+                    description: Artifact access denied
+                "404":
+                    description: Artifact absent or not visible
+                "412":
+                    description: Artifact not published
+                "502":
+                    description: Object store unreachable or returned an error
+                "504":
+                    description: Object store timed out
 components:
     schemas:
         NetworkOperation:
@@ -14511,6 +14748,102 @@ components:
                     type: string
                 device_mode:
                     type: string
+        ExecutionContainerView:
+            type: object
+            properties:
+                name:
+                    type: string
+                type:
+                    type: string
+                    description: container / init_container / ephemeral
+                state:
+                    type: string
+                    description: running / waiting / terminated / unknown
+                reason:
+                    type: string
+                message:
+                    type: string
+                restart_count:
+                    type: integer
+                    format: int32
+                exit_code:
+                    type: integer
+                    format: int32
+                started_at:
+                    type: string
+                finished_at:
+                    type: string
+                last_state:
+                    $ref: '#/components/schemas/ExecutionContainerView'
+            description: |-
+                One container instance as Kubernetes reports it. Display strings keep the
+                 BFF free of Kubernetes enum packages; unknown values fail closed downstream.
+        ExecutionEventView:
+            type: object
+            properties:
+                type:
+                    type: string
+                reason:
+                    type: string
+                message:
+                    type: string
+                first_timestamp:
+                    type: string
+                last_timestamp:
+                    type: string
+                count:
+                    type: integer
+                    format: int32
+                source:
+                    type: string
+                involved_kind:
+                    type: string
+                involved_name:
+                    type: string
+                involved_uid:
+                    type: string
+                field_path:
+                    type: string
+                reporting_instance:
+                    type: string
+        ExecutionBaseModelView:
+            type: object
+            properties:
+                model_id:
+                    type: string
+                version_id:
+                    type: string
+                family:
+                    type: string
+                    description: 模型族名，如 Qwen2.5-0.5B-Instruct。
+                format:
+                    type: string
+                    description: 权重格式，如 safetensors。
+            description: 微调所用的基座模型身份。不含对象键、存储位置与文件清单，不能据此拼下载地址。
+        ExecutionFailureView:
+            type: object
+            properties:
+                reason:
+                    type: string
+                    description: 不带前缀的原因枚举名，如 INVALID_ARGUMENT / UPSTREAM_UNAVAILABLE。
+                safe_message:
+                    type: string
+                    description: 面向人的安全描述，不含凭据、存储密钥或隐藏的对象事实。
+                violations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionFieldViolationView'
+                correlation_id:
+                    type: string
+                    description: 服务端关联 ID，用于日志检索；不是用户可见的业务标识。
+            description: 历史失败诊断。safe_message 已剔除凭据与存储密钥，可直接展示。
+        ExecutionFieldViolationView:
+            type: object
+            properties:
+                field:
+                    type: string
+                reason:
+                    type: string
         ExecutionHistoryView:
             type: object
             properties:
@@ -14541,6 +14874,103 @@ components:
                 timestamp:
                     type: string
                 text:
+                    type: string
+        ExecutionManagedSettingsView:
+            type: object
+            properties:
+                stage:
+                    type: string
+                    description: 训练阶段。本期只有 sft，不存在 dpo/ppo。
+                finetuning_type:
+                    type: string
+                lora_target:
+                    type: string
+                lora_rank:
+                    type: string
+                lora_alpha:
+                    type: string
+                cutoff_len:
+                    type: string
+                per_device_train_batch_size:
+                    type: string
+                gradient_accumulation_steps:
+                    type: string
+                seed:
+                    type: string
+                data_seed:
+                    type: string
+                device:
+                    type: string
+                fp16:
+                    type: boolean
+                bf16:
+                    type: boolean
+                flash_attn:
+                    type: string
+                report_to:
+                    type: string
+                save_strategy:
+                    type: string
+                template:
+                    type: string
+                train_dtype:
+                    type: string
+                export_dtype:
+                    type: string
+                verify_dtype:
+                    type: string
+                lr_scheduler_type:
+                    type: string
+                warmup_ratio:
+                    type: string
+                weight_decay:
+                    type: string
+                lora_dropout:
+                    type: string
+                num_train_epochs:
+                    type: string
+                optim:
+                    type: string
+                logging_steps:
+                    type: string
+            description: |-
+                服务端托管的训练超参，创建请求不接受这些字段。整数字段在本消息里是原生
+                 整数（与执行详情的其他 int64 一致），不走 explicit_parameters 的字符串编码；
+                 小数型超参（warmup_ratio / weight_decay / lora_dropout）保留十进制字符串。
+        ExecutionMetricPoint:
+            type: object
+            properties:
+                timestamp:
+                    type: string
+                value:
+                    type: string
+                    description: Absent on a gap; decimal string so a large byte count stays exact.
+                gap_reason:
+                    type: string
+                    description: NO_DATA / AMBIGUOUS_SOURCE / INVALID_VALUE / EXPORTER_UNAVAILABLE
+        ExecutionMetricSeries:
+            type: object
+            properties:
+                metric_code:
+                    type: string
+                unit:
+                    type: string
+                status:
+                    type: string
+                    description: OK / PARTIAL / NO_DATA
+                points:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionMetricPoint'
+        ExecutionMetricView:
+            type: object
+            properties:
+                name:
+                    type: string
+                decimal_value:
+                    type: string
+                    description: Bag of digits as emitted by ModelDev; parsed as a decimal string.
+                step:
                     type: string
         ExecutionParameters:
             type: object
@@ -14579,6 +15009,91 @@ components:
             description: |-
                 The implementation's strict parser selects its own typed parameters.
                  Omitted fields use implementation defaults; null/unknown fields are rejected.
+        ExecutionPodView:
+            type: object
+            properties:
+                pod_name:
+                    type: string
+                pod_uid:
+                    type: string
+                pod_ip:
+                    type: string
+                phase:
+                    type: string
+                    description: Kubernetes phase only; recycled and never-created stay in availability.
+                ready:
+                    type: boolean
+                node_name:
+                    type: string
+                restarts:
+                    type: integer
+                    format: int32
+                created_at:
+                    type: string
+                start_time:
+                    type: string
+                deletion_timestamp:
+                    type: string
+                layer:
+                    type: string
+                    description: TRAINER / PIPELINE
+                availability:
+                    type: string
+                    description: LIVE / RECYCLED / NEVER_CREATED / REJECTED / ORPHANED / CREATION_PENDING
+                step_name:
+                    type: string
+                attempt:
+                    type: integer
+                    format: int32
+                job_index:
+                    type: integer
+                    format: int32
+                log_id:
+                    type: string
+                log_available:
+                    type: boolean
+                containers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionContainerView'
+                init_containers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionContainerView'
+                api_present:
+                    type: boolean
+                exit_code:
+                    type: integer
+                    format: int32
+                ephemeral_containers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionContainerView'
+                metric_instance_id:
+                    type: string
+                    description: |-
+                        The instance this Pod reports under in the observability training records:
+                         the execution ID for a worker, the KFP run ID for a step. Empty for a Pod
+                         created before metric labelling, so callers must not substitute their own.
+        ExecutionStepView:
+            type: object
+            properties:
+                role:
+                    type: string
+                state:
+                    type: string
+                started_at:
+                    type: string
+                finished_at:
+                    type: string
+                exit_code:
+                    type: integer
+                    format: int32
+                deadline_at:
+                    type: string
+            description: |-
+                One ordered timeline entry. Extended facts mirror ModelDev StepProgress, which
+                 uses a google.protobuf.Timestamp there; this contract keeps RFC3339 strings.
         ExecutionTimingView:
             type: object
             properties:
@@ -14645,6 +15160,34 @@ components:
                     type: string
                 observed_at:
                     type: string
+                steps:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionStepView'
+                    description: |-
+                        Mirrors ModelDev ExecutionView.steps (field 31). Role/state stay strings
+                         because the step set depends on kind.
+                metrics:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionMetricView'
+                    description: |-
+                        Mirrors ModelDev ExecutionView.metrics (field 16): train.loss points read
+                         from the published METRICS artifact.
+                failure:
+                    allOf:
+                        - $ref: '#/components/schemas/ExecutionFailureView'
+                    description: |-
+                        历史失败诊断。仅当这次执行确实失败过才有值；正常结束或仍在运行时为 null。
+                         与 HTTP 错误无关——这是执行结果的一部分，不是接口调用失败。
+                managed_settings:
+                    allOf:
+                        - $ref: '#/components/schemas/ExecutionManagedSettingsView'
+                    description: 服务端托管的训练超参。前端只读展示，创建时不能提交这些字段。
+                base_model:
+                    allOf:
+                        - $ref: '#/components/schemas/ExecutionBaseModelView'
+                    description: 微调所用的基座模型。只暴露身份信息，不含对象键、存储位置与文件清单；普通训练为 null。
         Expression:
             type: object
             properties:
@@ -14783,6 +15326,15 @@ components:
                     type: boolean
                 observed_at:
                     type: string
+                source_kind:
+                    type: string
+                    description: TRAINER or KFP_STEP; decides which plane produced these lines.
+                container_name:
+                    type: string
+                previous:
+                    type: boolean
+                available:
+                    type: boolean
             description: Bounded actual training output. Pod identity and selectors remain internal.
         GetExecutionResponse:
             type: object
@@ -16297,6 +16849,30 @@ components:
                     items:
                         $ref: '#/components/schemas/ArtifactView'
                 total:
+                    type: string
+        ListExecutionEventsResponse:
+            type: object
+            properties:
+                events:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionEventView'
+                observed_at:
+                    type: string
+                retention_hint:
+                    type: string
+                truncated:
+                    type: boolean
+        ListExecutionPodsResponse:
+            type: object
+            properties:
+                pods:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionPodView'
+                observed_at:
+                    type: string
+                availability:
                     type: string
         ListExecutionsResponse:
             type: object
@@ -18469,6 +19045,20 @@ components:
                     type: string
                 validation_description:
                     type: string
+                minimum_inclusive:
+                    type: boolean
+                    description: |-
+                        开闭区间。与 minimum/maximum 成对解读：minimum_inclusive=false 表示下界开，
+                         此时 minimum 本身不可取。未设置（null）表示服务端没有给出区间语义，不要猜测。
+                maximum_inclusive:
+                    type: boolean
+                    description: maximum_inclusive=false 表示上界开，此时 maximum 本身不可取。
+                editable:
+                    type: boolean
+                    description: 该参数是否允许用户改写。当前所有已发布实现均为 true。
+                non_editable_reason:
+                    type: string
+                    description: editable=false 时说明原因；editable=true 时恒为空字符串。
         PasswordLoginRequest:
             type: object
             properties:
@@ -19336,6 +19926,55 @@ components:
                 updatedAt:
                     type: string
                     format: date-time
+        QueryExecutionMetricsResponse:
+            type: object
+            properties:
+                execution_id:
+                    type: string
+                pod_uid:
+                    type: string
+                pod_name:
+                    type: string
+                container:
+                    type: string
+                start:
+                    type: string
+                end:
+                    type: string
+                step_seconds:
+                    type: integer
+                    format: uint32
+                observed_at:
+                    type: string
+                    description: BFF wall clock at the moment the answer was assembled.
+                source:
+                    type: string
+                    description: |-
+                        PROMETHEUS_CADVISOR_PROJECTION: the source is a recording rule over
+                         cAdvisor, not a direct cAdvisor read.
+                retention_hint:
+                    type: string
+                    description: |-
+                        Prometheus retention as configured today; the frontend must not promise
+                         longer history.
+                device_mode:
+                    type: string
+                    description: cpu / gpu, from ExecutionView.compute.device_mode.
+                gpu_requested:
+                    type: boolean
+                    description: |-
+                        True when the execution requested a GPU. gpu_available additionally
+                         requires a real GPU exporter series, which this environment lacks.
+                gpu_available:
+                    type: boolean
+                series:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ExecutionMetricSeries'
+            description: |-
+                Every field the observability contract does not return is synthesized here
+                 and labelled as such, so a consumer never mistakes a derived value for a
+                 measured one.
         QueryInstanceMetricsData:
             type: object
             properties:

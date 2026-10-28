@@ -167,6 +167,127 @@ def add_instance_log_stream(text):
     return text.replace(marker, operation + marker, 1)
 
 
+def add_execution_log_stream(text):
+    # The training log channel is a hand-written SSE handler, not a protobuf
+    # annotation, so the generator cannot infer it. The tenant gate still looks
+    # the route up by template, which means the contract has to be declared here.
+    if "            operationId: ModelDevService_ListExecutionEvents\n" not in text:
+        return text
+    route = "    /api/v1/modeldev/executions/{execution_id}/logs/stream:\n"
+    if route in text:
+        raise SystemExit("execution log stream must be declared once as SSE")
+    operation = """    /api/v1/modeldev/executions/{execution_id}/logs/stream:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_StreamExecutionLogs
+            description: Follow one container of one execution. READY is verified before HTTP headers; later failures arrive as control frames. Reconnect with the server-issued sinceBytes offset.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: execution_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+                - name: podUid
+                  in: query
+                  schema:
+                    type: string
+                    format: uuid
+                - name: container
+                  in: query
+                  schema:
+                    type: string
+                - name: previous
+                  in: query
+                  schema:
+                    type: boolean
+                    default: false
+                - name: sinceBytes
+                  in: query
+                  schema:
+                    type: integer
+                    format: int64
+                    minimum: 0
+                    maximum: 1073741824
+                    default: 0
+            responses:
+                "200":
+                    description: SSE READY/DATA/CLOSED/REJECTED frames with comment heartbeats; no-store and proxy buffering disabled.
+                    content:
+                        text/event-stream:
+                            schema:
+                                type: string
+                "400":
+                    description: Invalid query
+                "403":
+                    description: Execution access denied
+                "404":
+                    description: Execution or selected Pod absent
+                "429":
+                    description: Connection limit reached
+                "503":
+                    description: Upstream frame stream unavailable before READY
+"""
+    marker = "components:\n"
+    if text.count(marker) != 1:
+        raise SystemExit("expected one OpenAPI components section")
+    return text.replace(marker, operation + marker, 1)
+
+
+def add_artifact_download(text):
+    # The byte relay is a hand-written handler next to the URL exchange, so the
+    # generator cannot infer it. The tenant gate looks the route up by template,
+    # which means the contract has to be declared here or the route answers 403.
+    if "            operationId: ModelDevService_AuthorizeArtifactDownload\n" not in text:
+        return text
+    route = "    /api/v1/modeldev/artifacts/{artifact_id}/download:\n"
+    if route in text:
+        raise SystemExit("artifact download must be declared once as a byte stream")
+    operation = """    /api/v1/modeldev/artifacts/{artifact_id}/download:
+        get:
+            tags:
+                - ModelDevService
+            operationId: ModelDevService_DownloadArtifact
+            description: Relay the artifact bytes. The URL exchange returns a signed URL on the object store's in-cluster host, which a browser cannot reach; this endpoint fetches that object server-side and copies it out. Accepts no query.
+            security:
+                - BearerAuth: []
+            parameters:
+                - name: artifact_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+            responses:
+                "200":
+                    description: Artifact bytes as an attachment. The type collapses to application/octet-stream unless it is a known safe textual type.
+                    content:
+                        application/octet-stream:
+                            schema:
+                                type: string
+                                format: binary
+                "400":
+                    description: Invalid UUID or a query was supplied
+                "403":
+                    description: Artifact access denied
+                "404":
+                    description: Artifact absent or not visible
+                "412":
+                    description: Artifact not published
+                "502":
+                    description: Object store unreachable or returned an error
+                "504":
+                    description: Object store timed out
+"""
+    marker = "components:\n"
+    if text.count(marker) != 1:
+        raise SystemExit("expected one OpenAPI components section")
+    return text.replace(marker, operation + marker, 1)
+
+
 def require_compute_usage(text, proto_source=None):
     # gnostic v0.7.1 does not carry field behavior/property enums into GET
     # query parameters. Keep the emitted contract tied to its Proto input.
@@ -221,7 +342,7 @@ def finalize(text):
             text = remove_synthetic_200(text, route, status, method)
     # response_body endpoints retain their explicit public-object schema,
     # including the Network/Image mutation responses and existing details.
-    return add_instance_log_stream(require_compute_usage(repair_network_operation(remove_shadowed_200(text))))
+    return add_artifact_download(add_execution_log_stream(add_instance_log_stream(require_compute_usage(repair_network_operation(remove_shadowed_200(text))))))
 
 
 if __name__ == "__main__":

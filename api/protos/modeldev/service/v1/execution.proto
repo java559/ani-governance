@@ -49,11 +49,14 @@ message GeneralParameter {
 
 // Catalogue metadata exposes selection and registered parameters only.
 // Gov public pagination uses page/pageSize; legacy limit/cursor stay reserved.
+// kind filters by task type before pagination and reuses the value returned in
+// ImplementationView.kind.
 message ListImplementationsRequest {
   reserved 1, 2;
   reserved "limit", "cursor";
   optional uint32 page = 3 [json_name = "page"];
   optional uint32 page_size = 4 [json_name = "pageSize"];
+  optional string kind = 5;
 }
 message ListImplementationsResponse {
   repeated ImplementationView items = 1;
@@ -86,6 +89,15 @@ message ParameterRule {
   GeneralParameter maximum = 7;
   string numeric_representation = 8 [json_name = "numeric_representation"];
   string validation_description = 9 [json_name = "validation_description"];
+  // 开闭区间。与 minimum/maximum 成对解读：minimum_inclusive=false 表示下界开，
+  // 此时 minimum 本身不可取。未设置（null）表示服务端没有给出区间语义，不要猜测。
+  optional bool minimum_inclusive = 10 [json_name = "minimum_inclusive"];
+  // maximum_inclusive=false 表示上界开，此时 maximum 本身不可取。
+  optional bool maximum_inclusive = 11 [json_name = "maximum_inclusive"];
+  // 该参数是否允许用户改写。当前所有已发布实现均为 true。
+  bool editable = 12;
+  // editable=false 时说明原因；editable=true 时恒为空字符串。
+  string non_editable_reason = 13 [json_name = "non_editable_reason"];
 }
 message GetInputVersionRequest { string input_version_id = 1 [json_name = "input_version_id"]; }
 message GetInputVersionResponse { InputVersionView input_version = 1 [json_name = "input_version"]; }
@@ -95,6 +107,10 @@ message ListInputVersionsRequest {
   optional string state = 3;
   optional uint32 page = 4 [json_name = "page"];
   optional uint32 page_size = 5 [json_name = "pageSize"];
+  // 按已校验的数据集格式筛选，在分页前生效，total 为筛选后条数。
+  // 兼容性由格式唯一决定：CSV 只能用于普通训练，JSON 只能用于微调。
+  // 只接受 CSV / JSON，其它值返回 400（不会静默返回空页）。
+  optional string format = 6;
 }
 message ListInputVersionsResponse {
   repeated InputVersionView items = 1;
@@ -149,6 +165,15 @@ message ListExecutionsRequest {
   reserved "limit", "cursor";
   optional uint32 page = 3 [json_name = "page"];
   optional uint32 page_size = 4 [json_name = "pageSize"];
+  // 以下三个筛选与响应里的 compute_state / delivery_state / close_state 同词汇
+  // （不带枚举前缀，如 SUCCEEDED / PUBLISHED / CLOSED）。三者在服务端可叠加，
+  // 且都在分页前生效，total 为筛选后的条数。
+  optional string compute_state = 5 [json_name = "compute_state"];
+  optional string delivery_state = 6 [json_name = "delivery_state"];
+  optional string close_state = 7 [json_name = "close_state"];
+  // 按任务名做不区分大小写的子串匹配，在分页前生效，total 为筛选后的条数。
+  // 名称即创建时提交的 name，与响应里的 name 同源。
+  optional string name = 8;
 }
 message ListExecutionsResponse {
   repeated ExecutionView items = 1;
@@ -160,6 +185,13 @@ message GetExecutionLogsRequest {
   string execution_id = 1 [json_name = "execution_id"];
   uint32 tail_lines = 2 [json_name = "tail_lines"];
   uint32 max_bytes = 3 [json_name = "max_bytes"];
+  // Opaque owner-issued log ID; container selection stays a separate field.
+  optional string log_id = 4 [json_name = "log_id"];
+  // Absent keeps the original single-worker behaviour.
+  optional string pod_uid = 5 [json_name = "pod_uid"];
+  optional string container = 6;
+  // Reads the last terminated instance of the same container.
+  optional bool previous = 7;
 }
 // Bounded actual training output. Pod identity and selectors remain internal.
 message GetExecutionLogsResponse {
@@ -167,10 +199,155 @@ message GetExecutionLogsResponse {
   repeated ExecutionLogLine lines = 2;
   bool truncated = 3;
   string observed_at = 4 [json_name = "observed_at"];
+  // TRAINER or KFP_STEP; decides which plane produced these lines.
+  string source_kind = 5 [json_name = "source_kind"];
+  string container_name = 6 [json_name = "container_name"];
+  bool previous = 7;
+  bool available = 8;
 }
 message ExecutionLogLine {
   string timestamp = 1;
   string text = 2;
+}
+// One container instance as Kubernetes reports it. Display strings keep the
+// BFF free of Kubernetes enum packages; unknown values fail closed downstream.
+message ExecutionContainerView {
+  string name = 1;
+  // container / init_container / ephemeral
+  string type = 2;
+  // running / waiting / terminated / unknown
+  string state = 3;
+  string reason = 4;
+  string message = 5;
+  int32 restart_count = 6 [json_name = "restart_count"];
+  optional int32 exit_code = 7 [json_name = "exit_code"];
+  string started_at = 8 [json_name = "started_at"];
+  string finished_at = 9 [json_name = "finished_at"];
+  ExecutionContainerView last_state = 10 [json_name = "last_state"];
+}
+message ExecutionPodView {
+  string pod_name = 1 [json_name = "pod_name"];
+  string pod_uid = 2 [json_name = "pod_uid"];
+  string pod_ip = 3 [json_name = "pod_ip"];
+  // Kubernetes phase only; recycled and never-created stay in availability.
+  string phase = 4;
+  bool ready = 5;
+  string node_name = 6 [json_name = "node_name"];
+  int32 restarts = 7;
+  string created_at = 8 [json_name = "created_at"];
+  string start_time = 9 [json_name = "start_time"];
+  string deletion_timestamp = 10 [json_name = "deletion_timestamp"];
+  // TRAINER / PIPELINE
+  string layer = 11;
+  // LIVE / RECYCLED / NEVER_CREATED / REJECTED / ORPHANED / CREATION_PENDING
+  string availability = 12;
+  string step_name = 13 [json_name = "step_name"];
+  int32 attempt = 14;
+  int32 job_index = 15 [json_name = "job_index"];
+  string log_id = 16 [json_name = "log_id"];
+  bool log_available = 17 [json_name = "log_available"];
+  repeated ExecutionContainerView containers = 18;
+  repeated ExecutionContainerView init_containers = 19 [json_name = "init_containers"];
+  bool api_present = 20 [json_name = "api_present"];
+  optional int32 exit_code = 21 [json_name = "exit_code"];
+  repeated ExecutionContainerView ephemeral_containers = 22 [json_name = "ephemeral_containers"];
+  // The instance this Pod reports under in the observability training records:
+  // the execution ID for a worker, the KFP run ID for a step. Empty for a Pod
+  // created before metric labelling, so callers must not substitute their own.
+  string metric_instance_id = 23 [json_name = "metric_instance_id"];
+}
+message ExecutionEventView {
+  string type = 1;
+  string reason = 2;
+  string message = 3;
+  string first_timestamp = 4 [json_name = "first_timestamp"];
+  string last_timestamp = 5 [json_name = "last_timestamp"];
+  int32 count = 6;
+  string source = 7;
+  string involved_kind = 8 [json_name = "involved_kind"];
+  string involved_name = 9 [json_name = "involved_name"];
+  string involved_uid = 10 [json_name = "involved_uid"];
+  string field_path = 11 [json_name = "field_path"];
+  string reporting_instance = 12 [json_name = "reporting_instance"];
+}
+message ListExecutionPodsRequest {
+  string execution_id = 1 [json_name = "execution_id"];
+  // all / trainer / pipeline; absent behaves as all.
+  optional string layer = 2;
+  optional bool include_recycled = 3 [json_name = "include_recycled"];
+}
+message ListExecutionPodsResponse {
+  repeated ExecutionPodView pods = 1;
+  string observed_at = 2 [json_name = "observed_at"];
+  string availability = 3;
+}
+message ListExecutionEventsRequest {
+  string execution_id = 1 [json_name = "execution_id"];
+  // key / all / warning; absent behaves as key.
+  optional string scope = 2;
+}
+message ListExecutionEventsResponse {
+  repeated ExecutionEventView events = 1;
+  string observed_at = 2 [json_name = "observed_at"];
+  string retention_hint = 3 [json_name = "retention_hint"];
+  bool truncated = 4;
+}
+// QueryExecutionMetrics reads one container's CPU/memory curve inside a single
+// execution Pod. One request addresses one Pod because the observability
+// contract resolves exactly one physical workload per call; callers page
+// through Pods instead of asking for an execution-wide aggregate.
+message QueryExecutionMetricsRequest {
+  string execution_id = 1 [json_name = "execution_id"];
+  // Pod UID from ListExecutionPods. Kept separate from the pod name so a
+  // recreated Pod never inherits the previous curve.
+  string pod_uid = 2 [json_name = "pod_uid"];
+  // Container name; "node" for the worker, "main" for a KFP step.
+  string container = 3;
+  string start = 4;
+  string end = 5;
+  optional uint32 step_seconds = 6 [json_name = "step_seconds", (gnostic.openapi.v3.property) = {type:"integer" format:"uint32"}];
+  repeated string metric_codes = 7 [json_name = "metric_codes"];
+}
+// Every field the observability contract does not return is synthesized here
+// and labelled as such, so a consumer never mistakes a derived value for a
+// measured one.
+message QueryExecutionMetricsResponse {
+  string execution_id = 1 [json_name = "execution_id"];
+  string pod_uid = 2 [json_name = "pod_uid"];
+  string pod_name = 3 [json_name = "pod_name"];
+  string container = 4;
+  string start = 5;
+  string end = 6;
+  uint32 step_seconds = 7 [json_name = "step_seconds"];
+  // BFF wall clock at the moment the answer was assembled.
+  string observed_at = 8 [json_name = "observed_at"];
+  // PROMETHEUS_CADVISOR_PROJECTION: the source is a recording rule over
+  // cAdvisor, not a direct cAdvisor read.
+  string source = 9;
+  // Prometheus retention as configured today; the frontend must not promise
+  // longer history.
+  string retention_hint = 10 [json_name = "retention_hint"];
+  // cpu / gpu, from ExecutionView.compute.device_mode.
+  string device_mode = 11 [json_name = "device_mode"];
+  // True when the execution requested a GPU. gpu_available additionally
+  // requires a real GPU exporter series, which this environment lacks.
+  bool gpu_requested = 12 [json_name = "gpu_requested"];
+  bool gpu_available = 13 [json_name = "gpu_available"];
+  repeated ExecutionMetricSeries series = 14;
+}
+message ExecutionMetricSeries {
+  string metric_code = 1 [json_name = "metric_code"];
+  string unit = 2;
+  // OK / PARTIAL / NO_DATA
+  string status = 3;
+  repeated ExecutionMetricPoint points = 4;
+}
+message ExecutionMetricPoint {
+  string timestamp = 1;
+  // Absent on a gap; decimal string so a large byte count stays exact.
+  optional string value = 2;
+  // NO_DATA / AMBIGUOUS_SOURCE / INVALID_VALUE / EXPORTER_UNAVAILABLE
+  optional string gap_reason = 3 [json_name = "gap_reason"];
 }
 message ExecutionView {
   string operation_id = 1 [json_name = "operation_id"];
@@ -201,6 +378,92 @@ message ExecutionView {
   string accepted_at = 16 [json_name = "accepted_at"];
   string deadline_at = 17 [json_name = "deadline_at"];
   string observed_at = 18 [json_name = "observed_at"];
+  // Mirrors ModelDev ExecutionView.steps (field 31). Role/state stay strings
+  // because the step set depends on kind.
+  repeated ExecutionStepView steps = 29 [json_name = "steps"];
+  // Mirrors ModelDev ExecutionView.metrics (field 16): train.loss points read
+  // from the published METRICS artifact.
+  repeated ExecutionMetricView metrics = 30 [json_name = "metrics"];
+  // 历史失败诊断。仅当这次执行确实失败过才有值；正常结束或仍在运行时为 null。
+  // 与 HTTP 错误无关——这是执行结果的一部分，不是接口调用失败。
+  ExecutionFailureView failure = 31;
+  // 服务端托管的训练超参。前端只读展示，创建时不能提交这些字段。
+  ExecutionManagedSettingsView managed_settings = 32 [json_name = "managed_settings"];
+  // 微调所用的基座模型。只暴露身份信息，不含对象键、存储位置与文件清单；
+  // 普通训练为 null。
+  ExecutionBaseModelView base_model = 33 [json_name = "base_model"];
+}
+// 基座模型的公开身份。不包含存放位置，前端不能据此拼接下载地址。
+message ExecutionBaseModelView {
+  string model_id = 1 [json_name = "model_id"];
+  string version_id = 2 [json_name = "version_id"];
+  // 模型族名，如 Qwen2.5-0.5B-Instruct。
+  string family = 3;
+  // 权重格式，如 safetensors。
+  string format = 4;
+}
+// 历史失败诊断。safe_message 已剔除凭据与存储密钥，可直接展示。
+message ExecutionFailureView {
+  // 不带前缀的原因枚举名，如 INVALID_ARGUMENT / UPSTREAM_UNAVAILABLE。
+  string reason = 1;
+  // 面向人的安全描述，不含凭据、存储密钥或隐藏的对象事实。
+  string safe_message = 2 [json_name = "safe_message"];
+  repeated ExecutionFieldViolationView violations = 3;
+  // 服务端关联 ID，用于日志检索；不是用户可见的业务标识。
+  string correlation_id = 4 [json_name = "correlation_id"];
+}
+message ExecutionFieldViolationView {
+  string field = 1;
+  string reason = 2;
+}
+// 服务端托管的训练超参，创建请求不接受这些字段。整数字段在本消息里是原生
+// 整数（与执行详情的其他 int64 一致），不走 explicit_parameters 的字符串编码；
+// 小数型超参（warmup_ratio / weight_decay / lora_dropout）保留十进制字符串。
+message ExecutionManagedSettingsView {
+  // 训练阶段。本期只有 sft，不存在 dpo/ppo。
+  string stage = 1;
+  string finetuning_type = 2 [json_name = "finetuning_type"];
+  string lora_target = 3 [json_name = "lora_target"];
+  int64 lora_rank = 4 [json_name = "lora_rank"];
+  int64 lora_alpha = 5 [json_name = "lora_alpha"];
+  int64 cutoff_len = 6 [json_name = "cutoff_len"];
+  int64 per_device_train_batch_size = 7 [json_name = "per_device_train_batch_size"];
+  int64 gradient_accumulation_steps = 8 [json_name = "gradient_accumulation_steps"];
+  int64 seed = 9;
+  int64 data_seed = 10 [json_name = "data_seed"];
+  string device = 11;
+  bool fp16 = 12;
+  bool bf16 = 13;
+  string flash_attn = 14 [json_name = "flash_attn"];
+  string report_to = 15 [json_name = "report_to"];
+  string save_strategy = 16 [json_name = "save_strategy"];
+  string template = 17;
+  string train_dtype = 18 [json_name = "train_dtype"];
+  string export_dtype = 19 [json_name = "export_dtype"];
+  string verify_dtype = 20 [json_name = "verify_dtype"];
+  string lr_scheduler_type = 21 [json_name = "lr_scheduler_type"];
+  string warmup_ratio = 22 [json_name = "warmup_ratio"];
+  string weight_decay = 23 [json_name = "weight_decay"];
+  string lora_dropout = 24 [json_name = "lora_dropout"];
+  int64 num_train_epochs = 25 [json_name = "num_train_epochs"];
+  string optim = 26;
+  int64 logging_steps = 27 [json_name = "logging_steps"];
+}
+// One ordered timeline entry. Extended facts mirror ModelDev StepProgress, which
+// uses a google.protobuf.Timestamp there; this contract keeps RFC3339 strings.
+message ExecutionStepView {
+  string role = 1;
+  string state = 2;
+  string started_at = 3 [json_name = "started_at"];
+  string finished_at = 4 [json_name = "finished_at"];
+  int32 exit_code = 5 [json_name = "exit_code"];
+  string deadline_at = 6 [json_name = "deadline_at"];
+}
+message ExecutionMetricView {
+  string name = 1;
+  // Bag of digits as emitted by ModelDev; parsed as a decimal string.
+  string decimal_value = 2 [json_name = "decimal_value"];
+  optional int64 step = 3;
 }
 message ExecutionComputeView {
   string compute_preset_id = 1 [json_name = "compute_preset_id"];

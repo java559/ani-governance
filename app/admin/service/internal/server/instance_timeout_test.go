@@ -17,6 +17,11 @@ func TestInstanceLogTimeoutKeepsOrdinaryDeadlineAndClientCancellation(t *testing
 		{"GET", "/api/v1/instances/10000000-0000-4000-8000-000000000001/logs", false},
 		{"POST", "/api/v1/instances/10000000-0000-4000-8000-000000000001/logs", true},
 		{"GET", "/api/v1/instances/10000000-0000-4000-8000-000000000001/runtime", true},
+		// The training log stream owns its bounded lifetime, exactly like the
+		// instance log channel; the shared ordinary timeout must not cut it.
+		{"GET", "/api/v1/modeldev/executions/20000000-0000-4000-8000-000000000002/logs/stream", false},
+		{"POST", "/api/v1/modeldev/executions/20000000-0000-4000-8000-000000000002/logs/stream", true},
+		{"GET", "/api/v1/modeldev/executions/20000000-0000-4000-8000-000000000002/logs", true},
 	} {
 		t.Run(tc.method+tc.path, func(t *testing.T) {
 			parent, cancel := context.WithCancel(context.Background())
@@ -48,6 +53,11 @@ func TestInstanceMetricsTimeoutOnlyChangesTwoMethods(t *testing.T) {
 		{"GET", "/api/v1/instances/10000000-0000-4000-8000-000000000001/metrics/query", 3 * time.Second},
 		{"POST", "/api/v1/instances/10000000-0000-4000-8000-000000000001/metrics/latest", 3 * time.Second},
 		{"GET", "/api/v1/instances/10000000-0000-4000-8000-000000000001/runtime", 3 * time.Second},
+		// The training resource curve shares the monitoring budget; the POST form
+		// and a shorter path are still ordinary requests.
+		{"GET", "/api/v1/modeldev/executions/10000000-0000-4000-8000-000000000001/resource-metrics", 10 * time.Second},
+		{"POST", "/api/v1/modeldev/executions/10000000-0000-4000-8000-000000000001/resource-metrics", 3 * time.Second},
+		{"GET", "/api/v1/modeldev/executions/10000000-0000-4000-8000-000000000001/resource-metrics/", 3 * time.Second},
 	} {
 		t.Run(tc.method+tc.path, func(t *testing.T) {
 			request := httptest.NewRequest(tc.method, tc.path, nil)

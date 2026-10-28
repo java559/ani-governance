@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"net/url"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -39,6 +40,23 @@ func (c *ModelDevClient) queryContext(ctx context.Context, scope ModelDevResolve
 		"x-ani-request-id", uuid.NewString(), "x-ani-authorized-method", method, "x-ani-data-scope", "tenant-all")), cancel, nil
 }
 
+// streamContext rebuilds outgoing metadata for a long-lived stream. Unlike a
+// unary call it installs no total deadline: the caller owns the bounded
+// lifetime and the upstream must be able to idle between log lines.
+func (c *ModelDevClient) streamContext(ctx context.Context, scope ModelDevResolveScope, method string) (context.Context, error) {
+	if c == nil || c.connection == nil {
+		return nil, modelDevQueryUnavailable()
+	}
+	if !modelDevCanonicalUUID(scope.ResourceTenantID) || !validModelDevClientActor(scope.Actor) {
+		return nil, modelDevQueryUnavailable()
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, status.FromContextError(err).Err()
+	}
+	return metadata.NewOutgoingContext(ctx, metadata.Pairs("x-ani-tenant-id", scope.ResourceTenantID, "x-ani-actor", scope.Actor,
+		"x-ani-request-id", uuid.NewString(), "x-ani-authorized-method", method, "x-ani-data-scope", "tenant-all")), nil
+}
+
 func (c *ModelDevClient) GetExecution(ctx context.Context, scope ModelDevResolveScope, id string) (*modeldevv1.GetExecutionResponse, error) {
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_GetExecution_FullMethodName)
 	if err != nil {
@@ -60,7 +78,60 @@ func modelDevValidExecution(in *modeldevv1.ExecutionView) bool {
 		modelDevCanonicalUUID(in.Identity.OperationId) && modelDevDigest(in.Identity.ExecutionSpecHash) && in.States != nil &&
 		modelDevSupportedExecutionKind(in.Kind) &&
 		modelDevValidTimestamp(in.AcceptedAt) && modelDevValidTimestamp(in.DeadlineAt) && modelDevValidTimestamp(in.ObservedAt) &&
-		in.States.ComputeState != 0 && in.States.DeliveryState != 0 && in.States.CloseState != 0 && in.States.ResourceState != 0 && modelDevValidModelRegistration(in) && modelDevValidExecutionHistory(in)
+		in.States.ComputeState != 0 && in.States.DeliveryState != 0 && in.States.CloseState != 0 && in.States.ResourceState != 0 &&
+		modelDevValidSteps(in.Steps) && modelDevValidMetrics(in.Metrics) && modelDevValidModelRegistration(in) && modelDevValidExecutionHistory(in)
+}
+
+// The timeline and curve are derived facts, but they still reach a public DTO.
+// Unknown roles, states or an unbounded list fail closed like every other field.
+func modelDevValidSteps(steps []*modeldevv1.StepProgress) bool {
+	if len(steps) > 16 {
+		return false
+	}
+	for _, step := range steps {
+		if step == nil || !modelDevStepRole(step.Role) || !modelDevStepState(step.State) || step.ExitCode < 0 ||
+			!modelDevOptionalTimestamp(step.StartedAt) || !modelDevOptionalTimestamp(step.FinishedAt) || !modelDevOptionalTimestamp(step.DeadlineAt) {
+			return false
+		}
+	}
+	return true
+}
+
+func modelDevStepRole(role string) bool {
+	switch role {
+	case "prepare", "train-wait", "export", "verify", "collect", "publish", "register", "close":
+		return true
+	}
+	return false
+}
+
+func modelDevStepState(state string) bool {
+	switch state {
+	case "PENDING", "RUNNING", "SUCCEEDED", "FAILED", "STOPPED":
+		return true
+	}
+	return false
+}
+
+func modelDevValidMetrics(metrics []*trainingv1.Metric) bool {
+	if len(metrics) > 10000 {
+		return false
+	}
+	for _, metric := range metrics {
+		if metric == nil || metric.Name == "" || len(metric.Name) > 128 || metric.DecimalValue == "" || len(metric.DecimalValue) > 64 {
+			return false
+		}
+		if _, err := strconv.ParseFloat(metric.DecimalValue, 64); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+// modelDevOptionalTimestamp accepts an absent observation; a present one must
+// still be a valid, non-zero instant.
+func modelDevOptionalTimestamp(value *timestamppb.Timestamp) bool {
+	return value == nil || modelDevValidTimestamp(value)
 }
 
 // Registration is an owner observation, never a conclusion inferred from

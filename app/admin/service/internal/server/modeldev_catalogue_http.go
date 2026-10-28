@@ -16,11 +16,11 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 	route.GET(data.ModelDevListImplementationsPath, func(ctx khttp.Context) error {
 		modelDevQueryHeaders(ctx)
 		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListImplementations)
-		size, pageSize, _, err := modelDevCatalogueSelectors(ctx.Request(), false)
+		selectors, err := modelDevCatalogueSelectors(ctx.Request(), map[string]bool{"kind": true})
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListImplementationsRequest{Page: size, PageSize: pageSize}
+		in := &modeldevv1.ListImplementationsRequest{Page: selectors.page, PageSize: selectors.pageSize, Kind: selectors.kind}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.ListImplementations(c, v.(*modeldevv1.ListImplementationsRequest))
 		})
@@ -33,11 +33,11 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 	route.GET(data.ModelDevListInputVersionsPath, func(ctx khttp.Context) error {
 		modelDevQueryHeaders(ctx)
 		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListInputVersions)
-		size, pageSize, state, err := modelDevCatalogueSelectors(ctx.Request(), true)
+		selectors, err := modelDevCatalogueSelectors(ctx.Request(), map[string]bool{"state": true, "format": true})
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListInputVersionsRequest{Page: size, PageSize: pageSize, State: state}
+		in := &modeldevv1.ListInputVersionsRequest{Page: selectors.page, PageSize: selectors.pageSize, State: selectors.state, Format: selectors.format}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.ListInputVersions(c, v.(*modeldevv1.ListInputVersionsRequest))
 		})
@@ -68,36 +68,70 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 	})
 }
 
-func modelDevCatalogueSelectors(request *http.Request, allowState bool) (*uint32, *uint32, *string, error) {
+// modelDevCatalogueSelectors parses the shared pagination window plus the
+// filters the route explicitly allows. Any other parameter, a repeated value or
+// an unsupported value is rejected rather than ignored.
+func modelDevCatalogueSelectors(request *http.Request, allowed map[string]bool) (modelDevCatalogueSelector, error) {
+	var selector modelDevCatalogueSelector
 	query, err := modelDevBoundedQuery(request)
 	if err != nil {
-		return nil, nil, nil, err
+		return selector, err
 	}
-	var page, pageSize *uint32
-	var state *string
 	for name, values := range query {
 		switch name {
 		case "page":
-			page, err = modelDevPagePointer(values[0])
+			selector.page, err = modelDevPagePointer(values[0])
 		case "pageSize":
-			pageSize, err = modelDevPageSizePointer(values[0])
+			selector.pageSize, err = modelDevPageSizePointer(values[0])
 		case "state":
-			if !allowState {
-				return nil, nil, nil, invalidModelDevQueryHTTP()
+			if !allowed["state"] {
+				return selector, invalidModelDevQueryHTTP()
 			}
 			value := values[0]
 			switch value {
 			case "FIXING", "VALIDATING", "READY", "FAILED":
-				state = &value
+				selector.state = &value
 			default:
-				return nil, nil, nil, invalidModelDevQueryHTTP()
+				return selector, invalidModelDevQueryHTTP()
+			}
+		case "kind":
+			if !allowed["kind"] {
+				return selector, invalidModelDevQueryHTTP()
+			}
+			value := values[0]
+			switch value {
+			case "GENERAL_TRAINING", "FINETUNING":
+				selector.kind = &value
+			default:
+				return selector, invalidModelDevQueryHTTP()
+			}
+		case "format":
+			if !allowed["format"] {
+				return selector, invalidModelDevQueryHTTP()
+			}
+			value := values[0]
+			switch value {
+			case "CSV", "JSON":
+				selector.format = &value
+			default:
+				return selector, invalidModelDevQueryHTTP()
 			}
 		default:
-			return nil, nil, nil, invalidModelDevQueryHTTP()
+			return selector, invalidModelDevQueryHTTP()
 		}
 		if err != nil {
-			return nil, nil, nil, err
+			return selector, err
 		}
 	}
-	return page, pageSize, state, nil
+	return selector, nil
+}
+
+// modelDevCatalogueSelector carries the optional list filters. A nil field
+// means the caller did not ask for that filter.
+type modelDevCatalogueSelector struct {
+	page     *uint32
+	pageSize *uint32
+	state    *string
+	kind     *string
+	format   *string
 }

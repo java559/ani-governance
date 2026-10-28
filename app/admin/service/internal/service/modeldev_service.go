@@ -44,6 +44,8 @@ type ModelDevService struct {
 	compute       ModelDevComputeResolver
 	resolver      *data.ModelDevClient
 	gpu           ModelDevGPUAdmission
+	monitoring    ModelDevMonitoringClient
+	metricGate    *modelDevMetricGate
 }
 
 type ModelDevGPUAdmission struct {
@@ -65,11 +67,21 @@ func NewModelDevService(
 		acceptances:   acceptances,
 		resolver:      resolver,
 		compute:       computeResolver,
+		metricGate:    &modelDevMetricGate{},
 	}
 	if len(gpu) == 1 {
 		s.gpu = gpu[0]
 	}
 	return s
+}
+
+// SetMonitoring attaches the observability client after construction. The
+// resource curve is an optional dependency: an absent client only disables the
+// metrics route and never blocks admission, query or dispatch.
+func (s *ModelDevService) SetMonitoring(monitoring ModelDevMonitoringClient) {
+	if s != nil {
+		s.monitoring = monitoring
+	}
 }
 
 // CreateExecution is called by the strict JSON HTTP adapter. It intentionally

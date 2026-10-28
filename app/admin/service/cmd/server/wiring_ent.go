@@ -483,6 +483,9 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		modeldevGPU.Plans = acceleratorClient.Catalog
 	}
 	modeldevService := service.NewModelDevService(modeldevAuthorizationRepo, tenantRepo, modeldevAcceptanceRepo, modeldevClient, computeOwner, modeldevGPU)
+	if observabilityClient != nil {
+		modeldevService.SetMonitoring(observabilityClient)
+	}
 
 	// ═══════════════════════ 五、传输层(internal/server) ═══════════════════════
 

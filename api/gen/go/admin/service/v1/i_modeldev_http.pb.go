@@ -26,9 +26,12 @@ const OperationModelDevServiceGetExecution = "/admin.service.v1.ModelDevService/
 const OperationModelDevServiceGetExecutionLogs = "/admin.service.v1.ModelDevService/GetExecutionLogs"
 const OperationModelDevServiceGetInputVersion = "/admin.service.v1.ModelDevService/GetInputVersion"
 const OperationModelDevServiceListExecutionArtifacts = "/admin.service.v1.ModelDevService/ListExecutionArtifacts"
+const OperationModelDevServiceListExecutionEvents = "/admin.service.v1.ModelDevService/ListExecutionEvents"
+const OperationModelDevServiceListExecutionPods = "/admin.service.v1.ModelDevService/ListExecutionPods"
 const OperationModelDevServiceListExecutions = "/admin.service.v1.ModelDevService/ListExecutions"
 const OperationModelDevServiceListImplementations = "/admin.service.v1.ModelDevService/ListImplementations"
 const OperationModelDevServiceListInputVersions = "/admin.service.v1.ModelDevService/ListInputVersions"
+const OperationModelDevServiceQueryExecutionMetrics = "/admin.service.v1.ModelDevService/QueryExecutionMetrics"
 const OperationModelDevServiceResumeModelRegistration = "/admin.service.v1.ModelDevService/ResumeModelRegistration"
 const OperationModelDevServiceStopExecution = "/admin.service.v1.ModelDevService/StopExecution"
 
@@ -39,9 +42,12 @@ type ModelDevServiceHTTPServer interface {
 	GetExecutionLogs(context.Context, *v1.GetExecutionLogsRequest) (*v1.GetExecutionLogsResponse, error)
 	GetInputVersion(context.Context, *v1.GetInputVersionRequest) (*v1.GetInputVersionResponse, error)
 	ListExecutionArtifacts(context.Context, *v1.ListExecutionArtifactsRequest) (*v1.ListExecutionArtifactsResponse, error)
+	ListExecutionEvents(context.Context, *v1.ListExecutionEventsRequest) (*v1.ListExecutionEventsResponse, error)
+	ListExecutionPods(context.Context, *v1.ListExecutionPodsRequest) (*v1.ListExecutionPodsResponse, error)
 	ListExecutions(context.Context, *v1.ListExecutionsRequest) (*v1.ListExecutionsResponse, error)
 	ListImplementations(context.Context, *v1.ListImplementationsRequest) (*v1.ListImplementationsResponse, error)
 	ListInputVersions(context.Context, *v1.ListInputVersionsRequest) (*v1.ListInputVersionsResponse, error)
+	QueryExecutionMetrics(context.Context, *v1.QueryExecutionMetricsRequest) (*v1.QueryExecutionMetricsResponse, error)
 	ResumeModelRegistration(context.Context, *v1.ResumeModelRegistrationRequest) (*v1.GetExecutionResponse, error)
 	StopExecution(context.Context, *v1.StopExecutionRequest) (*v1.StopExecutionResponse, error)
 }
@@ -53,6 +59,9 @@ func RegisterModelDevServiceHTTPServer(s *http.Server, srv ModelDevServiceHTTPSe
 	r.GET("/api/v1/modeldev/input-versions", _ModelDevService_ListInputVersions0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/executions", _ModelDevService_ListExecutions0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/executions/{execution_id}/logs", _ModelDevService_GetExecutionLogs0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/executions/{execution_id}/pods", _ModelDevService_ListExecutionPods0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/executions/{execution_id}/events", _ModelDevService_ListExecutionEvents0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/executions/{execution_id}/resource-metrics", _ModelDevService_QueryExecutionMetrics0_HTTP_Handler(srv))
 	r.POST("/api/v1/modeldev/executions/{execution_id}:stop", _ModelDevService_StopExecution0_HTTP_Handler(srv))
 	r.POST("/api/v1/modeldev/executions/{execution_id}:resume-model-registration", _ModelDevService_ResumeModelRegistration0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/executions/{execution_id}", _ModelDevService_GetExecution0_HTTP_Handler(srv))
@@ -158,6 +167,72 @@ func _ModelDevService_GetExecutionLogs0_HTTP_Handler(srv ModelDevServiceHTTPServ
 			return err
 		}
 		reply := out.(*v1.GetExecutionLogsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelDevService_ListExecutionPods0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListExecutionPodsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelDevServiceListExecutionPods)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListExecutionPods(ctx, req.(*v1.ListExecutionPodsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListExecutionPodsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelDevService_ListExecutionEvents0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListExecutionEventsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelDevServiceListExecutionEvents)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListExecutionEvents(ctx, req.(*v1.ListExecutionEventsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListExecutionEventsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelDevService_QueryExecutionMetrics0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.QueryExecutionMetricsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelDevServiceQueryExecutionMetrics)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.QueryExecutionMetrics(ctx, req.(*v1.QueryExecutionMetricsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.QueryExecutionMetricsResponse)
 		return ctx.Result(200, reply)
 	}
 }
@@ -301,9 +376,12 @@ type ModelDevServiceHTTPClient interface {
 	GetExecutionLogs(ctx context.Context, req *v1.GetExecutionLogsRequest, opts ...http.CallOption) (rsp *v1.GetExecutionLogsResponse, err error)
 	GetInputVersion(ctx context.Context, req *v1.GetInputVersionRequest, opts ...http.CallOption) (rsp *v1.GetInputVersionResponse, err error)
 	ListExecutionArtifacts(ctx context.Context, req *v1.ListExecutionArtifactsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionArtifactsResponse, err error)
+	ListExecutionEvents(ctx context.Context, req *v1.ListExecutionEventsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionEventsResponse, err error)
+	ListExecutionPods(ctx context.Context, req *v1.ListExecutionPodsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionPodsResponse, err error)
 	ListExecutions(ctx context.Context, req *v1.ListExecutionsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionsResponse, err error)
 	ListImplementations(ctx context.Context, req *v1.ListImplementationsRequest, opts ...http.CallOption) (rsp *v1.ListImplementationsResponse, err error)
 	ListInputVersions(ctx context.Context, req *v1.ListInputVersionsRequest, opts ...http.CallOption) (rsp *v1.ListInputVersionsResponse, err error)
+	QueryExecutionMetrics(ctx context.Context, req *v1.QueryExecutionMetricsRequest, opts ...http.CallOption) (rsp *v1.QueryExecutionMetricsResponse, err error)
 	ResumeModelRegistration(ctx context.Context, req *v1.ResumeModelRegistrationRequest, opts ...http.CallOption) (rsp *v1.GetExecutionResponse, err error)
 	StopExecution(ctx context.Context, req *v1.StopExecutionRequest, opts ...http.CallOption) (rsp *v1.StopExecutionResponse, err error)
 }
@@ -394,6 +472,32 @@ func (c *ModelDevServiceHTTPClientImpl) ListExecutionArtifacts(ctx context.Conte
 	return &out, nil
 }
 
+func (c *ModelDevServiceHTTPClientImpl) ListExecutionEvents(ctx context.Context, in *v1.ListExecutionEventsRequest, opts ...http.CallOption) (*v1.ListExecutionEventsResponse, error) {
+	var out v1.ListExecutionEventsResponse
+	pattern := "/api/v1/modeldev/executions/{execution_id}/events"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelDevServiceListExecutionEvents))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelDevServiceHTTPClientImpl) ListExecutionPods(ctx context.Context, in *v1.ListExecutionPodsRequest, opts ...http.CallOption) (*v1.ListExecutionPodsResponse, error) {
+	var out v1.ListExecutionPodsResponse
+	pattern := "/api/v1/modeldev/executions/{execution_id}/pods"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelDevServiceListExecutionPods))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *ModelDevServiceHTTPClientImpl) ListExecutions(ctx context.Context, in *v1.ListExecutionsRequest, opts ...http.CallOption) (*v1.ListExecutionsResponse, error) {
 	var out v1.ListExecutionsResponse
 	pattern := "/api/v1/modeldev/executions"
@@ -425,6 +529,19 @@ func (c *ModelDevServiceHTTPClientImpl) ListInputVersions(ctx context.Context, i
 	pattern := "/api/v1/modeldev/input-versions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationModelDevServiceListInputVersions))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelDevServiceHTTPClientImpl) QueryExecutionMetrics(ctx context.Context, in *v1.QueryExecutionMetricsRequest, opts ...http.CallOption) (*v1.QueryExecutionMetricsResponse, error) {
+	var out v1.QueryExecutionMetricsResponse
+	pattern := "/api/v1/modeldev/executions/{execution_id}/resource-metrics"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelDevServiceQueryExecutionMetrics))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
