@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	gpu "github.com/zhangzhe-ctrl/ani-observability-service/api/observability/gpu/v1"
 	pb "github.com/zhangzhe-ctrl/ani-observability-service/api/observability/monitoring/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -15,7 +16,10 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type ObservabilityClient struct{ client pb.MonitoringServiceClient }
+type ObservabilityClient struct {
+	client pb.MonitoringServiceClient
+	gpu    gpu.GpuMonitoringServiceClient
+}
 
 func NewObservabilityClientFromEnv() (*ObservabilityClient, func(), error) {
 	addr := os.Getenv("ANI_OBSERVABILITY_GRPC_ADDR")
@@ -34,7 +38,7 @@ func NewObservabilityClientFromEnv() (*ObservabilityClient, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	return &ObservabilityClient{pb.NewMonitoringServiceClient(conn)}, func() { _ = conn.Close() }, nil
+	return &ObservabilityClient{client: pb.NewMonitoringServiceClient(conn), gpu: gpu.NewGpuMonitoringServiceClient(conn)}, func() { _ = conn.Close() }, nil
 }
 
 func observabilityCall[T any](c *ObservabilityClient, ctx context.Context, tenant, actor string, fn func(context.Context) (T, error)) (T, error) {

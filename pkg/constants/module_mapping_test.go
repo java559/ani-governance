@@ -22,6 +22,9 @@ func TestServiceTagToBusinessModuleExactMapping(t *testing.T) {
 		"ComputePresetService":    identityV1.Module_SYSTEM,
 		"AcceleratorAdminService": identityV1.Module_ACCELERATOR,
 		"AcceleratorService":      identityV1.Module_ACCELERATOR,
+		"GpuAdminService":         identityV1.Module_ACCELERATOR,
+		"GpuService":              identityV1.Module_ACCELERATOR,
+		"GpuTenantAdminService":   identityV1.Module_ACCELERATOR,
 		"QuotaSelfService":        identityV1.Module_TENANT,
 		"AdminPortalService":      identityV1.Module_DASHBOARD,
 		"DashboardService":        identityV1.Module_DASHBOARD,
@@ -99,7 +102,7 @@ func TestServiceTagToBusinessModuleReverseMapping(t *testing.T) {
 		identityV1.Module_LOG:              {"ApiAuditLogService", "LoginAuditLogService", "OperationAuditLogService", "DataAccessAuditLogService", "PermissionAuditLogService", "PolicyEvaluationLogService", "RedisCacheMonitorService"},
 		identityV1.Module_INTERNAL_MESSAGE: {"InternalMessageService", "InternalMessageCategoryService", "InternalMessageRecipientService"},
 		identityV1.Module_NETWORK:          {"NetworkService", "PlatformNetworkService"},
-		identityV1.Module_ACCELERATOR:      {"AcceleratorAdminService", "AcceleratorService"},
+		identityV1.Module_ACCELERATOR:      {"AcceleratorAdminService", "AcceleratorService", "GpuAdminService", "GpuService", "GpuTenantAdminService"},
 		identityV1.Module_MODEL:            {"ModelDevService", "ModelService"},
 		identityV1.Module_INFERENCE:        {"InferenceService", "InferenceDiagnosticsService"},
 	}

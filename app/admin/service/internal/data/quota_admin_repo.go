@@ -2,7 +2,6 @@ package data
 
 import (
 	"context"
-	"strconv"
 
 	paginationV1 "go-wind-admin/pkg/localdeps/go-crud/api/gen/go/pagination/v1"
 	entCrud "go-wind-admin/pkg/localdeps/go-crud/entgo"
@@ -13,7 +12,6 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/plan"
 	"go-wind-admin/app/admin/service/internal/data/ent/planquota"
-	"go-wind-admin/app/admin/service/internal/data/ent/quotaaccount"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotadefinition"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
@@ -81,42 +79,21 @@ func (r *QuotaAdminRepo) ListTenantAccounts(ctx context.Context, tid uint32) (ou
 	if tid == 0 {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "tenant required")
 	}
-	err = quotaTransaction(ctx, r.entClient.Client(), func(tx *ent.Tx) error {
+	err = quotaReadSnapshot(ctx, r.entClient.Client(), func(tx *ent.Tx) error {
 		ctx := appViewer.NewSystemViewerContext(ctx)
 		t, e := tx.Tenant.Query().Where(tenant.IDEQ(tid), tenant.IDGT(0)).Only(ctx)
 		if e != nil {
 			return e
 		}
-		limits := map[string]int64{}
-		if t.PlanID != nil {
-			policies, e := tx.PlanQuota.Query().Where(planquota.HasPlanWith(plan.IDEQ(*t.PlanID))).Order(ent.Asc(planquota.FieldQuotaCode)).All(ctx)
-			if e != nil {
-				return e
-			}
-			for _, p := range policies {
-				limits[p.QuotaCode] = int64(*p.QuotaValue)
-			}
-		}
-		accs, e := tx.QuotaAccount.Query().Where(quotaaccount.TenantIDEQ(tid)).Order(ent.Asc(quotaaccount.FieldQuotaCode)).All(ctx)
+		defs, e := quotaSummaryDefinitions(ctx, tx, "")
 		if e != nil {
 			return e
 		}
-		occupied := map[string]int64{}
-		for _, a := range accs {
-			occupied[a.QuotaCode] = a.OccupiedUnits
-		}
-		defs, e := tx.QuotaDefinition.Query().Order(ent.Asc(quotadefinition.FieldCode)).All(ctx)
+		summaries, e := r.quotaAccountSummaries(ctx, tx, []*ent.Tenant{t}, defs)
 		if e != nil {
 			return e
 		}
-		for _, d := range defs {
-			limit, occ := limits[d.Code], occupied[d.Code]
-			available := limit - occ
-			if available < 0 {
-				available = 0
-			}
-			out = append(out, &quotapb.QuotaAccountView{QuotaCode: d.Code, Unit: d.Unit, Limit: strconv.FormatInt(limit, 10), Occupied: strconv.FormatInt(occ, 10), Available: strconv.FormatInt(available, 10), OverLimit: occ > limit, Enforcement: r.enforcement(d.Code)})
-		}
+		out = summaries[0].Accounts
 		return nil
 	})
 	return

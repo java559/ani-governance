@@ -1,0 +1,45 @@
+syntax = "proto3";
+package catalog.service.v1;
+import "google/protobuf/timestamp.proto";
+import "catalog/service/v1/vpc.proto";
+
+message PlatformEIP {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string state = 4;
+  string reason = 5;
+  string reason_message = 6 [json_name="reason_message"];
+  int64 version = 7;
+  google.protobuf.Timestamp created_at = 8 [json_name="created_at"];
+  google.protobuf.Timestamp updated_at = 9 [json_name="updated_at"];
+  google.protobuf.Timestamp observed_at = 10 [json_name="observed_at"];
+  bool observation_stale = 11 [json_name="observation_stale"];
+  string last_operation_id = 12 [json_name="last_operation_id"];
+  string address = 13;
+  string binding_state = 14 [json_name="binding_state"];
+  EIPBindingTarget binding_target = 15 [json_name="binding_target"];
+  string scope = 16;
+  string managed_by = 17 [json_name="managed_by"];
+  uint32 tenant_id = 18 [json_name="tenant_id"];
+  string tenant_name = 19 [json_name="tenant_name"];
+  string resource_tenant_id = 20 [json_name="resource_tenant_id"];
+  string pool_id = 21 [json_name="pool_id"];
+  string pool_name = 22 [json_name="pool_name"];
+  string cluster_id = 23 [json_name="cluster_id"];
+}
+message ListPlatformEIPsRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2 [json_name="pageSize"];
+  optional uint32 tenant_id = 3 [json_name="tenant_id"];
+  string name = 4;
+  string address = 5;
+  string pool_id = 6 [json_name="pool_id"];
+  string state = 7;
+  string scope = 8;
+}
+message ListPlatformEIPsResponse { repeated PlatformEIP items = 1; int64 total = 2; }
+message GetPlatformEIPRequest { string eip_id = 1 [json_name="eip_id"]; }
+message GetPlatformEIPResponse { PlatformEIP resource = 1; }
+message ReleasePlatformEIPRequest { string eip_id = 1 [json_name="eip_id"]; }
+message ReleasePlatformEIPResponse { PlatformEIP resource = 1; }

@@ -357,7 +357,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		platformNetworkClient = client
 	}
 	networkService := service.NewNetworkService(networkClient, tenantRepo)
-	platformNetworkService := service.NewPlatformNetworkService(platformNetworkClient)
+	platformNetworkService := service.NewPlatformNetworkService(platformNetworkClient, tenantRepo)
 	imageConfig, err := data.ImageConfigFromEnv()
 	if err != nil {
 		rollback()
@@ -536,6 +536,9 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	}
 	if restServer != nil {
 		server.RegisterVMHTTPServer(restServer, vmService)
+		gpuMonitoringService := service.NewGpuMonitoringService(acceleratorService, observabilityClient, instanceService, inferenceService, data.NewGpuResourceReadAuthorizationRepo(entClient))
+		server.RegisterGpuHTTPServer(restServer, gpuMonitoringService)
+		server.RegisterGpuTenantHTTPServer(restServer, service.NewGpuTenantAdminService(quotaAdminRepo, gpuMonitoringService, acceleratorService))
 	}
 	asynqServer, err := server.NewAsynqServer(ctx, taskService, internalMessageService)
 	if err != nil {

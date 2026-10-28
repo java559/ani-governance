@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	QuotaAdminService_ListQuotaDefinitions_FullMethodName    = "/admin.service.v1.QuotaAdminService/ListQuotaDefinitions"
-	QuotaAdminService_ListTenantQuotaAccounts_FullMethodName = "/admin.service.v1.QuotaAdminService/ListTenantQuotaAccounts"
+	QuotaAdminService_ListQuotaDefinitions_FullMethodName            = "/admin.service.v1.QuotaAdminService/ListQuotaDefinitions"
+	QuotaAdminService_ListTenantQuotaAccounts_FullMethodName         = "/admin.service.v1.QuotaAdminService/ListTenantQuotaAccounts"
+	QuotaAdminService_ListTenantQuotaAccountSummaries_FullMethodName = "/admin.service.v1.QuotaAdminService/ListTenantQuotaAccountSummaries"
 )
 
 // QuotaAdminServiceClient is the client API for QuotaAdminService service.
@@ -35,6 +36,8 @@ type QuotaAdminServiceClient interface {
 	ListQuotaDefinitions(ctx context.Context, in *v1.PagingRequest, opts ...grpc.CallOption) (*ListQuotaDefinitionsResponse, error)
 	// 查询指定租户配额账户（QUOTA-02）
 	ListTenantQuotaAccounts(ctx context.Context, in *GetTenantQuotaAccountsRequest, opts ...grpc.CallOption) (*ListTenantQuotaAccountsResponse, error)
+	// 按租户分页批量读取当前配额；同一个只读一致快照，无逐租户查询。
+	ListTenantQuotaAccountSummaries(ctx context.Context, in *ListTenantQuotaAccountSummariesRequest, opts ...grpc.CallOption) (*ListTenantQuotaAccountSummariesResponse, error)
 }
 
 type quotaAdminServiceClient struct {
@@ -65,6 +68,16 @@ func (c *quotaAdminServiceClient) ListTenantQuotaAccounts(ctx context.Context, i
 	return out, nil
 }
 
+func (c *quotaAdminServiceClient) ListTenantQuotaAccountSummaries(ctx context.Context, in *ListTenantQuotaAccountSummariesRequest, opts ...grpc.CallOption) (*ListTenantQuotaAccountSummariesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTenantQuotaAccountSummariesResponse)
+	err := c.cc.Invoke(ctx, QuotaAdminService_ListTenantQuotaAccountSummaries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QuotaAdminServiceServer is the server API for QuotaAdminService service.
 // All implementations must embed UnimplementedQuotaAdminServiceServer
 // for forward compatibility.
@@ -76,6 +89,8 @@ type QuotaAdminServiceServer interface {
 	ListQuotaDefinitions(context.Context, *v1.PagingRequest) (*ListQuotaDefinitionsResponse, error)
 	// 查询指定租户配额账户（QUOTA-02）
 	ListTenantQuotaAccounts(context.Context, *GetTenantQuotaAccountsRequest) (*ListTenantQuotaAccountsResponse, error)
+	// 按租户分页批量读取当前配额；同一个只读一致快照，无逐租户查询。
+	ListTenantQuotaAccountSummaries(context.Context, *ListTenantQuotaAccountSummariesRequest) (*ListTenantQuotaAccountSummariesResponse, error)
 	mustEmbedUnimplementedQuotaAdminServiceServer()
 }
 
@@ -91,6 +106,9 @@ func (UnimplementedQuotaAdminServiceServer) ListQuotaDefinitions(context.Context
 }
 func (UnimplementedQuotaAdminServiceServer) ListTenantQuotaAccounts(context.Context, *GetTenantQuotaAccountsRequest) (*ListTenantQuotaAccountsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTenantQuotaAccounts not implemented")
+}
+func (UnimplementedQuotaAdminServiceServer) ListTenantQuotaAccountSummaries(context.Context, *ListTenantQuotaAccountSummariesRequest) (*ListTenantQuotaAccountSummariesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTenantQuotaAccountSummaries not implemented")
 }
 func (UnimplementedQuotaAdminServiceServer) mustEmbedUnimplementedQuotaAdminServiceServer() {}
 func (UnimplementedQuotaAdminServiceServer) testEmbeddedByValue()                           {}
@@ -149,6 +167,24 @@ func _QuotaAdminService_ListTenantQuotaAccounts_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _QuotaAdminService_ListTenantQuotaAccountSummaries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTenantQuotaAccountSummariesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QuotaAdminServiceServer).ListTenantQuotaAccountSummaries(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QuotaAdminService_ListTenantQuotaAccountSummaries_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QuotaAdminServiceServer).ListTenantQuotaAccountSummaries(ctx, req.(*ListTenantQuotaAccountSummariesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // QuotaAdminService_ServiceDesc is the grpc.ServiceDesc for QuotaAdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -163,6 +199,10 @@ var QuotaAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTenantQuotaAccounts",
 			Handler:    _QuotaAdminService_ListTenantQuotaAccounts_Handler,
+		},
+		{
+			MethodName: "ListTenantQuotaAccountSummaries",
+			Handler:    _QuotaAdminService_ListTenantQuotaAccountSummaries_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

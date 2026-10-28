@@ -221,7 +221,7 @@ func NewRestServer(
 	if err != nil || modelConfig.Timeout > 24*time.Hour {
 		return nil, fmt.Errorf("invalid bounded model import HTTP budget")
 	}
-	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, storageQueryHTTPFilter},
+	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, gpuHTTPFilter, storageQueryHTTPFilter},
 		middlewares...,
 	)
 	if err != nil {
@@ -260,11 +260,12 @@ func NewRestServer(
 	adminV1.RegisterOrgUnitServiceHTTPServer(srv, orgUnitService)
 	adminV1.RegisterRoleServiceHTTPServer(srv, roleService)
 	adminV1.RegisterPositionServiceHTTPServer(srv, positionService)
+	// Static tenant summaries must precede TenantService's /tenants/{id} route.
+	adminV1.RegisterQuotaAdminServiceHTTPServer(srv, quotaAdminService)
 	adminV1.RegisterTenantServiceHTTPServer(srv, tenantService)
 	adminV1.RegisterPlanServiceHTTPServer(srv, planService)
 	adminV1.RegisterPlanQuotaServiceHTTPServer(srv, planQuotaService)
 	adminV1.RegisterPlanModuleServiceHTTPServer(srv, planModuleService)
-	adminV1.RegisterQuotaAdminServiceHTTPServer(srv, quotaAdminService)
 
 	adminV1.RegisterLoginAuditLogServiceHTTPServer(srv, loginAuditLogService)
 	adminV1.RegisterApiAuditLogServiceHTTPServer(srv, apiAuditLogService)

@@ -2,7 +2,7 @@
 // 仍然是唯一的注册条件，启用时 UI 与内存 OpenAPI 在真实路由上可取，禁用时既不注册
 // 也不改变其余行为。
 //
-// 除 ApiService 外服务形参全部传 nil：这里不执行任何业务方法，只检查路由注册。若某个
+// 除 Api/Tenant/Quota 服务外形参传 nil：这些真实实例也供租户静态路由分派回归使用。若某个
 // 注册路径需要真实服务，本用例会以明确的失败暴露它，而不是被跳过。
 package server
 
@@ -42,7 +42,10 @@ func newRestServerWithSwagger(t *testing.T, enableSwagger bool) http.Handler {
 
 	// ApiService is the one service NewRestServer touches while building (it stores the
 	// route walker), so it gets a real instance over the isolated in-memory database.
-	apiService := service.NewApiService(ctx, data.NewApiRepo(ctx, testutil.NewEntClientForTest(t)), nil)
+	client := testutil.NewEntClientForTest(t)
+	apiService := service.NewApiService(ctx, data.NewApiRepo(ctx, client), nil)
+	tenantService := service.NewTenantService(ctx, data.NewTenantRepo(ctx, client), nil, nil, nil, nil, nil, nil)
+	quotaService := service.NewQuotaAdminService(ctx, data.NewQuotaAdminRepo(ctx, client))
 
 	srv, err := NewRestServer(ctx, nil, nil,
 		nil,                               // authenticationService
@@ -53,10 +56,10 @@ func newRestServerWithSwagger(t *testing.T, enableSwagger bool) http.Handler {
 		nil,                               // dictTypeService
 		nil,                               // dictEntryService
 		nil,                               // languageService
-		nil,                               // tenantService
+		tenantService,                     // tenantService
 		nil,                               // planService
 		nil,                               // planQuotaService
-		nil,                               // quotaAdminService
+		quotaService,                      // quotaAdminService
 		nil,                               // planModuleService
 		nil,                               // userService
 		nil,                               // userProfileService

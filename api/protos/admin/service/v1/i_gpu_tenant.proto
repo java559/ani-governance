@@ -1,0 +1,12 @@
+syntax = "proto3";
+package admin.service.v1;
+
+import "google/api/annotations.proto";
+import "gpu/service/v1/gpu_tenant_list.proto";
+
+// Platform JWT plus current Casbin permission; no tenant identity is fabricated.
+service GpuTenantAdminService {
+  rpc ListGpuTenants(gpu.service.v1.ListGpuTenantsRequest) returns (gpu.service.v1.ListGpuTenantsResponse) {
+    option (google.api.http) = {get: "/api/v1/admin/gpu/tenants"};
+  }
+}

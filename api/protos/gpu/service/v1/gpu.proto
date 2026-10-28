@@ -1,0 +1,86 @@
+syntax = "proto3";
+package gpu.service.v1;
+
+import "google/protobuf/timestamp.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "catalog/service/v1/accelerator.proto";
+
+// Public selectors contain business identities only. Runtime selectors are
+// resolved by Gov and never accepted from a public caller.
+message GpuQueryData {
+  repeated string metric_codes = 1 [json_name="metricCodes"];
+  google.protobuf.Timestamp start = 2;
+  google.protobuf.Timestamp end = 3;
+  // 1h, 6h, 24h (default), 7d, 30d; mutually exclusive with start/end.
+  string window = 4;
+  string cluster_id = 5 [json_name="clusterId"];
+  string model_key = 6 [json_name="modelKey"];
+}
+message GpuPhysicalQueryRequest { string device_id = 1 [json_name="deviceId"]; GpuQueryData data = 2; }
+message GpuPhysicalLatestRequest {
+  string device_id = 1 [json_name="deviceId"];
+  string cluster_id = 2 [json_name="clusterId"];
+  repeated string metric_codes = 3 [json_name="metricCodes"];
+  string model_key = 4 [json_name="modelKey"];
+}
+message GpuResourceQueryRequest { string resource_kind = 1 [json_name="resourceKind"]; string resource_id = 2 [json_name="resourceId"]; GpuQueryData data = 3; }
+message GpuResourceLatestRequest { string resource_kind = 1 [json_name="resourceKind"]; string resource_id = 2 [json_name="resourceId"]; repeated string metric_codes = 3 [json_name="metricCodes"]; }
+message GpuTenantQueryRequest { uint32 tenant_id = 1 [json_name="tenantId"]; GpuQueryData data = 2; }
+message GpuTenantLatestRequest { uint32 tenant_id = 1 [json_name="tenantId"]; repeated string metric_codes = 2 [json_name="metricCodes"]; }
+message ListGpuDevicesRequest { string cluster_id = 1 [json_name="clusterId"]; string model_key = 2 [json_name="modelKey"]; optional uint32 page = 3; optional uint32 page_size = 4 [json_name="pageSize"]; }
+message ListGpuDevicesResponse { repeated catalog.service.v1.AcceleratorDevice items = 1; uint64 total = 2; }
+
+message GpuQuality {
+  string status = 1;
+  repeated string reasons = 2;
+  uint32 complete_points = 3 [json_name="completePoints"];
+  uint32 observed_points = 4 [json_name="observedPoints"];
+  uint32 expected_points = 5 [json_name="expectedPoints"];
+  uint32 partial_points = 6 [json_name="partialPoints"];
+  uint32 empty_points = 7 [json_name="emptyPoints"];
+  optional double coverage = 8 [(gnostic.openapi.v3.property) = { nullable: true }];
+  uint32 observed_sources = 9 [json_name="observedSources"];
+  optional uint32 expected_sources = 10 [json_name="expectedSources", (gnostic.openapi.v3.property) = { nullable: true }];
+}
+message GpuPoint {
+  google.protobuf.Timestamp timestamp = 1;
+  google.protobuf.Timestamp end = 2;
+  optional double value = 3 [(gnostic.openapi.v3.property) = { nullable: true }];
+  optional double peak = 4 [(gnostic.openapi.v3.property) = { nullable: true }];
+  optional double known_value = 5 [json_name="knownValue", (gnostic.openapi.v3.property) = { nullable: true }];
+  optional double known_peak = 6 [json_name="knownPeak", (gnostic.openapi.v3.property) = { nullable: true }];
+  GpuQuality quality = 7;
+  google.protobuf.Timestamp sample_time_min = 8 [json_name="sampleTimeMin"];
+  google.protobuf.Timestamp sample_time_max = 9 [json_name="sampleTimeMax"];
+}
+message GpuSeries {
+  string metric_code = 1 [json_name="metricCode"];
+  string unit = 2;
+  string aggregation = 3;
+  uint32 base_resolution_seconds = 4 [json_name="baseResolutionSeconds"];
+  repeated GpuPoint points = 5;
+  optional double mean = 6 [(gnostic.openapi.v3.property) = { nullable: true }];
+  optional double peak = 7 [(gnostic.openapi.v3.property) = { nullable: true }];
+  GpuQuality quality = 8;
+  google.protobuf.Timestamp metric_available_from = 9 [json_name="metricAvailableFrom"];
+  google.protobuf.Timestamp ownership_available_from = 10 [json_name="ownershipAvailableFrom"];
+  google.protobuf.Timestamp data_cutoff = 11 [json_name="dataCutoff"];
+  string capability = 12;
+  string event_code = 13 [json_name="eventCode"];
+  string semantics = 14;
+  repeated google.protobuf.Timestamp exporter_process_starts = 15 [json_name="exporterProcessStarts"];
+}
+message GpuQueryResponse {
+  google.protobuf.Timestamp query_time = 1 [json_name="queryTime"];
+  google.protobuf.Timestamp start = 2;
+  google.protobuf.Timestamp end = 3;
+  uint32 effective_step_seconds = 4 [json_name="effectiveStepSeconds"];
+  repeated GpuSeries series = 5;
+  bool index_complete = 6 [json_name="indexComplete"];
+  repeated string included_resource_kinds = 7 [json_name="includedResourceKinds"];
+  repeated string uncovered_resource_kinds = 8 [json_name="uncoveredResourceKinds"];
+  // Public target; no Pod, node, GPU or binding identity on tenant responses.
+  string resource_kind = 10 [json_name="resourceKind"];
+  string resource_id = 11 [json_name="resourceId"];
+  optional uint32 tenant_id = 12 [json_name="tenantId"];
+}

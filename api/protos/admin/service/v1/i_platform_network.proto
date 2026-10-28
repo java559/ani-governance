@@ -3,9 +3,22 @@ package admin.service.v1;
 import "google/api/annotations.proto";
 import "gnostic/openapi/v3/annotations.proto";
 import "catalog/service/v1/platform_network.proto";
+import "catalog/service/v1/platform_eip.proto";
 
 // Platform user JWT, current action permission and Casbin authorization required.
 service PlatformNetworkService {
+  rpc ListPlatformEIPs(catalog.service.v1.ListPlatformEIPsRequest) returns (catalog.service.v1.ListPlatformEIPsResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/eips" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "ListPlatformEIPs" description: "Platform user JWT and network:platform:eip:list. All EIP owners in the configured cluster; page/pageSize and items/total, server-side tenant_id/name/address/pool_id/state/scope filters. Tenant identities and API keys are denied." };
+  }
+  rpc GetPlatformEIP(catalog.service.v1.GetPlatformEIPRequest) returns (catalog.service.v1.GetPlatformEIPResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/eips/{eip_id}" response_body: "resource" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetPlatformEIP" description: "Platform user JWT and network:platform:eip:get. Includes tenant, pool and exclusive binding identity. Tenant identities and API keys are denied." };
+  }
+  rpc ReleasePlatformEIP(catalog.service.v1.ReleasePlatformEIPRequest) returns (catalog.service.v1.ReleasePlatformEIPResponse) {
+    option (google.api.http) = { delete: "/api/v1/admin/networks/eips/{eip_id}" response_body: "resource" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "ReleasePlatformEIP" description: "Platform user JWT and network:platform:eip:release. Asynchronous ordinary owner release; active claims and unfinished operations block it. System-managed EIPs cannot be manually released. No force mode." };
+  }
   rpc CreateDefaultVPCEgress(catalog.service.v1.CreateDefaultVPCEgressRequest) returns (catalog.service.v1.CreateDefaultVPCEgressResponse) {
     option (google.api.http) = { post: "/api/v1/admin/networks/default-vpc-egresses" body: "*" response_body: "egress" };
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "CreateDefaultVPCEgress" description: "Requires platform user JWT and network:platform:default-egress:create. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness." };
@@ -13,6 +26,10 @@ service PlatformNetworkService {
   rpc GetDefaultVPCEgress(catalog.service.v1.GetDefaultVPCEgressRequest) returns (catalog.service.v1.GetDefaultVPCEgressResponse) {
     option (google.api.http) = { get: "/api/v1/admin/networks/default-vpc-egresses/{egress_id}" response_body: "egress" };
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetDefaultVPCEgress" description: "Requires platform user JWT and network:platform:default-egress:get. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness." };
+  }
+  rpc GetCurrentDefaultVPCEgress(catalog.service.v1.GetCurrentDefaultVPCEgressRequest) returns (catalog.service.v1.GetDefaultVPCEgressResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/default-vpc-egress" response_body: "egress" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetCurrentDefaultVPCEgress" description: "Platform user JWT and network:platform:default-egress:get. Returns the active outlet of the configured system VPC; 404 when no outlet is configured. No client supplied cluster, tenant or VPC identity." };
   }
   rpc DeleteDefaultVPCEgress(catalog.service.v1.DeleteDefaultVPCEgressRequest) returns (catalog.service.v1.DeleteDefaultVPCEgressResponse) {
     option (google.api.http) = { delete: "/api/v1/admin/networks/default-vpc-egresses/{egress_id}" response_body: "egress" };

@@ -2115,6 +2115,220 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/gpu/devices:
+        get:
+            tags:
+                - GpuAdminService
+            operationId: GpuAdminService_ListGpuDevices
+            parameters:
+                - name: clusterId
+                  in: query
+                  schema:
+                    type: string
+                - name: modelKey
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListGpuDevicesResponse'
+    /api/v1/admin/gpu/devices/{deviceId}/metrics/latest:
+        get:
+            tags:
+                - GpuAdminService
+            operationId: GpuAdminService_GetPhysicalGpuLatest
+            parameters:
+                - name: deviceId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: clusterId
+                  in: query
+                  schema:
+                    type: string
+                - name: metricCodes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: modelKey
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/admin/gpu/devices/{deviceId}/metrics/query:
+        post:
+            tags:
+                - GpuAdminService
+            operationId: GpuAdminService_QueryPhysicalGpu
+            parameters:
+                - name: deviceId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GpuPhysicalQueryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/admin/gpu/metrics/latest:
+        get:
+            tags:
+                - GpuAdminService
+            operationId: GpuAdminService_GetPlatformGpuLatest
+            parameters:
+                - name: deviceId
+                  in: query
+                  schema:
+                    type: string
+                - name: clusterId
+                  in: query
+                  schema:
+                    type: string
+                - name: metricCodes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: modelKey
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/admin/gpu/metrics/query:
+        post:
+            tags:
+                - GpuAdminService
+            operationId: GpuAdminService_QueryPlatformGpu
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GpuPhysicalQueryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/admin/gpu/tenants:
+        get:
+            tags:
+                - GpuTenantAdminService
+            operationId: GpuTenantAdminService_ListGpuTenants
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListGpuTenantsResponse'
+    /api/v1/admin/gpu/tenants/{tenantId}/metrics/latest:
+        get:
+            tags:
+                - GpuAdminService
+            operationId: GpuAdminService_GetTenantGpuLatest
+            parameters:
+                - name: tenantId
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: metricCodes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/admin/gpu/tenants/{tenantId}/metrics/query:
+        post:
+            tags:
+                - GpuAdminService
+            operationId: GpuAdminService_QueryTenantGpu
+            parameters:
+                - name: tenantId
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GpuTenantQueryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
     /api/v1/admin/initial-context:
         get:
             tags:
@@ -3304,6 +3518,22 @@ paths:
                                 $ref: '#/components/schemas/GetPlatformNetworkCapabilitiesResponse'
             security:
                 - BearerAuth: []
+    /api/v1/admin/networks/default-vpc-egress:
+        get:
+            tags:
+                - PlatformNetworkService
+            summary: GetCurrentDefaultVPCEgress
+            description: Platform user JWT and network:platform:default-egress:get. Returns the active outlet of the configured system VPC; 404 when no outlet is configured. No client supplied cluster, tenant or VPC identity.
+            operationId: PlatformNetworkService_GetCurrentDefaultVPCEgress
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetDefaultVPCEgressResponse'
+            security:
+                - BearerAuth: []
     /api/v1/admin/networks/default-vpc-egresses:
         post:
             tags:
@@ -3558,6 +3788,101 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/DeleteEgressGatewayResponse'
+            security:
+                - BearerAuth: []
+    /api/v1/admin/networks/eips:
+        get:
+            tags:
+                - PlatformNetworkService
+            summary: ListPlatformEIPs
+            description: Platform user JWT and network:platform:eip:list. All EIP owners in the configured cluster; page/pageSize and items/total, server-side tenant_id/name/address/pool_id/state/scope filters. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_ListPlatformEIPs
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: tenant_id
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+                - name: address
+                  in: query
+                  schema:
+                    type: string
+                - name: pool_id
+                  in: query
+                  schema:
+                    type: string
+                - name: state
+                  in: query
+                  schema:
+                    type: string
+                - name: scope
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListPlatformEIPsResponse'
+            security:
+                - BearerAuth: []
+    /api/v1/admin/networks/eips/{eip_id}:
+        get:
+            tags:
+                - PlatformNetworkService
+            summary: GetPlatformEIP
+            description: Platform user JWT and network:platform:eip:get. Includes tenant, pool and exclusive binding identity. Tenant identities and API keys are denied.
+            operationId: PlatformNetworkService_GetPlatformEIP
+            parameters:
+                - name: eip_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPlatformEIPResponse'
+            security:
+                - BearerAuth: []
+        delete:
+            tags:
+                - PlatformNetworkService
+            summary: ReleasePlatformEIP
+            description: Platform user JWT and network:platform:eip:release. Asynchronous ordinary owner release; active claims and unfinished operations block it. System-managed EIPs cannot be manually released. No force mode.
+            operationId: PlatformNetworkService_ReleasePlatformEIP
+            parameters:
+                - name: eip_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ReleasePlatformEIPResponse'
             security:
                 - BearerAuth: []
     /api/v1/admin/networks/intranet-address-pools:
@@ -6639,6 +6964,40 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/tenants/quota-account-summaries:
+        get:
+            tags:
+                - QuotaAdminService
+            description: 按租户分页批量读取当前配额；同一个只读一致快照，无逐租户查询。
+            operationId: QuotaAdminService_ListTenantQuotaAccountSummaries
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: quotaCode
+                  in: query
+                  description: 精确目录编码；缺失政策仍返回configured=false。
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListTenantQuotaAccountSummariesResponse'
     /api/v1/admin/tenants/{id}:
         get:
             tags:
@@ -7560,6 +7919,106 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListPresetsResponse'
+    /api/v1/gpu/metrics/latest:
+        get:
+            tags:
+                - GpuService
+            operationId: GpuService_GetMyGpuLatest
+            parameters:
+                - name: tenantId
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: metricCodes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/gpu/metrics/query:
+        post:
+            tags:
+                - GpuService
+            operationId: GpuService_QueryMyGpu
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GpuTenantQueryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/gpu/resources/{resourceKind}/{resourceId}/metrics/latest:
+        get:
+            tags:
+                - GpuService
+            operationId: GpuService_GetResourceGpuLatest
+            parameters:
+                - name: resourceKind
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: resourceId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: metricCodes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
+    /api/v1/gpu/resources/{resourceKind}/{resourceId}/metrics/query:
+        post:
+            tags:
+                - GpuService
+            operationId: GpuService_QueryResourceGpu
+            parameters:
+                - name: resourceKind
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: resourceId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GpuResourceQueryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GpuQueryResponse'
     /api/v1/images/publisher-credential:
         get:
             tags:
@@ -14080,6 +14539,8 @@ components:
                     type: string
                 observation_stale:
                     type: boolean
+                eip_id:
+                    type: string
             description: The system VPC identity is output-only and fixed by Resource configuration.
         DeleteAcceleratorProfileData:
             type: object
@@ -15451,6 +15912,11 @@ components:
             properties:
                 operation:
                     $ref: '#/components/schemas/NetworkOperation'
+        GetPlatformEIPResponse:
+            type: object
+            properties:
+                resource:
+                    $ref: '#/components/schemas/PlatformEIP'
         GetPlatformNetworkCapabilitiesResponse:
             type: object
             properties:
@@ -15585,6 +16051,46 @@ components:
                     description: The type of the serialized message.
             additionalProperties: true
             description: Contains an arbitrary serialized message along with a @type that describes the type of the serialized message.
+        GpuPhysicalQueryRequest:
+            type: object
+            properties:
+                deviceId:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/GpuQueryData'
+        GpuPoint:
+            type: object
+            properties:
+                timestamp:
+                    type: string
+                    format: date-time
+                end:
+                    type: string
+                    format: date-time
+                value:
+                    nullable: true
+                    type: number
+                    format: double
+                peak:
+                    nullable: true
+                    type: number
+                    format: double
+                knownValue:
+                    nullable: true
+                    type: number
+                    format: double
+                knownPeak:
+                    nullable: true
+                    type: number
+                    format: double
+                quality:
+                    $ref: '#/components/schemas/GpuQuality'
+                sampleTimeMin:
+                    type: string
+                    format: date-time
+                sampleTimeMax:
+                    type: string
+                    format: date-time
         GpuPreviewQuotaCheck:
             type: object
             properties:
@@ -15605,6 +16111,110 @@ components:
                     type: string
                 units:
                     type: string
+        GpuQuality:
+            type: object
+            properties:
+                status:
+                    type: string
+                reasons:
+                    type: array
+                    items:
+                        type: string
+                completePoints:
+                    type: integer
+                    format: uint32
+                observedPoints:
+                    type: integer
+                    format: uint32
+                expectedPoints:
+                    type: integer
+                    format: uint32
+                partialPoints:
+                    type: integer
+                    format: uint32
+                emptyPoints:
+                    type: integer
+                    format: uint32
+                coverage:
+                    nullable: true
+                    type: number
+                    format: double
+                observedSources:
+                    type: integer
+                    format: uint32
+                expectedSources:
+                    nullable: true
+                    type: integer
+                    format: uint32
+        GpuQueryData:
+            type: object
+            properties:
+                metricCodes:
+                    type: array
+                    items:
+                        type: string
+                start:
+                    type: string
+                    format: date-time
+                end:
+                    type: string
+                    format: date-time
+                window:
+                    type: string
+                    description: 1h, 6h, 24h (default), 7d, 30d; mutually exclusive with start/end.
+                clusterId:
+                    type: string
+                modelKey:
+                    type: string
+            description: |-
+                Public selectors contain business identities only. Runtime selectors are
+                 resolved by Gov and never accepted from a public caller.
+        GpuQueryResponse:
+            type: object
+            properties:
+                queryTime:
+                    type: string
+                    format: date-time
+                start:
+                    type: string
+                    format: date-time
+                end:
+                    type: string
+                    format: date-time
+                effectiveStepSeconds:
+                    type: integer
+                    format: uint32
+                series:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GpuSeries'
+                indexComplete:
+                    type: boolean
+                includedResourceKinds:
+                    type: array
+                    items:
+                        type: string
+                uncoveredResourceKinds:
+                    type: array
+                    items:
+                        type: string
+                resourceKind:
+                    type: string
+                    description: Public target; no Pod, node, GPU or binding identity on tenant responses.
+                resourceId:
+                    type: string
+                tenantId:
+                    type: integer
+                    format: uint32
+        GpuResourceQueryRequest:
+            type: object
+            properties:
+                resourceKind:
+                    type: string
+                resourceId:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/GpuQueryData'
         GpuSelection:
             type: object
             properties:
@@ -15616,6 +16226,52 @@ components:
                     type: string
                 profile_version:
                     type: string
+        GpuSeries:
+            type: object
+            properties:
+                metricCode:
+                    type: string
+                unit:
+                    type: string
+                aggregation:
+                    type: string
+                baseResolutionSeconds:
+                    type: integer
+                    format: uint32
+                points:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GpuPoint'
+                mean:
+                    nullable: true
+                    type: number
+                    format: double
+                peak:
+                    nullable: true
+                    type: number
+                    format: double
+                quality:
+                    $ref: '#/components/schemas/GpuQuality'
+                metricAvailableFrom:
+                    type: string
+                    format: date-time
+                ownershipAvailableFrom:
+                    type: string
+                    format: date-time
+                dataCutoff:
+                    type: string
+                    format: date-time
+                capability:
+                    type: string
+                eventCode:
+                    type: string
+                semantics:
+                    type: string
+                exporterProcessStarts:
+                    type: array
+                    items:
+                        type: string
+                        format: date-time
         GpuSummary:
             type: object
             properties:
@@ -15637,6 +16293,58 @@ components:
                 core_limit_percent:
                     type: integer
                     format: uint32
+        GpuTenantCurrentAllocation:
+            type: object
+            properties:
+                memoryMiB:
+                    nullable: true
+                    type: string
+                    description: |-
+                        Trusted ACTIVE binding commitments from ACC; never actual usage or quota.
+                         Exact decimal MiB. Absent unless the allocation scan is complete.
+                bindingCount:
+                    nullable: true
+                    type: string
+                knownMemoryMiB:
+                    nullable: true
+                    type: string
+                    description: Known verified part, including when unknown ownership prevents a total.
+                knownBindingCount:
+                    nullable: true
+                    type: string
+                status:
+                    type: string
+                reason:
+                    type: string
+        GpuTenantCurrentSummary:
+            type: object
+            properties:
+                quota:
+                    allOf:
+                        - $ref: '#/components/schemas/TenantQuotaAccountSummary'
+                    description: Tenant identity and all quota accounts come from one Gov read snapshot.
+                usage:
+                    allOf:
+                        - $ref: '#/components/schemas/GpuQueryResponse'
+                    description: |-
+                        Independent latest observation, never a 30-day range or quota balance.
+                         Absent when usage_status is UNAVAILABLE. Missing values remain null.
+                usageStatus:
+                    type: string
+                    description: AVAILABLE, PARTIAL, NO_DATA or UNAVAILABLE. Inspect each metric's quality.
+                usageReason:
+                    type: string
+                    description: Stable public code only; never a dependency error message or runtime ID.
+                allocation:
+                    $ref: '#/components/schemas/GpuTenantCurrentAllocation'
+        GpuTenantQueryRequest:
+            type: object
+            properties:
+                tenantId:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/GpuQueryData'
         HeadObjectData:
             type: object
             properties:
@@ -16883,6 +17591,25 @@ components:
                         $ref: '#/components/schemas/ExecutionView'
                 total:
                     type: string
+        ListGpuDevicesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorDevice'
+                total:
+                    type: string
+        ListGpuTenantsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/GpuTenantCurrentSummary'
+                total:
+                    type: string
+                    description: Number of tenants, including those without quota policies or observations.
         ListImagesResponse:
             type: object
             properties:
@@ -17202,6 +17929,15 @@ components:
                 total:
                     type: string
             description: 套餐列表 - 答复
+        ListPlatformEIPsResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PlatformEIP'
+                total:
+                    type: string
         ListPolicyEvaluationLogResponse:
             type: object
             properties:
@@ -17332,6 +18068,19 @@ components:
                         type: string
                     description: 类型名称列表
             description: 任务类型名称列表 - 回应
+        ListTenantQuotaAccountSummariesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/TenantQuotaAccountSummary'
+                total:
+                    type: string
+                summary:
+                    allOf:
+                        - $ref: '#/components/schemas/TenantQuotaAccountTotals'
+                    description: 同一筛选范围、同一只读快照的合计，不受 page/pageSize 影响。
         ListTenantQuotaAccountsResponse:
             type: object
             properties:
@@ -19501,6 +20250,59 @@ components:
                     description: 删除时间
                     format: date-time
             description: 套餐配额
+        PlatformEIP:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                state:
+                    type: string
+                reason:
+                    type: string
+                reason_message:
+                    type: string
+                version:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                updated_at:
+                    type: string
+                    format: date-time
+                observed_at:
+                    type: string
+                    format: date-time
+                observation_stale:
+                    type: boolean
+                last_operation_id:
+                    type: string
+                address:
+                    type: string
+                binding_state:
+                    type: string
+                binding_target:
+                    $ref: '#/components/schemas/EIPBindingTarget'
+                scope:
+                    type: string
+                managed_by:
+                    type: string
+                tenant_id:
+                    type: integer
+                    format: uint32
+                tenant_name:
+                    type: string
+                resource_tenant_id:
+                    type: string
+                pool_id:
+                    type: string
+                pool_name:
+                    type: string
+                cluster_id:
+                    type: string
         PlatformNetworkCapabilities:
             type: object
             properties:
@@ -20008,6 +20810,24 @@ components:
             properties:
                 data:
                     $ref: '#/components/schemas/ResourceTrendData'
+        QuotaAccountTotals:
+            type: object
+            properties:
+                quotaCode:
+                    type: string
+                unit:
+                    type: string
+                configuredTenantCount:
+                    type: string
+                limit:
+                    type: string
+                    description: 合计均为非负十进制字符串，可能超过单账户 uint64 范围。
+                occupied:
+                    type: string
+                    description: 包括未配置政策的账户占用，不代表运行中的 GPU 数量。
+                available:
+                    type: string
+                    description: 每租户 max(limit-occupied,0) 后求和，不是合计 limit-occupied。
         QuotaAccountView:
             type: object
             properties:
@@ -20032,6 +20852,8 @@ components:
                         - NOT_ENABLED
                     type: string
                     format: enum
+                configured:
+                    type: boolean
             description: 租户配额账户快照（只读投影，不含 tenant_id 之外的账本内部状态）
         QuotaDefinition:
             type: object
@@ -20203,6 +21025,11 @@ components:
             properties:
                 image:
                     $ref: '#/components/schemas/ImageRegistration'
+        ReleasePlatformEIPResponse:
+            type: object
+            properties:
+                resource:
+                    $ref: '#/components/schemas/PlatformEIP'
         RequestBody:
             type: object
             properties:
@@ -21499,6 +22326,36 @@ components:
                 exist:
                     type: boolean
             description: 租户是否存在 - 答复
+        TenantQuotaAccountSummary:
+            type: object
+            properties:
+                tenantId:
+                    type: integer
+                    format: uint32
+                tenantName:
+                    type: string
+                tenantCode:
+                    type: string
+                planId:
+                    type: integer
+                    format: uint32
+                planName:
+                    type: string
+                accounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/QuotaAccountView'
+            description: 平台管理读取的当前租户与套餐投影；不表示历史配额。
+        TenantQuotaAccountTotals:
+            type: object
+            properties:
+                configuredTenantCount:
+                    type: string
+                    description: 至少配置一个选定配额政策的租户数；共享套餐按租户分别计数。
+                accounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/QuotaAccountTotals'
         TenantUsage:
             type: object
             properties:
@@ -22920,6 +23777,14 @@ tags:
       description: 数据字典条目管理服务
     - name: DictTypeService
       description: 数据字典分类管理服务
+    - name: GpuAdminService
+      description: Platform JWT + current Casbin permission. No delegated tenant is fabricated.
+    - name: GpuService
+      description: |-
+        Tenant JWT + current module/role permission. Resource reads additionally ask
+         the business owner and original Gov ledger before constructing ACC scopes.
+    - name: GpuTenantAdminService
+      description: Platform JWT plus current Casbin permission; no tenant identity is fabricated.
     - name: ImageService
     - name: InferenceDiagnosticsService
       description: Tenant-authenticated management diagnostics; inference calls remain on Higress.

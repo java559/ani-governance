@@ -336,6 +336,32 @@ if os.environ.get('FAIL_KIND') == kind: sys.exit(43 if kind == 'quota-server' el
             rejected = subprocess.run(['python3', str(script), '--repo', str(repo)], capture_output=True)
             self.assertNotEqual(rejected.returncode, 0)
 
+    def test_quota_read_snapshot_only_allows_native_ent_readonly_repeatable_read(self):
+        source = (REPO / 'app/admin/service/internal/data/quota_read_snapshot.go').read_text()
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            data = repo / 'app/admin/service/internal/data'
+            data.mkdir(parents=True)
+            path = data / 'quota_read_snapshot.go'
+            script = REPO / 'scripts/ci/check_quota_storage.py'
+            def check(contents):
+                path.write_text(contents)
+                return subprocess.run(['python3', str(script), '--repo', str(repo)], capture_output=True)
+            passed = check(source)
+            self.assertEqual(passed.returncode, 0, passed.stdout + passed.stderr)
+            for old, new in (
+                ('client *ent.Client', 'client *sql.DB'),
+                ('sql.LevelRepeatableRead', 'sql.LevelReadCommitted'),
+                ('ReadOnly: true', 'ReadOnly: false'),
+                ('client.BeginTx(', 'db.BeginTx('),
+            ):
+                with self.subTest(replacement=new):
+                    self.assertNotEqual(check(source.replace(old, new)).returncode, 0)
+            self.assertNotEqual(check(source + '\nfunc bad() { db.BeginTx(ctx, nil) }\n').returncode, 0)
+            path.write_text(source)
+            path.rename(data / 'quota_other_reader.go')
+            self.assertNotEqual(subprocess.run(['python3', str(script), '--repo', str(repo)], capture_output=True).returncode, 0)
+
     def test_required_test_result_rejects_skip_missing_and_failure(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

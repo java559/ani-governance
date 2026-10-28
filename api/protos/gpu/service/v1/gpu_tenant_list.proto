@@ -1,0 +1,42 @@
+syntax = "proto3";
+package gpu.service.v1;
+
+import "gpu/service/v1/gpu.proto";
+import "quota/service/v1/quota_catalog.proto";
+import "gnostic/openapi/v3/annotations.proto";
+
+// A current-only platform page. Two metrics per tenant share the GPU request
+// budget, so at most six tenants fit the twelve-series limit.
+message ListGpuTenantsRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2 [json_name="pageSize"];
+  optional uint32 tenant_id = 3 [json_name="tenantId"];
+}
+message GpuTenantCurrentSummary {
+  // Tenant identity and all quota accounts come from one Gov read snapshot.
+  quota.service.v1.TenantQuotaAccountSummary quota = 1;
+  // Independent latest observation, never a 30-day range or quota balance.
+  // Absent when usage_status is UNAVAILABLE. Missing values remain null.
+  GpuQueryResponse usage = 2;
+  // AVAILABLE, PARTIAL, NO_DATA or UNAVAILABLE. Inspect each metric's quality.
+  string usage_status = 3 [json_name="usageStatus"];
+  // Stable public code only; never a dependency error message or runtime ID.
+  string usage_reason = 4 [json_name="usageReason"];
+  GpuTenantCurrentAllocation allocation = 5;
+}
+message GpuTenantCurrentAllocation {
+  // Trusted ACTIVE binding commitments from ACC; never actual usage or quota.
+  // Exact decimal MiB. Absent unless the allocation scan is complete.
+  optional string memory_mib = 1 [json_name="memoryMiB", (gnostic.openapi.v3.property) = { nullable: true }];
+  optional uint64 binding_count = 2 [json_name="bindingCount", (gnostic.openapi.v3.property) = { nullable: true }];
+  // Known verified part, including when unknown ownership prevents a total.
+  optional string known_memory_mib = 3 [json_name="knownMemoryMiB", (gnostic.openapi.v3.property) = { nullable: true }];
+  optional uint64 known_binding_count = 4 [json_name="knownBindingCount", (gnostic.openapi.v3.property) = { nullable: true }];
+  string status = 5;
+  string reason = 6;
+}
+message ListGpuTenantsResponse {
+  repeated GpuTenantCurrentSummary items = 1;
+  // Number of tenants, including those without quota policies or observations.
+  uint64 total = 2;
+}

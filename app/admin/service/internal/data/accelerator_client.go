@@ -188,6 +188,7 @@ func acceleratorMethodKind(method string) string {
 		acc.AcceleratorAdminService_AdminListProfiles_FullMethodName,
 		acc.AcceleratorAdminService_AdminListBindings_FullMethodName,
 		acc.AcceleratorAdminService_ListDevices_FullMethodName,
+		acc.AcceleratorAdminService_ListAdminGpuMetricScopes_FullMethodName,
 		acc.AcceleratorAdminService_AdminGetCapacity_FullMethodName:
 		return "admin"
 	case acc.AcceleratorCatalogService_ListProfiles_FullMethodName,
@@ -197,6 +198,7 @@ func acceleratorMethodKind(method string) string {
 		acc.AcceleratorCatalogService_CheckGpuFit_FullMethodName,
 		acc.AcceleratorUsageService_GetGpuUsage_FullMethodName,
 		acc.AcceleratorUsageService_ListGpuUsages_FullMethodName,
+		acc.AcceleratorUsageService_ListTenantGpuMetricScopes_FullMethodName,
 		acc.AcceleratorUsageService_ListBindings_FullMethodName:
 		return "tenant"
 	case acc.AcceleratorUsageService_SyncGpuUsage_FullMethodName:

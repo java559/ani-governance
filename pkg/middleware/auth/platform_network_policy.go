@@ -10,8 +10,12 @@ import (
 
 // Registration is not a grant. User JWT, platform scope, action and Casbin apply.
 var PlatformNetworkOperations = map[string]NetworkOperationPolicy{
+	"/admin.service.v1.PlatformNetworkService/ListPlatformEIPs":                 {"GET", "/api/v1/admin/networks/eips", "network:platform:eip:list", true},
+	"/admin.service.v1.PlatformNetworkService/GetPlatformEIP":                   {"GET", "/api/v1/admin/networks/eips/{eip_id}", "network:platform:eip:get", true},
+	"/admin.service.v1.PlatformNetworkService/ReleasePlatformEIP":               {"DELETE", "/api/v1/admin/networks/eips/{eip_id}", "network:platform:eip:release", false},
 	"/admin.service.v1.PlatformNetworkService/CreateDefaultVPCEgress":           {"POST", "/api/v1/admin/networks/default-vpc-egresses", "network:platform:default-egress:create", false},
 	"/admin.service.v1.PlatformNetworkService/GetDefaultVPCEgress":              {"GET", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:get", true},
+	"/admin.service.v1.PlatformNetworkService/GetCurrentDefaultVPCEgress":       {"GET", "/api/v1/admin/networks/default-vpc-egress", "network:platform:default-egress:get", true},
 	"/admin.service.v1.PlatformNetworkService/DeleteDefaultVPCEgress":           {"DELETE", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:delete", false},
 	"/admin.service.v1.PlatformNetworkService/RetireNetworkDevice":              {"POST", "/api/v1/admin/networks/devices/{device_id}/retirement", "network:platform:device-retirement:create", false},
 	"/admin.service.v1.PlatformNetworkService/GetNetworkDeviceRetirement":       {"GET", "/api/v1/admin/networks/devices/{device_id}/retirement", "network:platform:device-retirement:get", true},
@@ -54,6 +58,7 @@ func IsPlatformNetworkOperation(operation string) bool {
 }
 
 var platformNetworkIDPatterns = map[string]*regexp.Regexp{
+	"eip_id":            regexp.MustCompile(`^eip_[0-9a-f]{32}$`),
 	"egress_id":         regexp.MustCompile(`^dve_[0-9a-f]{32}$`),
 	"virtual_switch_id": regexp.MustCompile(`^vsw_[0-9a-f]{32}$`),
 	"pool_id":           regexp.MustCompile(`^pool_[0-9a-f]{32}$`),
@@ -69,10 +74,18 @@ func ValidPlatformNetworkID(field, value string) bool {
 }
 func platformNetworkMessage(operation string) proto.Message {
 	switch strings.TrimPrefix(operation, "/admin.service.v1.PlatformNetworkService/") {
+	case "ListPlatformEIPs":
+		return &view.ListPlatformEIPsRequest{}
+	case "GetPlatformEIP":
+		return &view.GetPlatformEIPRequest{}
+	case "ReleasePlatformEIP":
+		return &view.ReleasePlatformEIPRequest{}
 	case "CreateDefaultVPCEgress":
 		return &view.CreateDefaultVPCEgressRequest{}
 	case "GetDefaultVPCEgress":
 		return &view.GetDefaultVPCEgressRequest{}
+	case "GetCurrentDefaultVPCEgress":
+		return &view.GetCurrentDefaultVPCEgressRequest{}
 	case "DeleteDefaultVPCEgress":
 		return &view.DeleteDefaultVPCEgressRequest{}
 	case "RetireNetworkDevice":
@@ -172,6 +185,10 @@ func platformNetworkHTTPRoute(r *http.Request) (string, proto.Message, string, s
 func platformNetworkQueryFields(operation string) map[string]bool {
 	fields := map[string]bool{}
 	switch strings.TrimPrefix(operation, "/admin.service.v1.PlatformNetworkService/") {
+	case "ListPlatformEIPs":
+		for _, f := range []string{"page", "pageSize", "tenant_id", "name", "address", "pool_id", "state", "scope"} {
+			fields[f] = true
+		}
 	case "ListVirtualSwitches":
 		for _, f := range []string{"name", "state", "page", "pageSize"} {
 			fields[f] = true

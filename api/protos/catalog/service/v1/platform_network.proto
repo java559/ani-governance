@@ -560,6 +560,7 @@ message DefaultVPCEgress {
   int64 target_generation = 26 [json_name = "target_generation"];
   string pending_action = 27 [json_name = "pending_action"];
   bool observation_stale = 28 [json_name = "observation_stale"];
+  string eip_id = 29 [json_name = "eip_id"];
 }
 message CreateDefaultVPCEgressData {
   string name = 1 [json_name = "name"];
@@ -575,6 +576,7 @@ message CreateDefaultVPCEgressResponse {
 message GetDefaultVPCEgressRequest {
   string egress_id = 1 [json_name = "egress_id"];
 }
+message GetCurrentDefaultVPCEgressRequest {}
 message GetDefaultVPCEgressResponse {
   DefaultVPCEgress egress = 1 [json_name = "egress"];
 }

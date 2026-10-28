@@ -23,4 +23,11 @@ service QuotaAdminService {
       get: "/api/v1/admin/tenants/{id}/quota-accounts"
     };
   }
+
+  // 按租户分页批量读取当前配额；同一个只读一致快照，无逐租户查询。
+  rpc ListTenantQuotaAccountSummaries (ListTenantQuotaAccountSummariesRequest) returns (ListTenantQuotaAccountSummariesResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/admin/tenants/quota-account-summaries"
+    };
+  }
 }

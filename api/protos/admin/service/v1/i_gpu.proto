@@ -1,0 +1,23 @@
+syntax = "proto3";
+package admin.service.v1;
+import "google/api/annotations.proto";
+import "gpu/service/v1/gpu.proto";
+
+// Platform JWT + current Casbin permission. No delegated tenant is fabricated.
+service GpuAdminService {
+ rpc ListGpuDevices(gpu.service.v1.ListGpuDevicesRequest) returns(gpu.service.v1.ListGpuDevicesResponse) { option(google.api.http)={get:"/api/v1/admin/gpu/devices"}; }
+ rpc GetPhysicalGpuLatest(gpu.service.v1.GpuPhysicalLatestRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={get:"/api/v1/admin/gpu/devices/{device_id}/metrics/latest"}; }
+ rpc QueryPhysicalGpu(gpu.service.v1.GpuPhysicalQueryRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={post:"/api/v1/admin/gpu/devices/{device_id}/metrics/query" body:"*"}; }
+ rpc GetPlatformGpuLatest(gpu.service.v1.GpuPhysicalLatestRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={get:"/api/v1/admin/gpu/metrics/latest"}; }
+ rpc QueryPlatformGpu(gpu.service.v1.GpuPhysicalQueryRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={post:"/api/v1/admin/gpu/metrics/query" body:"*"}; }
+ rpc GetTenantGpuLatest(gpu.service.v1.GpuTenantLatestRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={get:"/api/v1/admin/gpu/tenants/{tenant_id}/metrics/latest"}; }
+ rpc QueryTenantGpu(gpu.service.v1.GpuTenantQueryRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={post:"/api/v1/admin/gpu/tenants/{tenant_id}/metrics/query" body:"*"}; }
+}
+// Tenant JWT + current module/role permission. Resource reads additionally ask
+// the business owner and original Gov ledger before constructing ACC scopes.
+service GpuService {
+ rpc GetMyGpuLatest(gpu.service.v1.GpuTenantLatestRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={get:"/api/v1/gpu/metrics/latest"}; }
+ rpc QueryMyGpu(gpu.service.v1.GpuTenantQueryRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={post:"/api/v1/gpu/metrics/query" body:"*"}; }
+ rpc GetResourceGpuLatest(gpu.service.v1.GpuResourceLatestRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={get:"/api/v1/gpu/resources/{resource_kind}/{resource_id}/metrics/latest"}; }
+ rpc QueryResourceGpu(gpu.service.v1.GpuResourceQueryRequest) returns(gpu.service.v1.GpuQueryResponse) { option(google.api.http)={post:"/api/v1/gpu/resources/{resource_kind}/{resource_id}/metrics/query" body:"*"}; }
+}

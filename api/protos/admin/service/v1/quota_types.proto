@@ -19,3 +19,36 @@ message ListTenantQuotaAccountsResponse {
   uint32 tenant_id = 1 [json_name = "tenantId"];
   repeated quota.service.v1.QuotaAccountView items = 2;
 }
+
+message ListTenantQuotaAccountSummariesRequest {
+  optional uint32 page = 1;
+  optional uint32 page_size = 2 [json_name = "pageSize"];
+  optional uint32 tenant_id = 3 [json_name = "tenantId"];
+  // 精确目录编码；缺失政策仍返回configured=false。
+  optional string quota_code = 4 [json_name = "quotaCode"];
+}
+
+message ListTenantQuotaAccountSummariesResponse {
+  repeated quota.service.v1.TenantQuotaAccountSummary items = 1;
+  uint64 total = 2; // 匹配租户总数，不是账户条数。
+  // 同一筛选范围、同一只读快照的合计，不受 page/pageSize 影响。
+  TenantQuotaAccountTotals summary = 3;
+}
+
+message TenantQuotaAccountTotals {
+  // 至少配置一个选定配额政策的租户数；共享套餐按租户分别计数。
+  string configured_tenant_count = 1 [json_name = "configuredTenantCount"];
+  repeated QuotaAccountTotals accounts = 2;
+}
+
+message QuotaAccountTotals {
+  string quota_code = 1 [json_name = "quotaCode"];
+  string unit = 2;
+  string configured_tenant_count = 3 [json_name = "configuredTenantCount"];
+  // 合计均为非负十进制字符串，可能超过单账户 uint64 范围。
+  string limit = 4;
+  // 包括未配置政策的账户占用，不代表运行中的 GPU 数量。
+  string occupied = 5;
+  // 每租户 max(limit-occupied,0) 后求和，不是合计 limit-occupied。
+  string available = 6;
+}

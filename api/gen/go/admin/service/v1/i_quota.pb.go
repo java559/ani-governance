@@ -26,25 +26,30 @@ var File_admin_service_v1_i_quota_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_quota_proto_rawDesc = "" +
 	"\n" +
-	"\x1eadmin/service/v1/i_quota.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a\"admin/service/v1/quota_types.proto2\xd3\x02\n" +
+	"\x1eadmin/service/v1/i_quota.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1epagination/v1/pagination.proto\x1a\"admin/service/v1/quota_types.proto2\xa3\x04\n" +
 	"\x11QuotaAdminService\x12\x8a\x01\n" +
 	"\x14ListQuotaDefinitions\x12\x19.pagination.PagingRequest\x1a..admin.service.v1.ListQuotaDefinitionsResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/quota-definitions\x12\xb0\x01\n" +
-	"\x17ListTenantQuotaAccounts\x12/.admin.service.v1.GetTenantQuotaAccountsRequest\x1a1.admin.service.v1.ListTenantQuotaAccountsResponse\"1\x82\xd3\xe4\x93\x02+\x12)/api/v1/admin/tenants/{id}/quota-accountsB\xb8\x01\n" +
+	"\x17ListTenantQuotaAccounts\x12/.admin.service.v1.GetTenantQuotaAccountsRequest\x1a1.admin.service.v1.ListTenantQuotaAccountsResponse\"1\x82\xd3\xe4\x93\x02+\x12)/api/v1/admin/tenants/{id}/quota-accounts\x12\xcd\x01\n" +
+	"\x1fListTenantQuotaAccountSummaries\x128.admin.service.v1.ListTenantQuotaAccountSummariesRequest\x1a9.admin.service.v1.ListTenantQuotaAccountSummariesResponse\"5\x82\xd3\xe4\x93\x02/\x12-/api/v1/admin/tenants/quota-account-summariesB\xb8\x01\n" +
 	"\x14com.admin.service.v1B\vIQuotaProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1P\x02b\x06proto3"
 
 var file_admin_service_v1_i_quota_proto_goTypes = []any{
-	(*v1.PagingRequest)(nil),                // 0: pagination.PagingRequest
-	(*GetTenantQuotaAccountsRequest)(nil),   // 1: admin.service.v1.GetTenantQuotaAccountsRequest
-	(*ListQuotaDefinitionsResponse)(nil),    // 2: admin.service.v1.ListQuotaDefinitionsResponse
-	(*ListTenantQuotaAccountsResponse)(nil), // 3: admin.service.v1.ListTenantQuotaAccountsResponse
+	(*v1.PagingRequest)(nil),                        // 0: pagination.PagingRequest
+	(*GetTenantQuotaAccountsRequest)(nil),           // 1: admin.service.v1.GetTenantQuotaAccountsRequest
+	(*ListTenantQuotaAccountSummariesRequest)(nil),  // 2: admin.service.v1.ListTenantQuotaAccountSummariesRequest
+	(*ListQuotaDefinitionsResponse)(nil),            // 3: admin.service.v1.ListQuotaDefinitionsResponse
+	(*ListTenantQuotaAccountsResponse)(nil),         // 4: admin.service.v1.ListTenantQuotaAccountsResponse
+	(*ListTenantQuotaAccountSummariesResponse)(nil), // 5: admin.service.v1.ListTenantQuotaAccountSummariesResponse
 }
 var file_admin_service_v1_i_quota_proto_depIdxs = []int32{
 	0, // 0: admin.service.v1.QuotaAdminService.ListQuotaDefinitions:input_type -> pagination.PagingRequest
 	1, // 1: admin.service.v1.QuotaAdminService.ListTenantQuotaAccounts:input_type -> admin.service.v1.GetTenantQuotaAccountsRequest
-	2, // 2: admin.service.v1.QuotaAdminService.ListQuotaDefinitions:output_type -> admin.service.v1.ListQuotaDefinitionsResponse
-	3, // 3: admin.service.v1.QuotaAdminService.ListTenantQuotaAccounts:output_type -> admin.service.v1.ListTenantQuotaAccountsResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	2, // 2: admin.service.v1.QuotaAdminService.ListTenantQuotaAccountSummaries:input_type -> admin.service.v1.ListTenantQuotaAccountSummariesRequest
+	3, // 3: admin.service.v1.QuotaAdminService.ListQuotaDefinitions:output_type -> admin.service.v1.ListQuotaDefinitionsResponse
+	4, // 4: admin.service.v1.QuotaAdminService.ListTenantQuotaAccounts:output_type -> admin.service.v1.ListTenantQuotaAccountsResponse
+	5, // 5: admin.service.v1.QuotaAdminService.ListTenantQuotaAccountSummaries:output_type -> admin.service.v1.ListTenantQuotaAccountSummariesResponse
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name

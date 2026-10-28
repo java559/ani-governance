@@ -12601,6 +12601,8 @@ func (m *DefaultVPCEgress) validate(all bool) error {
 
 	// no validation rules for ObservationStale
 
+	// no validation rules for EipId
+
 	if m.AppliedEnabled != nil {
 		// no validation rules for AppliedEnabled
 	}
@@ -13158,6 +13160,111 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = GetDefaultVPCEgressRequestValidationError{}
+
+// Validate checks the field values on GetCurrentDefaultVPCEgressRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *GetCurrentDefaultVPCEgressRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetCurrentDefaultVPCEgressRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// GetCurrentDefaultVPCEgressRequestMultiError, or nil if none found.
+func (m *GetCurrentDefaultVPCEgressRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetCurrentDefaultVPCEgressRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return GetCurrentDefaultVPCEgressRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetCurrentDefaultVPCEgressRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// GetCurrentDefaultVPCEgressRequest.ValidateAll() if the designated
+// constraints aren't met.
+type GetCurrentDefaultVPCEgressRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetCurrentDefaultVPCEgressRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetCurrentDefaultVPCEgressRequestMultiError) AllErrors() []error { return m }
+
+// GetCurrentDefaultVPCEgressRequestValidationError is the validation error
+// returned by GetCurrentDefaultVPCEgressRequest.Validate if the designated
+// constraints aren't met.
+type GetCurrentDefaultVPCEgressRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetCurrentDefaultVPCEgressRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetCurrentDefaultVPCEgressRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetCurrentDefaultVPCEgressRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetCurrentDefaultVPCEgressRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetCurrentDefaultVPCEgressRequestValidationError) ErrorName() string {
+	return "GetCurrentDefaultVPCEgressRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetCurrentDefaultVPCEgressRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetCurrentDefaultVPCEgressRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetCurrentDefaultVPCEgressRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetCurrentDefaultVPCEgressRequestValidationError{}
 
 // Validate checks the field values on GetDefaultVPCEgressResponse with the
 // rules defined in the proto definition for this message. If any rules are

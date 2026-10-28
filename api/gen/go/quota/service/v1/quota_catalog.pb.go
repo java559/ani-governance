@@ -213,11 +213,12 @@ type QuotaAccountView struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	QuotaCode     string                 `protobuf:"bytes,1,opt,name=quota_code,json=quotaCode,proto3" json:"quota_code,omitempty"`                       // 配额编码
 	Unit          string                 `protobuf:"bytes,2,opt,name=unit,proto3" json:"unit,omitempty"`                                                  // 单位（来自目录）
-	Limit         string                 `protobuf:"bytes,3,opt,name=limit,proto3" json:"limit,omitempty"`                                                // 当前套餐上限（十进制字符串，uint64）；未配置=0
+	Limit         string                 `protobuf:"bytes,3,opt,name=limit,proto3" json:"limit,omitempty"`                                                // 当前套餐上限（十进制字符串）；未配置回退0，须结合configured
 	Occupied      string                 `protobuf:"bytes,4,opt,name=occupied,proto3" json:"occupied,omitempty"`                                          // 当前占用（十进制字符串，uint64）
 	Available     string                 `protobuf:"bytes,5,opt,name=available,proto3" json:"available,omitempty"`                                        // max(limit-occupied,0)（十进制字符串）
 	OverLimit     bool                   `protobuf:"varint,6,opt,name=over_limit,json=overLimit,proto3" json:"over_limit,omitempty"`                      // occupied>limit（降额后允许出现）
 	Enforcement   Enforcement            `protobuf:"varint,7,opt,name=enforcement,proto3,enum=quota.service.v1.Enforcement" json:"enforcement,omitempty"` // 执行能力
+	Configured    bool                   `protobuf:"varint,8,opt,name=configured,proto3" json:"configured,omitempty"`                                     // 当前套餐存在此配额政策；false不表示无限额度
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -301,6 +302,98 @@ func (x *QuotaAccountView) GetEnforcement() Enforcement {
 	return Enforcement_ENFORCEMENT_UNSPECIFIED
 }
 
+func (x *QuotaAccountView) GetConfigured() bool {
+	if x != nil {
+		return x.Configured
+	}
+	return false
+}
+
+// 平台管理读取的当前租户与套餐投影；不表示历史配额。
+type TenantQuotaAccountSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TenantId      uint32                 `protobuf:"varint,1,opt,name=tenant_id,json=tenantId,proto3" json:"tenant_id,omitempty"`
+	TenantName    string                 `protobuf:"bytes,2,opt,name=tenant_name,json=tenantName,proto3" json:"tenant_name,omitempty"`
+	TenantCode    string                 `protobuf:"bytes,3,opt,name=tenant_code,json=tenantCode,proto3" json:"tenant_code,omitempty"`
+	PlanId        *uint32                `protobuf:"varint,4,opt,name=plan_id,json=planId,proto3,oneof" json:"plan_id,omitempty"`
+	PlanName      string                 `protobuf:"bytes,5,opt,name=plan_name,json=planName,proto3" json:"plan_name,omitempty"`
+	Accounts      []*QuotaAccountView    `protobuf:"bytes,6,rep,name=accounts,proto3" json:"accounts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TenantQuotaAccountSummary) Reset() {
+	*x = TenantQuotaAccountSummary{}
+	mi := &file_quota_service_v1_quota_catalog_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TenantQuotaAccountSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TenantQuotaAccountSummary) ProtoMessage() {}
+
+func (x *TenantQuotaAccountSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_quota_service_v1_quota_catalog_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TenantQuotaAccountSummary.ProtoReflect.Descriptor instead.
+func (*TenantQuotaAccountSummary) Descriptor() ([]byte, []int) {
+	return file_quota_service_v1_quota_catalog_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *TenantQuotaAccountSummary) GetTenantId() uint32 {
+	if x != nil {
+		return x.TenantId
+	}
+	return 0
+}
+
+func (x *TenantQuotaAccountSummary) GetTenantName() string {
+	if x != nil {
+		return x.TenantName
+	}
+	return ""
+}
+
+func (x *TenantQuotaAccountSummary) GetTenantCode() string {
+	if x != nil {
+		return x.TenantCode
+	}
+	return ""
+}
+
+func (x *TenantQuotaAccountSummary) GetPlanId() uint32 {
+	if x != nil && x.PlanId != nil {
+		return *x.PlanId
+	}
+	return 0
+}
+
+func (x *TenantQuotaAccountSummary) GetPlanName() string {
+	if x != nil {
+		return x.PlanName
+	}
+	return ""
+}
+
+func (x *TenantQuotaAccountSummary) GetAccounts() []*QuotaAccountView {
+	if x != nil {
+		return x.Accounts
+	}
+	return nil
+}
+
 var File_quota_service_v1_quota_catalog_proto protoreflect.FileDescriptor
 
 const file_quota_service_v1_quota_catalog_proto_rawDesc = "" +
@@ -311,7 +404,7 @@ const file_quota_service_v1_quota_catalog_proto_rawDesc = "" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
 	"\x04unit\x18\x03 \x01(\tR\x04unit\x12I\n" +
 	"\x0faccounting_kind\x18\x04 \x01(\x0e2 .quota.service.v1.AccountingKindR\x0eaccountingKind\x12?\n" +
-	"\venforcement\x18\x05 \x01(\x0e2\x1d.quota.service.v1.EnforcementR\venforcement\"\xf5\x01\n" +
+	"\venforcement\x18\x05 \x01(\x0e2\x1d.quota.service.v1.EnforcementR\venforcement\"\x95\x02\n" +
 	"\x10QuotaAccountView\x12\x1d\n" +
 	"\n" +
 	"quota_code\x18\x01 \x01(\tR\tquotaCode\x12\x12\n" +
@@ -321,7 +414,21 @@ const file_quota_service_v1_quota_catalog_proto_rawDesc = "" +
 	"\tavailable\x18\x05 \x01(\tR\tavailable\x12\x1d\n" +
 	"\n" +
 	"over_limit\x18\x06 \x01(\bR\toverLimit\x12?\n" +
-	"\venforcement\x18\a \x01(\x0e2\x1d.quota.service.v1.EnforcementR\venforcement*N\n" +
+	"\venforcement\x18\a \x01(\x0e2\x1d.quota.service.v1.EnforcementR\venforcement\x12\x1e\n" +
+	"\n" +
+	"configured\x18\b \x01(\bR\n" +
+	"configured\"\x81\x02\n" +
+	"\x19TenantQuotaAccountSummary\x12\x1b\n" +
+	"\ttenant_id\x18\x01 \x01(\rR\btenantId\x12\x1f\n" +
+	"\vtenant_name\x18\x02 \x01(\tR\n" +
+	"tenantName\x12\x1f\n" +
+	"\vtenant_code\x18\x03 \x01(\tR\n" +
+	"tenantCode\x12\x1c\n" +
+	"\aplan_id\x18\x04 \x01(\rH\x00R\x06planId\x88\x01\x01\x12\x1b\n" +
+	"\tplan_name\x18\x05 \x01(\tR\bplanName\x12>\n" +
+	"\baccounts\x18\x06 \x03(\v2\".quota.service.v1.QuotaAccountViewR\baccountsB\n" +
+	"\n" +
+	"\b_plan_id*N\n" +
 	"\x0eAccountingKind\x12\x1f\n" +
 	"\x1bACCOUNTING_KIND_UNSPECIFIED\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -348,22 +455,24 @@ func file_quota_service_v1_quota_catalog_proto_rawDescGZIP() []byte {
 }
 
 var file_quota_service_v1_quota_catalog_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_quota_service_v1_quota_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_quota_service_v1_quota_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_quota_service_v1_quota_catalog_proto_goTypes = []any{
-	(AccountingKind)(0),      // 0: quota.service.v1.AccountingKind
-	(Enforcement)(0),         // 1: quota.service.v1.Enforcement
-	(*QuotaDefinition)(nil),  // 2: quota.service.v1.QuotaDefinition
-	(*QuotaAccountView)(nil), // 3: quota.service.v1.QuotaAccountView
+	(AccountingKind)(0),               // 0: quota.service.v1.AccountingKind
+	(Enforcement)(0),                  // 1: quota.service.v1.Enforcement
+	(*QuotaDefinition)(nil),           // 2: quota.service.v1.QuotaDefinition
+	(*QuotaAccountView)(nil),          // 3: quota.service.v1.QuotaAccountView
+	(*TenantQuotaAccountSummary)(nil), // 4: quota.service.v1.TenantQuotaAccountSummary
 }
 var file_quota_service_v1_quota_catalog_proto_depIdxs = []int32{
 	0, // 0: quota.service.v1.QuotaDefinition.accounting_kind:type_name -> quota.service.v1.AccountingKind
 	1, // 1: quota.service.v1.QuotaDefinition.enforcement:type_name -> quota.service.v1.Enforcement
 	1, // 2: quota.service.v1.QuotaAccountView.enforcement:type_name -> quota.service.v1.Enforcement
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	3, // 3: quota.service.v1.TenantQuotaAccountSummary.accounts:type_name -> quota.service.v1.QuotaAccountView
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_quota_service_v1_quota_catalog_proto_init() }
@@ -371,13 +480,14 @@ func file_quota_service_v1_quota_catalog_proto_init() {
 	if File_quota_service_v1_quota_catalog_proto != nil {
 		return
 	}
+	file_quota_service_v1_quota_catalog_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_quota_service_v1_quota_catalog_proto_rawDesc), len(file_quota_service_v1_quota_catalog_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

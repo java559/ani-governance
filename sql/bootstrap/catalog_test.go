@@ -36,5 +36,5 @@ func TestVMCatalogUsesRuntimePathVariables(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, strings.HasPrefix(resolved.Code, "vm:"))
 	}
-	require.Equal(t, 25, count)
+	require.Equal(t, 26, count) // Includes GetVMDNSDefaults alongside the original VM routes.
 }

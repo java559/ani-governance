@@ -107,7 +107,7 @@ func TestInferenceGPUBlockMemoryReadAndDeleteKeepsOriginalCharge(t *testing.T) {
 	require.Zero(t, after[0].ReleasedUnits, "DELETE acceptance is not release evidence")
 }
 
-// Only Model, Accelerator and Inference RPCs are boundary substitutes. The BFF,
+// Only Model, Compute, Accelerator and Inference RPCs are boundary substitutes. The BFF,
 // current route authorization, acceptance and PostgreSQL ledger are real.
 type inferenceMissingOwner struct {
 	directInferenceOwnerProbe
@@ -230,6 +230,27 @@ func (f *inferenceGPUFixture) otherAuthorizedTenant(t *testing.T) (context.Conte
 
 func TestInferenceGPUAdmissionAndPublicReplay(t *testing.T) {
 	f := newInferenceGPUFixture(t)
+	sys := appViewer.NewSystemViewerContext(context.Background())
+	require.NoError(t, f.client.PlanModule.Create().SetPlanID(f.planID).SetModule(planmodule.ModuleAccelerator).Exec(sys))
+	selection := inferenceCPUSelection(t)
+	selection.Code, selection.Name, selection.ComputeType = "gpu-test", "GPU", "gpu"
+	plan := f.plans.plan
+	selection.Gpu = &compute.GpuSelection{ProfileId: plan.Request.ProfileId, ProfileVersion: plan.Request.ProfileVersion, SpecDigest: plan.Profile.SpecDigest, DevicesPerUnit: plan.Request.DevicesPerReplica, ClusterId: plan.Request.ClusterId, PoolId: plan.Request.PoolId, Mode: plan.Resolved.Selection.Mode, ModelKey: plan.Resolved.Selection.ModelKey, MemoryMibPerDevice: plan.Profile.Spec.MemoryMibPerDevice, CoreLimitPercent: plan.Profile.Spec.CoreLimitPercent}
+	var err error
+	selection.SelectionDigest, err = compute.SelectionDigest(selection)
+	require.NoError(t, err)
+	computePeer := &inferenceComputeProbe{selection: selection}
+	oldAcceptance := f.service.acceptance.(*GpuAcceptance)
+	oldBinding := oldAcceptance.binding.(*InferenceGpuBinding)
+	binding := NewInferenceComputeBinding(f.owner, oldBinding.authorization, f.model, computePeer)
+	registry := NewQuotaAdapterRegistry()
+	require.NoError(t, registry.Register(binding))
+	acceptance, err := NewGpuAcceptance(f.ledger, registry, oldAcceptance.resolver, f.plans, binding, nil)
+	require.NoError(t, err)
+	f.service = NewInferenceServiceWithOwnerAndModel(acceptance, f.owner, oldAcceptance.resolver, f.model)
+	f.request.PresetId = selection.PresetId
+	f.request.Cpu, f.request.Memory, f.request.Gpu = "", "", nil
+
 	first, err := f.service.CreateInference(f.ctx, f.request)
 	require.NoError(t, err)
 	require.Equal(t, "ACCEPTED", first.Result)
@@ -237,7 +258,12 @@ func TestInferenceGPUAdmissionAndPublicReplay(t *testing.T) {
 	require.NotEmpty(t, first.OperationId)
 	require.NotEmpty(t, first.ResourceId)
 	require.Equal(t, 1, f.model.calls)
+	require.Equal(t, 1, computePeer.calls)
 	require.Equal(t, 1, f.plans.calls)
+	principal, err := auth.PrincipalFromContext(f.ctx)
+	require.NoError(t, err)
+	require.Equal(t, f.model.response.Model.TenantId, f.model.tenant)
+	require.Equal(t, "governance:user:"+strconv.FormatUint(uint64(principal.ID), 10), f.model.actor)
 
 	// A retry with the same public idempotency key and unchanged request must
 	// replay the durable operation without re-resolving the model or GPU plan.
@@ -247,11 +273,14 @@ func TestInferenceGPUAdmissionAndPublicReplay(t *testing.T) {
 	require.Equal(t, first.OperationId, replay.OperationId)
 	require.Equal(t, first.ResourceId, replay.ResourceId)
 	require.Equal(t, 1, f.model.calls)
+	require.Equal(t, 1, computePeer.calls)
 	require.Equal(t, 1, f.plans.calls)
 
-	charges, err := f.client.QuotaCharge.Query().All(appViewer.NewSystemViewerContext(context.Background()))
+	charges, err := f.ledger.GetChargesForOperation(sys, f.tenantID, first.OperationId)
 	require.NoError(t, err)
 	require.NotEmpty(t, charges, "accepted inference GPU create must reserve quota")
+	require.Len(t, charges, 1)
+	require.EqualValues(t, 16384, charges[0].OriginalUnits)
 }
 func TestInferenceCPUActorsRemainTrusted(t *testing.T) {
 	f := newInferenceGPUFixture(t)

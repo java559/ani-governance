@@ -14,7 +14,7 @@ func wireDefaultVPCEgress(v *networkv1.DefaultVPCEgress) *catalogv1.DefaultVPCEg
 	if v == nil {
 		return nil
 	}
-	return &catalogv1.DefaultVPCEgress{Id: v.Id, Name: v.Name, PoolId: v.PoolId, State: v.State, Reason: v.Reason, Version: v.Version, LastOperationId: v.LastOperationId, OperationState: v.OperationState, Phase: v.Phase, PendingUnknown: v.PendingUnknown, Address: v.Address, EipProviderName: v.EipProviderName, EipProviderUid: v.EipProviderUid, SnatProviderName: v.SnatProviderName, SnatProviderUid: v.SnatProviderUid, DesiredEnabled: v.DesiredEnabled, AppliedEnabled: v.AppliedEnabled, ClusterId: v.ClusterId, ClusterUid: v.ClusterUid, DefaultVpcNamespace: v.DefaultVpcNamespace, DefaultVpcName: v.DefaultVpcName, DefaultVpcUid: v.DefaultVpcUid, CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt, ObservedAt: v.ObservedAt, TargetGeneration: v.TargetGeneration, PendingAction: v.PendingAction, ObservationStale: v.ObservationStale}
+	return &catalogv1.DefaultVPCEgress{Id: v.Id, EipId: v.EipId, Name: v.Name, PoolId: v.PoolId, State: v.State, Reason: v.Reason, Version: v.Version, LastOperationId: v.LastOperationId, OperationState: v.OperationState, Phase: v.Phase, PendingUnknown: v.PendingUnknown, Address: v.Address, EipProviderName: v.EipProviderName, EipProviderUid: v.EipProviderUid, SnatProviderName: v.SnatProviderName, SnatProviderUid: v.SnatProviderUid, DesiredEnabled: v.DesiredEnabled, AppliedEnabled: v.AppliedEnabled, ClusterId: v.ClusterId, ClusterUid: v.ClusterUid, DefaultVpcNamespace: v.DefaultVpcNamespace, DefaultVpcName: v.DefaultVpcName, DefaultVpcUid: v.DefaultVpcUid, CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt, ObservedAt: v.ObservedAt, TargetGeneration: v.TargetGeneration, PendingAction: v.PendingAction, ObservationStale: v.ObservationStale}
 }
 
 func (s *PlatformNetworkService) CreateDefaultVPCEgress(ctx context.Context, req *catalogv1.CreateDefaultVPCEgressRequest) (*catalogv1.CreateDefaultVPCEgressResponse, error) {
@@ -59,6 +59,33 @@ func (s *PlatformNetworkService) GetDefaultVPCEgress(ctx context.Context, req *c
 	}
 	out := wireDefaultVPCEgress(reply.Egress)
 	if !validDefaultVPCEgress(out, req.EgressId) {
+		return nil, invalidNetworkReply()
+	}
+	return &catalogv1.GetDefaultVPCEgressResponse{Egress: out}, nil
+}
+func (s *PlatformNetworkService) GetCurrentDefaultVPCEgress(ctx context.Context, req *catalogv1.GetCurrentDefaultVPCEgressRequest) (*catalogv1.GetDefaultVPCEgressResponse, error) {
+	actor, err := s.actor(ctx, "GetCurrentDefaultVPCEgress")
+	if err != nil {
+		return nil, err
+	}
+	if req == nil {
+		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "request required")
+	}
+	client, ok := s.client.(interface {
+		GetCurrentDefaultVPCEgress(context.Context, string, *networkv1.GetCurrentDefaultVPCEgressRequest) (*networkv1.GetCurrentDefaultVPCEgressResponse, error)
+	})
+	if !ok {
+		return nil, errors.ServiceUnavailable("NETWORK_UNAVAILABLE", "platform default egress access is unavailable")
+	}
+	reply, err := client.GetCurrentDefaultVPCEgress(ctx, actor, &networkv1.GetCurrentDefaultVPCEgressRequest{})
+	if err != nil {
+		return nil, mapNetworkError(err)
+	}
+	if reply == nil {
+		return nil, invalidNetworkReply()
+	}
+	out := wireDefaultVPCEgress(reply.Egress)
+	if !validDefaultVPCEgress(out, "") {
 		return nil, invalidNetworkReply()
 	}
 	return &catalogv1.GetDefaultVPCEgressResponse{Egress: out}, nil

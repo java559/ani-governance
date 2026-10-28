@@ -48,7 +48,9 @@ func instanceHTTPTimeoutFilter(ordinary time.Duration, ownerBudgets ...time.Dura
 			trend := r.Method == http.MethodGet && r.URL.Path == data.ObservabilityResourceTrendPath
 			modeldev := r.Method == http.MethodPost && (r.URL.Path == "/api/v1/modeldev/executions" || modelDevRegistrationHTTPPath.MatchString(r.URL.Path)) || r.Method == http.MethodGet && modelDevArtifactHTTPPath.MatchString(r.URL.Path)
 			modelImport := r.Method == http.MethodPost && (r.URL.Path == "/api/v1/model-versions" || modelUploadHTTPPath.MatchString(r.URL.Path))
-			if modelImport && modelImportBudget > 0 {
+			if gpuHTTPPath.MatchString(r.URL.Path) {
+				ctx, cancel = context.WithTimeout(ctx, 35*time.Second)
+			} else if modelImport && modelImportBudget > 0 {
 				// CreateModelVersion verifies the entire immutable archive before
 				// returning READY; keep its finite owner budget through HTTP.
 				ctx, cancel = context.WithTimeout(ctx, modelImportBudget)

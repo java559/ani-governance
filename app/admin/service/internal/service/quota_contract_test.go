@@ -101,6 +101,7 @@ func TestQuotaAdminHTTPAndRPCContract(t *testing.T) {
 	}{
 		{"admin.service.v1.QuotaAdminService", "ListQuotaDefinitions", "pagination.PagingRequest", "admin.service.v1.ListQuotaDefinitionsResponse", "/api/v1/admin/quota-definitions"},
 		{"admin.service.v1.QuotaAdminService", "ListTenantQuotaAccounts", "admin.service.v1.GetTenantQuotaAccountsRequest", "admin.service.v1.ListTenantQuotaAccountsResponse", "/api/v1/admin/tenants/{id}/quota-accounts"},
+		{"admin.service.v1.QuotaAdminService", "ListTenantQuotaAccountSummaries", "admin.service.v1.ListTenantQuotaAccountSummariesRequest", "admin.service.v1.ListTenantQuotaAccountSummariesResponse", "/api/v1/admin/tenants/quota-account-summaries"},
 		{"admin.service.v1.QuotaSelfService", "GetMyQuotaAccounts", "google.protobuf.Empty", "admin.service.v1.ListTenantQuotaAccountsResponse", "/api/v1/me/quota-accounts"},
 	}
 	for _, tc := range cases {

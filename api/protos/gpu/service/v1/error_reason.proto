@@ -1,0 +1,15 @@
+syntax = "proto3";
+package gpu.service.v1;
+import "errors/errors.proto";
+enum GpuErrorReason {
+ option (errors.default_code)=500;
+ GPU_INVALID_QUERY=0 [(errors.code)=400];
+ GPU_QUERY_BUDGET_EXCEEDED=1 [(errors.code)=429];
+ GPU_QUERY_TIMEOUT=2 [(errors.code)=504];
+ GPU_NOT_FOUND=3 [(errors.code)=404];
+ GPU_SCOPE_CHANGED=4 [(errors.code)=409];
+ GPU_SOURCE_UNAVAILABLE=5 [(errors.code)=503];
+ GPU_INVALID_RESPONSE=6 [(errors.code)=502];
+ GPU_MODEL_FILTER_REQUIRED=7 [(errors.code)=400];
+ GPU_RESOURCE_KIND_UNSUPPORTED=8 [(errors.code)=400];
+}

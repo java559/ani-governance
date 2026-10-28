@@ -21,11 +21,14 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationQuotaAdminServiceListQuotaDefinitions = "/admin.service.v1.QuotaAdminService/ListQuotaDefinitions"
+const OperationQuotaAdminServiceListTenantQuotaAccountSummaries = "/admin.service.v1.QuotaAdminService/ListTenantQuotaAccountSummaries"
 const OperationQuotaAdminServiceListTenantQuotaAccounts = "/admin.service.v1.QuotaAdminService/ListTenantQuotaAccounts"
 
 type QuotaAdminServiceHTTPServer interface {
 	// ListQuotaDefinitions 查询配额目录（QUOTA-01）
 	ListQuotaDefinitions(context.Context, *v1.PagingRequest) (*ListQuotaDefinitionsResponse, error)
+	// ListTenantQuotaAccountSummaries 按租户分页批量读取当前配额；同一个只读一致快照，无逐租户查询。
+	ListTenantQuotaAccountSummaries(context.Context, *ListTenantQuotaAccountSummariesRequest) (*ListTenantQuotaAccountSummariesResponse, error)
 	// ListTenantQuotaAccounts 查询指定租户配额账户（QUOTA-02）
 	ListTenantQuotaAccounts(context.Context, *GetTenantQuotaAccountsRequest) (*ListTenantQuotaAccountsResponse, error)
 }
@@ -34,6 +37,7 @@ func RegisterQuotaAdminServiceHTTPServer(s *http.Server, srv QuotaAdminServiceHT
 	r := s.Route("/")
 	r.GET("/api/v1/admin/quota-definitions", _QuotaAdminService_ListQuotaDefinitions0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/tenants/{id}/quota-accounts", _QuotaAdminService_ListTenantQuotaAccounts0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/quota-account-summaries", _QuotaAdminService_ListTenantQuotaAccountSummaries0_HTTP_Handler(srv))
 }
 
 func _QuotaAdminService_ListQuotaDefinitions0_HTTP_Handler(srv QuotaAdminServiceHTTPServer) func(ctx http.Context) error {
@@ -77,9 +81,30 @@ func _QuotaAdminService_ListTenantQuotaAccounts0_HTTP_Handler(srv QuotaAdminServ
 	}
 }
 
+func _QuotaAdminService_ListTenantQuotaAccountSummaries0_HTTP_Handler(srv QuotaAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListTenantQuotaAccountSummariesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationQuotaAdminServiceListTenantQuotaAccountSummaries)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListTenantQuotaAccountSummaries(ctx, req.(*ListTenantQuotaAccountSummariesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListTenantQuotaAccountSummariesResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 type QuotaAdminServiceHTTPClient interface {
 	// ListQuotaDefinitions 查询配额目录（QUOTA-01）
 	ListQuotaDefinitions(ctx context.Context, req *v1.PagingRequest, opts ...http.CallOption) (rsp *ListQuotaDefinitionsResponse, err error)
+	// ListTenantQuotaAccountSummaries 按租户分页批量读取当前配额；同一个只读一致快照，无逐租户查询。
+	ListTenantQuotaAccountSummaries(ctx context.Context, req *ListTenantQuotaAccountSummariesRequest, opts ...http.CallOption) (rsp *ListTenantQuotaAccountSummariesResponse, err error)
 	// ListTenantQuotaAccounts 查询指定租户配额账户（QUOTA-02）
 	ListTenantQuotaAccounts(ctx context.Context, req *GetTenantQuotaAccountsRequest, opts ...http.CallOption) (rsp *ListTenantQuotaAccountsResponse, err error)
 }
@@ -98,6 +123,20 @@ func (c *QuotaAdminServiceHTTPClientImpl) ListQuotaDefinitions(ctx context.Conte
 	pattern := "/api/v1/admin/quota-definitions"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationQuotaAdminServiceListQuotaDefinitions))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListTenantQuotaAccountSummaries 按租户分页批量读取当前配额；同一个只读一致快照，无逐租户查询。
+func (c *QuotaAdminServiceHTTPClientImpl) ListTenantQuotaAccountSummaries(ctx context.Context, in *ListTenantQuotaAccountSummariesRequest, opts ...http.CallOption) (*ListTenantQuotaAccountSummariesResponse, error) {
+	var out ListTenantQuotaAccountSummariesResponse
+	pattern := "/api/v1/admin/tenants/quota-account-summaries"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationQuotaAdminServiceListTenantQuotaAccountSummaries))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

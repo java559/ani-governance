@@ -5785,6 +5785,7 @@ type DefaultVPCEgress struct {
 	TargetGeneration    int64                  `protobuf:"varint,26,opt,name=target_generation,proto3" json:"target_generation,omitempty"`
 	PendingAction       string                 `protobuf:"bytes,27,opt,name=pending_action,proto3" json:"pending_action,omitempty"`
 	ObservationStale    bool                   `protobuf:"varint,28,opt,name=observation_stale,proto3" json:"observation_stale,omitempty"`
+	EipId               string                 `protobuf:"bytes,29,opt,name=eip_id,proto3" json:"eip_id,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -6015,6 +6016,13 @@ func (x *DefaultVPCEgress) GetObservationStale() bool {
 	return false
 }
 
+func (x *DefaultVPCEgress) GetEipId() string {
+	if x != nil {
+		return x.EipId
+	}
+	return ""
+}
+
 type CreateDefaultVPCEgressData struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Name           string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -6207,6 +6215,42 @@ func (x *GetDefaultVPCEgressRequest) GetEgressId() string {
 	return ""
 }
 
+type GetCurrentDefaultVPCEgressRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCurrentDefaultVPCEgressRequest) Reset() {
+	*x = GetCurrentDefaultVPCEgressRequest{}
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[99]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCurrentDefaultVPCEgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCurrentDefaultVPCEgressRequest) ProtoMessage() {}
+
+func (x *GetCurrentDefaultVPCEgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[99]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCurrentDefaultVPCEgressRequest.ProtoReflect.Descriptor instead.
+func (*GetCurrentDefaultVPCEgressRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{99}
+}
+
 type GetDefaultVPCEgressResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Egress        *DefaultVPCEgress      `protobuf:"bytes,1,opt,name=egress,proto3" json:"egress,omitempty"`
@@ -6216,7 +6260,7 @@ type GetDefaultVPCEgressResponse struct {
 
 func (x *GetDefaultVPCEgressResponse) Reset() {
 	*x = GetDefaultVPCEgressResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[99]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6228,7 +6272,7 @@ func (x *GetDefaultVPCEgressResponse) String() string {
 func (*GetDefaultVPCEgressResponse) ProtoMessage() {}
 
 func (x *GetDefaultVPCEgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[99]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6241,7 +6285,7 @@ func (x *GetDefaultVPCEgressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDefaultVPCEgressResponse.ProtoReflect.Descriptor instead.
 func (*GetDefaultVPCEgressResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{99}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *GetDefaultVPCEgressResponse) GetEgress() *DefaultVPCEgress {
@@ -6260,7 +6304,7 @@ type DeleteDefaultVPCEgressRequest struct {
 
 func (x *DeleteDefaultVPCEgressRequest) Reset() {
 	*x = DeleteDefaultVPCEgressRequest{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[100]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6272,7 +6316,7 @@ func (x *DeleteDefaultVPCEgressRequest) String() string {
 func (*DeleteDefaultVPCEgressRequest) ProtoMessage() {}
 
 func (x *DeleteDefaultVPCEgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[100]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6285,7 +6329,7 @@ func (x *DeleteDefaultVPCEgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDefaultVPCEgressRequest.ProtoReflect.Descriptor instead.
 func (*DeleteDefaultVPCEgressRequest) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{100}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *DeleteDefaultVPCEgressRequest) GetEgressId() string {
@@ -6304,7 +6348,7 @@ type DeleteDefaultVPCEgressResponse struct {
 
 func (x *DeleteDefaultVPCEgressResponse) Reset() {
 	*x = DeleteDefaultVPCEgressResponse{}
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[101]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6316,7 +6360,7 @@ func (x *DeleteDefaultVPCEgressResponse) String() string {
 func (*DeleteDefaultVPCEgressResponse) ProtoMessage() {}
 
 func (x *DeleteDefaultVPCEgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[101]
+	mi := &file_catalog_service_v1_platform_network_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6329,7 +6373,7 @@ func (x *DeleteDefaultVPCEgressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDefaultVPCEgressResponse.ProtoReflect.Descriptor instead.
 func (*DeleteDefaultVPCEgressResponse) Descriptor() ([]byte, []int) {
-	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{101}
+	return file_catalog_service_v1_platform_network_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *DeleteDefaultVPCEgressResponse) GetEgress() *DefaultVPCEgress {
@@ -6797,7 +6841,7 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"\"GetNetworkDeviceRetirementResponse\x12D\n" +
 	"\n" +
 	"retirement\x18\x01 \x01(\v2$.catalog.service.v1.DeviceRetirementR\n" +
-	"retirement\"\xf7\b\n" +
+	"retirement\"\x8f\t\n" +
 	"\x10DefaultVPCEgress\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -6833,7 +6877,8 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"\vobserved_at\x18\x19 \x01(\v2\x1a.google.protobuf.TimestampR\vobserved_at\x12,\n" +
 	"\x11target_generation\x18\x1a \x01(\x03R\x11target_generation\x12&\n" +
 	"\x0epending_action\x18\x1b \x01(\tR\x0epending_action\x12,\n" +
-	"\x11observation_stale\x18\x1c \x01(\bR\x11observation_staleB\x12\n" +
+	"\x11observation_stale\x18\x1c \x01(\bR\x11observation_stale\x12\x16\n" +
+	"\x06eip_id\x18\x1d \x01(\tR\x06eip_idB\x12\n" +
 	"\x10_applied_enabled\"t\n" +
 	"\x1aCreateDefaultVPCEgressData\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
@@ -6844,7 +6889,8 @@ const file_catalog_service_v1_platform_network_proto_rawDesc = "" +
 	"\x1eCreateDefaultVPCEgressResponse\x12<\n" +
 	"\x06egress\x18\x01 \x01(\v2$.catalog.service.v1.DefaultVPCEgressR\x06egress\":\n" +
 	"\x1aGetDefaultVPCEgressRequest\x12\x1c\n" +
-	"\tegress_id\x18\x01 \x01(\tR\tegress_id\"[\n" +
+	"\tegress_id\x18\x01 \x01(\tR\tegress_id\"#\n" +
+	"!GetCurrentDefaultVPCEgressRequest\"[\n" +
 	"\x1bGetDefaultVPCEgressResponse\x12<\n" +
 	"\x06egress\x18\x01 \x01(\v2$.catalog.service.v1.DefaultVPCEgressR\x06egress\"=\n" +
 	"\x1dDeleteDefaultVPCEgressRequest\x12\x1c\n" +
@@ -6865,7 +6911,7 @@ func file_catalog_service_v1_platform_network_proto_rawDescGZIP() []byte {
 	return file_catalog_service_v1_platform_network_proto_rawDescData
 }
 
-var file_catalog_service_v1_platform_network_proto_msgTypes = make([]protoimpl.MessageInfo, 102)
+var file_catalog_service_v1_platform_network_proto_msgTypes = make([]protoimpl.MessageInfo, 103)
 var file_catalog_service_v1_platform_network_proto_goTypes = []any{
 	(*PlatformResource)(nil),                         // 0: catalog.service.v1.PlatformResource
 	(*VirtualSwitch)(nil),                            // 1: catalog.service.v1.VirtualSwitch
@@ -6966,45 +7012,46 @@ var file_catalog_service_v1_platform_network_proto_goTypes = []any{
 	(*CreateDefaultVPCEgressRequest)(nil),            // 96: catalog.service.v1.CreateDefaultVPCEgressRequest
 	(*CreateDefaultVPCEgressResponse)(nil),           // 97: catalog.service.v1.CreateDefaultVPCEgressResponse
 	(*GetDefaultVPCEgressRequest)(nil),               // 98: catalog.service.v1.GetDefaultVPCEgressRequest
-	(*GetDefaultVPCEgressResponse)(nil),              // 99: catalog.service.v1.GetDefaultVPCEgressResponse
-	(*DeleteDefaultVPCEgressRequest)(nil),            // 100: catalog.service.v1.DeleteDefaultVPCEgressRequest
-	(*DeleteDefaultVPCEgressResponse)(nil),           // 101: catalog.service.v1.DeleteDefaultVPCEgressResponse
-	(*timestamppb.Timestamp)(nil),                    // 102: google.protobuf.Timestamp
+	(*GetCurrentDefaultVPCEgressRequest)(nil),        // 99: catalog.service.v1.GetCurrentDefaultVPCEgressRequest
+	(*GetDefaultVPCEgressResponse)(nil),              // 100: catalog.service.v1.GetDefaultVPCEgressResponse
+	(*DeleteDefaultVPCEgressRequest)(nil),            // 101: catalog.service.v1.DeleteDefaultVPCEgressRequest
+	(*DeleteDefaultVPCEgressResponse)(nil),           // 102: catalog.service.v1.DeleteDefaultVPCEgressResponse
+	(*timestamppb.Timestamp)(nil),                    // 103: google.protobuf.Timestamp
 }
 var file_catalog_service_v1_platform_network_proto_depIdxs = []int32{
-	102, // 0: catalog.service.v1.PlatformResource.created_at:type_name -> google.protobuf.Timestamp
-	102, // 1: catalog.service.v1.PlatformResource.updated_at:type_name -> google.protobuf.Timestamp
-	102, // 2: catalog.service.v1.PlatformResource.observed_at:type_name -> google.protobuf.Timestamp
+	103, // 0: catalog.service.v1.PlatformResource.created_at:type_name -> google.protobuf.Timestamp
+	103, // 1: catalog.service.v1.PlatformResource.updated_at:type_name -> google.protobuf.Timestamp
+	103, // 2: catalog.service.v1.PlatformResource.observed_at:type_name -> google.protobuf.Timestamp
 	13,  // 3: catalog.service.v1.PlatformResource.device:type_name -> catalog.service.v1.NetworkDevice
 	14,  // 4: catalog.service.v1.PlatformResource.vlan:type_name -> catalog.service.v1.VlanNetwork
 	15,  // 5: catalog.service.v1.PlatformResource.gateway:type_name -> catalog.service.v1.EgressGateway
 	16,  // 6: catalog.service.v1.PlatformResource.pool:type_name -> catalog.service.v1.PublicAddressPool
 	17,  // 7: catalog.service.v1.PlatformResource.intranet_pool:type_name -> catalog.service.v1.IntranetAddressPool
-	102, // 8: catalog.service.v1.VirtualSwitch.created_at:type_name -> google.protobuf.Timestamp
-	102, // 9: catalog.service.v1.VirtualSwitch.updated_at:type_name -> google.protobuf.Timestamp
+	103, // 8: catalog.service.v1.VirtualSwitch.created_at:type_name -> google.protobuf.Timestamp
+	103, // 9: catalog.service.v1.VirtualSwitch.updated_at:type_name -> google.protobuf.Timestamp
 	2,   // 10: catalog.service.v1.VirtualSwitch.nodes:type_name -> catalog.service.v1.VirtualSwitchNode
 	3,   // 11: catalog.service.v1.CreateVirtualSwitchRequest.data:type_name -> catalog.service.v1.CreateVirtualSwitchData
 	1,   // 12: catalog.service.v1.CreateVirtualSwitchResponse.resource:type_name -> catalog.service.v1.VirtualSwitch
 	1,   // 13: catalog.service.v1.GetVirtualSwitchResponse.resource:type_name -> catalog.service.v1.VirtualSwitch
 	1,   // 14: catalog.service.v1.ListVirtualSwitchesResponse.items:type_name -> catalog.service.v1.VirtualSwitch
 	1,   // 15: catalog.service.v1.DeleteVirtualSwitchResponse.resource:type_name -> catalog.service.v1.VirtualSwitch
-	102, // 16: catalog.service.v1.NodeInterface.observed_at:type_name -> google.protobuf.Timestamp
+	103, // 16: catalog.service.v1.NodeInterface.observed_at:type_name -> google.protobuf.Timestamp
 	12,  // 17: catalog.service.v1.NetworkDevice.nodes:type_name -> catalog.service.v1.NodeInterface
 	2,   // 18: catalog.service.v1.VlanNetwork.nodes:type_name -> catalog.service.v1.VirtualSwitchNode
 	21,  // 19: catalog.service.v1.PublicAddressPool.verification:type_name -> catalog.service.v1.PublicPoolVerification
 	18,  // 20: catalog.service.v1.IntranetAddressPool.verification:type_name -> catalog.service.v1.IntranetPoolVerification
-	102, // 21: catalog.service.v1.IntranetPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
-	102, // 22: catalog.service.v1.IntranetPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
-	102, // 23: catalog.service.v1.CapabilityObservation.observed_at:type_name -> google.protobuf.Timestamp
+	103, // 21: catalog.service.v1.IntranetPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
+	103, // 22: catalog.service.v1.IntranetPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
+	103, // 23: catalog.service.v1.CapabilityObservation.observed_at:type_name -> google.protobuf.Timestamp
 	19,  // 24: catalog.service.v1.PlatformNetworkCapabilities.base_connectivity:type_name -> catalog.service.v1.CapabilityObservation
 	19,  // 25: catalog.service.v1.PlatformNetworkCapabilities.public_address:type_name -> catalog.service.v1.CapabilityObservation
 	19,  // 26: catalog.service.v1.PlatformNetworkCapabilities.load_balancer:type_name -> catalog.service.v1.CapabilityObservation
-	102, // 27: catalog.service.v1.PublicPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
-	102, // 28: catalog.service.v1.PublicPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
-	102, // 29: catalog.service.v1.PlatformOperation.created_at:type_name -> google.protobuf.Timestamp
-	102, // 30: catalog.service.v1.PlatformOperation.updated_at:type_name -> google.protobuf.Timestamp
-	102, // 31: catalog.service.v1.PlatformOperation.completed_at:type_name -> google.protobuf.Timestamp
-	102, // 32: catalog.service.v1.PlatformOperation.next_attempt_at:type_name -> google.protobuf.Timestamp
+	103, // 27: catalog.service.v1.PublicPoolVerification.verified_at:type_name -> google.protobuf.Timestamp
+	103, // 28: catalog.service.v1.PublicPoolVerification.expires_at:type_name -> google.protobuf.Timestamp
+	103, // 29: catalog.service.v1.PlatformOperation.created_at:type_name -> google.protobuf.Timestamp
+	103, // 30: catalog.service.v1.PlatformOperation.updated_at:type_name -> google.protobuf.Timestamp
+	103, // 31: catalog.service.v1.PlatformOperation.completed_at:type_name -> google.protobuf.Timestamp
+	103, // 32: catalog.service.v1.PlatformOperation.next_attempt_at:type_name -> google.protobuf.Timestamp
 	12,  // 33: catalog.service.v1.ListNodeInterfacesResponse.items:type_name -> catalog.service.v1.NodeInterface
 	25,  // 34: catalog.service.v1.AdoptNetworkDeviceRequest.data:type_name -> catalog.service.v1.AdoptNetworkDeviceData
 	0,   // 35: catalog.service.v1.AdoptNetworkDeviceResponse.resource:type_name -> catalog.service.v1.PlatformResource
@@ -7045,15 +7092,15 @@ var file_catalog_service_v1_platform_network_proto_depIdxs = []int32{
 	0,   // 70: catalog.service.v1.SetDefaultIntranetPoolResponse.resource:type_name -> catalog.service.v1.PlatformResource
 	20,  // 71: catalog.service.v1.GetPlatformNetworkCapabilitiesResponse.capabilities:type_name -> catalog.service.v1.PlatformNetworkCapabilities
 	22,  // 72: catalog.service.v1.GetPlatformOperationResponse.operation:type_name -> catalog.service.v1.PlatformOperation
-	102, // 73: catalog.service.v1.DeviceRetirement.created_at:type_name -> google.protobuf.Timestamp
-	102, // 74: catalog.service.v1.DeviceRetirement.updated_at:type_name -> google.protobuf.Timestamp
-	102, // 75: catalog.service.v1.DeviceRetirement.completed_at:type_name -> google.protobuf.Timestamp
+	103, // 73: catalog.service.v1.DeviceRetirement.created_at:type_name -> google.protobuf.Timestamp
+	103, // 74: catalog.service.v1.DeviceRetirement.updated_at:type_name -> google.protobuf.Timestamp
+	103, // 75: catalog.service.v1.DeviceRetirement.completed_at:type_name -> google.protobuf.Timestamp
 	89,  // 76: catalog.service.v1.RetireNetworkDeviceRequest.data:type_name -> catalog.service.v1.RetireNetworkDeviceData
 	88,  // 77: catalog.service.v1.RetireNetworkDeviceResponse.retirement:type_name -> catalog.service.v1.DeviceRetirement
 	88,  // 78: catalog.service.v1.GetNetworkDeviceRetirementResponse.retirement:type_name -> catalog.service.v1.DeviceRetirement
-	102, // 79: catalog.service.v1.DefaultVPCEgress.created_at:type_name -> google.protobuf.Timestamp
-	102, // 80: catalog.service.v1.DefaultVPCEgress.updated_at:type_name -> google.protobuf.Timestamp
-	102, // 81: catalog.service.v1.DefaultVPCEgress.observed_at:type_name -> google.protobuf.Timestamp
+	103, // 79: catalog.service.v1.DefaultVPCEgress.created_at:type_name -> google.protobuf.Timestamp
+	103, // 80: catalog.service.v1.DefaultVPCEgress.updated_at:type_name -> google.protobuf.Timestamp
+	103, // 81: catalog.service.v1.DefaultVPCEgress.observed_at:type_name -> google.protobuf.Timestamp
 	95,  // 82: catalog.service.v1.CreateDefaultVPCEgressRequest.data:type_name -> catalog.service.v1.CreateDefaultVPCEgressData
 	94,  // 83: catalog.service.v1.CreateDefaultVPCEgressResponse.egress:type_name -> catalog.service.v1.DefaultVPCEgress
 	94,  // 84: catalog.service.v1.GetDefaultVPCEgressResponse.egress:type_name -> catalog.service.v1.DefaultVPCEgress
@@ -7078,7 +7125,7 @@ func file_catalog_service_v1_platform_network_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_service_v1_platform_network_proto_rawDesc), len(file_catalog_service_v1_platform_network_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   102,
+			NumMessages:   103,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -7,6 +7,7 @@ BEGIN
   FOR r IN SELECT * FROM (VALUES
     ('POST','/api/v1/admin/networks/default-vpc-egresses','network:platform:default-egress:create'),
     ('GET','/api/v1/admin/networks/default-vpc-egresses/{egress_id}','network:platform:default-egress:get'),
+    ('GET','/api/v1/admin/networks/default-vpc-egress','network:platform:default-egress:get'),
     ('DELETE','/api/v1/admin/networks/default-vpc-egresses/{egress_id}','network:platform:default-egress:delete')
   ) AS contracts(method,path,code) LOOP
     SELECT count(*),min(a.id) INTO route_count,selected_api_id FROM sys_apis a

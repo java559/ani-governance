@@ -52,11 +52,16 @@ type NetworkPlatformClient interface {
 }
 type PlatformNetworkService struct {
 	adminv1.UnimplementedPlatformNetworkServiceServer
-	client NetworkPlatformClient
+	client     NetworkPlatformClient
+	eipTenants PlatformEIPTenantResolver
 }
 
-func NewPlatformNetworkService(client NetworkPlatformClient) *PlatformNetworkService {
-	return &PlatformNetworkService{client: client}
+func NewPlatformNetworkService(client NetworkPlatformClient, tenants ...PlatformEIPTenantResolver) *PlatformNetworkService {
+	s := &PlatformNetworkService{client: client}
+	if len(tenants) == 1 {
+		s.eipTenants = tenants[0]
+	}
+	return s
 }
 
 func (s *PlatformNetworkService) actor(ctx context.Context, operation string) (string, error) {

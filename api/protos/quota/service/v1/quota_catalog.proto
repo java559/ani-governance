@@ -35,9 +35,20 @@ message QuotaDefinition {
 message QuotaAccountView {
   string quota_code = 1;      // 配额编码
   string unit = 2;            // 单位（来自目录）
-  string limit = 3;           // 当前套餐上限（十进制字符串，uint64）；未配置=0
+  string limit = 3;           // 当前套餐上限（十进制字符串）；未配置回退0，须结合configured
   string occupied = 4;        // 当前占用（十进制字符串，uint64）
   string available = 5;       // max(limit-occupied,0)（十进制字符串）
   bool over_limit = 6;        // occupied>limit（降额后允许出现）
   Enforcement enforcement = 7; // 执行能力
+  bool configured = 8;       // 当前套餐存在此配额政策；false不表示无限额度
+}
+
+// 平台管理读取的当前租户与套餐投影；不表示历史配额。
+message TenantQuotaAccountSummary {
+  uint32 tenant_id = 1 [json_name = "tenantId"];
+  string tenant_name = 2 [json_name = "tenantName"];
+  string tenant_code = 3 [json_name = "tenantCode"];
+  optional uint32 plan_id = 4 [json_name = "planId"];
+  string plan_name = 5 [json_name = "planName"];
+  repeated QuotaAccountView accounts = 6;
 }
