@@ -199,6 +199,7 @@ func NewRestServer(
 	modelService *service.ModelService,
 	computeService *service.ComputePresetService,
 	overviewService *service.OverviewService,
+	platformComponentService *service.PlatformComponentService,
 	instanceServices ...*service.InstanceService,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
@@ -308,6 +309,7 @@ func NewRestServer(
 	if overviewService != nil {
 		RegisterOverviewHTTP(srv, overviewService)
 	}
+	RegisterPlatformComponentHTTP(srv, platformComponentService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {
 		swaggerUI.RegisterSwaggerUIServerWithOption(

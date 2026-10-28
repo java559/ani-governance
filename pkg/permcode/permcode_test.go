@@ -203,10 +203,15 @@ func TestCountsAndKeys(t *testing.T) {
 		"GET /api/v1/observability/resource-trend": {Code: "observability:resource-trend:read", Source: homepageSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 		"GET /api/v1/overview":                     {Code: "overview:resource-count:read", Source: homepageSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 	}
+	// 平台组件健康快照（BOSS 组件状态页）：平台级只读，挂 SYSTEM 模块。
+	const platformComponentSource = "scripts/ops/sql/register-platform-component-permissions.sql"
+	platformComponentReads := map[string]expectation{
+		"GET /api/v1/platform/components": {Code: "component:status:read", Source: platformComponentSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
+	}
 	if want := 199 + len(gpuReads) + 5 + 3; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
-	if want := 176 + len(platformEIPReadsAndRelease) + len(homepageReads) + 5; CapabilityCount() != want {
+	if want := 176 + len(platformEIPReadsAndRelease) + len(homepageReads) + len(platformComponentReads) + 5; CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
@@ -245,6 +250,15 @@ func TestCountsAndKeys(t *testing.T) {
 		got, ok := capabilityOperations[key]
 		if !ok || got.Code != want.Code || got.BusinessModule != want.BusinessModule || got.ScopeKind != want.ScopeKind {
 			t.Errorf("homepage capability %q = %+v (ok=%v), want %+v", key, got, ok, want)
+		}
+		if !keySet[key] {
+			t.Errorf("AllKeys() missing %q", key)
+		}
+	}
+	for key, want := range platformComponentReads {
+		got, ok := capabilityOperations[key]
+		if !ok || got.Code != want.Code || got.BusinessModule != want.BusinessModule || got.ScopeKind != want.ScopeKind {
+			t.Errorf("platform component capability %q = %+v (ok=%v), want %+v", key, got, ok, want)
 		}
 		if !keySet[key] {
 			t.Errorf("AllKeys() missing %q", key)

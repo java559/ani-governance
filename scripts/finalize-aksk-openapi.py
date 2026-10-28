@@ -161,10 +161,12 @@ def add_instance_log_stream(text):
                 "503":
                     description: Diagnostic target or upstream unavailable before READY
 """
-    marker = "components:\n"
+    # 行首锚定匹配顶层 components:（不能用裸子串：路由 /api/v1/platform/components
+    # 的路径行同样以 "components:\n" 结尾，会被误计入）。
+    marker = "\ncomponents:\n"
     if text.count(marker) != 1:
         raise SystemExit("expected one OpenAPI components section")
-    return text.replace(marker, operation + marker, 1)
+    return text.replace(marker, "\n" + operation + "components:\n", 1)
 
 
 def add_execution_log_stream(text):
@@ -231,10 +233,10 @@ def add_execution_log_stream(text):
                 "503":
                     description: Upstream frame stream unavailable before READY
 """
-    marker = "components:\n"
+    marker = "\ncomponents:\n"
     if text.count(marker) != 1:
         raise SystemExit("expected one OpenAPI components section")
-    return text.replace(marker, operation + marker, 1)
+    return text.replace(marker, "\n" + operation + "components:\n", 1)
 
 
 def add_artifact_download(text):
@@ -282,10 +284,10 @@ def add_artifact_download(text):
                 "504":
                     description: Object store timed out
 """
-    marker = "components:\n"
+    marker = "\ncomponents:\n"
     if text.count(marker) != 1:
         raise SystemExit("expected one OpenAPI components section")
-    return text.replace(marker, operation + marker, 1)
+    return text.replace(marker, "\n" + operation + "components:\n", 1)
 
 
 def require_compute_usage(text, proto_source=None):

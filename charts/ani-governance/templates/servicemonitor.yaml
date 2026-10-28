@@ -1,0 +1,34 @@
+{{- if .Values.platformComponents.serviceMonitor.enabled }}
+# 平台组件 metrics 抓取（service 组 scrape_status 的数据源）。
+# 目标 Service 自身 labels 为空（无法 matchLabels），因此 selector 留空、
+# 用 endpoint relabeling 按 Service 名白名单收窄；label release=ani-metrics
+# 必须保留，否则 Prometheus CR 的 serviceMonitorSelector 发现不了本对象。
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ani-platform-components
+  namespace: {{ .Release.Namespace }}
+  labels:
+    release: ani-metrics
+spec:
+  namespaceSelector:
+    matchNames: ["ani-system"]
+  selector: {}
+  endpoints:
+    # 5 个 admin 端口的 metrics Service（observability 的 admin:19091 已补齐）
+    - port: admin
+      path: /metrics
+      interval: 30s
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_service_name]
+          regex: "ani-accelerator-service|ani-inference-admin|ani-model-admin|ani-modeldev|ani-observability-service"
+          action: keep
+    # ani-session-gateway 的端口名是 websocket:8080，需单独 endpoint
+    - port: websocket
+      path: /metrics
+      interval: 30s
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_service_name]
+          regex: "ani-session-gateway-websocket"
+          action: keep
+{{- end }}

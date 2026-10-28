@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package admin.service.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// 平台组件健康快照服务（BOSS「组件状态」页表格数据源，只读）
+service PlatformComponentService {
+  // 获取平台全部组件（service / dependency / platform 三组）的实时状态快照。
+  // 单个工作负载读取失败降级为 unknown，不返回 5xx；仅 Kubernetes 客户端
+  // 未配置时返回 500 COMPONENT_STATUS_FAILED。
+  rpc ListPlatformComponents (google.protobuf.Empty) returns (PlatformComponentStatusResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/platform/components"
+    };
+  }
+}
+
+// 组件状态快照 - 回应
+message PlatformComponentStatusResponse {
+  string observed_at = 1;                        // 观测时间（UTC RFC3339，秒级）
+  repeated PlatformComponentGroup groups = 2;     // 固定三组、固定顺序：service / dependency / platform
+  PlatformComponentDevProfile dev_profile = 3;    // 数据来源画像（前端仅调试用）
+}
+
+// 组件分组
+message PlatformComponentGroup {
+  string name = 1;                        // service / dependency / platform
+  repeated PlatformComponent components = 2;
+}
+
+// 单个组件状态。desired_replicas / ready_replicas / version / scrape_status /
+// reason 在快照中允许为 null，HTTP 层按契约输出 null 而不是 0 或空串。
+message PlatformComponent {
+  string name = 1;                 // 工作负载名
+  string kind = 2;                 // Deployment / StatefulSet / DaemonSet
+  string namespace = 3;
+  string group = 4;                // service / dependency / platform
+  string status = 5;               // running / degraded / stopped / unknown
+  int32 desired_replicas = 6;      // unknown 时 HTTP 层输出 null
+  int32 ready_replicas = 7;        // unknown 时 HTTP 层输出 null
+  string version = 8;              // 镜像 tag；无 tag 时 HTTP 层输出 null
+  string scrape_status = 9;        // 仅 service 组：reachable / unreachable / unknown
+  string reason = 10;              // 降级原因；正常时 HTTP 层输出 null
+}
+
+// 数据来源画像
+message PlatformComponentDevProfile {
+  string mode = 1;           // real
+  string provider = 2;       // kubernetes-component-status
+  bool real_provider = 3;    // 存在 unknown 组件时为 false
+  string reason = 4;         // 正常为空串
+}

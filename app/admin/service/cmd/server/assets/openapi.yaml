@@ -11182,6 +11182,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ConsoleOverviewResponse'
+    /api/v1/platform/components:
+        get:
+            tags:
+                - PlatformComponentService
+            description: |-
+                获取平台全部组件（service / dependency / platform 三组）的实时状态快照。
+                 单个工作负载读取失败降级为 unknown，不返回 5xx；仅 Kubernetes 客户端
+                 未配置时返回 500 COMPONENT_STATUS_FAILED。
+            operationId: PlatformComponentService_ListPlatformComponents
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PlatformComponentStatusResponse'
     /api/v1/storage/buckets:
         get:
             tags:
@@ -20645,6 +20661,68 @@ components:
                     description: 删除时间
                     format: date-time
             description: 套餐配额
+        PlatformComponent:
+            type: object
+            properties:
+                name:
+                    type: string
+                kind:
+                    type: string
+                namespace:
+                    type: string
+                group:
+                    type: string
+                status:
+                    type: string
+                desiredReplicas:
+                    type: integer
+                    format: int32
+                readyReplicas:
+                    type: integer
+                    format: int32
+                version:
+                    type: string
+                scrapeStatus:
+                    type: string
+                reason:
+                    type: string
+            description: |-
+                单个组件状态。desired_replicas / ready_replicas / version / scrape_status /
+                 reason 在快照中允许为 null，HTTP 层按契约输出 null 而不是 0 或空串。
+        PlatformComponentDevProfile:
+            type: object
+            properties:
+                mode:
+                    type: string
+                provider:
+                    type: string
+                realProvider:
+                    type: boolean
+                reason:
+                    type: string
+            description: 数据来源画像
+        PlatformComponentGroup:
+            type: object
+            properties:
+                name:
+                    type: string
+                components:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PlatformComponent'
+            description: 组件分组
+        PlatformComponentStatusResponse:
+            type: object
+            properties:
+                observedAt:
+                    type: string
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/PlatformComponentGroup'
+                devProfile:
+                    $ref: '#/components/schemas/PlatformComponentDevProfile'
+            description: 组件状态快照 - 回应
         PlatformEIP:
             type: object
             properties:
@@ -24343,6 +24421,8 @@ tags:
       description: 套餐配额管理服务
     - name: PlanService
       description: 套餐管理服务
+    - name: PlatformComponentService
+      description: 平台组件健康快照服务（BOSS「组件状态」页表格数据源，只读）
     - name: PlatformNetworkService
       description: Platform user JWT, current action permission and Casbin authorization required.
     - name: PolicyEvaluationLogService

@@ -239,6 +239,24 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		rollback()
 		return nil, nil, err
 	}
+	// 平台组件状态：只读集群客户端 + 可选的 Prometheus 抓取可达性读取。
+	// 未配置 kubeconfig 时 cluster 内部 client 为 nil（接口返回 500）；
+	// 未配置 Prometheus URL 时 scrape reader 为 nil（service 组恒 unknown）。
+	platformComponentCluster, err := data.NewPlatformComponentClusterFromEnv()
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	platformComponentScrapeConfig, err := data.PlatformComponentScrapeConfigFromEnv()
+	if err != nil {
+		rollback()
+		return nil, nil, err
+	}
+	platformComponentService := service.NewPlatformComponentService(
+		ctx.NewLoggerHelper("platform-component/service/admin-service"),
+		platformComponentCluster,
+		data.NewPlatformComponentScrapeReader(platformComponentScrapeConfig),
+	)
 	instanceScheduling := service.NewInstanceSchedulingPolicy(configRepo, tenantRepo, instanceCluster, os.Getenv("ANI_INSTANCE_CLUSTER_ID"))
 	instanceBinding := service.NewInstanceGpuBinding(instanceClient, data.NewInstanceAuthorizationRepo(entClient), os.Getenv("ANI_INSTANCE_CLUSTER_ID"), instanceScheduling)
 	var vmClient service.VMOwnerClient
@@ -528,6 +546,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		modelService,
 		computeService,
 		overviewService,
+		platformComponentService,
 		instanceService,
 	)
 	if err != nil {

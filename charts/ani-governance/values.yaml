@@ -28,6 +28,15 @@ rbac:
   # The server reads the registered Volcano scheduling configuration and
   # validates scheduling options through the Kubernetes API.
   create: true
+
+# 平台组件健康快照（BOSS 组件状态页，GET /api/v1/platform/components）。
+# prometheusURL 留空 = 不查询抓取可达性，service 组 scrape_status 恒 unknown。
+platformComponents:
+  prometheusURL: ""
+  serviceMonitor:
+    # 由 Prometheus Operator（serviceMonitorSelector release=ani-metrics）发现；
+    # 目标集群未装 Operator 时保持 false。
+    enabled: false
 podAnnotations: {}
 podLabels: {}
 podSecurityContext:

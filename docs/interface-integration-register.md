@@ -27,6 +27,7 @@
 | 通用配额、GPU 实例与 Inference 接入 | QUOTA-01～03；INF-01/02；QUOTA-LAB-01～04；复用 PLAN-11～14、TENANT-04/08 | 保留 ACC 目录与 Resource 实例执行/释放合同；Inference 管理由 Governance BFF 接入并通过受信 mTLS 客户端投递；旧模拟 owner 入口退役 | 当前合同见 [GPU owner 指南](contracts/gpu-owner-integration-guide.md)；源码、部署与真实 GPU 验收分别记录 |
 | ModelDev 训练、微调及原登记恢复 | MODELDEV-01～MODELDEV-08、MODELDEV-12；服务间调用登记 S2S-MODELDEV-CPUP01-01 | 单一 typed 受理/查询及当前授权恢复已实现；原登记 Resume 的 HTTP/JWT/PG/mTLS 边界 GREEN，真实 provider Resume 与完整微调/GPU分别验收；历史 CPU-P01 结果保留原范围 | v2.1，进行中 |
 | 存储接入（独立盘与对象只读） | STORAGE-01～STORAGE-10 | 已实现并在 kcn 新环境完成正/负向验证；对象列表是本登记中唯一分页合同例外 | 待指定；前端合同与交付文档另行提供 |
+| 平台组件健康快照（BOSS 组件状态页） | PLAT-COMP-01 | 已实现并在 kcn 新环境实测（快照、鉴权、降级、缓存）；前端对接文档见 `local-remote/平台健康/` | 待指定 |
 
 ## 风格改动批次
 
@@ -1956,3 +1957,21 @@ Obs先计算全租户时间对齐统计，Gov再排序/搜索/分页，全平台
 范围以Gov仍持久的租户目录为准（含停用、过期、冻结及保留的软删标记行）；完全物理删除且无目录映射的历史不作完整覆盖承诺。
 客户端scope/观测快照按用户、窗口和租户范围短时复用15秒，不复用用户授权结果。
 本条为新增实现合同；部署、权限登记和真实跨仓验收由本任务发布步骤分别确认。
+## PLAT-COMP-20261028：平台组件健康快照（PLAT-COMP-01）
+
+BOSS「组件状态」页数据源：`GET /api/v1/platform/components`。Proto 合同
+`api/protos/admin/service/v1/i_platform_component.proto`；HTTP 由 server 层手写
+snake_case JSON（`platform_component_http.go`），不是 protojson。
+响应顶层 `observed_at`（UTC RFC3339 秒级）+ 固定三组 `groups`（service/dependency/platform，
+顺序固定、空组也输出）+ `dev_profile`。行字段十个，`required` 仅五个；
+`desired_replicas/ready_replicas/version/scrape_status/reason` 不可得时输出 JSON `null`（不是 0/空串）。
+`kind` 三值含 DaemonSet（取 desiredNumberScheduled/numberReady）；`status` 四值
+running/degraded/stopped/unknown（无 pending、无 missing）；`scrape_status` 三值
+reachable/unreachable/unknown，仅 service 组非 null，由 Prometheus `up` 判定（Prometheus 未配置时恒 unknown，不翻转 real_provider）。
+静态清单 26 条（2026-10-28 kcn 快照）硬编码于 `platform_component_catalog.go`；K8s 侧
+3 namespace × 3 资源并行 List + 15s 进程内 TTL 缓存；单个对象缺失/读取失败降级该行
+unknown+reason，仅 K8s client 未配置时 500 `COMPONENT_STATUS_FAILED`。
+鉴权：平台身份闸门（用户主体、tenant_id=0、platform 角色前缀）+ 权限码
+`component:status:read`（SYSTEM 模块，仅授予 `platform:admin`，租户闸门 fail-closed）。
+部署侧：ClusterRole 增 apps 三资源 list；ServiceMonitor 白名单抓 6 个 metrics Service
+（ani-resource-service 未暴露 19091，该行恒 unknown，属已知决策）。

@@ -79,4 +79,7 @@ var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	//（§10.1/§10.2；实验路由仅 quota_lab 构建的 OpenAPI 之外手动登记）。
 	"QuotaAdminService": identityV1.Module_TENANT,
 	"QuotaLabService":   identityV1.Module_TENANT,
+
+	// 平台组件健康快照（BOSS 组件状态页）：平台级只读接口，仅 platform:admin 可达。
+	"PlatformComponentService": identityV1.Module_SYSTEM,
 }

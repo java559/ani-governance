@@ -103,6 +103,10 @@ spec:
             - name: ANI_ACCELERATOR_KEY
               value: /service-identity/accelerator/tls.key
             {{- end }}
+            {{- if .Values.platformComponents.prometheusURL }}
+            - name: ANI_PLATFORM_COMPONENTS_PROMETHEUS_URL
+              value: {{ .Values.platformComponents.prometheusURL | quote }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.httpPort }}

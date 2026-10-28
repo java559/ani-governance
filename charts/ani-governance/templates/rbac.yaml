@@ -44,6 +44,11 @@ rules:
   - apiGroups: ["scheduling.volcano.sh"]
     resources: ["podgroups"]
     verbs: ["get"]
+  # 平台组件健康快照：只读 List 三种工作负载（跨 3 个 namespace，Role 不适用）。
+  # 不给 pods/pods/log——组件日志流（SSE）属另一批次。
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
