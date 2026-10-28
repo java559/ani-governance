@@ -1886,7 +1886,7 @@ Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_
 
 请求仅接受查询参数 `metric`（`cpu|memory|gpu`，省略时一次返回三条，顺序固定）、`range`（`1d|7d|30d`，必填）；可选 `start/end`（RFC3339 整秒，成对出现且跨度不超过所选档位）、`step`（Go duration 字符串，落在档位 `[min,max]` 内且为 30s 整数倍）。档位约束：1d 档 step 30s–1h（默认 5m）、7d 档 5m–1h（默认 30m）、30d 档 15m–4h（默认 2h）；未声明参数、重复参数、`tenant_id` 等一律 400 `MONITORING_INVALID_QUERY`。租户身份只取自 JWT，前端传 `tenant_id` 不生效。
 
-响应为 `data` 包装（`protojson.EmitUnpopulated`），`series[]` 携带 `metric/metric_code/unit/status/points[]`，缺数点 `value=null` 且 `gap_reason="NO_DATA"`，与实例指标接口同构。obs 侧新增租户级 target（TENANT=3，方案 A 不改 api 子模块 proto）与三个租户级编码（`tenant.cpu.usage_cores` / `tenant.memory.working_set_bytes` / `tenant.gpu.allocated_cores`，GPU 为 volcano vGPU 份额 join 租户标签 /100 的等效卡数），obs 与 gov 必须同批部署；30d 档依赖 Prometheus 保留期 ≥30d，历史数据不回补。
+响应为 `data` 包装（`protojson.EmitUnpopulated`），`series[]` 携带 `metric/metric_code/unit/status/points[]`，缺数点 `value=null` 且 `gap_reason="NO_DATA"`，与实例指标接口同构。obs 侧新增租户级 target（TENANT=3，方案 A 不改 api 子模块 proto）与三个租户级编码（`tenant.cpu.usage_cores` / `tenant.memory.working_set_bytes` / `tenant.gpu.memory_usage_bytes`），三条曲线统一为「租户全部工作负载的实际用量」：CPU/内存直查 cAdvisor（不再走 `container="workspace"` 的实例预聚合），GPU 为 HAMi 显存实际用量（bytes），租户归属由 pod/ns 三路 label 收敛的 pod 视图 join 得出；obs 与 gov 必须同批部署，GPU 编码与单位必须成对变更（否则 gov 侧 502）；30d 档依赖 Prometheus 保留期 ≥30d，历史数据不回补。
 
 ## OVERVIEW-20261027：首页资源统计卡片
 
