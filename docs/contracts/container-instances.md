@@ -33,7 +33,7 @@ JSON 字段名逐字段遵守 Proto 的 `json_name`，不能对整个对象统�
 
 ## 工作目录、已有卷与业务配置
 
-创建的 `data` 支持 `workspace_mount_path`、`volume_mounts`、`network`、`labels`、`annotations` 和 `env`。服务器始终解析并保存当前配置合同 2；未提供可选配置时正常解析默认值，工作目录默认为 `/workspace`。公网不能提交 `instance_contract_version`。Gov `ANI_INSTANCE_CONFIG_V2_WRITES` 未设或不为 `true` 时只关闭新的 CREATE，返回 `503 INSTANCE_CREATE_DISABLED`，不会生成旧合同；当前合同的查询、同键重放、启停和删除不受此维护闸门影响。升级须先通过产品 API 清理旧实例及原账，再保持新建关闭、升级所有 Gov/Res reader 与 worker，验证正式模块和必需门禁后开放新建。
+创建的 `data` 支持 `workspace_mount_path`、`volume_mounts`、`network`、`labels`、`annotations` 和 `env`。服务器始终解析并保存当前配置合同 2；未提供可选配置时正常解析默认值，工作目录默认为 `/workspace`。公网不能提交 `instance_contract_version`。Gov `ANI_INSTANCE_CONFIG_V2_WRITES` 未设或不为 `true` 时只关闭新的 CREATE，返回 `503 INSTANCE_CREATE_DISABLED`，不会生成旧合同；当前合同的查询、同键重放、启停和删除不受此维护闸门影响。本批按 Resource 的显式迁移与旧执行者退出流程升级，保留现有实例、原 CREATE 和原账；保持新意图关闭，验证正式模块、当前配置初始化证明及恢复门禁后开放对应能力。
 
 ```json
 {"data":{"idempotencyKey":"10000000-0000-4000-8000-000000000001","name":"工作区","imageId":"实际镜像ID","imageScope":"platform","presetId":"实际规格ID","workspace_mount_path":"/work","volume_mounts":[{"pvc_name":"research-data","mount_path":"/datasets","read_only":false},{"pvc_name":"reference-data","mount_path":"/reference","read_only":true}],"labels":{"business.example.com/team":"research"},"annotations":{"business.example.com/purpose":"experiment"},"env":[{"name":"RUN_MODE","value":"  literal value  "},{"name":"OUTPUT_DIR","value":"$(RUN_MODE)"}]}}
@@ -46,7 +46,7 @@ JSON 字段名逐字段遵守 Proto 的 `json_name`，不能对整个对象统�
 | 方法与路径 | 输入、结果与权限 |
 |---|---|
 | GET `/api/v1/instances/mountable-pvcs` | `page/pageSize/name`，`{items,total}`；当前 `instance:create` 与 INSTANCE 套餐权限 |
-| GET `/api/v1/instances/{instance_id}/configuration` | 已冻结生效配置；当前实例 `instance:read` 与 INSTANCE 套餐权限；响应 `Cache-Control: no-store` |
+| GET `/api/v1/instances/{instance_id}/configuration` | 当前权威配置及应用版本、待变更状态；当前实例 `instance:read` 与 INSTANCE 套餐权限；响应 `Cache-Control: no-store` |
 
 PVC 候选项含 `pvc_name/phase/requested_capacity/access_modes/volume_mode/selectable/unavailable_reason`，容量为 quantity 字符串，分页默认 page=1/pageSize=20、pageSize 最多 100。只接受 `page/pageSize/name`，不接受 `page_size`、cursor、排序或任意 label selector；未知、重复及非规范正整数查询参数返回 400。`name` 是区分大小写的名称子串，最长 253 字节；先过滤，再按 PVC 名升序计算 total 和分页。未选中的候选也可能以 `selectable=false` 返回，界面以该值控制可选性并展示安全的 `unavailable_reason`。合法 Pending/WaitForFirstConsumer 不等于不可选择。完整快照最多扫描租户 Namespace 的 2000 个 PVC，超过上限返回 422；name 过滤不绕过该扫描上限。目录不能替代创建时重查。
 
@@ -81,6 +81,35 @@ Gov 显式结构迁移 `20261019090000_instance_contract_version.sql` 为操作�
 这些是源码接口合同；正式依赖、Fedora 验证及 CSI/终端/网络/GPU 实测结论见 Resource 本任务唯一执行状态，不能据字段或路由存在认定业务验收通过。
 
 引用、保留键、当前合同 2 摘要及网络生命周期的完整规则以 [Resource 权威设计](https://github.com/zhangzhe-ctrl/ani-resource-service/blob/3cd79a303d710617e513937ce5fc6f93ace8ccd5/docs/specs/instance-configuration-network.md) 为准；本页只维护前端 HTTP 边界，不另建实施状态台账。
+
+## 重启与已有 PVC 挂卸
+
+| 方法与路径 | 权限与输入 |
+|---|---|
+| POST `/api/v1/instances/{instance_id}:restart` | `instance:restart`；`{data:{idempotencyKey,expectedVersion}}` |
+| POST `/api/v1/instances/{instance_id}:attach-pvc` | `instance:pvc:attach`；另有 `pvc_name/mount_path/read_only/restart_if_running` |
+| POST `/api/v1/instances/{instance_id}:detach-pvc` | `instance:pvc:detach`；另有 `mount_path/restart_if_running` |
+| GET `/api/v1/instances/{instance_id}/mountable-pvcs` | `instance:pvc:attach`；只接受 `page/pageSize/name`，按实例持久 placement 查询 |
+
+三个新动作的基础 JSON 名固定为 `instanceId/idempotencyKey/expectedVersion`，版本必须是正整数十进制字符串；路径 ID 可省略，提供时必须与 URL 一致。卷字段与 `restart_if_running` 只接受表列 snake_case，bool 缺省 false。拒绝 null、别名、重复/未知键、额外 query、数值或科学计数版本及客户端内部身份字段。旧 Start/Stop 保留原兼容解码。运行态挂卸只有显式 `restart_if_running:true` 才授权同一操作内的停止与恢复，无需额外 Start/Stop 权限；false 返回 `INSTANCE_REQUIRES_STOP`。独立 Restart 只接受稳定 running。
+
+新动作只有 Resource durable ACK 后才返回 202；响应直接为 `{operationId,resourceId,replayed,result:"ACCEPTED"}`。调用顺序固定为当前身份/动作/INSTANCE 套餐授权、公共 Resource API helper 规范意图、只读 `LookupCommandReplay`，未命中才检查 DELETE 和能力门禁。原键重放保留原版本和正文，不因当前版本变化、PVC 消失或门禁关闭而失效；同键异意图返回 409 `INSTANCE_IDEMPOTENCY_CONFLICT`。Start/Stop 同样采用 Lookup 先行。
+
+Gov 与 Resource 的 `ANI_INSTANCE_NEW_INTENTS_ENABLED` 为维护受理门禁；`ANI_INSTANCE_RESTART_ENABLED` 和 `ANI_INSTANCE_PVC_MUTATIONS_ENABLED` 分别控制新能力，均缺省关闭。CREATE 还要求既有 `ANI_INSTANCE_CONFIG_V2_WRITES=true`。开关不阻止授权的 Lookup/查询/候选、已受理恢复及最终 DELETE。挂卸开放须先完成引用 guard、迁移和初始化证明。
+
+本批权限登记使用[窄增量脚本](../../scripts/ops/sql/register-instance-restart-pvc-permissions.sql)。先用确切合入 dev 版本的 `admin sync-apis --dry-run` 核对目录并备份，再显式给出脚本要求的已审核租户、套餐和角色身份；脚本缺省只预览，`apply=true` 才补本批缺失关联。既有 ID、启停状态及其他权限关联保留，身份或目录漂移会中止。它不修改套餐额度，也不运行 `SyncPermissions`；应用后刷新全部 Gov 实例的策略再验权。
+
+实例新增 `activeOperationId/executionRunState/appliedMountVersion`。configuration 的 `version/applied_mount_version/pending_change` 展示当前权威挂载，原 CREATE 不变。`pending_change` 内固定 `operation_id/intent_version/phase/target_configuration`；operation 新增 `phase/target_configuration/final_run_state/applied_mount_version/completion_scope/failure_reason`。所有 int64 为十进制字符串。无目标变更时 `target_configuration:null`；卸空时为 `{"volume_mounts":[]}`，CurrentMounts 空集合不会回退 CREATE。配置应用和运行完成分别由 `template_applied/runtime_verified` 表示。
+
+只读候选沿用 `{items,total}`，分页缺省 1/20、pageSize 上限 100，显式 0、重复或未知参数拒绝。实例范围候选使用 attach 权，不要求 create 权；创建范围候选仍使用 create 权。
+
+CPU/GPU DELETE 均持久关闭新意图闸门。只有当前 dispatcher lease、DISPATCHING、从未 ACK 且 owner 明确 FailedPrecondition/`INSTANCE_VERSION_CONFLICT` 时标 REJECTED 并解闸，不退额。超时/未知继续保闸。同键重放拒绝返回原 operation、`replayed:true/result:"REJECTED_VERSION_CONFLICT"`；该本地 operation 查询为 `action:"delete",intentVersion:"0",state:"failed",reason:"INSTANCE_VERSION_CONFLICT"`，避免查询不存在的 Resource 操作。已 ACK DELETE 仍查询 Resource。其他 owner/VM 语义保持原合同。
+
+错误沿用 code/reason/message/metadata 封装；新格式错误 400、缺对象 404、业务状态/版本/互斥/DELETE/PVC guard 冲突 409、依赖或能力未开放 503。已受理后通过 operation 查询执行失败，HTTP 200 只表示查询成功。
+
+本批正式 HTTP 验收入口为 [container-restart-pvc-acceptance.py](../../scripts/ops/container-restart-pvc-acceptance.py)，在授权驱动主机显式给出 `--base-url`、`--credentials-file`、`--evidence-dir`。凭据文件必须归调用者所有且权限为 `0600`，格式和正常租户/平台登录合同见脚本说明；没有默认账号或目标。证据目录为 `0700`，只保存原键、版本、请求正文摘要和白名单状态，不保存配置 env、密码、token 或 cookie；结束注销自己的会话。
+
+`restart-cpu --create-input <0600请求文件>` 或 `restart-cpu --instance-id <本批实例UUID> --expected-version <当前版本>` 执行 CP-01。`--observation-hook <绝对可执行文件>` 通过 stdin 接收合成标记、挂载路径及旧 Pod 身份，必须返回真实 exec 读写摘要、Notebook/PVC/新 Pod UID 和旧 Pod 的直接 GET 证明；钩子不接收登录凭据。没有该证明只记 `NOT_VERIFIED`（退出码 3），不能据 operation completed 记 LIVE PASS。单步 `command` 支持 Restart/Stop/Attach/Start/Detach；每个新意图用独立证据目录，同一目录重试必须保持原动作、版本、正文和键。超时或 ACK 丢失保留原意图，不自动换键重做。
 
 ## 规格与列表
 
@@ -124,7 +153,7 @@ DELETE 的 202 只表示持久受理，继续轮询原 operation 和详情，分
 | `volumeReferencesReleased` | 借用的用户卷引用已解除，用户 PVC/PV 和文件保留 |
 | `quotaReturned` | 原计算账本退额已处理；GPU 退额仍以原 CREATE 和物理释放事实为准 |
 
-这些标志可以分阶段完成：计算已释放时，网络或磁盘仍可能等待清理。不能因为网络失败而隐藏已完成的计算退额，也不能把退款完成或 404 当成全部清理完成。Stop/Start 保留工作盘、用户卷引用及冻结配置；删除用户卷夹具是验收后另行授权的资源清理，不是 DELETE 实例的副作用。
+这些标志可以分阶段完成：计算已释放时，网络或磁盘仍可能等待清理。只有计算、workspace、全部保护态借用引用、网络和未知写均已清理后，Resource 才按原 CREATE 账触发一次最终退额。Stop/Start/Restart 与挂卸及其失败不产生占额或退额；borrowed PVC/PV 和文件保留。退款完成或 404 不能代替全部清理证明。
 
 规格字段为 id/code/name/description/compute_type/cpu_millis/memory_mib/enabled/gpu/created_at/updated_at/selectable/unavailable_reason。CPU/内存为正整数，无浮点规格。code 创建后不可改。GPU 公开输入只有 profile_id/profile_version/devices_per_instance；服务器从 ACC 可信目录核对完整引用。整卡数量为正整数，并满足 `1 ≤ devices_per_instance ≤ Profile.max_devices_per_replica`，同一个 Profile 可选择其上限内的数量；不硬编码 2 卡或逐数量分流。共享保持单卡。修改不更新已有实例，不级联删除 Profile 或实例。`selectable/unavailable_reason` 是已授权候选的当前可选性提示，不能替代创建时的正式解析，也不能改变已受理请求的重放结果。
 

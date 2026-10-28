@@ -79,8 +79,8 @@ func (InferenceKeyErrorReason) EnumDescriptor() ([]byte, []int) {
 	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{0}
 }
 
-// Inference-owned data-plane metadata. Platform AK/SK and tenant identity are
-// deliberately absent. No read response can contain the secret or its hash.
+// Inference-owned data-plane credential. Authorized list/detail responses
+// include the full secret; hashes and encryption material are never exposed.
 type InferenceKey struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -97,8 +97,10 @@ type InferenceKey struct {
 	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,proto3" json:"created_at,omitempty"`
 	LastUsedAt        *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=last_used_at,proto3" json:"last_used_at,omitempty"`
 	Version           int64                  `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// Legacy hashes have no secret until successful use or explicit rotation.
+	Secret        *string `protobuf:"bytes,15,opt,name=secret,proto3,oneof" json:"secret,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *InferenceKey) Reset() {
@@ -227,6 +229,13 @@ func (x *InferenceKey) GetVersion() int64 {
 		return x.Version
 	}
 	return 0
+}
+
+func (x *InferenceKey) GetSecret() string {
+	if x != nil && x.Secret != nil {
+		return *x.Secret
+	}
+	return ""
 }
 
 type CreateInferenceKeyData struct {
@@ -727,7 +736,7 @@ var File_inference_service_v1_access_key_proto protoreflect.FileDescriptor
 
 const file_inference_service_v1_access_key_proto_rawDesc = "" +
 	"\n" +
-	"%inference/service/v1/access_key.proto\x12\x14inference.service.v1\x1a\x13errors/errors.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16redact/v1/redact.proto\"\xf6\x04\n" +
+	"%inference/service/v1/access_key.proto\x12\x14inference.service.v1\x1a\x13errors/errors.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16redact/v1/redact.proto\"\xa6\x05\n" +
 	"\fInferenceKey\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1e\n" +
@@ -753,7 +762,9 @@ const file_inference_service_v1_access_key_proto_rawDesc = "" +
 	"created_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"created_at\x12>\n" +
 	"\flast_used_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\flast_used_at\x12\x18\n" +
-	"\aversion\x18\x0e \x01(\x03R\aversion\"\x88\x03\n" +
+	"\aversion\x18\x0e \x01(\x03R\aversion\x12#\n" +
+	"\x06secret\x18\x0f \x01(\tB\x06ڶ\x1a\x02z\x00H\x00R\x06secret\x88\x01\x01B\t\n" +
+	"\a_secret\"\x88\x03\n" +
 	"\x16CreateInferenceKeyData\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x120\n" +
 	"\x13allowed_service_ids\x18\x02 \x03(\tR\x13allowed_service_ids\x120\n" +
@@ -766,9 +777,9 @@ const file_inference_service_v1_access_key_proto_rawDesc = "" +
 	"expires_at\x12(\n" +
 	"\x0fidempotency_key\x18\b \x01(\tR\x0fidempotency_key\"]\n" +
 	"\x19CreateInferenceKeyRequest\x12@\n" +
-	"\x04data\x18\x01 \x01(\v2,.inference.service.v1.CreateInferenceKeyDataR\x04data\"\x8b\x01\n" +
-	"\x17InferenceKeyCredentials\x124\n" +
-	"\x03key\x18\x01 \x01(\v2\".inference.service.v1.InferenceKeyR\x03key\x12\x1e\n" +
+	"\x04data\x18\x01 \x01(\v2,.inference.service.v1.CreateInferenceKeyDataR\x04data\"\x96\x01\n" +
+	"\x17InferenceKeyCredentials\x12?\n" +
+	"\x03key\x18\x01 \x01(\v2\".inference.service.v1.InferenceKeyB\tڶ\x1a\x05\x9a\x01\x02 \x01R\x03key\x12\x1e\n" +
 	"\x06secret\x18\x02 \x01(\tB\x06ڶ\x1a\x02z\x00R\x06secret\x12\x1a\n" +
 	"\breplayed\x18\x03 \x01(\bR\breplayed\"l\n" +
 	"\x18ListInferenceKeysRequest\x12\x17\n" +
@@ -776,9 +787,9 @@ const file_inference_service_v1_access_key_proto_rawDesc = "" +
 	"\tpage_size\x18\x02 \x01(\x05H\x01R\bpageSize\x88\x01\x01B\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
-	"_page_size\"k\n" +
-	"\x19ListInferenceKeysResponse\x128\n" +
-	"\x05items\x18\x01 \x03(\v2\".inference.service.v1.InferenceKeyR\x05items\x12\x14\n" +
+	"_page_size\"v\n" +
+	"\x19ListInferenceKeysResponse\x12C\n" +
+	"\x05items\x18\x01 \x03(\v2\".inference.service.v1.InferenceKeyB\tڶ\x1a\x05\xa2\x01\x02\x10\x01R\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"0\n" +
 	"\x16GetInferenceKeyRequest\x12\x16\n" +
 	"\x06key_id\x18\x01 \x01(\tR\x06key_id\"3\n" +
@@ -847,6 +858,7 @@ func file_inference_service_v1_access_key_proto_init() {
 	if File_inference_service_v1_access_key_proto != nil {
 		return
 	}
+	file_inference_service_v1_access_key_proto_msgTypes[0].OneofWrappers = []any{}
 	file_inference_service_v1_access_key_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

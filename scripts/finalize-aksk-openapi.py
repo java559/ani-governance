@@ -108,6 +108,66 @@ def repair_network_operation(text, proto_source=None):
     return text.replace(marker, marker + network_operation_schema(proto_source), 1)
 
 
+def instance_operation_schema(proto_source):
+    """Derive the Instance query DTO alias despite the gnostic name collision."""
+    source = re.sub(r"(?m)//[^\n]*", "", proto_source)
+    messages = re.findall(r"(?m)^message Operation\s*\{([^{}]*)\}", source)
+    if len(messages) != 1:
+        raise SystemExit("expected one public Instance Operation DTO")
+    result = "        InstanceOperation:\n            type: object\n            properties:\n"
+    names, numbers = set(), set()
+    for statement in messages[0].split(";"):
+        if not statement.strip():
+            continue
+        field = re.fullmatch(r'\s*(string|int64|MountConfiguration)\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*([1-9][0-9]*)(?:\s*\[\s*json_name\s*=\s*"([A-Za-z_][A-Za-z0-9_]*)"\s*\])?\s*', statement)
+        if field is None:
+            raise SystemExit("unsupported public Instance Operation schema field")
+        kind, proto_name, number, explicit_name = field.groups()
+        name = explicit_name or re.sub(r"_([a-z])", lambda m: m.group(1).upper(), proto_name)
+        if name in names or number in numbers:
+            raise SystemExit("duplicate public Instance Operation field")
+        names.add(name)
+        numbers.add(number)
+        result += "                " + name + ":\n"
+        if kind == "MountConfiguration":
+            result += "                    allOf:\n                        - $ref: '#/components/schemas/MountConfiguration'\n                    nullable: true\n"
+        else:
+            # ProtoJSON represents every int64 as a decimal string.
+            result += "                    type: string\n"
+    if not names:
+        raise SystemExit("public Instance Operation schema is empty")
+    return result
+
+
+def repair_instance_operation(text, proto_source=None):
+    operation = "            operationId: InstanceService_GetInstanceOperation\n"
+    if operation not in text:
+        return text
+    if re.search(r"(?m)^        InstanceOperation:\n", text):
+        raise SystemExit("InstanceOperation schema must be derived once during generation")
+    marker = "    /api/v1/instance-operations/{operation_id}:\n"
+    if text.count(marker) != 1:
+        raise SystemExit("expected one Instance operation query route")
+    start = text.index(marker)
+    end = text.find("\n    /", start + len(marker))
+    if end < 0:
+        end = text.index("\ncomponents:", start)
+    section = text[start:end]
+    if section.count(operation) != 1:
+        raise SystemExit("Instance operation query route mismatch")
+    section, count = re.subn(r"(\$ref: ['\"]#/components/schemas/)Operation(['\"])", r"\g<1>InstanceOperation\2", section)
+    if count != 1:
+        raise SystemExit("expected one Instance operation response reference")
+    text = text[:start] + section + text[end:]
+    if proto_source is None:
+        source = pathlib.Path(__file__).resolve().parents[1] / "api/protos/instance/service/v1/instance.proto"
+        proto_source = source.read_text()
+    schemas = "components:\n    schemas:\n"
+    if text.count(schemas) != 1:
+        raise SystemExit("expected one OpenAPI schema component section")
+    return text.replace(schemas, schemas + instance_operation_schema(proto_source), 1)
+
+
 def add_instance_log_stream(text):
     # A protobuf server stream has a dedicated HTTP implementation. Describe
     # its actual SSE wire format instead of gnostic's inferred unary JSON.
@@ -454,6 +514,9 @@ def finalize(text):
         ("/api/v1/instances", "202", "post"),
         ("/api/v1/instances/{data.instance_id}:start", "202", "post"),
         ("/api/v1/instances/{data.instance_id}:stop", "202", "post"),
+        ("/api/v1/instances/{data.instance_id}:restart", "202", "post"),
+        ("/api/v1/instances/{data.instance_id}:attach-pvc", "202", "post"),
+        ("/api/v1/instances/{data.instance_id}:detach-pvc", "202", "post"),
         ("/api/v1/instances/{data.instance_id}", "202", "delete"),
         ("/api/v1/instances/{data.instance_id}/exec", "202", "post"),
     ):
@@ -461,7 +524,7 @@ def finalize(text):
             text = remove_synthetic_200(text, route, status, method)
     # response_body endpoints retain their explicit public-object schema,
     # including the Network/Image mutation responses and existing details.
-    return add_platform_component_log_error_schema(add_platform_component_log_stream(add_artifact_download(add_execution_log_stream(add_instance_log_stream(require_compute_usage(repair_network_operation(remove_shadowed_200(text))))))))
+    return add_platform_component_log_error_schema(add_platform_component_log_stream(add_artifact_download(add_execution_log_stream(add_instance_log_stream(require_compute_usage(repair_instance_operation(repair_network_operation(remove_shadowed_200(text)))))))))
 
 
 if __name__ == "__main__":

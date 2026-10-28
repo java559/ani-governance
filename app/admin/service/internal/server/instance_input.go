@@ -26,12 +26,28 @@ import (
 // This applies to creation only: PATCH gpu:null remains an explicit clear.
 func decodeInstanceHTTP(r *http.Request, message proto.Message) error {
 	invalid := errors.BadRequest("INVALID_INSTANCE_REQUEST", "invalid instance request")
-	if r == nil || r.Body == nil {
+	if r == nil || r.Body == nil || r.URL == nil {
 		return invalid
 	}
 	raw, err := io.ReadAll(io.LimitReader(r.Body, 65537))
 	if err != nil || len(raw) == 0 || len(raw) > 65536 {
 		return invalid
+	}
+	newAction := ""
+	switch message.(type) {
+	case *view.ChangeInstanceRequest:
+		if strings.HasSuffix(r.URL.Path, ":restart") {
+			newAction = "restart"
+		}
+	case *view.AttachInstancePVCRequest:
+		newAction = "attach-pvc"
+	case *view.DetachInstancePVCRequest:
+		newAction = "detach-pvc"
+	}
+	if newAction != "" {
+		if err := validateInstanceCommandJSON(raw, newAction); err != nil {
+			return err
+		}
 	}
 	switch message.(type) {
 	case *view.UpdateInstanceSchedulingSettingsRequest:
@@ -171,7 +187,7 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 	switch message.(type) {
 	case *vmview.ListVMsRequest:
 		allowed["page"], allowed["pageSize"] = true, true
-	case *view.ListMountablePVCsRequest:
+	case *view.ListMountablePVCsRequest, *view.ListInstanceMountablePVCsRequest:
 		for _, k := range []string{"page", "pageSize", "name"} {
 			allowed[k] = true
 		}
@@ -314,4 +330,103 @@ func validateInstanceConfigurationJSON(data map[string]json.RawMessage) error {
 		}
 	}
 	return nil
+}
+
+// New command inputs preserve exact public spelling, presence and int64 values.
+// The existing Start/Stop decoder deliberately retains its compatibility inputs.
+func validateInstanceCommandJSON(raw []byte, action string) error {
+	invalid := errors.BadRequest("INVALID_INSTANCE_REQUEST", "invalid instance command")
+	envelope, err := instanceJSONObject(raw)
+	if err != nil || len(envelope) != 1 {
+		return invalid
+	}
+	data, err := instanceJSONObject(envelope["data"])
+	if err != nil {
+		return invalid
+	}
+	allowed := map[string]string{"instanceId": "string", "idempotencyKey": "string", "expectedVersion": "version"}
+	if action == "attach-pvc" {
+		allowed["pvc_name"] = "string"
+		allowed["mount_path"] = "string"
+		allowed["read_only"] = "bool"
+		allowed["restart_if_running"] = "bool"
+	}
+	if action == "detach-pvc" {
+		allowed["mount_path"] = "string"
+		allowed["restart_if_running"] = "bool"
+	}
+	for key, value := range data {
+		kind, ok := allowed[key]
+		if !ok || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return invalid
+		}
+		switch kind {
+		case "bool":
+			var b bool
+			if json.Unmarshal(value, &b) != nil {
+				return invalid
+			}
+		default:
+			var str string
+			if json.Unmarshal(value, &str) != nil || str == "" {
+				return invalid
+			}
+			if kind == "version" {
+				n, e := strconv.ParseInt(str, 10, 64)
+				if e != nil || n < 1 || strconv.FormatInt(n, 10) != str {
+					return invalid
+				}
+			}
+		}
+	}
+	for _, key := range []string{"idempotencyKey", "expectedVersion"} {
+		if _, ok := data[key]; !ok {
+			return invalid
+		}
+	}
+	if action != "restart" {
+		if _, ok := data["mount_path"]; !ok {
+			return invalid
+		}
+	}
+	if action == "attach-pvc" {
+		if _, ok := data["pvc_name"]; !ok {
+			return invalid
+		}
+	}
+	return nil
+}
+
+func instanceJSONObject(raw []byte) (map[string]json.RawMessage, error) {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	token, err := dec.Token()
+	if err != nil || token != json.Delim('{') {
+		return nil, errInvalidJSONRequest
+	}
+	result := map[string]json.RawMessage{}
+	for dec.More() {
+		key, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		name, ok := key.(string)
+		if !ok {
+			return nil, errInvalidJSONRequest
+		}
+		if _, exists := result[name]; exists {
+			return nil, errInvalidJSONRequest
+		}
+		var value json.RawMessage
+		if err = dec.Decode(&value); err != nil {
+			return nil, err
+		}
+		result[name] = value
+	}
+	if token, err = dec.Token(); err != nil || token != json.Delim('}') {
+		return nil, errInvalidJSONRequest
+	}
+	if _, err = dec.Token(); err != io.EOF {
+		return nil, errInvalidJSONRequest
+	}
+	return result, nil
 }

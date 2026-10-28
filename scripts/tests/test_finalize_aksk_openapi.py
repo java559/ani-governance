@@ -129,6 +129,43 @@ components:
         with self.assertRaises(SystemExit):
             finalizer.repair_network_operation(text)
 
+    def test_instance_operation_schema_is_source_derived_and_scoped(self):
+        text = """paths:
+    /api/v1/instance-operations/{operation_id}:
+        get:
+            operationId: InstanceService_GetInstanceOperation
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Operation'
+components:
+    schemas:
+        Operation:
+            type: object
+            properties:
+                tags:
+                    type: array
+        Unrelated:
+            properties:
+                operation:
+                    $ref: '#/components/schemas/Operation'
+"""
+        source = (Path(__file__).resolve().parents[2] / 'api/protos/instance/service/v1/instance.proto').read_text()
+        result = finalizer.repair_instance_operation(text, source)
+        self.assertEqual(result.count("$ref: '#/components/schemas/InstanceOperation'"), 1)
+        self.assertIn("$ref: '#/components/schemas/Operation'", result)
+        schema = result.split('        InstanceOperation:\n', 1)[1].split('        Operation:\n', 1)[0]
+        fields = re.findall(r'^                ([A-Za-z_][A-Za-z0-9_]*):$', schema, re.MULTILINE)
+        self.assertEqual(fields, ['id', 'instanceId', 'action', 'intentVersion', 'state', 'reason', 'phase', 'target_configuration', 'final_run_state', 'applied_mount_version', 'completion_scope', 'failure_reason'])
+        self.assertIn('nullable: true', schema)
+        self.assertNotIn('tags:', schema)
+        with self.assertRaises(SystemExit):
+            finalizer.repair_instance_operation(result, source)
+        with self.assertRaises(SystemExit):
+            finalizer.instance_operation_schema(source.replace('int64 intent_version = 4', 'double intent_version = 4'))
+
     def test_compute_usage_is_required_and_enum_comes_from_proto(self):
         text = """    /api/v1/compute-presets:
         get:

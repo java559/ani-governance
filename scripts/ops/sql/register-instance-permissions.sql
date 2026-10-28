@@ -21,6 +21,10 @@ BEGIN
   ('PUT','/api/v1/admin/instance-scheduling-settings','instance:scheduling:defaults:update'),
   ('POST','/api/v1/instances/{data.instance_id}:start','instance:start'),
   ('POST','/api/v1/instances/{data.instance_id}:stop','instance:stop'),
+  ('POST','/api/v1/instances/{data.instance_id}:restart','instance:restart'),
+  ('POST','/api/v1/instances/{data.instance_id}:attach-pvc','instance:pvc:attach'),
+  ('POST','/api/v1/instances/{data.instance_id}:detach-pvc','instance:pvc:detach'),
+  ('GET','/api/v1/instances/{instance_id}/mountable-pvcs','instance:pvc:attach'),
   ('DELETE','/api/v1/instances/{data.instance_id}','instance:delete'),
   ('GET','/api/v1/instance-operations/{operation_id}','instance:operation:read'),
   ('POST','/api/v1/instances/{data.instance_id}/exec','instance:exec')

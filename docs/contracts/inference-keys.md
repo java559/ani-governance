@@ -9,15 +9,15 @@ Key 由 Inference 签发并保存在 `inference_access_keys`，Governance 不存
 | 方法和路径 | 权限 | 请求与结果 |
 |---|---|---|
 | `POST /api/v1/inference-keys` | `inference:key:create` | `{data:{...}}` → `{key,secret,replayed}` |
-| `GET /api/v1/inference-keys` | `inference:key:read` | `page/pageSize` → `{items,total}` |
-| `GET /api/v1/inference-keys/{key_id}` | `inference:key:read` | 直接返回 Key 元数据 |
+| `GET /api/v1/inference-keys` | `inference:key:read` | `page/pageSize` → `{items,total}`，各项含完整 `secret` |
+| `GET /api/v1/inference-keys/{key_id}` | `inference:key:read` | 直接返回 Key 信息和完整 `secret` |
 | `DELETE /api/v1/inference-keys/{key_id}` | `inference:key:revoke` | 不带请求体；撤销后直接返回元数据，保留历史 |
 | `POST /api/v1/inference-keys/{key_id}:rotate` | `inference:key:rotate` | `{data:{idempotency_key}}` → `{key,secret,replayed}` |
 
 成功状态均为 200。`key_id` 是规范的小写 UUID，不是平台 AK 的数字 ID。
 元数据包含 `id/name/key_prefix/allowed_service_ids/allowed_model_names`、
 `requests_per_second/requests_per_minute/requests_per_hour`、`expires_at/revoked_at`、
-`created_by/created_at/last_used_at/version`，不含 secret 或哈希。
+`created_by/created_at/last_used_at/version`；列表各项和详情另含 `secret`，不返回哈希或密文。
 `version`、列表 `total` 在 JSON 中为十进制字符串；时间为 RFC3339。
 
 创建请求示例：
@@ -44,7 +44,7 @@ Key 由 Inference 签发并保存在 `inference_access_keys`，Governance 不存
 轮换幂等键」。重放返回原元数据和 `replayed=true`，不再交付明文 secret。
 创建同键异意图返回 409 `INFERENCE_KEY_CONFLICT`，Gov 对 owner 返回的持久元数据
 比较名称、范围、额度与到期时间；不增加本地幂等账本。不要把一个幂等键复用于不同
-请求。首次响应丢失时通过新的轮换幂等键重新签发 secret。
+请求。首次响应丢失时，可从列表取得原 Key ID，再从详情读取当前 secret。
 
 同一租户的相同创建幂等键并发投递时，Inference 仅对该唯一键冲突执行
 `ON CONFLICT ... DO NOTHING`，再从同一 READ COMMITTED 事务读取已提交的原 Key；
@@ -62,10 +62,26 @@ REPEATABLE READ 事务。并发写入不会使一次响应中的 `items` 与 `to
 快照；Gov 直接保留 owner 的总数。独立 PostgreSQL 回归在读取列表后、计数前
 提交另一条 Key，验证本次列表与总数均维持原快照。不同分页请求仍各自取得快照。
 
-`iak_...` secret 仅在新创建或新轮换时返回一次，HTTP 响应带
-`Cache-Control: no-store`。列表和详情永不返回 secret，审计不保留请求体、query
-或 Referer。使用时将 secret 放入 Higress 请求头 `x-api-key`，调用
+按用户最终要求，列表各项和详情通过 `secret` 返回完整的当前 `iak_...`，继续使用
+租户用户 JWT、`inference:key:read`、INFERENCE 套餐和同租户隔离。创建/轮换的首次
+响应仍在顶层返回 `secret`，写操作重放仍只返回元数据，不重复交付；撤销响应只含
+元数据。所有这些 HTTP 响应带 `Cache-Control: no-store`，Proto 日志脱敏会清除
+secret，审计不保留响应、请求体、query 或 Referer。使用时将 secret 放入 Higress 请求头 `x-api-key`，调用
 `/v1/completions` 等推理接口；它不能用于 Governance 登录或平台 AK/SK 验签。
+
+Inference 显式迁移 `000025_inference_access_key_secrets.sql` 增加可空密文字段；
+创建和轮换在原事务内持久化 AES-256-GCM 密文，Argon2id 哈希继续用于鉴权。
+外部文件 `ANI_INFERENCE_ACCESS_KEY_ENCRYPTION_KEY_FILE` 必须包含恰好 32 字节的
+随机二进制主密钥；密钥不入库、不入镜像、不入 Git，部署时独立挂载并可靠保管。
+密文绑定租户、Key ID、前缀和鉴权哈希；无法解密时整次列表/详情返回不可用，
+不返回部分结果、不降级为空值。更换或丢失主密钥会使已有密文无法读取，不能在
+重启时重新生成主密钥；主密钥轮换不在本批范围。
+
+迁移前的 Key 仅有不可逆哈希，不会被自动轮换。旧记录尚未补存时不含 `secret`；
+该 Key 下一次成功鉴权、通过范围/服务策略/限流检查后，用本次已验证的原值补存
+密文，之后列表和详情即可读到完整原 AK。补存按租户、ID、版本和哈希条件更新，
+不覆盖并发轮换/撤销，也不改变版本或限流配置。无法再成功使用的历史凭证无法
+还原；可用的新凭证通过显式轮换产生。列表/详情均只读本次快照，不因查询签发新值。
 
 错误通过 HTTP 状态及 Proto reason 表达：400 `INVALID_INFERENCE_KEY_REQUEST`、
 403 `INFERENCE_KEY_USER_REQUIRED`、404 `INFERENCE_KEY_NOT_FOUND`、

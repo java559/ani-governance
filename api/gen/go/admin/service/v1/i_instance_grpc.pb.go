@@ -37,6 +37,10 @@ const (
 	InstanceService_GetInstance_FullMethodName                      = "/admin.service.v1.InstanceService/GetInstance"
 	InstanceService_StartInstance_FullMethodName                    = "/admin.service.v1.InstanceService/StartInstance"
 	InstanceService_StopInstance_FullMethodName                     = "/admin.service.v1.InstanceService/StopInstance"
+	InstanceService_RestartInstance_FullMethodName                  = "/admin.service.v1.InstanceService/RestartInstance"
+	InstanceService_AttachInstancePVC_FullMethodName                = "/admin.service.v1.InstanceService/AttachInstancePVC"
+	InstanceService_DetachInstancePVC_FullMethodName                = "/admin.service.v1.InstanceService/DetachInstancePVC"
+	InstanceService_ListInstanceMountablePVCs_FullMethodName        = "/admin.service.v1.InstanceService/ListInstanceMountablePVCs"
 	InstanceService_DeleteInstance_FullMethodName                   = "/admin.service.v1.InstanceService/DeleteInstance"
 	InstanceService_GetInstanceOperation_FullMethodName             = "/admin.service.v1.InstanceService/GetInstanceOperation"
 	InstanceService_ExecInstance_FullMethodName                     = "/admin.service.v1.InstanceService/ExecInstance"
@@ -68,6 +72,10 @@ type InstanceServiceClient interface {
 	GetInstance(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.Instance, error)
 	StartInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
 	StopInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
+	RestartInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
+	AttachInstancePVC(ctx context.Context, in *v1.AttachInstancePVCRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
+	DetachInstancePVC(ctx context.Context, in *v1.DetachInstancePVCRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
+	ListInstanceMountablePVCs(ctx context.Context, in *v1.ListInstanceMountablePVCsRequest, opts ...grpc.CallOption) (*v1.ListMountablePVCsResponse, error)
 	DeleteInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
 	GetInstanceOperation(ctx context.Context, in *v1.GetOperationRequest, opts ...grpc.CallOption) (*v1.Operation, error)
 	ExecInstance(ctx context.Context, in *v1.ExecInstanceRequest, opts ...grpc.CallOption) (*v1.ExecInstanceResponse, error)
@@ -260,6 +268,46 @@ func (c *instanceServiceClient) StopInstance(ctx context.Context, in *v1.ChangeI
 	return out, nil
 }
 
+func (c *instanceServiceClient) RestartInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Acceptance)
+	err := c.cc.Invoke(ctx, InstanceService_RestartInstance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) AttachInstancePVC(ctx context.Context, in *v1.AttachInstancePVCRequest, opts ...grpc.CallOption) (*v1.Acceptance, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Acceptance)
+	err := c.cc.Invoke(ctx, InstanceService_AttachInstancePVC_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) DetachInstancePVC(ctx context.Context, in *v1.DetachInstancePVCRequest, opts ...grpc.CallOption) (*v1.Acceptance, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Acceptance)
+	err := c.cc.Invoke(ctx, InstanceService_DetachInstancePVC_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceServiceClient) ListInstanceMountablePVCs(ctx context.Context, in *v1.ListInstanceMountablePVCsRequest, opts ...grpc.CallOption) (*v1.ListMountablePVCsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListMountablePVCsResponse)
+	err := c.cc.Invoke(ctx, InstanceService_ListInstanceMountablePVCs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *instanceServiceClient) DeleteInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.Acceptance)
@@ -316,6 +364,10 @@ type InstanceServiceServer interface {
 	GetInstance(context.Context, *v1.GetInstanceRequest) (*v1.Instance, error)
 	StartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	StopInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
+	RestartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
+	AttachInstancePVC(context.Context, *v1.AttachInstancePVCRequest) (*v1.Acceptance, error)
+	DetachInstancePVC(context.Context, *v1.DetachInstancePVCRequest) (*v1.Acceptance, error)
+	ListInstanceMountablePVCs(context.Context, *v1.ListInstanceMountablePVCsRequest) (*v1.ListMountablePVCsResponse, error)
 	DeleteInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	GetInstanceOperation(context.Context, *v1.GetOperationRequest) (*v1.Operation, error)
 	ExecInstance(context.Context, *v1.ExecInstanceRequest) (*v1.ExecInstanceResponse, error)
@@ -379,6 +431,18 @@ func (UnimplementedInstanceServiceServer) StartInstance(context.Context, *v1.Cha
 }
 func (UnimplementedInstanceServiceServer) StopInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error) {
 	return nil, status.Error(codes.Unimplemented, "method StopInstance not implemented")
+}
+func (UnimplementedInstanceServiceServer) RestartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error) {
+	return nil, status.Error(codes.Unimplemented, "method RestartInstance not implemented")
+}
+func (UnimplementedInstanceServiceServer) AttachInstancePVC(context.Context, *v1.AttachInstancePVCRequest) (*v1.Acceptance, error) {
+	return nil, status.Error(codes.Unimplemented, "method AttachInstancePVC not implemented")
+}
+func (UnimplementedInstanceServiceServer) DetachInstancePVC(context.Context, *v1.DetachInstancePVCRequest) (*v1.Acceptance, error) {
+	return nil, status.Error(codes.Unimplemented, "method DetachInstancePVC not implemented")
+}
+func (UnimplementedInstanceServiceServer) ListInstanceMountablePVCs(context.Context, *v1.ListInstanceMountablePVCsRequest) (*v1.ListMountablePVCsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInstanceMountablePVCs not implemented")
 }
 func (UnimplementedInstanceServiceServer) DeleteInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteInstance not implemented")
@@ -709,6 +773,78 @@ func _InstanceService_StopInstance_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InstanceService_RestartInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ChangeInstanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).RestartInstance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_RestartInstance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).RestartInstance(ctx, req.(*v1.ChangeInstanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_AttachInstancePVC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.AttachInstancePVCRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).AttachInstancePVC(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_AttachInstancePVC_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).AttachInstancePVC(ctx, req.(*v1.AttachInstancePVCRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_DetachInstancePVC_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DetachInstancePVCRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).DetachInstancePVC(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_DetachInstancePVC_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).DetachInstancePVC(ctx, req.(*v1.DetachInstancePVCRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceService_ListInstanceMountablePVCs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListInstanceMountablePVCsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).ListInstanceMountablePVCs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_ListInstanceMountablePVCs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).ListInstanceMountablePVCs(ctx, req.(*v1.ListInstanceMountablePVCsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _InstanceService_DeleteInstance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v1.ChangeInstanceRequest)
 	if err := dec(in); err != nil {
@@ -833,6 +969,22 @@ var InstanceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StopInstance",
 			Handler:    _InstanceService_StopInstance_Handler,
+		},
+		{
+			MethodName: "RestartInstance",
+			Handler:    _InstanceService_RestartInstance_Handler,
+		},
+		{
+			MethodName: "AttachInstancePVC",
+			Handler:    _InstanceService_AttachInstancePVC_Handler,
+		},
+		{
+			MethodName: "DetachInstancePVC",
+			Handler:    _InstanceService_DetachInstancePVC_Handler,
+		},
+		{
+			MethodName: "ListInstanceMountablePVCs",
+			Handler:    _InstanceService_ListInstanceMountablePVCs_Handler,
 		},
 		{
 			MethodName: "DeleteInstance",

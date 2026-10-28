@@ -13,6 +13,7 @@
 | `repair-tenant-logout.sql` | 数据修复，旧安装登出权限缺失时使用；原子且可重跑，需确认现有权限/API 唯一。 |
 | `register-accelerator-permissions.sql` | 数据修复，API 目录 dry-run 与显式同步后登记权限；不授角色、不开套餐或租户额度。 |
 | `retire-inference-management.sql` | 部署不含推理管理路由的版本后，停用旧 API 与未被其它活动 API 使用的推理权限；保留 ID、授权关系和历史账目，执行前审查并备份匹配行。 |
+| `register-instance-restart-pvc-permissions.sql` | 本批四条 API、三项权限及 tenant-a 的精确角色/INSTANCE 关联；缺省只 dry-run，需显式核对租户、套餐和角色 ID，`apply=true` 才补缺失记录。先用同一 merged dev 的 `admin sync-apis --dry-run` 核对并备份；保留既有 ID、状态与其他关联，不改额度。 |
 | `register-model-permissions.sql` | 数据修复，Model BFF API 目录同步后登记精确权限；不授角色、不开套餐或租户额度。 |
 | `register-compute-permissions.sql` | 空库 API 目录同步后的平台算力规格权限登记；新权限为 OFF，只登记五个 compute 管理权限及六条 API 关系，不授角色或套餐。已有旧权限必须先走显式升级。 |
 | `migrate-compute-preset-permissions.sql` | 受控切换中原地改名五个管理权限及六条 API owner；保留 ID、状态、审计和授权关系，冲突原子失败，可重跑。 |

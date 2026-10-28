@@ -15,8 +15,8 @@ enum InferenceKeyErrorReason {
   INFERENCE_KEY_UNAVAILABLE = 4 [(errors.code) = 503];
 }
 
-// Inference-owned data-plane metadata. Platform AK/SK and tenant identity are
-// deliberately absent. No read response can contain the secret or its hash.
+// Inference-owned data-plane credential. Authorized list/detail responses
+// include the full secret; hashes and encryption material are never exposed.
 message InferenceKey {
   string id = 1;
   string name = 2;
@@ -32,6 +32,8 @@ message InferenceKey {
   google.protobuf.Timestamp created_at = 12 [json_name = "created_at"];
   google.protobuf.Timestamp last_used_at = 13 [json_name = "last_used_at"];
   int64 version = 14;
+  // Legacy hashes have no secret until successful use or explicit rotation.
+  optional string secret = 15 [(redact.value).string = ""];
 }
 
 message CreateInferenceKeyData {
@@ -47,7 +49,7 @@ message CreateInferenceKeyData {
 }
 message CreateInferenceKeyRequest { CreateInferenceKeyData data = 1; }
 message InferenceKeyCredentials {
-  InferenceKey key = 1;
+  InferenceKey key = 1 [(redact.value).message = { apply: true }];
   // Returned once, only on a new creation or rotation. Use as x-api-key.
   string secret = 2 [(redact.value).string = ""];
   bool replayed = 3;
@@ -57,7 +59,7 @@ message ListInferenceKeysRequest {
   optional int32 page_size = 2 [json_name = "pageSize"];
 }
 message ListInferenceKeysResponse {
-  repeated InferenceKey items = 1;
+  repeated InferenceKey items = 1 [(redact.value).element = { nested: true }];
   int64 total = 2;
 }
 message GetInferenceKeyRequest { string key_id = 1 [json_name = "key_id"]; }

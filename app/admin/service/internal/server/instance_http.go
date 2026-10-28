@@ -55,6 +55,18 @@ func RegisterInstanceHTTPServer(server *http.Server, s *service.InstanceService)
 		{"POST", data.InstanceStopPath, admin.OperationInstanceServiceStopInstance, func() proto.Message { return new(view.ChangeInstanceRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
 			return s.StopInstance(c, r.(*view.ChangeInstanceRequest))
 		}},
+		{"POST", data.InstanceRestartPath, admin.OperationInstanceServiceRestartInstance, func() proto.Message { return new(view.ChangeInstanceRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.RestartInstance(c, r.(*view.ChangeInstanceRequest))
+		}},
+		{"POST", data.InstanceAttachPVCPath, admin.OperationInstanceServiceAttachInstancePVC, func() proto.Message { return new(view.AttachInstancePVCRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.AttachInstancePVC(c, r.(*view.AttachInstancePVCRequest))
+		}},
+		{"POST", data.InstanceDetachPVCPath, admin.OperationInstanceServiceDetachInstancePVC, func() proto.Message { return new(view.DetachInstancePVCRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.DetachInstancePVC(c, r.(*view.DetachInstancePVCRequest))
+		}},
+		{"GET", data.InstanceScopeMountablePVCsPath, admin.OperationInstanceServiceListInstanceMountablePVCs, func() proto.Message { return new(view.ListInstanceMountablePVCsRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.ListInstanceMountablePVCs(c, r.(*view.ListInstanceMountablePVCsRequest))
+		}},
 		{"DELETE", data.InstanceDeletePath, admin.OperationInstanceServiceDeleteInstance, func() proto.Message { return new(view.ChangeInstanceRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
 			return s.DeleteInstance(c, r.(*view.ChangeInstanceRequest))
 		}},
@@ -92,6 +104,18 @@ func RegisterInstanceHTTPServer(server *http.Server, s *service.InstanceService)
 				switch in := request.(type) {
 				case *view.ChangeInstanceRequest:
 					bound := path.(*view.ChangeInstanceRequest)
+					if in.Data == nil || bound.Data == nil || (in.Data.InstanceId != "" && in.Data.InstanceId != bound.Data.InstanceId) {
+						return kratoserrors.BadRequest("INVALID_INSTANCE_REQUEST", "instance path mismatch")
+					}
+					in.Data.InstanceId = bound.Data.InstanceId
+				case *view.AttachInstancePVCRequest:
+					bound := path.(*view.AttachInstancePVCRequest)
+					if in.Data == nil || bound.Data == nil || (in.Data.InstanceId != "" && in.Data.InstanceId != bound.Data.InstanceId) {
+						return kratoserrors.BadRequest("INVALID_INSTANCE_REQUEST", "instance path mismatch")
+					}
+					in.Data.InstanceId = bound.Data.InstanceId
+				case *view.DetachInstancePVCRequest:
+					bound := path.(*view.DetachInstancePVCRequest)
 					if in.Data == nil || bound.Data == nil || (in.Data.InstanceId != "" && in.Data.InstanceId != bound.Data.InstanceId) {
 						return kratoserrors.BadRequest("INVALID_INSTANCE_REQUEST", "instance path mismatch")
 					}

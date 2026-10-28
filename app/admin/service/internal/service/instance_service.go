@@ -32,6 +32,7 @@ const InstanceDeleteAction = "/instance.v1.InstanceService/AcceptDelete"
 const InstanceOwner = "ani-resource-service"
 
 type InstanceOwnerClient interface {
+	instanceCommandClient
 	Resolve(context.Context, string, string, *res.CreateInstanceData, *res.SchedulingOptions) (*res.CreateSpec, error)
 	Create(context.Context, *res.AcceptCreateRequest) (*res.OperationResponse, error)
 	Delete(context.Context, *res.AcceptDeleteRequest) (*res.OperationResponse, error)
@@ -46,24 +47,29 @@ type InstanceActionAuthorizer interface {
 	Authorize(context.Context, uint32, uint32, string, string) error
 }
 type InstanceGpuBinding struct {
-	client           InstanceOwnerClient
-	authorization    InstanceActionAuthorizer
-	clusterID        string
-	scheduling       *InstanceSchedulingPolicy
-	newCreateEnabled bool
+	client              InstanceOwnerClient
+	authorization       InstanceActionAuthorizer
+	clusterID           string
+	scheduling          *InstanceSchedulingPolicy
+	newCreateEnabled    bool
+	newIntentsEnabled   bool
+	restartEnabled      bool
+	pvcMutationsEnabled bool
 }
 
 func NewInstanceGpuBinding(c InstanceOwnerClient, a InstanceActionAuthorizer, clusterID string, policies ...*InstanceSchedulingPolicy) *InstanceGpuBinding {
-	b := &InstanceGpuBinding{client: c, authorization: a, clusterID: clusterID, newCreateEnabled: os.Getenv("ANI_INSTANCE_CONFIG_V2_WRITES") == "true"}
+	b := &InstanceGpuBinding{client: c, authorization: a, clusterID: clusterID, newCreateEnabled: os.Getenv("ANI_INSTANCE_CONFIG_V2_WRITES") == "true", newIntentsEnabled: os.Getenv("ANI_INSTANCE_NEW_INTENTS_ENABLED") == "true", restartEnabled: os.Getenv("ANI_INSTANCE_RESTART_ENABLED") == "true", pvcMutationsEnabled: os.Getenv("ANI_INSTANCE_PVC_MUTATIONS_ENABLED") == "true"}
 	if len(policies) > 0 {
 		b.scheduling = policies[0]
 	}
 	return b
 }
-func (*InstanceGpuBinding) OwnerService() string     { return InstanceOwner }
-func (b *InstanceGpuBinding) NewCreateEnabled() bool { return b != nil && b.newCreateEnabled }
-func (*InstanceGpuBinding) CreateAction() string     { return InstanceCreateAction }
-func (*InstanceGpuBinding) DeleteAction() string     { return InstanceDeleteAction }
+func (*InstanceGpuBinding) OwnerService() string { return InstanceOwner }
+func (b *InstanceGpuBinding) NewCreateEnabled() bool {
+	return b != nil && b.newCreateEnabled && b.newIntentsEnabled
+}
+func (*InstanceGpuBinding) CreateAction() string { return InstanceCreateAction }
+func (*InstanceGpuBinding) DeleteAction() string { return InstanceDeleteAction }
 func (*InstanceGpuBinding) Actions() []string {
 	return []string{InstanceCreateAction, InstanceDeleteAction}
 }
@@ -306,22 +312,22 @@ func (s *InstanceService) DeleteInstance(ctx context.Context, r *view.ChangeInst
 	if r == nil || r.Data == nil || r.Data.ExpectedVersion < 1 {
 		return nil, quota.ErrorInvalidQuotaRequest("%s", "instance delete data required")
 	}
-	accepted, e := s.acceptance.AcceptGpuDeleteVersion(ctx, r.Data.IdempotencyKey, r.Data.InstanceId, r.Data.ExpectedVersion)
+	var replayed bool
+	accepted, e := s.acceptance.acceptGpuDeleteWithReplay(ctx, r.Data.IdempotencyKey, r.Data.InstanceId, r.Data.ExpectedVersion, &replayed)
 	if e != nil {
 		return nil, e
 	}
-	return &view.Acceptance{OperationId: accepted.DeleteOperationId, ResourceId: accepted.ResourceId, Result: accepted.Result}, nil
+	return &view.Acceptance{OperationId: accepted.DeleteOperationId, ResourceId: accepted.ResourceId, Replayed: replayed, Result: accepted.Result}, nil
 }
 func (s *InstanceService) canOperate(ctx context.Context, id string) error {
 	p, e := gpuPrincipal(ctx)
 	if e != nil {
 		return e
 	}
-	op, e := s.ledger.GetCreateOperationByResource(ctx, p.TenantID, InstanceOwner, id)
-	if e != nil {
-		return e
+	hasDelete, e := s.ledger.HasAcceptedInstanceDelete(ctx, p.TenantID, id)
+	if ent.IsNotFound(e) {
+		return kratoserrors.NotFound("INSTANCE_NOT_FOUND", "instance not found")
 	}
-	_, _, hasDelete, e := s.ledger.LoadGpuProjectionSource(ctx, p.TenantID, op.OperationID)
 	if e != nil {
 		return e
 	}
@@ -332,28 +338,14 @@ func (s *InstanceService) canOperate(ctx context.Context, id string) error {
 }
 func (s *InstanceService) change(ctx context.Context, r *view.ChangeInstanceRequest, start bool) (*view.Acceptance, error) {
 	if r == nil || r.Data == nil {
-		return nil, quota.ErrorInvalidQuotaRequest("%s", "instance data required")
+		return nil, kratoserrors.BadRequest("INVALID_INSTANCE_REQUEST", "instance data required")
 	}
-	path := data.InstanceStopPath
+	path, action := data.InstanceStopPath, "stop"
 	if start {
-		path = data.InstanceStartPath
-	}
-	tenant, actor, e := s.scope(ctx, path, "POST")
-	if e != nil {
-		return nil, e
+		path, action = data.InstanceStartPath, "start"
 	}
 	d := r.Data
-	if e = s.canOperate(ctx, d.InstanceId); e != nil {
-		return nil, e
-	}
-	reply, e := s.binding.client.Change(ctx, tenant, actor, &res.ChangeInstanceRequest{TenantId: tenant, InstanceId: d.InstanceId, IdempotencyKey: d.IdempotencyKey, ExpectedVersion: d.ExpectedVersion}, start)
-	if e != nil {
-		return nil, e
-	}
-	if reply == nil || reply.DurableOwnerAck == nil || !reply.DurableOwnerAck.Accepted || reply.DurableOwnerAck.ResourceId != d.InstanceId {
-		return nil, quota.ErrorInvalidQuotaRequest("%s", "invalid instance ACK")
-	}
-	return &view.Acceptance{OperationId: reply.DurableOwnerAck.OperationId, ResourceId: d.InstanceId, Result: "ACCEPTED"}, nil
+	return s.command(ctx, path, action, d.InstanceId, d.IdempotencyKey, d.ExpectedVersion, "", "", false, false)
 }
 func (s *InstanceService) StartInstance(ctx context.Context, r *view.ChangeInstanceRequest) (*view.Acceptance, error) {
 	return s.change(ctx, r, true)
@@ -422,6 +414,9 @@ func (s *InstanceService) GetInstanceOperation(ctx context.Context, r *view.GetO
 	if pending != nil {
 		if pending.OwnerService != InstanceOwner || pending.ResourceTenantID != tenant {
 			return nil, quota.ErrorQuotaNotFound("%s", "operation not found")
+		}
+		if pending.Action == InstanceDeleteAction && pending.CreateOperationID != nil && pending.DispatchState == quotaoperation.DispatchStateRejected && pending.AckJSON == nil && pending.LastErrorCode != nil && *pending.LastErrorCode == "INSTANCE_VERSION_CONFLICT" {
+			return &view.Operation{Id: pending.OperationID, InstanceId: pending.ResourceID, Action: "delete", IntentVersion: 0, State: "failed", Reason: "INSTANCE_VERSION_CONFLICT"}, nil
 		}
 		if data.IsInstanceCPUCanonical([]byte(pending.CanonicalRequest)) && pending.DispatchState != quotaoperation.DispatchStateAcked {
 			if !data.AllowsInstanceCPUCommand(pending.OwnerService, pending.Action, pending.CanonicalRequest) {

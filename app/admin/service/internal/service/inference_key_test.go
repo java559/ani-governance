@@ -16,6 +16,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+const inferenceKeyTestSecret = "iak_0000000000000000000000000000000000000000000"
+
 const inferenceKeyTestID = "22222222-2222-4222-8222-222222222222"
 
 // Only the external Inference protocol is substituted. The BFF constructor,
@@ -38,7 +40,7 @@ func (p *inferenceKeyOwnerProbe) observe(tenant, actor string) {
 func (p *inferenceKeyOwnerProbe) CreateInferenceKeyTrusted(_ context.Context, tenant, actor string, in *runtimev1.CreateInferenceAccessKeyRequest) (*runtimev1.CreateInferenceAccessKeyResponse, error) {
 	p.observe(tenant, actor)
 	p.create = in
-	return &runtimev1.CreateInferenceAccessKeyResponse{Key: p.key, Secret: "iak_0123456789ab-private-test-value", Replayed: p.replayed}, p.err
+	return &runtimev1.CreateInferenceAccessKeyResponse{Key: p.key, Secret: inferenceKeyTestSecret, Replayed: p.replayed}, p.err
 }
 func (p *inferenceKeyOwnerProbe) ListInferenceKeysTrusted(_ context.Context, tenant, actor string, in *runtimev1.ListInferenceAccessKeysRequest) (*runtimev1.ListInferenceAccessKeysResponse, error) {
 	p.observe(tenant, actor)
@@ -57,11 +59,11 @@ func (p *inferenceKeyOwnerProbe) RevokeInferenceKeyTrusted(_ context.Context, te
 }
 func (p *inferenceKeyOwnerProbe) RotateInferenceKeyTrusted(_ context.Context, tenant, actor string, in *runtimev1.RotateInferenceAccessKeyRequest) (*runtimev1.RotateInferenceAccessKeyResponse, error) {
 	p.observe(tenant, actor)
-	return &runtimev1.RotateInferenceAccessKeyResponse{Key: p.key, Secret: "iak_0123456789ab-private-test-value", Replayed: p.replayed}, p.err
+	return &runtimev1.RotateInferenceAccessKeyResponse{Key: p.key, Secret: inferenceKeyTestSecret, Replayed: p.replayed}, p.err
 }
 
 func inferenceKeyProbe() *inferenceKeyOwnerProbe {
-	return &inferenceKeyOwnerProbe{key: &runtimev1.InferenceAccessKey{Id: inferenceKeyTestID, Name: "app", KeyPrefix: "iak_0123456789ab", AllowedModelNames: []string{"model"}, CreatedAt: timestamppb.Now(), Version: 1}}
+	return &inferenceKeyOwnerProbe{key: &runtimev1.InferenceAccessKey{Id: inferenceKeyTestID, Name: "app", KeyPrefix: inferenceKeyTestSecret[:16], AllowedModelNames: []string{"model"}, CreatedAt: timestamppb.Now(), Version: 1}}
 }
 
 func TestInferenceKeyTrustedManagementAndOneTimeSecret(t *testing.T) {
@@ -101,6 +103,44 @@ func TestInferenceKeyTrustedManagementAndOneTimeSecret(t *testing.T) {
 	revoked, err := s.RevokeInferenceKey(ctx, &view.RevokeInferenceKeyRequest{KeyId: inferenceKeyTestID})
 	require.NoError(t, err)
 	require.NotNil(t, revoked.RevokedAt)
+}
+
+func TestInferenceKeyReadsReturnFullSecretWithoutLeakingItInWrites(t *testing.T) {
+	owner := inferenceKeyProbe()
+	owner.key.Secret = proto.String(inferenceKeyTestSecret)
+	s := NewInferenceServiceWithOwner(nil, owner, directInferenceTenantProbe{})
+	ctx := auth.NewPrincipalContext(context.Background(), &auth.Principal{Type: auth.SubjectUser, TenantID: 26, ID: 33})
+	list, err := s.ListInferenceKeys(ctx, &view.ListInferenceKeysRequest{})
+	require.NoError(t, err)
+	require.Equal(t, inferenceKeyTestSecret, list.Items[0].GetSecret())
+	detail, err := s.GetInferenceKey(ctx, &view.GetInferenceKeyRequest{KeyId: inferenceKeyTestID})
+	require.NoError(t, err)
+	require.Equal(t, inferenceKeyTestSecret, detail.GetSecret())
+	redacted := proto.Clone(list).(*view.ListInferenceKeysResponse)
+	redacted.Redact()
+	require.Empty(t, redacted.Items[0].GetSecret(), "nested list secrets must be redacted")
+	detail.Redact()
+	require.Empty(t, detail.GetSecret())
+	require.Equal(t, inferenceKeyTestSecret, owner.key.GetSecret(), "redaction must not mutate owner objects")
+	owner.replayed = true
+	replayed, err := s.RotateInferenceKey(ctx, &view.RotateInferenceKeyRequest{KeyId: inferenceKeyTestID, Data: &view.RotateInferenceKeyData{IdempotencyKey: "rotate"}})
+	require.NoError(t, err)
+	require.Empty(t, replayed.Secret)
+	require.Nil(t, replayed.Key.Secret, "write replay must not leak a nested read secret")
+	revoked, err := s.RevokeInferenceKey(ctx, &view.RevokeInferenceKeyRequest{KeyId: inferenceKeyTestID})
+	require.NoError(t, err)
+	require.Nil(t, revoked.Secret)
+	owner.key.Secret = nil
+	legacy, err := s.GetInferenceKey(ctx, &view.GetInferenceKeyRequest{KeyId: inferenceKeyTestID})
+	require.NoError(t, err)
+	require.Nil(t, legacy.Secret, "legacy hashes cannot be reconstructed")
+	for _, secret := range []string{"", "private-owner-secret", "iak_1111111111111111111111111111111111111111111"} {
+		owner.key.Secret = &secret
+		_, err := s.GetInferenceKey(ctx, &view.GetInferenceKeyRequest{KeyId: inferenceKeyTestID})
+		require.Equal(t, "INFERENCE_KEY_UNAVAILABLE", kratoserrors.Reason(err))
+		_, err = s.ListInferenceKeys(ctx, &view.ListInferenceKeysRequest{})
+		require.Equal(t, "INFERENCE_KEY_UNAVAILABLE", kratoserrors.Reason(err))
+	}
 }
 
 func TestInferenceKeyRejectsMachinePlatformAndInvalidRequests(t *testing.T) {

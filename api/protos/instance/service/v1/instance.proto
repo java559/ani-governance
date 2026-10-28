@@ -113,6 +113,12 @@ message MountablePVC {
  string volume_mode = 5 [json_name = "volume_mode"];
  bool selectable = 6; string unavailable_reason = 7 [json_name = "unavailable_reason"];
 }
+message ListInstanceMountablePVCsRequest {
+ string instance_id = 1 [json_name = "instance_id"];
+ optional uint32 page = 2;
+ optional uint32 page_size = 3 [json_name = "pageSize"];
+ string name = 4;
+}
 message ListMountablePVCsResponse { repeated MountablePVC items = 1; int64 total = 2; }
 message InstanceConfiguration {
  string instance_id = 1 [json_name = "instance_id"];
@@ -123,10 +129,38 @@ message InstanceConfiguration {
  NetworkSelection network = 5;
  map<string,string> labels = 6; map<string,string> annotations = 7;
  repeated InstanceEnvVar env = 8;
+ int64 version = 9;
+ int64 applied_mount_version = 10 [json_name = "applied_mount_version"];
+ PendingMountChange pending_change = 11 [json_name = "pending_change"];
+}
+message MountConfiguration { repeated VolumeMount volume_mounts = 1 [json_name = "volume_mounts"]; }
+message PendingMountChange {
+ string operation_id = 1 [json_name = "operation_id"];
+ int64 intent_version = 2 [json_name = "intent_version"];
+ string phase = 3;
+ MountConfiguration target_configuration = 4 [json_name = "target_configuration"];
 }
 message CreateInstanceRequest { CreateInstanceData data = 1; }
 message ChangeInstanceData { string instance_id = 1; string idempotency_key = 2; int64 expected_version = 3; }
 message ChangeInstanceRequest { ChangeInstanceData data = 1; }
+message AttachInstancePVCData {
+ string instance_id = 1;
+ string idempotency_key = 2;
+ int64 expected_version = 3;
+ string pvc_name = 4 [json_name = "pvc_name"];
+ string mount_path = 5 [json_name = "mount_path"];
+ bool read_only = 6 [json_name = "read_only"];
+ bool restart_if_running = 7 [json_name = "restart_if_running"];
+}
+message AttachInstancePVCRequest { AttachInstancePVCData data = 1; }
+message DetachInstancePVCData {
+ string instance_id = 1;
+ string idempotency_key = 2;
+ int64 expected_version = 3;
+ string mount_path = 4 [json_name = "mount_path"];
+ bool restart_if_running = 5 [json_name = "restart_if_running"];
+}
+message DetachInstancePVCRequest { DetachInstancePVCData data = 1; }
 message GetInstanceRequest { string instance_id = 1 [json_name = "instance_id"]; }
 message ListInstancesRequest {
  reserved 1, 2;
@@ -162,10 +196,21 @@ message Instance {
  string network_reason = 28;
  bool network_cleaned = 29;
  bool volume_references_released = 30;
+ string active_operation_id = 31;
+ string execution_run_state = 32;
+ int64 applied_mount_version = 33;
 }
 message ListInstancesResponse { repeated Instance items = 1; reserved 2; reserved "next_after_id"; int64 total = 3; }
 message Acceptance { string operation_id = 1; string resource_id = 2; bool replayed = 3; string result = 4; }
-message Operation { string id = 1; string instance_id = 2; string action = 3; int64 intent_version = 4; string state = 5; string reason = 6; }
+message Operation {
+ string id = 1; string instance_id = 2; string action = 3; int64 intent_version = 4; string state = 5; string reason = 6;
+ string phase = 7;
+ MountConfiguration target_configuration = 8 [json_name = "target_configuration"];
+ string final_run_state = 9 [json_name = "final_run_state"];
+ int64 applied_mount_version = 10 [json_name = "applied_mount_version"];
+ string completion_scope = 11 [json_name = "completion_scope"];
+ string failure_reason = 12 [json_name = "failure_reason"];
+}
 message GpuSummary {
  string profile_id = 1 [json_name = "profile_id"];
  uint64 profile_version = 2 [json_name = "profile_version"];

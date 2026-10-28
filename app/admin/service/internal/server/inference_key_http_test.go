@@ -35,7 +35,7 @@ import (
 )
 
 const inferenceHTTPKeyID = "22222222-2222-4222-8222-222222222222"
-const inferenceHTTPSecret = "iak_0123456789ab-test-secret-only"
+const inferenceHTTPSecret = "iak_0000000000000000000000000000000000000000000"
 
 // External Inference protocol responses only; no fake local credential store.
 type inferenceKeyHTTPPeer struct {
@@ -56,7 +56,7 @@ func (p *inferenceKeyHTTPPeer) observe(tenant, actor string, in proto.Message) e
 	return nil
 }
 func inferenceHTTPKey() *runtimev1.InferenceAccessKey {
-	return &runtimev1.InferenceAccessKey{Id: inferenceHTTPKeyID, Name: "app", KeyPrefix: inferenceHTTPSecret[:16], AllowedModelNames: []string{"model"}, CreatedAt: timestamppb.Now(), Version: 1}
+	return &runtimev1.InferenceAccessKey{Id: inferenceHTTPKeyID, Name: "app", KeyPrefix: inferenceHTTPSecret[:16], AllowedModelNames: []string{"model"}, CreatedAt: timestamppb.Now(), Version: 1, Secret: proto.String(inferenceHTTPSecret)}
 }
 func (p *inferenceKeyHTTPPeer) CreateInferenceKeyTrusted(_ context.Context, tenant, actor string, in *runtimev1.CreateInferenceAccessKeyRequest) (*runtimev1.CreateInferenceAccessKeyResponse, error) {
 	err := p.observe(tenant, actor, in)
@@ -177,6 +177,7 @@ func TestInferenceKeyHTTPManagementWithRealTenantGateAndCasbin(t *testing.T) {
 	list := fire("GET", base+"?pageSize=2", "", "user-a", 200)
 	require.Equal(t, "1", list["total"])
 	require.Len(t, list["items"], 1)
+	require.Equal(t, inferenceHTTPSecret, list["items"].([]any)[0].(map[string]any)["secret"])
 	page := peer.lastRequest.(*runtimev1.ListInferenceAccessKeysRequest)
 	require.EqualValues(t, 1, page.Page)
 	require.EqualValues(t, 2, page.PageSize)
@@ -186,7 +187,7 @@ func TestInferenceKeyHTTPManagementWithRealTenantGateAndCasbin(t *testing.T) {
 	key := fire("GET", item, "", "reader", 200)
 	require.Equal(t, inferenceHTTPKeyID, key["id"])
 	require.Equal(t, "1", key["version"])
-	require.NotContains(t, key, "secret")
+	require.Equal(t, inferenceHTTPSecret, key["secret"])
 	rotated := fire("POST", item+":rotate", `{"data":{"idempotency_key":"rotate-1"}}`, "user-a", 200)
 	require.Equal(t, inferenceHTTPSecret, rotated["secret"])
 	require.Equal(t, inferenceHTTPKeyID, peer.lastRequest.(*runtimev1.RotateInferenceAccessKeyRequest).Id)

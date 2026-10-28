@@ -638,12 +638,20 @@ func createDeleteOperationTx(ctx context.Context, tx *ent.Tx, in *QuotaDeleteInp
 		*out = deleteResult(existing, charges, true)
 		return nil
 	}
-	if in.Action == commandcontract.VMDeleteAction {
-		active, e := tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(tid), quotaoperation.OwnerServiceEQ(in.OwnerService), quotaoperation.ActionEQ(commandcontract.VMDeleteAction), quotaoperation.ResourceIDEQ(in.ResourceID), quotaoperation.CreateOperationIDEQ(original.OperationID), quotaoperation.DispatchStateNEQ(quotaoperation.DispatchStateRejected)).Exist(ctx)
+	instanceDelete := in.OwnerService == commandcontract.InstanceOwner && original.Action == commandcontract.InstanceCreateAction && in.Action == commandcontract.InstanceDeleteAction
+	if in.Action == commandcontract.VMDeleteAction || instanceDelete {
+		query := tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(tid), quotaoperation.OwnerServiceEQ(in.OwnerService), quotaoperation.ActionEQ(in.Action), quotaoperation.ResourceIDEQ(in.ResourceID), quotaoperation.CreateOperationIDEQ(original.OperationID), quotaoperation.DispatchStateNEQ(quotaoperation.DispatchStateRejected))
+		if instanceDelete {
+			query = query.Where(quotaoperation.ResourceTenantIDEQ(original.ResourceTenantID))
+		}
+		active, e := query.Exist(ctx)
 		if e != nil {
 			return e
 		}
 		if active {
+			if instanceDelete {
+				return kratosErrors.Conflict("INSTANCE_DELETING", "instance final deletion already accepted")
+			}
 			return kratosErrors.Conflict("VM_OPERATION_CONFLICT", "VM final deletion already accepted")
 		}
 	}

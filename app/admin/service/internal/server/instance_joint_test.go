@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
+	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	authpb "go-wind-admin/api/gen/go/authentication/service/v1"
 	computeview "go-wind-admin/api/gen/go/compute/service/v1"
 	identity "go-wind-admin/api/gen/go/identity/service/v1"
@@ -63,6 +65,54 @@ type instancePlanEndpoint struct {
 	calls       int
 }
 
+// Record calls while forwarding to the existing real mTLS Resource client.
+// This observes ordering without replacing owner admission or persistence.
+type instanceCommandForwarder struct {
+	service.InstanceOwnerClient
+	mu    sync.Mutex
+	calls map[string][]instanceCommandForward
+}
+
+type instanceCommandForward struct {
+	tenant, actor string
+	request       proto.Message
+}
+
+func (p *instanceCommandForwarder) record(method, tenant, actor string, request proto.Message) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.calls == nil {
+		p.calls = map[string][]instanceCommandForward{}
+	}
+	p.calls[method] = append(p.calls[method], instanceCommandForward{tenant, actor, proto.Clone(request)})
+}
+
+func (p *instanceCommandForwarder) recorded(method string) []instanceCommandForward {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return append([]instanceCommandForward(nil), p.calls[method]...)
+}
+
+func (p *instanceCommandForwarder) Lookup(ctx context.Context, tenant, actor string, request *res.LookupCommandReplayRequest) (*res.OperationResponse, error) {
+	p.record("lookup", tenant, actor, request)
+	return p.InstanceOwnerClient.Lookup(ctx, tenant, actor, request)
+}
+
+func (p *instanceCommandForwarder) Restart(ctx context.Context, tenant, actor string, request *res.ChangeInstanceRequest) (*res.OperationResponse, error) {
+	p.record("restart", tenant, actor, request)
+	return p.InstanceOwnerClient.Restart(ctx, tenant, actor, request)
+}
+
+func (p *instanceCommandForwarder) AttachPVC(ctx context.Context, tenant, actor string, request *res.AttachPVCRequest) (*res.OperationResponse, error) {
+	p.record("attach-pvc", tenant, actor, request)
+	return p.InstanceOwnerClient.AttachPVC(ctx, tenant, actor, request)
+}
+
+func (p *instanceCommandForwarder) DetachPVC(ctx context.Context, tenant, actor string, request *res.DetachPVCRequest) (*res.OperationResponse, error) {
+	p.record("detach-pvc", tenant, actor, request)
+	return p.InstanceOwnerClient.DetachPVC(ctx, tenant, actor, request)
+}
+
 func (p *instancePlanEndpoint) ResolveGpuRequest(ctx context.Context, r *acc.ResolveGpuRequestRequest, _ ...grpc.CallOption) (*acc.ResolvedGpuRequest, error) {
 	p.calls++
 	if p.unavailable {
@@ -83,6 +133,16 @@ func (p *instancePlanEndpoint) ResolveGpuRequest(ctx context.Context, r *acc.Res
 // external image/environment facts are controlled. No running
 // Notebook, terminal, compute cleanup or GPU acceptance is claimed here.
 func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
+	instancePublicHTTPJoint(t, false)
+}
+
+func TestInstancePublicHTTPRestartAndPVCCommands(t *testing.T) {
+	require.Equal(t, "1", os.Getenv("INSTANCE_JOINT_LIFECYCLE"), "new command boundary suite requires the existing Resource lifecycle fixture")
+	instancePublicHTTPJoint(t, true)
+}
+
+func instancePublicHTTPJoint(t *testing.T, newCommands bool) {
+	t.Helper()
 	ctx := context.Background()
 	sys := appViewer.NewSystemViewerContext(ctx)
 	c := testutil.NewQuotaPGClient(t)
@@ -108,19 +168,31 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 	require.NoError(t, e)
 	grant, e := c.Client().Permission.Create().SetName("instance-http-" + fixture).SetCode("instance:http:" + fixture).SetStatus(permission.StatusOn).Save(sys)
 	require.NoError(t, e)
-	require.NoError(t, c.Client().RolePermission.Create().SetTenantID(tenant.ID).SetRoleID(currentRole.ID).SetPermissionID(grant.ID).SetStatus(rolepermission.StatusOn).SetEffect(rolepermission.EffectAllow).Exec(sys))
+	baseGrant, e := c.Client().RolePermission.Create().SetTenantID(tenant.ID).SetRoleID(currentRole.ID).SetPermissionID(grant.ID).SetStatus(rolepermission.StatusOn).SetEffect(rolepermission.EffectAllow).Save(sys)
+	require.NoError(t, e)
 	catalog, e := dbbootstrap.Catalog(assets.OpenApiData)
 	require.NoError(t, e)
 	requiredRoutes := map[string]bool{
-		"POST " + data.InstanceCreatePath:   true,
-		"GET " + data.InstanceCreatePath:    true,
-		"DELETE " + data.InstanceDeletePath: true,
-		"POST " + data.InstanceStartPath:    true,
-		"POST " + data.InstanceStopPath:     true,
-		"GET " + data.InstanceGetPath:       true,
-		"GET " + data.InstanceOperationPath: true,
-		"POST " + data.InstanceExecPath:     true,
+		"POST " + data.InstanceCreatePath:            true,
+		"GET " + data.InstanceCreatePath:             true,
+		"DELETE " + data.InstanceDeletePath:          true,
+		"POST " + data.InstanceStartPath:             true,
+		"POST " + data.InstanceStopPath:              true,
+		"GET " + data.InstanceGetPath:                true,
+		"GET " + data.InstanceOperationPath:          true,
+		"POST " + data.InstanceExecPath:              true,
+		"POST " + data.InstanceRestartPath:           true,
+		"POST " + data.InstanceAttachPVCPath:         true,
+		"POST " + data.InstanceDetachPVCPath:         true,
+		"GET " + data.InstanceScopeMountablePVCsPath: true,
 	}
+	commandCodes := map[string]string{
+		data.InstanceRestartPath:            "instance:restart",
+		data.InstanceAttachPVCPath:          "instance:pvc:attach",
+		data.InstanceDetachPVCPath:          "instance:pvc:detach",
+		data.InstanceScopeMountablePVCsPath: "instance:pvc:attach",
+	}
+	commandGrants := map[string]*ent.RolePermission{}
 	routes := 0
 	for _, entry := range catalog {
 		if entry.Module != "InstanceService" {
@@ -138,9 +210,26 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 			route, e = c.Client().Api.Create().SetModule(entry.Module).SetOperation(entry.Operation).SetPath(entry.Path).SetMethod(entry.Method).SetScope(api.ScopeAdmin).SetBusinessModule(api.BusinessModuleInstance).SetStatus(api.StatusOn).Save(sys)
 		}
 		require.NoError(t, e)
-		require.NoError(t, c.Client().PermissionApi.Create().SetPermissionID(grant.ID).SetAPIID(route.ID).Exec(sys))
+		if code, exact := commandCodes[entry.Path]; exact {
+			commandPermission, err := c.Client().Permission.Query().Where(permission.CodeEQ(code)).Only(sys)
+			if ent.IsNotFound(err) {
+				commandPermission, err = c.Client().Permission.Create().SetName(code).SetCode(code).SetStatus(permission.StatusOn).Save(sys)
+			}
+			require.NoError(t, err)
+			linked, err := c.Client().PermissionApi.Query().Where(permissionapi.PermissionIDEQ(commandPermission.ID), permissionapi.APIIDEQ(route.ID)).Exist(sys)
+			require.NoError(t, err)
+			if !linked {
+				require.NoError(t, c.Client().PermissionApi.Create().SetPermissionID(commandPermission.ID).SetAPIID(route.ID).Exec(sys))
+			}
+			if commandGrants[code] == nil {
+				commandGrants[code], err = c.Client().RolePermission.Create().SetTenantID(tenant.ID).SetRoleID(currentRole.ID).SetPermissionID(commandPermission.ID).SetStatus(rolepermission.StatusOn).SetEffect(rolepermission.EffectAllow).Save(sys)
+				require.NoError(t, err)
+			}
+		} else {
+			require.NoError(t, c.Client().PermissionApi.Create().SetPermissionID(grant.ID).SetAPIID(route.ID).Exec(sys))
+		}
 	}
-	require.Equal(t, 8, routes, "instance lifecycle routes remain registered; compute has its own owner")
+	require.Equal(t, 12, routes, "exact new Instance routes and legacy lifecycle routes remain registered")
 	// Shared API and permission catalogs survive task tenant cleanup. Reuse
 	// their exact records so a preceding fixture or retry cannot duplicate them.
 	computeRoute, e := c.Client().Api.Query().Where(api.ModuleEQ("ComputePresetService"), api.PathEQ(data.ComputeCatalogPath), api.MethodEQ("GET"), api.ScopeEQ(api.ScopeAdmin)).Only(sys)
@@ -210,7 +299,11 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 	t.Cleanup(closeOwner)
 	// This suite covers the current frozen instance admission contract.
 	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "true")
-	binding := service.NewInstanceGpuBinding(owner, data.NewInstanceAuthorizationRepo(c), resourcePeer.ClusterID)
+	t.Setenv("ANI_INSTANCE_NEW_INTENTS_ENABLED", "true")
+	t.Setenv("ANI_INSTANCE_RESTART_ENABLED", "true")
+	t.Setenv("ANI_INSTANCE_PVC_MUTATIONS_ENABLED", "true")
+	forwarder := &instanceCommandForwarder{InstanceOwnerClient: owner}
+	binding := service.NewInstanceGpuBinding(forwarder, data.NewInstanceAuthorizationRepo(c), resourcePeer.ClusterID)
 	registry := service.NewQuotaAdapterRegistry()
 	require.NoError(t, registry.Register(binding))
 	worker := service.NewQuotaDispatchWorker(bctx, ledger, registry)
@@ -253,20 +346,34 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 	RegisterComputeHTTPServer(server, service.NewComputePresetService(computeOwner, service.ComputeCatalogConfig{ClusterID: resourcePeer.ClusterID, Compute: computeOwner, Catalog: accelerator.Catalog, Resolver: tenants, Authorization: data.NewComputeCatalogAuthorizationRepo(c)}))
 	host := httptest.NewServer(server)
 	t.Cleanup(host.Close)
-	request := func(method, path string, in proto.Message, out proto.Message, status int, bearer string) {
+	var closedHost *httptest.Server
+	if newCommands {
+		t.Setenv("ANI_INSTANCE_NEW_INTENTS_ENABLED", "false")
+		t.Setenv("ANI_INSTANCE_RESTART_ENABLED", "false")
+		t.Setenv("ANI_INSTANCE_PVC_MUTATIONS_ENABLED", "false")
+		closedBinding := service.NewInstanceGpuBinding(forwarder, data.NewInstanceAuthorizationRepo(c), resourcePeer.ClusterID)
+		closedServer := khttp.NewServer(khttp.Middleware(auth.CredentialHeaders(), auth.Server(auth.WithAccessTokenChecker(checker), auth.WithTenantAccessChecker(data.NewTenantAccessCheckerImpl(bctx, c)), auth.WithInjectMetadata(false), auth.WithInjectEnt(true)), authz.Server(policy.Engine())))
+		RegisterInstanceHTTPServer(closedServer, service.NewInstanceService(acceptance, closedBinding, tenants, ledger, sessions, service.InstanceCatalogConfig{ClusterID: resourcePeer.ClusterID}))
+		closedHost = httptest.NewServer(closedServer)
+		t.Cleanup(closedHost.Close)
+		t.Setenv("ANI_INSTANCE_NEW_INTENTS_ENABLED", "true")
+		t.Setenv("ANI_INSTANCE_RESTART_ENABLED", "true")
+		t.Setenv("ANI_INSTANCE_PVC_MUTATIONS_ENABLED", "true")
+	}
+	requestAt := func(target *httptest.Server, method, path string, in proto.Message, out proto.Message, status int, bearer string) []byte {
 		t.Helper()
 		var body []byte
 		if in != nil {
 			body, e = protojson.Marshal(in)
 			require.NoError(t, e)
 		}
-		r, e := http.NewRequest(method, host.URL+path, bytes.NewReader(body))
+		r, e := http.NewRequest(method, target.URL+path, bytes.NewReader(body))
 		require.NoError(t, e)
 		r.Header.Set("Content-Type", "application/json")
 		if bearer != "" {
 			r.Header.Set("Authorization", "Bearer "+bearer)
 		}
-		response, e := host.Client().Do(r)
+		response, e := target.Client().Do(r)
 		require.NoError(t, e)
 		defer response.Body.Close()
 		raw, e := io.ReadAll(response.Body)
@@ -277,6 +384,11 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 		}
 		require.NotContains(t, string(raw), "registry.invalid")
 		t.Logf("HTTP %s %s -> %d", method, path, response.StatusCode)
+		return raw
+	}
+	request := func(method, path string, in proto.Message, out proto.Message, status int, bearer string) {
+		t.Helper()
+		requestAt(host, method, path, in, out, status, bearer)
 	}
 	public := &view.CreateInstanceRequest{Data: &view.CreateInstanceData{IdempotencyKey: uuid.NewString(), Name: "workspace", ImageId: "img_" + strings.ReplaceAll(uuid.NewString(), "-", ""), ImageScope: "platform", PresetId: resourcePeer.PresetID}}
 	request("POST", "/api/v1/instances", public, nil, 401, "")
@@ -514,15 +626,215 @@ func TestInstancePublicHTTPPersistentIntakeAndCommands(t *testing.T) {
 		_ = connection.CloseNow()
 		cancel()
 	}
+	finalVersion := int64(3)
+	type commandReplay struct {
+		action  string
+		request proto.Message
+		ack     *view.Acceptance
+	}
+	var commandReplays []commandReplay
+	if newCommands {
+		commandRequest := func(action string, version int64) proto.Message {
+			key := uuid.NewString()
+			switch action {
+			case "attach-pvc":
+				return &view.AttachInstancePVCRequest{Data: &view.AttachInstancePVCData{IdempotencyKey: key, ExpectedVersion: version, PvcName: "research-data", MountPath: "/datasets"}}
+			case "detach-pvc":
+				return &view.DetachInstancePVCRequest{Data: &view.DetachInstancePVCData{IdempotencyKey: key, ExpectedVersion: version, MountPath: "/datasets"}}
+			default:
+				return &view.ChangeInstanceRequest{Data: &view.ChangeInstanceData{IdempotencyKey: key, ExpectedVersion: version}}
+			}
+		}
+		path := func(action string) string { return "/api/v1/instances/" + accepted.ResourceId + ":" + action }
+		code := func(action string) string {
+			switch action {
+			case "attach-pvc":
+				return "instance:pvc:attach"
+			case "detach-pvc":
+				return "instance:pvc:detach"
+			default:
+				return "instance:restart"
+			}
+		}
+		for _, action := range []string{"restart", "attach-pvc", "detach-pvc"} {
+			lookupBefore := len(forwarder.recorded("lookup"))
+			mutationsBefore := len(forwarder.recorded(action))
+			r := commandRequest(action, finalVersion)
+			request("POST", path(action), r, nil, 401, "")
+			grant := commandGrants[code(action)]
+			require.NotNil(t, grant)
+			require.NoError(t, c.Client().RolePermission.UpdateOneID(grant.ID).SetStatus(rolepermission.StatusOff).Exec(sys))
+			// Keep Casbin's previously allowed snapshot: the service must also
+			// check current exact authority before reading a replay key.
+			request("POST", path(action), r, nil, 403, token)
+			require.Equal(t, lookupBefore, len(forwarder.recorded("lookup")))
+			require.Equal(t, mutationsBefore, len(forwarder.recorded(action)))
+			require.NoError(t, c.Client().RolePermission.UpdateOneID(grant.ID).SetStatus(rolepermission.StatusOn).Exec(sys))
+			raw := requestAt(closedHost, "POST", path(action), r, nil, 503, token)
+			require.Contains(t, string(raw), "INSTANCE_ACTION_UNAVAILABLE")
+			require.Equal(t, lookupBefore+1, len(forwarder.recorded("lookup")), "a closed capability checks read-only replay first")
+			require.Equal(t, mutationsBefore, len(forwarder.recorded(action)))
+		}
+		original, err := ledger.GetOperationForUser(ctx, tenant.ID, accepted.OperationId)
+		require.NoError(t, err)
+		originalCharges, err := ledger.GetChargesForOperation(ctx, tenant.ID, accepted.OperationId)
+		require.NoError(t, err)
+		ledgerOperations := c.Client().QuotaOperation.Query().CountX(sys)
+		for _, action := range []string{"restart", "stop", "attach-pvc", "start", "restart", "stop", "detach-pvc", "start"} {
+			r := commandRequest(action, finalVersion)
+			isNew := action == "restart" || action == "attach-pvc" || action == "detach-pvc"
+			mutationsBefore := len(forwarder.recorded(action))
+			if action == "attach-pvc" || action == "detach-pvc" {
+				// Only the exact PVC permission remains. A stopped mount command
+				// cannot require CREATE, Start/Stop, or standalone Restart grants.
+				require.NoError(t, c.Client().RolePermission.UpdateOneID(baseGrant.ID).SetStatus(rolepermission.StatusOff).Exec(sys))
+				require.NoError(t, c.Client().RolePermission.UpdateOneID(commandGrants["instance:restart"].ID).SetStatus(rolepermission.StatusOff).Exec(sys))
+			}
+			ack := new(view.Acceptance)
+			request("POST", path(action), r, ack, 202, token)
+			if action == "attach-pvc" || action == "detach-pvc" {
+				require.NoError(t, c.Client().RolePermission.UpdateOneID(baseGrant.ID).SetStatus(rolepermission.StatusOn).Exec(sys))
+				require.NoError(t, c.Client().RolePermission.UpdateOneID(commandGrants["instance:restart"].ID).SetStatus(rolepermission.StatusOn).Exec(sys))
+			}
+			require.NotEmpty(t, ack.OperationId)
+			require.Equal(t, accepted.ResourceId, ack.ResourceId)
+			require.False(t, ack.Replayed)
+			require.Equal(t, "ACCEPTED", ack.Result)
+			if isNew {
+				calls := forwarder.recorded(action)
+				require.Len(t, calls, mutationsBefore+1)
+				call := calls[len(calls)-1]
+				require.Equal(t, tenant.ResourceTenantID, call.tenant)
+				require.Equal(t, "governance:user:"+actorID, call.actor)
+				var expected proto.Message
+				var key, pvcName, mountPath string
+				switch in := r.(type) {
+				case *view.AttachInstancePVCRequest:
+					key, pvcName, mountPath = in.Data.IdempotencyKey, in.Data.PvcName, in.Data.MountPath
+					expected = &res.AttachPVCRequest{TenantId: tenant.ResourceTenantID, InstanceId: accepted.ResourceId, IdempotencyKey: key, ExpectedVersion: finalVersion, PvcName: pvcName, MountPath: mountPath}
+				case *view.DetachInstancePVCRequest:
+					key, mountPath = in.Data.IdempotencyKey, in.Data.MountPath
+					expected = &res.DetachPVCRequest{TenantId: tenant.ResourceTenantID, InstanceId: accepted.ResourceId, IdempotencyKey: key, ExpectedVersion: finalVersion, MountPath: mountPath}
+				case *view.ChangeInstanceRequest:
+					key = in.Data.IdempotencyKey
+					expected = &res.ChangeInstanceRequest{TenantId: tenant.ResourceTenantID, InstanceId: accepted.ResourceId, IdempotencyKey: key, ExpectedVersion: finalVersion}
+				}
+				require.True(t, proto.Equal(expected, call.request), "HTTP path and trusted identity must reach the exact formal owner RPC")
+				lookups := forwarder.recorded("lookup")
+				lookup := lookups[len(lookups)-1].request.(*res.LookupCommandReplayRequest)
+				canonical, err := res.CanonicalCommandIntent(action, accepted.ResourceId, finalVersion, pvcName, mountPath, false, false)
+				require.NoError(t, err)
+				require.Equal(t, canonical, lookup.CanonicalIntent)
+				require.Equal(t, action, lookup.Action)
+				require.Equal(t, key, lookup.IdempotencyKey)
+				commandReplays = append(commandReplays, commandReplay{action, r, ack})
+			}
+			finalVersion++
+			// The production worker persists a five-second next-attempt time
+			// between lifecycle phases. Allow the complete real cadence while
+			// rejecting failed/blocked results and a phase that stops advancing.
+			deadline, phaseSince := time.Now().Add(120*time.Second), time.Now()
+			lastPhase := "not-observed"
+			for {
+				op, err := owner.Operation(ctx, tenant.ResourceTenantID, "governance:user:"+actorID, ack.OperationId)
+				require.NoError(t, err)
+				require.NotNil(t, op)
+				if op.Phase != lastPhase {
+					phaseSince, lastPhase = time.Now(), op.Phase
+					t.Logf("%s operation=%s state=%s phase=%s reason=%s failure=%s", action, op.Id, op.State, op.Phase, op.Reason, op.FailureReason)
+					publicOperation := new(view.Operation)
+					request("GET", "/api/v1/instance-operations/"+ack.OperationId, nil, publicOperation, 200, token)
+					require.Equal(t, ack.OperationId, publicOperation.Id)
+					require.EqualValues(t, finalVersion, publicOperation.IntentVersion)
+					if op.Phase != "" {
+						require.NotEmpty(t, publicOperation.Phase, "Gov exposes phase progress; the worker may advance between the two reads")
+					}
+				}
+				if op.State == "completed" {
+					break
+				}
+				require.Equal(t, "accepted", op.State, "terminal/blocked result: phase=%s reason=%s failure=%s", op.Phase, op.Reason, op.FailureReason)
+				require.Less(t, time.Since(phaseSince), 20*time.Second, "phase stopped advancing: %s reason=%s failure=%s", op.Phase, op.Reason, op.FailureReason)
+				require.True(t, time.Now().Before(deadline), "%s exceeded the production lifecycle budget: phase=%s reason=%s failure=%s", action, op.Phase, op.Reason, op.FailureReason)
+				time.Sleep(50 * time.Millisecond)
+			}
+			result := new(view.Operation)
+			request("GET", "/api/v1/instance-operations/"+ack.OperationId, nil, result, 200, token)
+			require.Equal(t, action, result.Action)
+			require.EqualValues(t, finalVersion, result.IntentVersion)
+			require.Equal(t, "completed", result.State)
+			if isNew {
+				require.Equal(t, "done", result.Phase)
+			}
+			request("GET", "/api/v1/instances/"+accepted.ResourceId, nil, instance, 200, token)
+			require.EqualValues(t, finalVersion, instance.Version)
+		}
+		for _, replay := range commandReplays {
+			lookupBefore := len(forwarder.recorded("lookup"))
+			mutationsBefore := len(forwarder.recorded(replay.action))
+			got := new(view.Acceptance)
+			requestAt(closedHost, "POST", path(replay.action), replay.request, got, 202, token)
+			require.True(t, got.Replayed)
+			require.Equal(t, replay.ack.OperationId, got.OperationId)
+			require.Equal(t, replay.ack.ResourceId, got.ResourceId)
+			require.Equal(t, lookupBefore+1, len(forwarder.recorded("lookup")))
+			require.Equal(t, mutationsBefore, len(forwarder.recorded(replay.action)), "stale-version replay cannot redispatch")
+			grant := commandGrants[code(replay.action)]
+			require.NoError(t, c.Client().RolePermission.UpdateOneID(grant.ID).SetStatus(rolepermission.StatusOff).Exec(sys))
+			requestAt(closedHost, "POST", path(replay.action), replay.request, nil, 403, token)
+			require.Equal(t, lookupBefore+1, len(forwarder.recorded("lookup")), "current authorization precedes even an existing replay")
+			require.NoError(t, c.Client().RolePermission.UpdateOneID(grant.ID).SetStatus(rolepermission.StatusOn).Exec(sys))
+		}
+		after, err := ledger.GetOperationForUser(ctx, tenant.ID, accepted.OperationId)
+		require.NoError(t, err)
+		require.Equal(t, original.CanonicalRequest, after.CanonicalRequest)
+		require.Equal(t, original.RequestHash, after.RequestHash)
+		require.Equal(t, original.AckJSON, after.AckJSON)
+		require.Equal(t, ledgerOperations, c.Client().QuotaOperation.Query().CountX(sys), "new commands use Resource persistence without creating Gov quota operations")
+		charges, err := ledger.GetChargesForOperation(ctx, tenant.ID, accepted.OperationId)
+		require.NoError(t, err)
+		require.Len(t, charges, len(originalCharges))
+		for i, charge := range charges {
+			require.Equal(t, originalCharges[i].ChargeID, charge.ChargeID)
+			require.Equal(t, originalCharges[i].OriginalUnits, charge.OriginalUnits)
+			require.Zero(t, charge.ReleasedUnits)
+		}
+		require.Zero(t, c.Client().QuotaReleaseReceipt.Query().CountX(sys), "Restart/mount commands cannot manufacture cleanup refunds")
+	}
 	request("GET", "/api/v1/instances/"+accepted.ResourceId, nil, instance, 200, token)
-	require.EqualValues(t, 3, instance.Version)
+	require.EqualValues(t, finalVersion, instance.Version)
 	require.Equal(t, accepted.OperationId, instance.CreateOperationId)
 	deleted := new(view.Acceptance)
-	request("DELETE", "/api/v1/instances/"+accepted.ResourceId, &view.ChangeInstanceRequest{Data: &view.ChangeInstanceData{IdempotencyKey: uuid.NewString(), ExpectedVersion: 3}}, deleted, 202, token)
+	request("DELETE", "/api/v1/instances/"+accepted.ResourceId, &view.ChangeInstanceRequest{Data: &view.ChangeInstanceData{IdempotencyKey: uuid.NewString(), ExpectedVersion: finalVersion}}, deleted, 202, token)
 	require.Eventually(t, func() bool {
 		op, e := ledger.GetOperationForUser(sys, tenant.ID, deleted.OperationId)
 		return e == nil && op.DispatchState == quotaoperation.DispatchStateAcked
 	}, 5*time.Second, 20*time.Millisecond, "delete ACK required")
+	if newCommands {
+		blocked, err := ledger.HasAcceptedInstanceDelete(ctx, tenant.ID, accepted.ResourceId)
+		require.NoError(t, err)
+		require.True(t, blocked)
+		for _, replay := range commandReplays {
+			path := "/api/v1/instances/" + accepted.ResourceId + ":" + replay.action
+			mutationsBefore := len(forwarder.recorded(replay.action))
+			got := new(view.Acceptance)
+			requestAt(closedHost, "POST", path, replay.request, got, 202, token)
+			require.True(t, got.Replayed)
+			require.Equal(t, replay.ack.OperationId, got.OperationId, "accepted DELETE cannot hide an authorized prior replay")
+			fresh := proto.Clone(replay.request)
+			switch in := fresh.(type) {
+			case *view.ChangeInstanceRequest:
+				in.Data.IdempotencyKey = uuid.NewString()
+			case *view.AttachInstancePVCRequest:
+				in.Data.IdempotencyKey = uuid.NewString()
+			case *view.DetachInstancePVCRequest:
+				in.Data.IdempotencyKey = uuid.NewString()
+			}
+			raw := requestAt(host, "POST", path, fresh, nil, 409, token)
+			require.Contains(t, string(raw), "INSTANCE_DELETING")
+			require.Equal(t, mutationsBefore, len(forwarder.recorded(replay.action)), "the exact Instance DELETE fence prevents a new owner mutation")
+		}
+	}
 	if lifecycle {
 		require.Eventually(t, func() bool {
 			i, e := owner.Get(ctx, tenant.ResourceTenantID, "governance:user:"+actorID, accepted.ResourceId)

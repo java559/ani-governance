@@ -116,3 +116,36 @@ func (c *InstanceClient) Configuration(ctx context.Context, tenant, actor, id st
 		return c.client.GetInstanceConfiguration(ctx, &pb.GetInstanceRequest{TenantId: tenant, InstanceId: id})
 	})
 }
+
+func (c *InstanceClient) Lookup(ctx context.Context, t, a string, in *pb.LookupCommandReplayRequest) (*pb.OperationResponse, error) {
+	if in == nil || in.TenantId != t {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
+	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.LookupCommandReplay(ctx, in) })
+}
+func (c *InstanceClient) Restart(ctx context.Context, t, a string, in *pb.ChangeInstanceRequest) (*pb.OperationResponse, error) {
+	if in == nil || in.TenantId != t {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
+	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.Restart(ctx, in) })
+}
+func (c *InstanceClient) AttachPVC(ctx context.Context, t, a string, in *pb.AttachPVCRequest) (*pb.OperationResponse, error) {
+	if in == nil || in.TenantId != t {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
+	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.AttachPVC(ctx, in) })
+}
+func (c *InstanceClient) DetachPVC(ctx context.Context, t, a string, in *pb.DetachPVCRequest) (*pb.OperationResponse, error) {
+	if in == nil || in.TenantId != t {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
+	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.OperationResponse, error) { return c.client.DetachPVC(ctx, in) })
+}
+func (c *InstanceClient) InstanceMountablePVCs(ctx context.Context, t, a string, in *pb.ListInstanceMountablePVCsRequest) (*pb.ListMountablePVCsResponse, error) {
+	if in == nil || in.TenantId != t {
+		return nil, status.Error(codes.InvalidArgument, "INVALID_INSTANCE_REQUEST")
+	}
+	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.ListMountablePVCsResponse, error) {
+		return c.client.ListInstanceMountablePVCs(ctx, in)
+	})
+}

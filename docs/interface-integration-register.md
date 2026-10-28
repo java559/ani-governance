@@ -764,7 +764,11 @@ Governance 提供 `/api/v1/inference-keys` 创建/列表、`/{key_id}` 详情/�
 平台 AK/SK、推理 Key 和平台租户 0 不能管理这些凭证。
 
 Gov 通过持久化租户映射与现有受管 mTLS 连接调用 Inference；凭证由 Inference
-签发和持久化，secret 仅在首次创建/轮换时交付，列表、详情、重放和审计不返回明文。
+签发和持久化。按用户最终要求，INF-KEY-02/03 列表各项和详情通过 `secret`
+返回完整当前 AK；创建/轮换首次响应继续交付，写重放、撤销响应和审计不包含明文。
+Inference 以独立挂载主密钥加密持久化，迁移前仅有哈希的记录在成功调用后补存原值，
+不自动轮换；未补存的旧记录不含 `secret`，解密故障返回 503。新行为的源码验证与
+目标环境部署分别报告，以下旧验收记录不代表本次读回功能已部署。
 Key 与平台 AK/SK 的路由、权限和存储独立；这些管理接口不进入 Higress。
 新增 API 目录须先 dry-run 再同步，并显式配置权限、角色及套餐后刷新 Casbin。
 
@@ -1690,6 +1694,8 @@ main 发布使用 Resource `e7b5a8a3435996181bff62e025a21224c97d2464`，Gov 依�
 此前 `page_size/after_id` 列表协议已由本批替换；当前接口不接旧分页参数，不提供双轨兼容。前端按上方当前合同接入。
 
 早期定向联调已使用真实授权、PG/Redis/mTLS 和生产业务代码，GPU/Kubernetes/exec 边界受控；真实 GPU 产品验收仍未完成。2026-10-13 用户授权先推送 main，剩余门禁由后续任务处理：已固定正式 Resource/Acc/SG API 版本并核对下载 SHA/sums，但新版 main 合入后的最终独立构建、定向组合用例及 CI 尚未完成，不声明通过。权威当前状态统一见 Resource `docs/execution/status.md#gpu-container-instance-mvp-v15`。`scripts/ops/sql/register-instance-permissions.sql` 只准备已同步的 API/permission 目录，未执行共享环境授权；本轮没有部署。
+
+2026-10-28 本编号增加 Restart、AttachPVC、DetachPVC 和实例范围候选，当前输入、权限、重放先行、查询与 CPU/GPU DELETE 明确拒绝合同见[容器实例 HTTP 合同](contracts/container-instances.md#重启与已有-pvc-挂卸)。本批仅 Resource/Gov 后端，无 Console/BROWSER 门禁；实现、正式模块、测试部署及验收进度统一在 Resource `docs/execution/status.md#container-restart-pvc-20261028`，不以本登记表示现场通过。
 
 ## MODELDEV-09：产物列表分页参数校验对齐（2026-10-13）
 

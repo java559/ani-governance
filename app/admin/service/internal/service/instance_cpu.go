@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"strconv"
 
 	commandv1 "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/command/v1"
@@ -13,7 +14,7 @@ import (
 	"go-wind-admin/pkg/middleware/auth"
 )
 
-func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Principal, key, resource string, version int64, original *ent.QuotaOperation) (*commandv1.GpuDeleteAcceptance, error) {
+func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Principal, key, resource string, version int64, original *ent.QuotaOperation, replayed *bool) (*commandv1.GpuDeleteAcceptance, error) {
 	b, ok := s.binding.(*InstanceGpuBinding)
 	if !ok || version < 1 || !data.AllowsInstanceCPUCommand(original.OwnerService, original.Action, original.CanonicalRequest) {
 		return nil, quota.ErrorInvalidQuotaRequest("%s", "invalid original CPU instance command")
@@ -39,6 +40,13 @@ func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Pri
 		return nil, e
 	}
 	if old == nil {
+		deleting, err := s.ledger.HasAcceptedInstanceDelete(ctx, p.TenantID, resource)
+		if err != nil {
+			return nil, err
+		}
+		if deleting {
+			return nil, kratoserrors.Conflict("INSTANCE_DELETING", "instance final deletion already accepted")
+		}
 		if e = b.ValidateGpuDelete(ctx, p, original.ResourceTenantID, resource, version); e != nil {
 			return nil, e
 		}
@@ -55,6 +63,13 @@ func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Pri
 	out := &commandv1.GpuDeleteAcceptance{DeleteOperationId: result.OperationID, ResourceId: result.ResourceID, DispatchOperationId: result.OperationID, Result: "QUEUED_FOR_OWNER"}
 	if result.LocalCanceled {
 		out.Result = "CANCELED_BEFORE_DISPATCH"
+		out.DispatchOperationId = ""
+	}
+	if replayed != nil {
+		*replayed = result.Replayed
+	}
+	if result.OwnerRejected {
+		out.Result = "REJECTED_VERSION_CONFLICT"
 		out.DispatchOperationId = ""
 	}
 	if s.worker != nil {

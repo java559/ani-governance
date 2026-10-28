@@ -244,6 +244,12 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 		return
 	}
 
+	if op.OwnerService == commandcontract.InstanceOwner && op.Action == commandcontract.InstanceDeleteAction && instanceDeleteVersionRejected(derr) {
+		if _, err := w.ledger.RejectInstanceDeleteVersion(ctx, op.TenantID, op.OperationID, op.LeaseGeneration); err != nil {
+			w.log.Errorf(context.Background(), "instance delete rejection writeback failed: %v", err)
+		}
+		return
+	}
 	if op.OwnerService == commandcontract.InstanceOwner && op.Action == commandcontract.VMDeleteAction && vmDeleteVersionRejected(derr) {
 		if _, err := w.ledger.RejectVMDeleteVersion(ctx, op.TenantID, op.OperationID, op.LeaseGeneration); err != nil {
 			w.log.Errorf(context.Background(), "VM delete rejection writeback failed: %v", err)
@@ -303,4 +309,20 @@ func isPermanentContractError(err error) bool {
 		codesPermissionDenied,
 		codesUnauthenticated,
 	)
+}
+
+func instanceDeleteVersionRejected(err error) bool {
+	st, ok := status.FromError(err)
+	if !ok || st.Code() != codes.FailedPrecondition {
+		return false
+	}
+	if st.Message() == "INSTANCE_VERSION_CONFLICT" {
+		return true
+	}
+	for _, detail := range st.Details() {
+		if info, ok := detail.(*errdetails.ErrorInfo); ok && info.Reason == "INSTANCE_VERSION_CONFLICT" {
+			return true
+		}
+	}
+	return false
 }

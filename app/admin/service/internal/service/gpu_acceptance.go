@@ -16,6 +16,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
@@ -273,7 +274,7 @@ func (s *GpuAcceptance) acceptGpuDeleteWithReplay(ctx context.Context, key, reso
 		return s.acceptVMDelete(ctx, p, key, resource, version, old, replayed)
 	}
 	if data.IsInstanceCPUCanonical([]byte(old.CanonicalRequest)) {
-		return s.acceptInstanceCPUDelete(ctx, p, key, resource, version, old)
+		return s.acceptInstanceCPUDelete(ctx, p, key, resource, version, old, replayed)
 	}
 	actorID := strconv.FormatUint(uint64(p.ID), 10)
 	object := map[string]any{"schema": "gov-gpu-delete-v1", "tenant_id": old.ResourceTenantID, "actor_type": string(p.Type), "actor_id": actorID, "owner": old.OwnerService, "action": s.binding.DeleteAction(), "resource_id": old.ResourceID, "create_operation_id": old.OperationID}
@@ -297,7 +298,23 @@ func (s *GpuAcceptance) acceptGpuDeleteWithReplay(ctx context.Context, key, reso
 			response.Result = "CANCELED_BEFORE_DISPATCH"
 			response.DispatchOperationId = ""
 		}
+		if existing.DispatchState == quotaoperation.DispatchStateRejected && old.OwnerService == InstanceOwner && old.Action == InstanceCreateAction {
+			response.Result = "REJECTED_VERSION_CONFLICT"
+			response.DispatchOperationId = ""
+		}
+		if replayed != nil {
+			*replayed = true
+		}
 		return response, nil
+	}
+	if old.OwnerService == InstanceOwner && old.Action == InstanceCreateAction {
+		deleting, err := s.ledger.HasAcceptedInstanceDelete(ctx, p.TenantID, resource)
+		if err != nil {
+			return nil, err
+		}
+		if deleting {
+			return nil, kratoserrors.Conflict("INSTANCE_DELETING", "instance final deletion already accepted")
+		}
 	}
 	charges, err := s.ledger.GetChargesForOperation(ctx, p.TenantID, old.OperationID)
 	if err != nil {
@@ -349,6 +366,13 @@ func (s *GpuAcceptance) acceptGpuDeleteWithReplay(ctx context.Context, key, reso
 	if result.LocalCanceled {
 		response.Result = "CANCELED_BEFORE_DISPATCH"
 		response.DispatchOperationId = ""
+	}
+	if result.OwnerRejected && old.OwnerService == InstanceOwner && old.Action == InstanceCreateAction {
+		response.Result = "REJECTED_VERSION_CONFLICT"
+		response.DispatchOperationId = ""
+	}
+	if replayed != nil {
+		*replayed = result.Replayed
 	}
 	if s.worker != nil {
 		s.worker.Notify()

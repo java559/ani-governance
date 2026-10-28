@@ -9005,7 +9005,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/Operation'
+                                $ref: '#/components/schemas/InstanceOperation'
     /api/v1/instances:
         get:
             tags:
@@ -9140,6 +9140,78 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ExecInstanceResponse'
+    /api/v1/instances/{data.instance_id}:attach-pvc:
+        post:
+            tags:
+                - InstanceService
+            operationId: InstanceService_AttachInstancePVC
+            parameters:
+                - name: data.instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AttachInstancePVCRequest'
+                required: true
+            responses:
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Acceptance'
+    /api/v1/instances/{data.instance_id}:detach-pvc:
+        post:
+            tags:
+                - InstanceService
+            operationId: InstanceService_DetachInstancePVC
+            parameters:
+                - name: data.instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DetachInstancePVCRequest'
+                required: true
+            responses:
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Acceptance'
+    /api/v1/instances/{data.instance_id}:restart:
+        post:
+            tags:
+                - InstanceService
+            operationId: InstanceService_RestartInstance
+            parameters:
+                - name: data.instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ChangeInstanceRequest'
+                required: true
+            responses:
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Acceptance'
     /api/v1/instances/{data.instance_id}:start:
         post:
             tags:
@@ -9284,6 +9356,38 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/QueryInstanceMetricsResponse'
+    /api/v1/instances/{instance_id}/mountable-pvcs:
+        get:
+            tags:
+                - InstanceService
+            operationId: InstanceService_ListInstanceMountablePVCs
+            parameters:
+                - name: instance_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: name
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListMountablePVCsResponse'
     /api/v1/instances/{instance_id}/runtime:
         get:
             tags:
@@ -12474,6 +12578,35 @@ components:
                     type: string
                 request_id:
                     type: string
+        InstanceOperation:
+            type: object
+            properties:
+                id:
+                    type: string
+                instanceId:
+                    type: string
+                action:
+                    type: string
+                intentVersion:
+                    type: string
+                state:
+                    type: string
+                reason:
+                    type: string
+                phase:
+                    type: string
+                target_configuration:
+                    allOf:
+                        - $ref: '#/components/schemas/MountConfiguration'
+                    nullable: true
+                final_run_state:
+                    type: string
+                applied_mount_version:
+                    type: string
+                completion_scope:
+                    type: string
+                failure_reason:
+                    type: string
         NetworkOperation:
             type: object
             properties:
@@ -13521,6 +13654,28 @@ components:
                     type: string
                 verified_at:
                     type: string
+        AttachInstancePVCData:
+            type: object
+            properties:
+                instanceId:
+                    type: string
+                idempotencyKey:
+                    type: string
+                expectedVersion:
+                    type: string
+                pvc_name:
+                    type: string
+                mount_path:
+                    type: string
+                read_only:
+                    type: boolean
+                restart_if_running:
+                    type: boolean
+        AttachInstancePVCRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/AttachInstancePVCData'
         AuthorizeArtifactDownloadResponse:
             type: object
             properties:
@@ -15013,6 +15168,24 @@ components:
                     description: SUBMITTED、TERMINATING 或 GONE。
                 volume:
                     $ref: '#/components/schemas/Volume'
+        DetachInstancePVCData:
+            type: object
+            properties:
+                instanceId:
+                    type: string
+                idempotencyKey:
+                    type: string
+                expectedVersion:
+                    type: string
+                mount_path:
+                    type: string
+                restart_if_running:
+                    type: boolean
+        DetachInstancePVCRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/DetachInstancePVCData'
         Detail:
             type: object
             properties:
@@ -17077,9 +17250,12 @@ components:
                     format: date-time
                 version:
                     type: string
+                secret:
+                    type: string
+                    description: Legacy hashes have no secret until successful use or explicit rotation.
             description: |-
-                Inference-owned data-plane metadata. Platform AK/SK and tenant identity are
-                 deliberately absent. No read response can contain the secret or its hash.
+                Inference-owned data-plane credential. Authorized list/detail responses
+                 include the full secret; hashes and encryption material are never exposed.
         InferenceKeyCredentials:
             type: object
             properties:
@@ -17331,6 +17507,12 @@ components:
                     type: boolean
                 volumeReferencesReleased:
                     type: boolean
+                activeOperationId:
+                    type: string
+                executionRunState:
+                    type: string
+                appliedMountVersion:
+                    type: string
         InstanceConfiguration:
             type: object
             properties:
@@ -17360,6 +17542,12 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/InstanceEnvVar'
+                version:
+                    type: string
+                applied_mount_version:
+                    type: string
+                pending_change:
+                    $ref: '#/components/schemas/PendingMountChange'
         InstanceEnvVar:
             type: object
             properties:
@@ -19565,6 +19753,13 @@ components:
                     type: string
                 recommended_image_scope:
                     type: string
+        MountConfiguration:
+            type: object
+            properties:
+                volume_mounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VolumeMount'
         MountablePVC:
             type: object
             properties:
@@ -20356,6 +20551,17 @@ components:
                     items:
                         $ref: '#/components/schemas/NamedAny'
             description: Describes the operations available on a single path. A Path Item MAY be empty, due to ACL constraints. The path itself is still exposed to the documentation viewer but they will not know which operations and parameters are available.
+        PendingMountChange:
+            type: object
+            properties:
+                operation_id:
+                    type: string
+                intent_version:
+                    type: string
+                phase:
+                    type: string
+                target_configuration:
+                    $ref: '#/components/schemas/MountConfiguration'
         Permission:
             type: object
             properties:

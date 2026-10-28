@@ -59,6 +59,10 @@ func (x *InferenceKey) Redact() {
 	// Safe field: LastUsedAt
 
 	// Safe field: Version
+
+	// Redacting field: Secret
+	SecretTmp := ``
+	x.Secret = &SecretTmp
 }
 
 // Ensure CreateInferenceKeyData implements the Redactor interface at compile time.
@@ -108,7 +112,8 @@ func (x *InferenceKeyCredentials) Redact() {
 		return
 	}
 
-	// Safe field: Key
+	// Redacting field: Key
+	redact.Apply(x.Key)
 
 	// Redacting field: Secret
 	x.Secret = ``
@@ -139,7 +144,10 @@ func (x *ListInferenceKeysResponse) Redact() {
 		return
 	}
 
-	// Safe field: Items
+	// Redacting field: Items
+	for k := range x.Items {
+		redact.Apply(x.Items[k])
+	}
 
 	// Safe field: Total
 }

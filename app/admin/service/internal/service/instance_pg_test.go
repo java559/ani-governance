@@ -35,6 +35,8 @@ import (
 	"go-wind-admin/pkg/localdeps/go-crud/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 )
@@ -43,10 +45,14 @@ import (
 // injection and the external Acc plan response are controlled here.
 type instanceResolutionPeer struct {
 	InstanceOwnerClient
-	mu          sync.Mutex
-	plan        *gpuPlanFixture
-	calls       int
-	unavailable bool
+	mu                  sync.Mutex
+	plan                *gpuPlanFixture
+	calls               int
+	unavailable         bool
+	rejectDeleteVersion bool
+	deleteCalls         int
+	operationCalls      int
+	deleteRequest       *res.AcceptDeleteRequest
 }
 
 func (p *instanceResolutionPeer) Resolve(ctx context.Context, tenant, actor string, d *res.CreateInstanceData, defaults *res.SchedulingOptions) (*res.CreateSpec, error) {
@@ -60,6 +66,27 @@ func (p *instanceResolutionPeer) Resolve(ctx context.Context, tenant, actor stri
 		return p.InstanceOwnerClient.Resolve(ctx, tenant, actor, d, defaults)
 	}
 	return nil, errors.New("Resource resolution peer required")
+}
+
+func (p *instanceResolutionPeer) Delete(ctx context.Context, request *res.AcceptDeleteRequest) (*res.OperationResponse, error) {
+	p.mu.Lock()
+	p.deleteCalls++
+	p.deleteRequest = proto.Clone(request).(*res.AcceptDeleteRequest)
+	rejected := p.rejectDeleteVersion
+	p.mu.Unlock()
+	if rejected {
+		// Only the owner response boundary is injected. Gov's validation,
+		// durable claim, adapter dispatch and rejection writeback stay real.
+		return nil, status.Error(codes.FailedPrecondition, "INSTANCE_VERSION_CONFLICT")
+	}
+	return p.InstanceOwnerClient.Delete(ctx, request)
+}
+
+func (p *instanceResolutionPeer) Operation(ctx context.Context, tenant, actor, id string) (*res.Operation, error) {
+	p.mu.Lock()
+	p.operationCalls++
+	p.mu.Unlock()
+	return p.InstanceOwnerClient.Operation(ctx, tenant, actor, id)
 }
 
 type instancePlanPeer struct {
@@ -87,8 +114,16 @@ func TestInstanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T)
 	t.Run("cpu", func(t *testing.T) { instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t, true) })
 }
 
+func TestInstanceDeleteVersionRejectedReplayAndLocalOperation(t *testing.T) {
+	// Reuse the original current-authorization/real-PG/mTLS fixture and stop
+	// after this rejection slice, before its unrelated release scenarios.
+	t.Run("cpu", func(t *testing.T) { instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t, true, false, true) })
+	t.Run("gpu", func(t *testing.T) { instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t, false, false, true) })
+}
+
 func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu bool, schedulingScenario ...bool) {
 	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "true")
+	t.Setenv("ANI_INSTANCE_NEW_INTENTS_ENABLED", "true")
 	c := testutil.NewQuotaPGClient(t)
 	testutil.ResetQuotaFixture(t, c)
 	sys := appViewer.NewSystemViewerContext(context.Background())
@@ -224,6 +259,94 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 		require.NotNil(t, instance.GpuSummary)
 		require.Equal(t, plan.Request.ProfileId, instance.GpuSummary.ProfileId)
 		require.Equal(t, plan.Request.DevicesPerReplica, instance.GpuSummary.DevicesPerInstance)
+	}
+	if len(schedulingScenario) > 1 && schedulingScenario[1] {
+		original := operation
+		originalCharges, err := ledger.GetChargesForOperation(requestCtx, tenant.ID, first.OperationID)
+		require.NoError(t, err)
+		deleteKey := uuid.NewString()
+		request := &view.ChangeInstanceRequest{Data: &view.ChangeInstanceData{InstanceId: first.ResourceID, IdempotencyKey: deleteKey, ExpectedVersion: instance.Version}}
+		accepted, err := service.DeleteInstance(requestCtx, request)
+		require.NoError(t, err)
+		require.Equal(t, "QUEUED_FOR_OWNER", accepted.Result)
+		require.False(t, accepted.Replayed)
+		require.Equal(t, first.ResourceID, accepted.ResourceId)
+		require.Error(t, service.canOperate(requestCtx, first.ResourceID))
+		claimed, err := ledger.ClaimDispatchable(context.Background(), "instance-delete-rejection", time.Minute, 1)
+		require.NoError(t, err)
+		require.Len(t, claimed, 1)
+		require.Equal(t, accepted.OperationId, claimed[0].OperationID)
+		require.Equal(t, first.OperationID, claimed[0].CreateOperationID)
+		resource.rejectDeleteVersion = true
+		worker.dispatchOne(context.Background(), &claimed[0])
+		require.Equal(t, 1, resource.deleteCalls)
+		require.NotNil(t, resource.deleteRequest)
+		require.EqualValues(t, instance.Version, resource.deleteRequest.ExpectedVersion)
+		require.Equal(t, accepted.OperationId, resource.deleteRequest.Context.OperationId)
+		rejected, err := ledger.GetOperationForUser(requestCtx, tenant.ID, accepted.OperationId)
+		require.NoError(t, err)
+		require.Equal(t, quotaoperation.DispatchStateRejected, rejected.DispatchState)
+		require.NotNil(t, rejected.LastErrorCode)
+		require.Equal(t, "INSTANCE_VERSION_CONFLICT", *rejected.LastErrorCode)
+		require.Nil(t, rejected.AckJSON)
+		require.Equal(t, claimed[0].CanonicalRequest, rejected.CanonicalRequest)
+		require.NoError(t, service.canOperate(requestCtx, first.ResourceID), "definite owner rejection reopens the Instance intent gate")
+
+		replay, err := service.DeleteInstance(requestCtx, request)
+		require.NoError(t, err)
+		require.True(t, replay.Replayed)
+		require.Equal(t, "REJECTED_VERSION_CONFLICT", replay.Result)
+		require.Equal(t, accepted.OperationId, replay.OperationId)
+		require.Equal(t, accepted.ResourceId, replay.ResourceId)
+		projection, err := acceptance.AcceptGpuDeleteVersion(requestCtx, deleteKey, first.ResourceID, instance.Version)
+		require.NoError(t, err)
+		require.Equal(t, "REJECTED_VERSION_CONFLICT", projection.Result)
+		require.Equal(t, accepted.OperationId, projection.DeleteOperationId)
+		require.Empty(t, projection.DispatchOperationId, "a rejected replay cannot ask the dispatcher to resend")
+		ownerQueries := resource.operationCalls
+		local, err := service.GetInstanceOperation(requestCtx, &view.GetOperationRequest{OperationId: accepted.OperationId})
+		require.NoError(t, err)
+		require.Equal(t, accepted.OperationId, local.Id)
+		require.Equal(t, first.ResourceID, local.InstanceId)
+		require.Equal(t, "delete", local.Action)
+		require.Equal(t, "failed", local.State)
+		require.Zero(t, local.IntentVersion, "Resource did not admit an operation version")
+		require.Equal(t, "INSTANCE_VERSION_CONFLICT", local.Reason)
+		require.Equal(t, ownerQueries, resource.operationCalls, "the rejected operation only exists in Gov")
+		resends, err := ledger.ClaimDispatchable(context.Background(), "instance-delete-no-resend", time.Minute, 8)
+		require.NoError(t, err)
+		require.Empty(t, resends)
+		require.Equal(t, 1, resource.deleteCalls)
+		changed := proto.Clone(request).(*view.ChangeInstanceRequest)
+		changed.Data.ExpectedVersion++
+		_, err = service.DeleteInstance(requestCtx, changed)
+		require.Error(t, err, "the same key cannot be rewritten with today's version")
+		after, err := ledger.GetOperationForUser(requestCtx, tenant.ID, accepted.OperationId)
+		require.NoError(t, err)
+		require.Equal(t, rejected.CanonicalRequest, after.CanonicalRequest)
+		require.Equal(t, rejected.RequestHash, after.RequestHash)
+		require.Equal(t, rejected.AttemptCount, after.AttemptCount)
+		require.Equal(t, rejected.LeaseGeneration, after.LeaseGeneration)
+		createAfter, err := ledger.GetOperationForUser(requestCtx, tenant.ID, first.OperationID)
+		require.NoError(t, err)
+		require.Equal(t, original.CanonicalRequest, createAfter.CanonicalRequest)
+		require.Equal(t, original.AckJSON, createAfter.AckJSON)
+		chargesAfter, err := ledger.GetChargesForOperation(requestCtx, tenant.ID, first.OperationID)
+		require.NoError(t, err)
+		require.Len(t, chargesAfter, len(originalCharges))
+		for i, charge := range chargesAfter {
+			require.Equal(t, originalCharges[i].ChargeID, charge.ChargeID)
+			require.Equal(t, originalCharges[i].OriginalUnits, charge.OriginalUnits)
+			require.Zero(t, charge.ReleasedUnits)
+		}
+		require.Zero(t, c.Client().QuotaReleaseReceipt.Query().CountX(sys), "a definite version rejection is not owner cleanup")
+		balances, err := ledger.RecomputeInvariants(context.Background(), tenant.ID)
+		require.NoError(t, err)
+		for _, balance := range balances {
+			require.True(t, balance.Balanced)
+			require.Equal(t, balance.ChargeRemainder, balance.OccupiedUnits)
+		}
+		return
 	}
 	if schedulingStore != nil {
 		require.NoError(t, settingsRepo.SaveInstanceSchedulingSettings(sys, peer.ClusterID, operator.ID, []byte(`{"defaults":{"pod_placement":"COLOCATE_PREFERRED"},"priority_class_allowlists":[]}`)))

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/base64"
 	"slices"
 	"strings"
 
@@ -117,7 +118,7 @@ func (s *InferenceService) ListInferenceKeys(ctx context.Context, in *view.ListI
 	}
 	out := &view.ListInferenceKeysResponse{Items: make([]*view.InferenceKey, 0, len(result.Items)), Total: result.Total}
 	for _, item := range result.Items {
-		key, err := projectInferenceKey(item, "")
+		key, err := projectInferenceKey(item, "", true)
 		if err != nil {
 			return nil, err
 		}
@@ -138,7 +139,7 @@ func (s *InferenceService) GetInferenceKey(ctx context.Context, in *view.GetInfe
 	if err != nil {
 		return nil, mapInferenceKeyError(err)
 	}
-	return projectInferenceKey(result, in.KeyId)
+	return projectInferenceKey(result, in.KeyId, true)
 }
 
 func (s *InferenceService) RevokeInferenceKey(ctx context.Context, in *view.RevokeInferenceKeyRequest) (*view.InferenceKey, error) {
@@ -156,7 +157,7 @@ func (s *InferenceService) RevokeInferenceKey(ctx context.Context, in *view.Revo
 	if result == nil || result.GetKey().GetRevokedAt() == nil {
 		return nil, view.ErrorInferenceKeyUnavailable("invalid inference key response")
 	}
-	return projectInferenceKey(result.Key, in.KeyId)
+	return projectInferenceKey(result.Key, in.KeyId, false)
 }
 
 func (s *InferenceService) RotateInferenceKey(ctx context.Context, in *view.RotateInferenceKeyRequest) (*view.InferenceKeyCredentials, error) {
@@ -199,18 +200,27 @@ func sameInferenceKeyIntent(in *runtimev1.CreateInferenceAccessKeyRequest, key *
 	return key != nil && in.Name == key.Name && slices.Equal(normalizedInferenceKeyScope(in.AllowedServiceIds), normalizedInferenceKeyScope(key.AllowedServiceIds)) && slices.Equal(normalizedInferenceKeyScope(in.AllowedModelNames), normalizedInferenceKeyScope(key.AllowedModelNames)) && in.RequestsPerSecond == key.RequestsPerSecond && in.RequestsPerMinute == key.RequestsPerMinute && in.RequestsPerHour == key.RequestsPerHour && proto.Equal(in.ExpiresAt, key.ExpiresAt)
 }
 
-func projectInferenceKey(key *runtimev1.InferenceAccessKey, id string) (*view.InferenceKey, error) {
+func projectInferenceKey(key *runtimev1.InferenceAccessKey, id string, includeSecret bool) (*view.InferenceKey, error) {
 	if key == nil || !canonicalInferenceKeyID(key.Id) || (id != "" && key.Id != id) || !strings.HasPrefix(key.KeyPrefix, "iak_") || len(key.KeyPrefix) != 16 || key.Version < 1 || key.CreatedAt == nil {
 		return nil, view.ErrorInferenceKeyUnavailable("invalid inference key response")
 	}
 	if key.CreatedAt.CheckValid() != nil || (key.ExpiresAt != nil && key.ExpiresAt.CheckValid() != nil) || (key.RevokedAt != nil && key.RevokedAt.CheckValid() != nil) || (key.LastUsedAt != nil && key.LastUsedAt.CheckValid() != nil) {
 		return nil, view.ErrorInferenceKeyUnavailable("invalid inference key response")
 	}
-	return &view.InferenceKey{Id: key.Id, Name: key.Name, KeyPrefix: key.KeyPrefix, AllowedServiceIds: append([]string(nil), key.AllowedServiceIds...), AllowedModelNames: append([]string(nil), key.AllowedModelNames...), RequestsPerSecond: key.RequestsPerSecond, RequestsPerMinute: key.RequestsPerMinute, RequestsPerHour: key.RequestsPerHour, ExpiresAt: key.ExpiresAt, RevokedAt: key.RevokedAt, CreatedBy: key.CreatedBy, CreatedAt: key.CreatedAt, LastUsedAt: key.LastUsedAt, Version: key.Version}, nil
+	out := &view.InferenceKey{Id: key.Id, Name: key.Name, KeyPrefix: key.KeyPrefix, AllowedServiceIds: append([]string(nil), key.AllowedServiceIds...), AllowedModelNames: append([]string(nil), key.AllowedModelNames...), RequestsPerSecond: key.RequestsPerSecond, RequestsPerMinute: key.RequestsPerMinute, RequestsPerHour: key.RequestsPerHour, ExpiresAt: key.ExpiresAt, RevokedAt: key.RevokedAt, CreatedBy: key.CreatedBy, CreatedAt: key.CreatedAt, LastUsedAt: key.LastUsedAt, Version: key.Version}
+	if includeSecret && key.Secret != nil {
+		secret := key.GetSecret()
+		decoded, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(secret, "iak_"))
+		if err != nil || len(decoded) != 32 || len(secret) != 47 || !strings.HasPrefix(secret, key.KeyPrefix) {
+			return nil, view.ErrorInferenceKeyUnavailable("invalid inference key response")
+		}
+		out.Secret = &secret
+	}
+	return out, nil
 }
 
 func inferenceKeyCredentials(key *runtimev1.InferenceAccessKey, secret string, replayed bool, id string) (*view.InferenceKeyCredentials, error) {
-	projected, err := projectInferenceKey(key, id)
+	projected, err := projectInferenceKey(key, id, false)
 	if err != nil {
 		return nil, err
 	}

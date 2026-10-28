@@ -20,8 +20,10 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationInstanceServiceAttachInstancePVC = "/admin.service.v1.InstanceService/AttachInstancePVC"
 const OperationInstanceServiceCreateInstance = "/admin.service.v1.InstanceService/CreateInstance"
 const OperationInstanceServiceDeleteInstance = "/admin.service.v1.InstanceService/DeleteInstance"
+const OperationInstanceServiceDetachInstancePVC = "/admin.service.v1.InstanceService/DetachInstancePVC"
 const OperationInstanceServiceExecInstance = "/admin.service.v1.InstanceService/ExecInstance"
 const OperationInstanceServiceGetInstance = "/admin.service.v1.InstanceService/GetInstance"
 const OperationInstanceServiceGetInstanceConfiguration = "/admin.service.v1.InstanceService/GetInstanceConfiguration"
@@ -31,20 +33,24 @@ const OperationInstanceServiceGetInstanceRuntime = "/admin.service.v1.InstanceSe
 const OperationInstanceServiceGetInstanceSchedulingSettings = "/admin.service.v1.InstanceService/GetInstanceSchedulingSettings"
 const OperationInstanceServiceGetSchedulerConfig = "/admin.service.v1.InstanceService/GetSchedulerConfig"
 const OperationInstanceServiceListInstanceEvents = "/admin.service.v1.InstanceService/ListInstanceEvents"
+const OperationInstanceServiceListInstanceMountablePVCs = "/admin.service.v1.InstanceService/ListInstanceMountablePVCs"
 const OperationInstanceServiceListInstances = "/admin.service.v1.InstanceService/ListInstances"
 const OperationInstanceServiceListMountablePVCs = "/admin.service.v1.InstanceService/ListMountablePVCs"
 const OperationInstanceServiceQueryInstanceMetrics = "/admin.service.v1.InstanceService/QueryInstanceMetrics"
 const OperationInstanceServiceQueryResourceTrend = "/admin.service.v1.InstanceService/QueryResourceTrend"
+const OperationInstanceServiceRestartInstance = "/admin.service.v1.InstanceService/RestartInstance"
 const OperationInstanceServiceStartInstance = "/admin.service.v1.InstanceService/StartInstance"
 const OperationInstanceServiceStopInstance = "/admin.service.v1.InstanceService/StopInstance"
 const OperationInstanceServiceUpdateInstanceSchedulingSettings = "/admin.service.v1.InstanceService/UpdateInstanceSchedulingSettings"
 const OperationInstanceServiceUpdateSchedulerConfig = "/admin.service.v1.InstanceService/UpdateSchedulerConfig"
 
 type InstanceServiceHTTPServer interface {
+	AttachInstancePVC(context.Context, *v1.AttachInstancePVCRequest) (*v1.Acceptance, error)
 	// CreateInstance 创建使用服务器固定的当前配置合同 2；可选配置省略时正常解析默认值。
 	// 新建维护闸门关闭返回 503 INSTANCE_CREATE_DISABLED，同键重放不受影响。
 	CreateInstance(context.Context, *v1.CreateInstanceRequest) (*v1.Acceptance, error)
 	DeleteInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
+	DetachInstancePVC(context.Context, *v1.DetachInstancePVCRequest) (*v1.Acceptance, error)
 	ExecInstance(context.Context, *v1.ExecInstanceRequest) (*v1.ExecInstanceResponse, error)
 	GetInstance(context.Context, *v1.GetInstanceRequest) (*v1.Instance, error)
 	GetInstanceConfiguration(context.Context, *v1.GetInstanceRequest) (*v1.InstanceConfiguration, error)
@@ -54,11 +60,13 @@ type InstanceServiceHTTPServer interface {
 	GetInstanceSchedulingSettings(context.Context, *v1.InstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
 	GetSchedulerConfig(context.Context, *v1.SchedulerConfigRequest) (*v1.SchedulerConfig, error)
 	ListInstanceEvents(context.Context, *v1.GetInstanceRequest) (*v1.InstanceEvents, error)
+	ListInstanceMountablePVCs(context.Context, *v1.ListInstanceMountablePVCsRequest) (*v1.ListMountablePVCsResponse, error)
 	ListInstances(context.Context, *v1.ListInstancesRequest) (*v1.ListInstancesResponse, error)
 	ListMountablePVCs(context.Context, *v1.ListMountablePVCsRequest) (*v1.ListMountablePVCsResponse, error)
 	QueryInstanceMetrics(context.Context, *v1.QueryInstanceMetricsRequest) (*v1.QueryInstanceMetricsResponse, error)
 	// QueryResourceTrend 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
 	QueryResourceTrend(context.Context, *v1.QueryResourceTrendRequest) (*v1.QueryResourceTrendResponse, error)
+	RestartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	StartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	StopInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
 	UpdateInstanceSchedulingSettings(context.Context, *v1.UpdateInstanceSchedulingSettingsRequest) (*v1.InstanceSchedulingSettings, error)
@@ -83,6 +91,10 @@ func RegisterInstanceServiceHTTPServer(s *http.Server, srv InstanceServiceHTTPSe
 	r.GET("/api/v1/instances/{instance_id}", _InstanceService_GetInstance0_HTTP_Handler(srv))
 	r.POST("/api/v1/instances/{data.instance_id}:start", _InstanceService_StartInstance0_HTTP_Handler(srv))
 	r.POST("/api/v1/instances/{data.instance_id}:stop", _InstanceService_StopInstance0_HTTP_Handler(srv))
+	r.POST("/api/v1/instances/{data.instance_id}:restart", _InstanceService_RestartInstance0_HTTP_Handler(srv))
+	r.POST("/api/v1/instances/{data.instance_id}:attach-pvc", _InstanceService_AttachInstancePVC0_HTTP_Handler(srv))
+	r.POST("/api/v1/instances/{data.instance_id}:detach-pvc", _InstanceService_DetachInstancePVC0_HTTP_Handler(srv))
+	r.GET("/api/v1/instances/{instance_id}/mountable-pvcs", _InstanceService_ListInstanceMountablePVCs0_HTTP_Handler(srv))
 	r.DELETE("/api/v1/instances/{data.instance_id}", _InstanceService_DeleteInstance0_HTTP_Handler(srv))
 	r.GET("/api/v1/instance-operations/{operation_id}", _InstanceService_GetInstanceOperation0_HTTP_Handler(srv))
 	r.POST("/api/v1/instances/{data.instance_id}/exec", _InstanceService_ExecInstance0_HTTP_Handler(srv))
@@ -434,6 +446,103 @@ func _InstanceService_StopInstance0_HTTP_Handler(srv InstanceServiceHTTPServer) 
 	}
 }
 
+func _InstanceService_RestartInstance0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ChangeInstanceRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceRestartInstance)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RestartInstance(ctx, req.(*v1.ChangeInstanceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Acceptance)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_AttachInstancePVC0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.AttachInstancePVCRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceAttachInstancePVC)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AttachInstancePVC(ctx, req.(*v1.AttachInstancePVCRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Acceptance)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_DetachInstancePVC0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DetachInstancePVCRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceDetachInstancePVC)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DetachInstancePVC(ctx, req.(*v1.DetachInstancePVCRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.Acceptance)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InstanceService_ListInstanceMountablePVCs0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListInstanceMountablePVCsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInstanceServiceListInstanceMountablePVCs)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListInstanceMountablePVCs(ctx, req.(*v1.ListInstanceMountablePVCsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListMountablePVCsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _InstanceService_DeleteInstance0_HTTP_Handler(srv InstanceServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in v1.ChangeInstanceRequest
@@ -507,10 +616,12 @@ func _InstanceService_ExecInstance0_HTTP_Handler(srv InstanceServiceHTTPServer) 
 }
 
 type InstanceServiceHTTPClient interface {
+	AttachInstancePVC(ctx context.Context, req *v1.AttachInstancePVCRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	// CreateInstance 创建使用服务器固定的当前配置合同 2；可选配置省略时正常解析默认值。
 	// 新建维护闸门关闭返回 503 INSTANCE_CREATE_DISABLED，同键重放不受影响。
 	CreateInstance(ctx context.Context, req *v1.CreateInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	DeleteInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
+	DetachInstancePVC(ctx context.Context, req *v1.DetachInstancePVCRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	ExecInstance(ctx context.Context, req *v1.ExecInstanceRequest, opts ...http.CallOption) (rsp *v1.ExecInstanceResponse, err error)
 	GetInstance(ctx context.Context, req *v1.GetInstanceRequest, opts ...http.CallOption) (rsp *v1.Instance, err error)
 	GetInstanceConfiguration(ctx context.Context, req *v1.GetInstanceRequest, opts ...http.CallOption) (rsp *v1.InstanceConfiguration, err error)
@@ -520,11 +631,13 @@ type InstanceServiceHTTPClient interface {
 	GetInstanceSchedulingSettings(ctx context.Context, req *v1.InstanceSchedulingSettingsRequest, opts ...http.CallOption) (rsp *v1.InstanceSchedulingSettings, err error)
 	GetSchedulerConfig(ctx context.Context, req *v1.SchedulerConfigRequest, opts ...http.CallOption) (rsp *v1.SchedulerConfig, err error)
 	ListInstanceEvents(ctx context.Context, req *v1.GetInstanceRequest, opts ...http.CallOption) (rsp *v1.InstanceEvents, err error)
+	ListInstanceMountablePVCs(ctx context.Context, req *v1.ListInstanceMountablePVCsRequest, opts ...http.CallOption) (rsp *v1.ListMountablePVCsResponse, err error)
 	ListInstances(ctx context.Context, req *v1.ListInstancesRequest, opts ...http.CallOption) (rsp *v1.ListInstancesResponse, err error)
 	ListMountablePVCs(ctx context.Context, req *v1.ListMountablePVCsRequest, opts ...http.CallOption) (rsp *v1.ListMountablePVCsResponse, err error)
 	QueryInstanceMetrics(ctx context.Context, req *v1.QueryInstanceMetricsRequest, opts ...http.CallOption) (rsp *v1.QueryInstanceMetricsResponse, err error)
 	// QueryResourceTrend 首页资源趋势：HTTP 是专用 GET handler，查询参数在 handler 内严格校验。
 	QueryResourceTrend(ctx context.Context, req *v1.QueryResourceTrendRequest, opts ...http.CallOption) (rsp *v1.QueryResourceTrendResponse, err error)
+	RestartInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	StartInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	StopInstance(ctx context.Context, req *v1.ChangeInstanceRequest, opts ...http.CallOption) (rsp *v1.Acceptance, err error)
 	UpdateInstanceSchedulingSettings(ctx context.Context, req *v1.UpdateInstanceSchedulingSettingsRequest, opts ...http.CallOption) (rsp *v1.InstanceSchedulingSettings, err error)
@@ -537,6 +650,19 @@ type InstanceServiceHTTPClientImpl struct {
 
 func NewInstanceServiceHTTPClient(client *http.Client) InstanceServiceHTTPClient {
 	return &InstanceServiceHTTPClientImpl{client}
+}
+
+func (c *InstanceServiceHTTPClientImpl) AttachInstancePVC(ctx context.Context, in *v1.AttachInstancePVCRequest, opts ...http.CallOption) (*v1.Acceptance, error) {
+	var out v1.Acceptance
+	pattern := "/api/v1/instances/{data.instance_id}:attach-pvc"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceAttachInstancePVC))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // CreateInstance 创建使用服务器固定的当前配置合同 2；可选配置省略时正常解析默认值。
@@ -561,6 +687,19 @@ func (c *InstanceServiceHTTPClientImpl) DeleteInstance(ctx context.Context, in *
 	opts = append(opts, http.Operation(OperationInstanceServiceDeleteInstance))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "DELETE", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) DetachInstancePVC(ctx context.Context, in *v1.DetachInstancePVCRequest, opts ...http.CallOption) (*v1.Acceptance, error) {
+	var out v1.Acceptance
+	pattern := "/api/v1/instances/{data.instance_id}:detach-pvc"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceDetachInstancePVC))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -684,6 +823,19 @@ func (c *InstanceServiceHTTPClientImpl) ListInstanceEvents(ctx context.Context, 
 	return &out, nil
 }
 
+func (c *InstanceServiceHTTPClientImpl) ListInstanceMountablePVCs(ctx context.Context, in *v1.ListInstanceMountablePVCsRequest, opts ...http.CallOption) (*v1.ListMountablePVCsResponse, error) {
+	var out v1.ListMountablePVCsResponse
+	pattern := "/api/v1/instances/{instance_id}/mountable-pvcs"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInstanceServiceListInstanceMountablePVCs))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *InstanceServiceHTTPClientImpl) ListInstances(ctx context.Context, in *v1.ListInstancesRequest, opts ...http.CallOption) (*v1.ListInstancesResponse, error) {
 	var out v1.ListInstancesResponse
 	pattern := "/api/v1/instances"
@@ -731,6 +883,19 @@ func (c *InstanceServiceHTTPClientImpl) QueryResourceTrend(ctx context.Context, 
 	opts = append(opts, http.Operation(OperationInstanceServiceQueryResourceTrend))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InstanceServiceHTTPClientImpl) RestartInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...http.CallOption) (*v1.Acceptance, error) {
+	var out v1.Acceptance
+	pattern := "/api/v1/instances/{data.instance_id}:restart"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInstanceServiceRestartInstance))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

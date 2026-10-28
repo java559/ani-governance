@@ -10,6 +10,10 @@ import (
 const InstanceCreatePath = "/api/v1/instances"
 const InstanceDeletePath = "/api/v1/instances/{data.instance_id}"
 const InstanceStartPath = "/api/v1/instances/{data.instance_id}:start"
+const InstanceRestartPath = "/api/v1/instances/{data.instance_id}:restart"
+const InstanceAttachPVCPath = "/api/v1/instances/{data.instance_id}:attach-pvc"
+const InstanceDetachPVCPath = "/api/v1/instances/{data.instance_id}:detach-pvc"
+const InstanceScopeMountablePVCsPath = "/api/v1/instances/{instance_id}/mountable-pvcs"
 const InstanceStopPath = "/api/v1/instances/{data.instance_id}:stop"
 const InstanceMountablePVCsPath = "/api/v1/instances/mountable-pvcs"
 const InstanceConfigurationPath = "/api/v1/instances/{instance_id}/configuration"
@@ -54,9 +58,9 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 		allowed = method == "POST" || method == "GET"
 	case InstanceDeletePath:
 		allowed = method == "DELETE"
-	case InstanceStartPath, InstanceStopPath, InstanceExecPath, InstanceMetricsQueryPath:
+	case InstanceStartPath, InstanceStopPath, InstanceRestartPath, InstanceAttachPVCPath, InstanceDetachPVCPath, InstanceExecPath, InstanceMetricsQueryPath:
 		allowed = method == "POST"
-	case InstanceGetPath, InstanceOperationPath, InstanceRuntimePath, InstanceEventsPath, InstanceLogsPath, InstanceMountablePVCsPath, InstanceConfigurationPath, InstanceMetricsLatestPath:
+	case InstanceGetPath, InstanceOperationPath, InstanceRuntimePath, InstanceEventsPath, InstanceLogsPath, InstanceMountablePVCsPath, InstanceScopeMountablePVCsPath, InstanceConfigurationPath, InstanceMetricsLatestPath:
 		allowed = method == "GET"
 	case ObservabilityResourceTrendPath, OverviewPath:
 		allowed = method == "GET"
