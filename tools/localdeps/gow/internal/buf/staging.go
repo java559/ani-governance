@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 )
@@ -121,6 +122,13 @@ func stageAndGenerate(ctx context.Context, root string, templates []*genTemplate
 	if _, err := os.Stat(plugin); err == nil {
 		if err := copyFile(plugin, filepath.Join(stage, "tools", "bin", "protoc-gen-go-redact")); err != nil {
 			return fmt.Errorf("staging protoc-gen-go-redact: %w", err)
+		}
+		// Windows 的 exec 按 PATHEXT 解析插件名，只认带扩展名的文件：模板里写的是
+		// ../tools/bin/protoc-gen-go-redact，因此暂存副本要同时提供 .exe 名称。
+		if runtime.GOOS == "windows" {
+			if err := copyFile(plugin, filepath.Join(stage, "tools", "bin", "protoc-gen-go-redact.exe")); err != nil {
+				return fmt.Errorf("staging protoc-gen-go-redact.exe: %w", err)
+			}
 		}
 	}
 

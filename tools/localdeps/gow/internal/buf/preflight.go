@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -252,7 +253,7 @@ func buildInfo(ctx context.Context, program string) (*buildID, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !info.Mode().IsRegular() || info.Mode().Perm()&0o111 == 0 {
+	if !info.Mode().IsRegular() || (runtime.GOOS != "windows" && info.Mode().Perm()&0o111 == 0) {
 		return nil, fmt.Errorf("%s is not a regular executable file", program)
 	}
 	cctx, cancel := context.WithTimeout(ctx, 20*time.Second)
