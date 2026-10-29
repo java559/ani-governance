@@ -30,6 +30,7 @@ type ConsoleOverviewResponse struct {
 	InferenceServices *ConsoleStatusOverview   `protobuf:"bytes,2,opt,name=inference_services,json=inferenceServices,proto3" json:"inference_services,omitempty"` // 推理服务统计
 	Models            *ConsoleStatusOverview   `protobuf:"bytes,3,opt,name=models,proto3" json:"models,omitempty"`                                                // 模型仓库统计
 	KnowledgeBases    *ConsoleStatusOverview   `protobuf:"bytes,4,opt,name=knowledge_bases,json=knowledgeBases,proto3" json:"knowledge_bases,omitempty"`          // 知识库统计（当前无数据源，恒 0）
+	GpuQuota          *ConsoleGpuQuotaOverview `protobuf:"bytes,5,opt,name=gpu_quota,proto3" json:"gpu_quota,omitempty"`                                          // 本租户 GPU 配额（两项固定键）
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -88,6 +89,13 @@ func (x *ConsoleOverviewResponse) GetModels() *ConsoleStatusOverview {
 func (x *ConsoleOverviewResponse) GetKnowledgeBases() *ConsoleStatusOverview {
 	if x != nil {
 		return x.KnowledgeBases
+	}
+	return nil
+}
+
+func (x *ConsoleOverviewResponse) GetGpuQuota() *ConsoleGpuQuotaOverview {
+	if x != nil {
+		return x.GpuQuota
 	}
 	return nil
 }
@@ -214,16 +222,173 @@ func (x *ConsoleStatusOverview) GetOther() int64 {
 	return 0
 }
 
+// 本租户 GPU 配额：两个固定键，未配置时补零并置 configured=false，
+// 不省略字段、不返回 null。两项是二选一语义（整卡独占 vs 共享显存），不可相加。
+type ConsoleGpuQuotaOverview struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	SharedMemoryMib *ConsoleQuotaItem      `protobuf:"bytes,1,opt,name=shared_memory_mib,proto3" json:"shared_memory_mib,omitempty"` // gpu.shared_memory_mib
+	PhysicalCount   *ConsoleQuotaItem      `protobuf:"bytes,2,opt,name=physical_count,proto3" json:"physical_count,omitempty"`       // gpu.physical.count
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ConsoleGpuQuotaOverview) Reset() {
+	*x = ConsoleGpuQuotaOverview{}
+	mi := &file_admin_service_v1_i_overview_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsoleGpuQuotaOverview) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsoleGpuQuotaOverview) ProtoMessage() {}
+
+func (x *ConsoleGpuQuotaOverview) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_service_v1_i_overview_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsoleGpuQuotaOverview.ProtoReflect.Descriptor instead.
+func (*ConsoleGpuQuotaOverview) Descriptor() ([]byte, []int) {
+	return file_admin_service_v1_i_overview_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ConsoleGpuQuotaOverview) GetSharedMemoryMib() *ConsoleQuotaItem {
+	if x != nil {
+		return x.SharedMemoryMib
+	}
+	return nil
+}
+
+func (x *ConsoleGpuQuotaOverview) GetPhysicalCount() *ConsoleQuotaItem {
+	if x != nil {
+		return x.PhysicalCount
+	}
+	return nil
+}
+
+// 配额项：数值一律十进制字符串（与 /api/v1/me/quota-accounts 同源同口径，
+// 避免 JS 2^53 精度上限），与同响应内的卡片计数（JSON number）类型不同。
+type ConsoleQuotaItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuotaCode     string                 `protobuf:"bytes,1,opt,name=quota_code,proto3" json:"quota_code,omitempty"`   // 稳定配额编码
+	Unit          string                 `protobuf:"bytes,2,opt,name=unit,proto3" json:"unit,omitempty"`               // 单位（MiB / gpu）
+	Limit         string                 `protobuf:"bytes,3,opt,name=limit,proto3" json:"limit,omitempty"`             // 当前套餐上限；未配置为 "0"，须结合 configured
+	Occupied      string                 `protobuf:"bytes,4,opt,name=occupied,proto3" json:"occupied,omitempty"`       // 当前并发占用（CONCURRENT 语义，释放后回落）
+	Available     string                 `protobuf:"bytes,5,opt,name=available,proto3" json:"available,omitempty"`     // max(limit-occupied, 0)
+	OverLimit     bool                   `protobuf:"varint,6,opt,name=over_limit,proto3" json:"over_limit,omitempty"`  // occupied > limit（降配后可能出现）
+	Configured    bool                   `protobuf:"varint,7,opt,name=configured,proto3" json:"configured,omitempty"`  // 当前套餐是否配置了该配额；false 不表示无限
+	Enforcement   string                 `protobuf:"bytes,8,opt,name=enforcement,proto3" json:"enforcement,omitempty"` // 执行级别：ENFORCED 才真正拦截创建
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ConsoleQuotaItem) Reset() {
+	*x = ConsoleQuotaItem{}
+	mi := &file_admin_service_v1_i_overview_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ConsoleQuotaItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsoleQuotaItem) ProtoMessage() {}
+
+func (x *ConsoleQuotaItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_service_v1_i_overview_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsoleQuotaItem.ProtoReflect.Descriptor instead.
+func (*ConsoleQuotaItem) Descriptor() ([]byte, []int) {
+	return file_admin_service_v1_i_overview_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ConsoleQuotaItem) GetQuotaCode() string {
+	if x != nil {
+		return x.QuotaCode
+	}
+	return ""
+}
+
+func (x *ConsoleQuotaItem) GetUnit() string {
+	if x != nil {
+		return x.Unit
+	}
+	return ""
+}
+
+func (x *ConsoleQuotaItem) GetLimit() string {
+	if x != nil {
+		return x.Limit
+	}
+	return ""
+}
+
+func (x *ConsoleQuotaItem) GetOccupied() string {
+	if x != nil {
+		return x.Occupied
+	}
+	return ""
+}
+
+func (x *ConsoleQuotaItem) GetAvailable() string {
+	if x != nil {
+		return x.Available
+	}
+	return ""
+}
+
+func (x *ConsoleQuotaItem) GetOverLimit() bool {
+	if x != nil {
+		return x.OverLimit
+	}
+	return false
+}
+
+func (x *ConsoleQuotaItem) GetConfigured() bool {
+	if x != nil {
+		return x.Configured
+	}
+	return false
+}
+
+func (x *ConsoleQuotaItem) GetEnforcement() string {
+	if x != nil {
+		return x.Enforcement
+	}
+	return ""
+}
+
 var File_admin_service_v1_i_overview_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_overview_proto_rawDesc = "" +
 	"\n" +
-	"!admin/service/v1/i_overview.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xcd\x02\n" +
+	"!admin/service/v1/i_overview.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x96\x03\n" +
 	"\x17ConsoleOverviewResponse\x12G\n" +
 	"\tinstances\x18\x01 \x01(\v2).admin.service.v1.ConsoleInstanceOverviewR\tinstances\x12V\n" +
 	"\x12inference_services\x18\x02 \x01(\v2'.admin.service.v1.ConsoleStatusOverviewR\x11inferenceServices\x12?\n" +
 	"\x06models\x18\x03 \x01(\v2'.admin.service.v1.ConsoleStatusOverviewR\x06models\x12P\n" +
-	"\x0fknowledge_bases\x18\x04 \x01(\v2'.admin.service.v1.ConsoleStatusOverviewR\x0eknowledgeBases\"\xd4\x01\n" +
+	"\x0fknowledge_bases\x18\x04 \x01(\v2'.admin.service.v1.ConsoleStatusOverviewR\x0eknowledgeBases\x12G\n" +
+	"\tgpu_quota\x18\x05 \x01(\v2).admin.service.v1.ConsoleGpuQuotaOverviewR\tgpu_quota\"\xd4\x01\n" +
 	"\x17ConsoleInstanceOverview\x12\x14\n" +
 	"\x05total\x18\x01 \x01(\x03R\x05total\x12Q\n" +
 	"\bby_state\x18\x02 \x03(\v26.admin.service.v1.ConsoleInstanceOverview.ByStateEntryR\abyState\x12\x14\n" +
@@ -237,7 +402,25 @@ const file_admin_service_v1_i_overview_proto_rawDesc = "" +
 	"\x05other\x18\x03 \x01(\x03R\x05other\x1a;\n" +
 	"\rByStatusEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x012}\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"\xb7\x01\n" +
+	"\x17ConsoleGpuQuotaOverview\x12P\n" +
+	"\x11shared_memory_mib\x18\x01 \x01(\v2\".admin.service.v1.ConsoleQuotaItemR\x11shared_memory_mib\x12J\n" +
+	"\x0ephysical_count\x18\x02 \x01(\v2\".admin.service.v1.ConsoleQuotaItemR\x0ephysical_count\"\xf8\x01\n" +
+	"\x10ConsoleQuotaItem\x12\x1e\n" +
+	"\n" +
+	"quota_code\x18\x01 \x01(\tR\n" +
+	"quota_code\x12\x12\n" +
+	"\x04unit\x18\x02 \x01(\tR\x04unit\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\tR\x05limit\x12\x1a\n" +
+	"\boccupied\x18\x04 \x01(\tR\boccupied\x12\x1c\n" +
+	"\tavailable\x18\x05 \x01(\tR\tavailable\x12\x1e\n" +
+	"\n" +
+	"over_limit\x18\x06 \x01(\bR\n" +
+	"over_limit\x12\x1e\n" +
+	"\n" +
+	"configured\x18\a \x01(\bR\n" +
+	"configured\x12 \n" +
+	"\venforcement\x18\b \x01(\tR\venforcement2}\n" +
 	"\x0fOverviewService\x12j\n" +
 	"\vGetOverview\x12\x16.google.protobuf.Empty\x1a).admin.service.v1.ConsoleOverviewResponse\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/v1/overviewB\xbb\x01\n" +
 	"\x14com.admin.service.v1B\x0eIOverviewProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
@@ -254,29 +437,34 @@ func file_admin_service_v1_i_overview_proto_rawDescGZIP() []byte {
 	return file_admin_service_v1_i_overview_proto_rawDescData
 }
 
-var file_admin_service_v1_i_overview_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_admin_service_v1_i_overview_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_admin_service_v1_i_overview_proto_goTypes = []any{
 	(*ConsoleOverviewResponse)(nil), // 0: admin.service.v1.ConsoleOverviewResponse
 	(*ConsoleInstanceOverview)(nil), // 1: admin.service.v1.ConsoleInstanceOverview
 	(*ConsoleStatusOverview)(nil),   // 2: admin.service.v1.ConsoleStatusOverview
-	nil,                             // 3: admin.service.v1.ConsoleInstanceOverview.ByStateEntry
-	nil,                             // 4: admin.service.v1.ConsoleStatusOverview.ByStatusEntry
-	(*emptypb.Empty)(nil),           // 5: google.protobuf.Empty
+	(*ConsoleGpuQuotaOverview)(nil), // 3: admin.service.v1.ConsoleGpuQuotaOverview
+	(*ConsoleQuotaItem)(nil),        // 4: admin.service.v1.ConsoleQuotaItem
+	nil,                             // 5: admin.service.v1.ConsoleInstanceOverview.ByStateEntry
+	nil,                             // 6: admin.service.v1.ConsoleStatusOverview.ByStatusEntry
+	(*emptypb.Empty)(nil),           // 7: google.protobuf.Empty
 }
 var file_admin_service_v1_i_overview_proto_depIdxs = []int32{
-	1, // 0: admin.service.v1.ConsoleOverviewResponse.instances:type_name -> admin.service.v1.ConsoleInstanceOverview
-	2, // 1: admin.service.v1.ConsoleOverviewResponse.inference_services:type_name -> admin.service.v1.ConsoleStatusOverview
-	2, // 2: admin.service.v1.ConsoleOverviewResponse.models:type_name -> admin.service.v1.ConsoleStatusOverview
-	2, // 3: admin.service.v1.ConsoleOverviewResponse.knowledge_bases:type_name -> admin.service.v1.ConsoleStatusOverview
-	3, // 4: admin.service.v1.ConsoleInstanceOverview.by_state:type_name -> admin.service.v1.ConsoleInstanceOverview.ByStateEntry
-	4, // 5: admin.service.v1.ConsoleStatusOverview.by_status:type_name -> admin.service.v1.ConsoleStatusOverview.ByStatusEntry
-	5, // 6: admin.service.v1.OverviewService.GetOverview:input_type -> google.protobuf.Empty
-	0, // 7: admin.service.v1.OverviewService.GetOverview:output_type -> admin.service.v1.ConsoleOverviewResponse
-	7, // [7:8] is the sub-list for method output_type
-	6, // [6:7] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	1,  // 0: admin.service.v1.ConsoleOverviewResponse.instances:type_name -> admin.service.v1.ConsoleInstanceOverview
+	2,  // 1: admin.service.v1.ConsoleOverviewResponse.inference_services:type_name -> admin.service.v1.ConsoleStatusOverview
+	2,  // 2: admin.service.v1.ConsoleOverviewResponse.models:type_name -> admin.service.v1.ConsoleStatusOverview
+	2,  // 3: admin.service.v1.ConsoleOverviewResponse.knowledge_bases:type_name -> admin.service.v1.ConsoleStatusOverview
+	3,  // 4: admin.service.v1.ConsoleOverviewResponse.gpu_quota:type_name -> admin.service.v1.ConsoleGpuQuotaOverview
+	5,  // 5: admin.service.v1.ConsoleInstanceOverview.by_state:type_name -> admin.service.v1.ConsoleInstanceOverview.ByStateEntry
+	6,  // 6: admin.service.v1.ConsoleStatusOverview.by_status:type_name -> admin.service.v1.ConsoleStatusOverview.ByStatusEntry
+	4,  // 7: admin.service.v1.ConsoleGpuQuotaOverview.shared_memory_mib:type_name -> admin.service.v1.ConsoleQuotaItem
+	4,  // 8: admin.service.v1.ConsoleGpuQuotaOverview.physical_count:type_name -> admin.service.v1.ConsoleQuotaItem
+	7,  // 9: admin.service.v1.OverviewService.GetOverview:input_type -> google.protobuf.Empty
+	0,  // 10: admin.service.v1.OverviewService.GetOverview:output_type -> admin.service.v1.ConsoleOverviewResponse
+	10, // [10:11] is the sub-list for method output_type
+	9,  // [9:10] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_admin_service_v1_i_overview_proto_init() }
@@ -290,7 +478,7 @@ func file_admin_service_v1_i_overview_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_service_v1_i_overview_proto_rawDesc), len(file_admin_service_v1_i_overview_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

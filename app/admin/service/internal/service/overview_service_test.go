@@ -8,6 +8,7 @@ import (
 	catalogv1 "go-wind-admin/api/gen/go/catalog/service/v1"
 	inferencev1 "go-wind-admin/api/gen/go/inference/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
+	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -90,8 +91,29 @@ func overviewCtx() context.Context {
 	return auth.NewPrincipalContext(context.Background(), &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 7})
 }
 
-func overviewService(instances overviewInstanceLister, inference overviewInferenceLister, models overviewModelLister, authorization OverviewAuthorizer) *OverviewService {
-	return NewOverviewService(nil, instances, inference, models, authorization)
+// overviewQuotaFake 记录调用次数与被查询的租户，用于验证只读本租户且只调用一次。
+type overviewQuotaFake struct {
+	accounts []*quotapb.QuotaAccountView
+	err      error
+	calls    int
+	lastTid  uint32
+}
+
+func (f *overviewQuotaFake) ListTenantAccounts(_ context.Context, tid uint32) ([]*quotapb.QuotaAccountView, error) {
+	f.calls++
+	f.lastTid = tid
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.accounts, nil
+}
+
+func overviewService(instances overviewInstanceLister, inference overviewInferenceLister, models overviewModelLister, authorization OverviewAuthorizer, quota ...overviewQuotaReader) *OverviewService {
+	var q overviewQuotaReader
+	if len(quota) > 0 {
+		q = quota[0]
+	}
+	return NewOverviewService(nil, instances, inference, models, q, authorization)
 }
 
 func overviewIdentity(t *testing.T, label string, total, primary, degraded, other int64) {
@@ -304,5 +326,118 @@ func TestOverviewEntryAuthorization(t *testing.T) {
 	fresh := overviewService(&overviewInstancesFake{totals: map[string]int64{}}, &overviewInferenceFake{}, &overviewModelsFake{totals: map[string]int64{}}, &overviewAuthFake{})
 	if _, err := fresh.GetOverview(context.Background(), &emptypb.Empty{}); code(err) != 401 {
 		t.Fatalf("missing principal code=%v", code(err))
+	}
+}
+
+// TestOverviewGpuQuotaSelectsTwoCodes 验证只取两个 GPU 配额项，其余配额不进响应。
+func TestOverviewGpuQuotaSelectsTwoCodes(t *testing.T) {
+	quota := &overviewQuotaFake{accounts: []*quotapb.QuotaAccountView{
+		{QuotaCode: "user.count", Unit: "user", Limit: "10", Occupied: "1", Available: "9", Configured: true},
+		{QuotaCode: GpuSharedQuotaCode, Unit: "MiB", Limit: "98280", Occupied: "24570", Available: "73710", Configured: true, Enforcement: quotapb.Enforcement_ENFORCED},
+		{QuotaCode: GpuPhysicalQuotaCode, Unit: "gpu", Limit: "2", Occupied: "1", Available: "1", Configured: true, Enforcement: quotapb.Enforcement_ENFORCED},
+	}}
+	s := overviewService(
+		&overviewInstancesFake{totals: map[string]int64{}},
+		&overviewInferenceFake{},
+		&overviewModelsFake{totals: map[string]int64{}},
+		&overviewAuthFake{},
+		quota,
+	)
+	out, err := s.GetOverview(overviewCtx(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	shared := out.GetGpuQuota().GetSharedMemoryMib()
+	if shared.GetQuotaCode() != GpuSharedQuotaCode || shared.GetUnit() != "MiB" || shared.GetLimit() != "98280" ||
+		shared.GetOccupied() != "24570" || shared.GetAvailable() != "73710" || !shared.GetConfigured() ||
+		shared.GetEnforcement() != "ENFORCED" || shared.GetOverLimit() {
+		t.Fatalf("shared_memory_mib=%+v", shared)
+	}
+	physical := out.GetGpuQuota().GetPhysicalCount()
+	if physical.GetQuotaCode() != GpuPhysicalQuotaCode || physical.GetUnit() != "gpu" || physical.GetLimit() != "2" ||
+		physical.GetOccupied() != "1" || physical.GetAvailable() != "1" || !physical.GetConfigured() {
+		t.Fatalf("physical_count=%+v", physical)
+	}
+	if quota.calls != 1 {
+		t.Fatalf("quota reader calls=%d want 1", quota.calls)
+	}
+	if quota.lastTid != 7 {
+		t.Fatalf("quota reader tenant=%d want 7 (principal only)", quota.lastTid)
+	}
+}
+
+// TestOverviewGpuQuotaUnconfiguredFillsZero 验证未配置项补零且 configured=false，不返回 null。
+func TestOverviewGpuQuotaUnconfiguredFillsZero(t *testing.T) {
+	quota := &overviewQuotaFake{accounts: []*quotapb.QuotaAccountView{
+		{QuotaCode: GpuSharedQuotaCode, Unit: "MiB", Limit: "0", Occupied: "0", Available: "0", Configured: false},
+	}}
+	s := overviewService(
+		&overviewInstancesFake{totals: map[string]int64{}},
+		&overviewInferenceFake{},
+		&overviewModelsFake{totals: map[string]int64{}},
+		&overviewAuthFake{},
+		quota,
+	)
+	out, err := s.GetOverview(overviewCtx(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.GetGpuQuota().GetSharedMemoryMib() == nil || out.GetGpuQuota().GetPhysicalCount() == nil {
+		t.Fatal("both fixed keys must be present")
+	}
+	if out.GetGpuQuota().GetSharedMemoryMib().GetConfigured() {
+		t.Fatal("unconfigured quota must report configured=false")
+	}
+	physical := out.GetGpuQuota().GetPhysicalCount()
+	if physical.GetQuotaCode() != GpuPhysicalQuotaCode || physical.GetUnit() != "gpu" ||
+		physical.GetLimit() != "0" || physical.GetOccupied() != "0" || physical.GetAvailable() != "0" || physical.GetConfigured() {
+		t.Fatalf("missing definition must be zeroed: %+v", physical)
+	}
+}
+
+// TestOverviewGpuQuotaDegradesAlone 验证配额源失败只清空自身，其他卡片保持。
+func TestOverviewGpuQuotaDegradesAlone(t *testing.T) {
+	quota := &overviewQuotaFake{err: kratoserrors.ServiceUnavailable("QUOTA_UNAVAILABLE", "down")}
+	s := overviewService(
+		&overviewInstancesFake{totals: map[string]int64{"running": 1}},
+		&overviewInferenceFake{},
+		&overviewModelsFake{totals: map[string]int64{}},
+		&overviewAuthFake{},
+		quota,
+	)
+	out, err := s.GetOverview(overviewCtx(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatalf("degraded overview must stay 200: %v", err)
+	}
+	if out.GetInstances().GetTotal() != 1 {
+		t.Fatalf("healthy card lost: %+v", out.GetInstances())
+	}
+	if out.GetGpuQuota().GetSharedMemoryMib().GetLimit() != "0" || out.GetGpuQuota().GetSharedMemoryMib().GetConfigured() {
+		t.Fatalf("gpu quota not degraded: %+v", out.GetGpuQuota())
+	}
+	if quota.calls != 1 {
+		t.Fatalf("quota reader calls=%d want 1", quota.calls)
+	}
+}
+
+// TestOverviewGpuQuotaMissingReaderKeepsKeys 验证 reader 未装配时仍返回两个零值键。
+func TestOverviewGpuQuotaMissingReaderKeepsKeys(t *testing.T) {
+	s := overviewService(
+		&overviewInstancesFake{totals: map[string]int64{}},
+		&overviewInferenceFake{},
+		&overviewModelsFake{totals: map[string]int64{}},
+		&overviewAuthFake{},
+	)
+	out, err := s.GetOverview(overviewCtx(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := out.GetGpuQuota()
+	if card.GetSharedMemoryMib().GetQuotaCode() != GpuSharedQuotaCode ||
+		card.GetPhysicalCount().GetQuotaCode() != GpuPhysicalQuotaCode {
+		t.Fatalf("fixed keys missing: %+v", card)
+	}
+	if card.GetSharedMemoryMib().GetConfigured() || card.GetPhysicalCount().GetConfigured() {
+		t.Fatalf("missing reader must not look configured: %+v", card)
 	}
 }

@@ -21,6 +21,7 @@ message ConsoleOverviewResponse {
   ConsoleStatusOverview inference_services = 2;       // 推理服务统计
   ConsoleStatusOverview models = 3;                   // 模型仓库统计
   ConsoleStatusOverview knowledge_bases = 4;          // 知识库统计（当前无数据源，恒 0）
+  ConsoleGpuQuotaOverview gpu_quota = 5 [json_name = "gpu_quota"]; // 本租户 GPU 配额（两项固定键）
 }
 
 // 实例统计：by_state 预置 pending/running/stopped/failed，不含 deleted
@@ -35,4 +36,24 @@ message ConsoleStatusOverview {
   int64 total = 1;                 // 各状态之和
   map<string, int64> by_status = 2; // 状态分布
   int64 other = 3;                 // total - 正常 - 异常
+}
+
+// 本租户 GPU 配额：两个固定键，未配置时补零并置 configured=false，
+// 不省略字段、不返回 null。两项是二选一语义（整卡独占 vs 共享显存），不可相加。
+message ConsoleGpuQuotaOverview {
+  ConsoleQuotaItem shared_memory_mib = 1 [json_name = "shared_memory_mib"]; // gpu.shared_memory_mib
+  ConsoleQuotaItem physical_count = 2 [json_name = "physical_count"];       // gpu.physical.count
+}
+
+// 配额项：数值一律十进制字符串（与 /api/v1/me/quota-accounts 同源同口径，
+// 避免 JS 2^53 精度上限），与同响应内的卡片计数（JSON number）类型不同。
+message ConsoleQuotaItem {
+  string quota_code = 1 [json_name = "quota_code"]; // 稳定配额编码
+  string unit = 2;                                  // 单位（MiB / gpu）
+  string limit = 3;                                 // 当前套餐上限；未配置为 "0"，须结合 configured
+  string occupied = 4;                              // 当前并发占用（CONCURRENT 语义，释放后回落）
+  string available = 5;                             // max(limit-occupied, 0)
+  bool over_limit = 6 [json_name = "over_limit"];   // occupied > limit（降配后可能出现）
+  bool configured = 7;                              // 当前套餐是否配置了该配额；false 不表示无限
+  string enforcement = 8;                           // 执行级别：ENFORCED 才真正拦截创建
 }

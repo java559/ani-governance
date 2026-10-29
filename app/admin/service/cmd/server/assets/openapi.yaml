@@ -13940,6 +13940,16 @@ components:
                     type: boolean
                 credentialId:
                     type: string
+        ConsoleGpuQuotaOverview:
+            type: object
+            properties:
+                shared_memory_mib:
+                    $ref: '#/components/schemas/ConsoleQuotaItem'
+                physical_count:
+                    $ref: '#/components/schemas/ConsoleQuotaItem'
+            description: |-
+                本租户 GPU 配额：两个固定键，未配置时补零并置 configured=false，
+                 不省略字段、不返回 null。两项是二选一语义（整卡独占 vs 共享显存），不可相加。
         ConsoleInstanceOverview:
             type: object
             properties:
@@ -13963,7 +13973,31 @@ components:
                     $ref: '#/components/schemas/ConsoleStatusOverview'
                 knowledgeBases:
                     $ref: '#/components/schemas/ConsoleStatusOverview'
+                gpu_quota:
+                    $ref: '#/components/schemas/ConsoleGpuQuotaOverview'
             description: 首页资源统计 - 回应
+        ConsoleQuotaItem:
+            type: object
+            properties:
+                quota_code:
+                    type: string
+                unit:
+                    type: string
+                limit:
+                    type: string
+                occupied:
+                    type: string
+                available:
+                    type: string
+                over_limit:
+                    type: boolean
+                configured:
+                    type: boolean
+                enforcement:
+                    type: string
+            description: |-
+                配额项：数值一律十进制字符串（与 /api/v1/me/quota-accounts 同源同口径，
+                 避免 JS 2^53 精度上限），与同响应内的卡片计数（JSON number）类型不同。
         ConsoleStatusOverview:
             type: object
             properties:

@@ -36,11 +36,32 @@ type overviewStatusPayload struct {
 
 // overviewPayload 用 encoding/json 输出计数：protojson 会把 int64 与 map 值编码成
 // 字符串，而本接口契约要求 JSON number（前端直接参与算术）。
+// gpu_quota 例外：配额数值一律十进制字符串，避免 JS 2^53 精度上限。
 type overviewPayload struct {
 	Instances         overviewInstancePayload `json:"instances"`
 	InferenceServices overviewStatusPayload   `json:"inference_services"`
 	Models            overviewStatusPayload   `json:"models"`
 	KnowledgeBases    overviewStatusPayload   `json:"knowledge_bases"`
+	GPUQuota          overviewGpuQuotaPayload `json:"gpu_quota"`
+}
+
+// overviewGpuQuotaPayload 本租户 GPU 配额：两个固定键，未配置时仍返回补零项。
+// 两项是二选一语义（整卡独占 vs 共享显存），不可相加。
+type overviewGpuQuotaPayload struct {
+	SharedMemoryMib overviewQuotaItemPayload `json:"shared_memory_mib"`
+	PhysicalCount   overviewQuotaItemPayload `json:"physical_count"`
+}
+
+// overviewQuotaItemPayload 配额项：limit/occupied/available 保持十进制字符串。
+type overviewQuotaItemPayload struct {
+	QuotaCode   string `json:"quota_code"`
+	Unit        string `json:"unit"`
+	Limit       string `json:"limit"`
+	Occupied    string `json:"occupied"`
+	Available   string `json:"available"`
+	OverLimit   bool   `json:"over_limit"`
+	Configured  bool   `json:"configured"`
+	Enforcement string `json:"enforcement"`
 }
 
 func overviewInvalidHTTP() error {
@@ -98,6 +119,10 @@ func writeOverviewResult(ctx khttp.Context, reply *admin.ConsoleOverviewResponse
 			ByStatus: overviewCounts(reply.GetKnowledgeBases().GetByStatus(), overviewKnowledgeBaseKeys),
 			Other:    reply.GetKnowledgeBases().GetOther(),
 		},
+		GPUQuota: overviewGpuQuotaPayload{
+			SharedMemoryMib: overviewQuotaItem(reply.GetGpuQuota().GetSharedMemoryMib()),
+			PhysicalCount:   overviewQuotaItem(reply.GetGpuQuota().GetPhysicalCount()),
+		},
 	}
 	raw, err := json.Marshal(body)
 	if err != nil {
@@ -121,4 +146,22 @@ func overviewCounts(in map[string]int64, keys []string) map[string]int64 {
 		}
 	}
 	return out
+}
+
+// overviewQuotaItem 保证配额项结构完整：缺省项补零并置 configured=false，
+// 不省略字段、不返回 null；数值原样透传十进制字符串。
+func overviewQuotaItem(item *admin.ConsoleQuotaItem) overviewQuotaItemPayload {
+	if item == nil {
+		return overviewQuotaItemPayload{Limit: "0", Occupied: "0", Available: "0"}
+	}
+	return overviewQuotaItemPayload{
+		QuotaCode:   item.GetQuotaCode(),
+		Unit:        item.GetUnit(),
+		Limit:       item.GetLimit(),
+		Occupied:    item.GetOccupied(),
+		Available:   item.GetAvailable(),
+		OverLimit:   item.GetOverLimit(),
+		Configured:  item.GetConfigured(),
+		Enforcement: item.GetEnforcement(),
+	}
 }

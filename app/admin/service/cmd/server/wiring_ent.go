@@ -504,6 +504,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		instanceService,
 		inferenceService,
 		modelService,
+		quotaAdminRepo,
 		data.NewInstanceAuthorizationRepo(entClient),
 	)
 	vmAcceptance, err := service.NewGpuAcceptance(quotaLedgerRepo, quotaRegistry, tenantRepo, nil, vmBinding, quotaWorker)

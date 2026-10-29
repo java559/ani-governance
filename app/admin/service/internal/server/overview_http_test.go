@@ -15,6 +15,7 @@ import (
 	catalogv1 "go-wind-admin/api/gen/go/catalog/service/v1"
 	inferencev1 "go-wind-admin/api/gen/go/inference/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
+	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/service"
 	"go-wind-admin/pkg/middleware/auth"
@@ -57,11 +58,21 @@ func (s *overviewAuthorizationStub) AuthorizeSource(context.Context, uint32, uin
 	return nil
 }
 
+type overviewQuotaStub struct{ accounts []*quotapb.QuotaAccountView }
+
+func (s *overviewQuotaStub) ListTenantAccounts(context.Context, uint32) ([]*quotapb.QuotaAccountView, error) {
+	return s.accounts, nil
+}
+
 func overviewTestService(deny bool) *service.OverviewService {
 	return service.NewOverviewService(nil,
 		&overviewInstancesStub{totals: map[string]int64{"running": 2, "stopped": 1, "pending": 0}},
 		&overviewInferenceStub{items: []*inferencev1.InferenceView{{DesiredState: "running", Phase: "ready"}}},
 		&overviewModelsStub{totals: map[string]int64{"ready": 4}},
+		&overviewQuotaStub{accounts: []*quotapb.QuotaAccountView{
+			{QuotaCode: "gpu.shared_memory_mib", Unit: "MiB", Limit: "98280", Occupied: "0", Available: "98280", Configured: true, Enforcement: quotapb.Enforcement_ENFORCED},
+			{QuotaCode: "gpu.physical.count", Unit: "gpu", Limit: "2", Occupied: "0", Available: "2", Configured: true, Enforcement: quotapb.Enforcement_ENFORCED},
+		}},
 		&overviewAuthorizationStub{deny: deny},
 	)
 }
@@ -161,8 +172,38 @@ func TestOverviewHTTPResponseContract(t *testing.T) {
 			t.Fatalf("instances.total=%v want 3", total)
 		}
 	}
-	if len(object) != 4 {
+	if len(object) != 5 {
 		t.Fatalf("unexpected top level keys: %+v", object)
+	}
+	quota, ok := object["gpu_quota"].(map[string]any)
+	if !ok {
+		t.Fatalf("gpu_quota missing or not an object: %+v", object)
+	}
+	for _, name := range []string{"shared_memory_mib", "physical_count"} {
+		item, ok := quota[name].(map[string]any)
+		if !ok {
+			t.Fatalf("gpu_quota.%s missing: %+v", name, quota)
+		}
+		for _, field := range []string{"limit", "occupied", "available"} {
+			if _, ok := item[field].(string); !ok {
+				t.Fatalf("gpu_quota.%s.%s must be a decimal string, not a JSON number: %v", name, field, item[field])
+			}
+		}
+		if _, ok := item["over_limit"].(bool); !ok {
+			t.Fatalf("gpu_quota.%s.over_limit must be a boolean: %v", name, item["over_limit"])
+		}
+		if item["configured"] != true {
+			t.Fatalf("gpu_quota.%s.configured=%v", name, item["configured"])
+		}
+	}
+	shared := quota["shared_memory_mib"].(map[string]any)
+	if shared["quota_code"] != "gpu.shared_memory_mib" || shared["unit"] != "MiB" ||
+		shared["limit"] != "98280" || shared["enforcement"] != "ENFORCED" {
+		t.Fatalf("shared_memory_mib=%+v", shared)
+	}
+	physical := quota["physical_count"].(map[string]any)
+	if physical["quota_code"] != "gpu.physical.count" || physical["unit"] != "gpu" || physical["limit"] != "2" {
+		t.Fatalf("physical_count=%+v", physical)
 	}
 }
 

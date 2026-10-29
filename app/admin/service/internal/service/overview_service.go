@@ -10,6 +10,7 @@ import (
 	catalogv1 "go-wind-admin/api/gen/go/catalog/service/v1"
 	inferencev1 "go-wind-admin/api/gen/go/inference/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
+	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 	"go-wind-admin/pkg/middleware/auth"
@@ -31,6 +32,9 @@ const (
 	overviewInferenceMaxPages = 50
 	// 传输层预算 10s，内部聚合预算 8s，留 2s 余量写回 200。
 	overviewAggregateBudget = 8 * time.Second
+	// GPU 配额单位兜底值：数据源缺失该目录项时仍要给出稳定单位，与目录登记一致。
+	quotaUnitSharedMemory = "MiB"
+	quotaUnitPhysicalGpu  = "gpu"
 )
 
 // OverviewAuthorizer 是首页聚合的入口与数据源二次鉴权。入口权限码
@@ -53,6 +57,11 @@ type overviewModelLister interface {
 	ListModels(context.Context, *catalogv1.ListModelsRequest) (*catalogv1.ListModelsResponse, error)
 }
 
+// overviewQuotaReader 读本租户的配额账户投影；与 /api/v1/me/quota-accounts 同源。
+type overviewQuotaReader interface {
+	ListTenantAccounts(context.Context, uint32) ([]*quotapb.QuotaAccountView, error)
+}
+
 // OverviewService 为首页四张资源卡片提供只读聚合快照。
 // 任一数据源失败（含 403 降级、下游不可用、超时）时该卡片返回空计数，
 // 整体仍 200；这与旧版 console_overview 的部分成功语义一致。
@@ -61,6 +70,7 @@ type OverviewService struct {
 	instances     overviewInstanceLister
 	inference     overviewInferenceLister
 	models        overviewModelLister
+	quota         overviewQuotaReader
 	authorization OverviewAuthorizer
 }
 
@@ -69,9 +79,10 @@ func NewOverviewService(
 	instances overviewInstanceLister,
 	inference overviewInferenceLister,
 	models overviewModelLister,
+	quota overviewQuotaReader,
 	authorization OverviewAuthorizer,
 ) *OverviewService {
-	return &OverviewService{log: log, instances: instances, inference: inference, models: models, authorization: authorization}
+	return &OverviewService{log: log, instances: instances, inference: inference, models: models, quota: quota, authorization: authorization}
 }
 
 func (s *OverviewService) warnf(ctx context.Context, format string, args ...any) {
@@ -124,7 +135,7 @@ func (s *OverviewService) GetOverview(ctx context.Context, _ *emptypb.Empty) (*a
 	call, cancel := context.WithTimeout(ctx, overviewAggregateBudget)
 	defer cancel()
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(4)
 	go func() {
 		defer wg.Done()
 		out.Instances = s.instanceOverview(call, p)
@@ -136,6 +147,10 @@ func (s *OverviewService) GetOverview(ctx context.Context, _ *emptypb.Empty) (*a
 	go func() {
 		defer wg.Done()
 		out.Models = s.modelsOverview(call, p)
+	}()
+	go func() {
+		defer wg.Done()
+		out.GpuQuota = s.gpuQuotaOverview(call, p)
 	}()
 	wg.Wait()
 	return out, nil
@@ -259,4 +274,68 @@ func (s *OverviewService) modelsOverview(ctx context.Context, p *auth.Principal)
 	}
 	card.Other = counts["pending"] + counts["importing"]
 	return card
+}
+
+// gpuQuotaOverview 从本租户配额账户投影里挑出两个固定 GPU 配额项。
+// 未配置或数据源缺失时补零并置 configured=false，不省略字段、不返回 null；
+// 两项是二选一语义（整卡独占 vs 共享显存），不可相加。
+func (s *OverviewService) gpuQuotaOverview(ctx context.Context, p *auth.Principal) *adminV1.ConsoleGpuQuotaOverview {
+	card := zeroGpuQuotaOverview()
+	if s.quota == nil {
+		s.warnf(ctx, "console overview data source degraded: source=gpu_quota tenant=%d err=missing", p.TenantID)
+		return card
+	}
+	accounts, err := s.quota.ListTenantAccounts(ctx, p.TenantID)
+	if err != nil {
+		s.warnf(ctx, "console overview data source degraded: source=gpu_quota tenant=%d err=%v", p.TenantID, err)
+		return card
+	}
+	byCode := make(map[string]*quotapb.QuotaAccountView, len(accounts))
+	for _, account := range accounts {
+		if account != nil {
+			byCode[account.GetQuotaCode()] = account
+		}
+	}
+	if account := byCode[GpuSharedQuotaCode]; account != nil {
+		card.SharedMemoryMib = overviewQuotaItem(account)
+	} else {
+		s.warnf(ctx, "console overview gpu quota missing: quota_code=%s tenant=%d", GpuSharedQuotaCode, p.TenantID)
+	}
+	if account := byCode[GpuPhysicalQuotaCode]; account != nil {
+		card.PhysicalCount = overviewQuotaItem(account)
+	} else {
+		s.warnf(ctx, "console overview gpu quota missing: quota_code=%s tenant=%d", GpuPhysicalQuotaCode, p.TenantID)
+	}
+	return card
+}
+
+// zeroGpuQuotaOverview 预置两个固定键的零值配额项，保证响应结构稳定。
+func zeroGpuQuotaOverview() *adminV1.ConsoleGpuQuotaOverview {
+	return &adminV1.ConsoleGpuQuotaOverview{
+		SharedMemoryMib: zeroQuotaItem(GpuSharedQuotaCode, quotaUnitSharedMemory),
+		PhysicalCount:   zeroQuotaItem(GpuPhysicalQuotaCode, quotaUnitPhysicalGpu),
+	}
+}
+
+// zeroQuotaItem 构造一项"未配置"的配额：数值全为 "0"，configured=false 表示没配而非无限；
+// 此时没有可信执行能力，enforcement 取枚举零值名，保持取值域稳定。
+func zeroQuotaItem(code, unit string) *adminV1.ConsoleQuotaItem {
+	return &adminV1.ConsoleQuotaItem{
+		QuotaCode: code, Unit: unit, Limit: "0", Occupied: "0", Available: "0",
+		Enforcement: quotapb.Enforcement_ENFORCEMENT_UNSPECIFIED.String(),
+	}
+}
+
+// overviewQuotaItem 把账户投影转成响应项；数值保持十进制字符串，不参与算术。
+func overviewQuotaItem(account *quotapb.QuotaAccountView) *adminV1.ConsoleQuotaItem {
+	return &adminV1.ConsoleQuotaItem{
+		QuotaCode:   account.GetQuotaCode(),
+		Unit:        account.GetUnit(),
+		Limit:       account.GetLimit(),
+		Occupied:    account.GetOccupied(),
+		Available:   account.GetAvailable(),
+		OverLimit:   account.GetOverLimit(),
+		Configured:  account.GetConfigured(),
+		Enforcement: account.GetEnforcement().String(),
+	}
 }
