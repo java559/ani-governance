@@ -30,7 +30,13 @@ var metricCatalog = map[string]string{
 	"memory.working_set_bytes":          "bytes",
 	"network.receive_bytes_per_second":  "bytes_per_second",
 	"network.transmit_bytes_per_second": "bytes_per_second",
+	"gpu.utilization_percent":           "percent",
+	"gpu.memory_usage_bytes":            "bytes",
 }
+
+// targetKindVM 与 observability 内部 VM kind 对齐；该枚举尚未进入 obs API 模块，
+// 因此这里以数值发送，避免为一次枚举扩展引入跨仓依赖升级。
+const targetKindVM = target.TargetKind(4)
 
 func metricUUID(value string) bool {
 	id, err := uuid.Parse(value)
@@ -43,7 +49,7 @@ func metricResponseInvalid() error {
 	return kratoserrors.New(502, "MONITORING_SOURCE_RESPONSE_INVALID", "invalid monitoring response")
 }
 func metricCodesValid(codes []string) bool {
-	if len(codes) < 1 || len(codes) > 4 {
+	if len(codes) < 1 || len(codes) > 6 {
 		return false
 	}
 	seen := map[string]bool{}
@@ -79,10 +85,19 @@ func (s *InstanceService) metricTarget(ctx context.Context, id, path, method str
 	if err != nil {
 		return nil, "", err
 	}
-	if scope == nil || scope.TenantId != tenant || scope.InstanceId != id || !metricUUID(scope.TenantId) || !metricUUID(scope.InstanceId) || !metricUUID(scope.ClusterId) || len(scope.Namespace) > 63 || !metricNamespace.MatchString(scope.Namespace) || scope.ContainerName != "workspace" {
+	if scope == nil || scope.TenantId != tenant || scope.InstanceId != id || !metricUUID(scope.TenantId) || !metricUUID(scope.InstanceId) || !metricUUID(scope.ClusterId) || len(scope.Namespace) > 63 || !metricNamespace.MatchString(scope.Namespace) {
 		return nil, "", metricResponseInvalid()
 	}
-	return &target.TargetScope{Kind: target.TargetKind_TARGET_KIND_CONTAINER_INSTANCE, TenantId: scope.TenantId, InstanceId: scope.InstanceId, ClusterId: scope.ClusterId, Namespace: scope.Namespace, ContainerName: scope.ContainerName}, actor, nil
+	kind := target.TargetKind_TARGET_KIND_CONTAINER_INSTANCE
+	switch scope.ContainerName {
+	case "workspace":
+	case "compute":
+		// VM（KubeVirt）实例由 resource-service 统一解析，容器名固定 compute。
+		kind = targetKindVM
+	default:
+		return nil, "", metricResponseInvalid()
+	}
+	return &target.TargetScope{Kind: kind, TenantId: scope.TenantId, InstanceId: scope.InstanceId, ClusterId: scope.ClusterId, Namespace: scope.Namespace, ContainerName: scope.ContainerName}, actor, nil
 }
 
 func (s *InstanceService) QueryInstanceMetrics(ctx context.Context, r *view.QueryInstanceMetricsRequest) (*view.QueryInstanceMetricsResponse, error) {
@@ -131,7 +146,7 @@ func (s *InstanceService) GetInstanceLatestMetrics(ctx context.Context, r *view.
 	if err != nil {
 		return nil, err
 	}
-	codes := []string{"cpu.usage_cores", "memory.working_set_bytes", "network.receive_bytes_per_second", "network.transmit_bytes_per_second"}
+	codes := []string{"cpu.usage_cores", "memory.working_set_bytes", "network.receive_bytes_per_second", "network.transmit_bytes_per_second", "gpu.utilization_percent", "gpu.memory_usage_bytes"}
 	call, cancel := context.WithTimeout(ctx, 6*time.Second)
 	defer cancel()
 	reply, err := s.monitoring.QueryLatest(call, t.TenantId, actor, &monitoring.QueryLatestRequest{Target: t, MetricCodes: codes})

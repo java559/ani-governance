@@ -14,6 +14,7 @@ import (
 	"github.com/go-kratos/kratos/v2/transport"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	monitoring "github.com/zhangzhe-ctrl/ani-observability-service/api/observability/monitoring/v1"
+	target "github.com/zhangzhe-ctrl/ani-observability-service/api/observability/target/v1"
 	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/service"
@@ -39,9 +40,10 @@ func (a *metricsAuthorization) Authorize(_ context.Context, tenant, actor uint32
 
 type metricsResource struct {
 	service.InstanceOwnerClient
-	calls   int
-	tenant  string
-	failure error
+	calls     int
+	tenant    string
+	container string
+	failure   error
 }
 
 func (p *metricsResource) ResolveInstanceMetricScope(ctx context.Context, tenant, actor, id string) (*res.InstanceMetricScope, error) {
@@ -58,13 +60,19 @@ func (p *metricsResource) ResolveInstanceMetricScope(ctx context.Context, tenant
 	if p.tenant != "" {
 		tenant = p.tenant
 	}
-	return &res.InstanceMetricScope{TenantId: tenant, InstanceId: id, ClusterId: "30000000-0000-4000-8000-000000000003", Namespace: "workspace", ContainerName: "workspace"}, nil
+	container := p.container
+	if container == "" {
+		container = "workspace"
+	}
+	return &res.InstanceMetricScope{TenantId: tenant, InstanceId: id, ClusterId: "30000000-0000-4000-8000-000000000003", Namespace: "workspace", ContainerName: container}, nil
 }
 
 type metricsPeer struct {
-	calls   int
-	step    uint32
-	failure error
+	calls     int
+	step      uint32
+	kind      target.TargetKind
+	container string
+	failure   error
 }
 
 // metricTestUnits 与 service.metricCatalog 的单位映射保持一致（测试侧独立维护）。
@@ -73,11 +81,15 @@ var metricTestUnits = map[string]string{
 	"memory.working_set_bytes":          "bytes",
 	"network.receive_bytes_per_second":  "bytes_per_second",
 	"network.transmit_bytes_per_second": "bytes_per_second",
+	"gpu.utilization_percent":           "percent",
+	"gpu.memory_usage_bytes":            "bytes",
 }
 
 func (p *metricsPeer) QueryRange(ctx context.Context, tenant, actor string, r *monitoring.QueryRangeRequest) (*monitoring.QueryRangeResponse, error) {
 	p.calls++
 	p.step = r.StepSeconds
+	p.kind = r.Target.Kind
+	p.container = r.Target.ContainerName
 	if tenant != diagnosticTenantID || actor != "governance:user:9" || r.Target.TenantId != tenant {
 		panic("untrusted scope")
 	}
@@ -96,7 +108,9 @@ func (p *metricsPeer) QueryRange(ctx context.Context, tenant, actor string, r *m
 }
 func (p *metricsPeer) QueryLatest(ctx context.Context, tenant, actor string, r *monitoring.QueryLatestRequest) (*monitoring.QueryLatestResponse, error) {
 	p.calls++
-	if strings.Join(r.MetricCodes, ",") != "cpu.usage_cores,memory.working_set_bytes,network.receive_bytes_per_second,network.transmit_bytes_per_second" {
+	p.kind = r.Target.Kind
+	p.container = r.Target.ContainerName
+	if strings.Join(r.MetricCodes, ",") != "cpu.usage_cores,memory.working_set_bytes,network.receive_bytes_per_second,network.transmit_bytes_per_second,gpu.utilization_percent,gpu.memory_usage_bytes" {
 		panic("latest order")
 	}
 	if p.failure != nil {
@@ -183,34 +197,47 @@ func TestInstanceMetricsHTTPEncodingAndTrustedScope(t *testing.T) {
 		t.Fatalf("latest %d %+v", code, object)
 	}
 }
-func TestInstanceMetricsFourCodesAcceptedAndFiveRejected(t *testing.T) {
+func TestInstanceMetricsSixCodesAcceptedAndSevenRejected(t *testing.T) {
 	r, p, a := &metricsResource{}, &metricsPeer{}, &metricsAuthorization{}
 	srv := metricsHTTP(t, r, p, a, true)
-	four := `{"data":{"metric_codes":["cpu.usage_cores","memory.working_set_bytes","network.receive_bytes_per_second","network.transmit_bytes_per_second"],"start":"2026-10-01T08:00:00+08:00","end":"2026-10-01T08:02:00+08:00"}}`
-	code, object := metricsRequest(t, srv, "POST", "query", four)
+	six := `{"data":{"metric_codes":["cpu.usage_cores","memory.working_set_bytes","network.receive_bytes_per_second","network.transmit_bytes_per_second","gpu.utilization_percent","gpu.memory_usage_bytes"],"start":"2026-10-01T08:00:00+08:00","end":"2026-10-01T08:02:00+08:00"}}`
+	code, object := metricsRequest(t, srv, "POST", "query", six)
 	if code != 200 {
 		t.Fatalf("%d %+v", code, object)
 	}
 	series := object["data"].(map[string]any)["series"].([]any)
-	if len(series) != 4 {
+	if len(series) != 6 {
 		t.Fatalf("series count %d", len(series))
 	}
-	wantUnits := []string{"cores", "bytes", "bytes_per_second", "bytes_per_second"}
-	wantCodes := []string{"cpu.usage_cores", "memory.working_set_bytes", "network.receive_bytes_per_second", "network.transmit_bytes_per_second"}
+	wantUnits := []string{"cores", "bytes", "bytes_per_second", "bytes_per_second", "percent", "bytes"}
+	wantCodes := []string{"cpu.usage_cores", "memory.working_set_bytes", "network.receive_bytes_per_second", "network.transmit_bytes_per_second", "gpu.utilization_percent", "gpu.memory_usage_bytes"}
 	for i, s := range series {
 		item := s.(map[string]any)
 		if item["metric_code"] != wantCodes[i] || item["unit"] != wantUnits[i] {
 			t.Fatalf("series[%d]=%v want %s/%s", i, item, wantCodes[i], wantUnits[i])
 		}
 	}
-	five := `{"data":{"metric_codes":["cpu.usage_cores","memory.working_set_bytes","network.receive_bytes_per_second","network.transmit_bytes_per_second","cpu.usage_cores"],"start":"2026-10-01T08:00:00+08:00","end":"2026-10-01T08:02:00+08:00"}}`
+	seven := `{"data":{"metric_codes":["cpu.usage_cores","memory.working_set_bytes","network.receive_bytes_per_second","network.transmit_bytes_per_second","gpu.utilization_percent","gpu.memory_usage_bytes","cpu.usage_cores"],"start":"2026-10-01T08:00:00+08:00","end":"2026-10-01T08:02:00+08:00"}}`
 	r2, p2 := &metricsResource{}, &metricsPeer{}
 	srv2 := metricsHTTP(t, r2, p2, &metricsAuthorization{}, true)
-	code, _ = metricsRequest(t, srv2, "POST", "query", five)
+	code, _ = metricsRequest(t, srv2, "POST", "query", seven)
 	if code != 400 || r2.calls != 0 || p2.calls != 0 {
-		t.Fatalf("five codes: %d calls=%d/%d", code, r2.calls, p2.calls)
+		t.Fatalf("seven codes: %d calls=%d/%d", code, r2.calls, p2.calls)
 	}
 }
+
+func TestInstanceMetricsVMScopeUsesComputeTarget(t *testing.T) {
+	r, p := &metricsResource{container: "compute"}, &metricsPeer{}
+	srv := metricsHTTP(t, r, p, &metricsAuthorization{}, true)
+	code, object := metricsRequest(t, srv, "GET", "latest", "")
+	if code != 200 {
+		t.Fatalf("vm latest %d %+v", code, object)
+	}
+	if int32(p.kind) != 4 || p.container != "compute" {
+		t.Fatalf("vm target kind=%d container=%s", p.kind, p.container)
+	}
+}
+
 func TestInstanceMetricsHTTPRejectsInputBeforeDependencies(t *testing.T) {
 	for _, body := range []string{`{}`, `{"data":null}`, strings.Replace(validMetricsBody, `"metric_codes"`, `"metricCodes"`, 1), strings.Replace(validMetricsBody, `"data":`, `"instance_id":"`+diagnosticInstanceID+`","data":`, 1), strings.Replace(validMetricsBody, `"start":`, `"cluster_id":"x","start":`, 1), strings.Replace(validMetricsBody, `"start":`, `"step_seconds":null,"start":`, 1), strings.Replace(validMetricsBody, `"start":`, `"step_seconds":"60","start":`, 1), strings.Replace(validMetricsBody, `"start":`, `"step_seconds":0,"start":`, 1), strings.Replace(validMetricsBody, `"start":`, `"step_seconds":60,"step_seconds":60,"start":`, 1), strings.Replace(validMetricsBody, `["cpu.usage_cores"]`, `["cpu.usage_cores","cpu.usage_cores"]`, 1)} {
 		r, p := &metricsResource{}, &metricsPeer{}
