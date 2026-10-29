@@ -70,15 +70,6 @@ func NewPlatformComponentClusterFromEnv() (*PlatformComponentCluster, error) {
 	return c, nil
 }
 
-// newPlatformComponentClusterForTest 供测试注入 fake clientset；生产装配
-// 只用 NewPlatformComponentClusterFromEnv。
-func newPlatformComponentClusterForTest(client kubernetes.Interface, ttl time.Duration) *PlatformComponentCluster {
-	if ttl <= 0 {
-		ttl = platformComponentDefaultTTL
-	}
-	return &PlatformComponentCluster{client: client, ttl: ttl, now: time.Now}
-}
-
 // Collect 返回组件状态快照（TTL 内复用上次结果）。
 // client 为 nil 时返回 ErrPlatformComponentUnsupported，调用方应映射为 500。
 func (c *PlatformComponentCluster) Collect(ctx context.Context) (PlatformComponentSnapshot, error) {

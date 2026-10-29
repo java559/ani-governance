@@ -20,11 +20,11 @@ const PlatformComponentLogStreamOperation = "/admin.service.v1.PlatformComponent
 // 日志接口的固定契约常量：8 秒正常关闭是旧前端重连节奏依赖的常量，
 // 刻意不进配置（改动必须与前端同版发布）。
 const (
-	PlatformComponentLogPermission   = "component:log:read"
-	PlatformComponentLogLifetime     = 8 * time.Second
-	PlatformComponentLogDefaultLimit = 100
-	PlatformComponentLogMinLimit     = 1
-	PlatformComponentLogMaxLimit     = 200
+	PlatformComponentLogPermission      = "component:log:read"
+	PlatformComponentLogLifetime        = 8 * time.Second
+	PlatformComponentLogDefaultLimit    = 100
+	PlatformComponentLogMinLimit        = 1
+	PlatformComponentLogMaxLimit        = 200
 	PlatformComponentLogDefaultInterval = 2
 	PlatformComponentLogMinInterval     = 1
 	PlatformComponentLogMaxInterval     = 5
@@ -221,8 +221,8 @@ type PlatformComponentState struct {
 
 // PlatformComponentSnapshot 是一次完整观测结果。
 type PlatformComponentSnapshot struct {
-	ObservedAt  time.Time
-	Components  []PlatformComponentState
+	ObservedAt   time.Time
+	Components   []PlatformComponentState
 	RealProvider bool
 	Reason       string
 }

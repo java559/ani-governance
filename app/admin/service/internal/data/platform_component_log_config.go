@@ -27,16 +27,16 @@ type platformComponentLogConfigFile struct {
 		ResponseMaxBytes    int    `json:"response_max_bytes"`
 	} `json:"opensearch"`
 	Stream struct {
-		OpenTimeoutSeconds  int `json:"open_timeout_seconds"`
-		WriteTimeoutSeconds int `json:"write_timeout_seconds"`
-		HeartbeatSeconds    int `json:"heartbeat_seconds"`
-		ReplayLimitMax      int `json:"replay_limit_max"`
-		IncrementMax        int `json:"increment_max"`
-		OverlapSeconds      int `json:"overlap_seconds"`
-		MaxFrameBytes       int `json:"max_frame_bytes"`
-		MaxBufferedBytes    int `json:"max_buffered_bytes"`
-		ProcessConnections  int `json:"process_connections"`
-		UserConnections     int `json:"user_connections"`
+		OpenTimeoutSeconds   int `json:"open_timeout_seconds"`
+		WriteTimeoutSeconds  int `json:"write_timeout_seconds"`
+		HeartbeatSeconds     int `json:"heartbeat_seconds"`
+		ReplayLimitMax       int `json:"replay_limit_max"`
+		IncrementMax         int `json:"increment_max"`
+		OverlapSeconds       int `json:"overlap_seconds"`
+		MaxFrameBytes        int `json:"max_frame_bytes"`
+		MaxBufferedBytes     int `json:"max_buffered_bytes"`
+		ProcessConnections   int `json:"process_connections"`
+		UserConnections      int `json:"user_connections"`
 		ComponentConnections int `json:"component_connections"`
 	} `json:"stream"`
 }
@@ -54,16 +54,16 @@ type PlatformComponentLogConfig struct {
 	QueryTimeout     time.Duration
 	ResponseMaxBytes int
 
-	OpenTimeout       time.Duration
-	WriteTimeout      time.Duration
-	Heartbeat         time.Duration
-	ReplayLimitMax    int
-	IncrementMax      int
-	Overlap           time.Duration
-	MaxFrameBytes     int
-	MaxBufferedBytes  int
-	ProcessConnections int
-	UserConnections    int
+	OpenTimeout          time.Duration
+	WriteTimeout         time.Duration
+	Heartbeat            time.Duration
+	ReplayLimitMax       int
+	IncrementMax         int
+	Overlap              time.Duration
+	MaxFrameBytes        int
+	MaxBufferedBytes     int
+	ProcessConnections   int
+	UserConnections      int
 	ComponentConnections int
 }
 

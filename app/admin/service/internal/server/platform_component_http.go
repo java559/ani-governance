@@ -42,8 +42,8 @@ type platformComponentDevProfilePayload struct {
 }
 
 type platformComponentsPayload struct {
-	ObservedAt string                           `json:"observed_at"`
-	Groups     []platformComponentGroupPayload  `json:"groups"`
+	ObservedAt string                             `json:"observed_at"`
+	Groups     []platformComponentGroupPayload    `json:"groups"`
 	DevProfile platformComponentDevProfilePayload `json:"dev_profile"`
 }
 

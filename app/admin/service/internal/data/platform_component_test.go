@@ -13,8 +13,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clienttesting "k8s.io/client-go/testing"
+	"k8s.io/client-go/kubernetes"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
+	clienttesting "k8s.io/client-go/testing"
 )
 
 func derefString(value *string) string {
@@ -22,6 +23,15 @@ func derefString(value *string) string {
 		return "<nil>"
 	}
 	return *value
+}
+
+// newPlatformComponentClusterForTest 供测试注入 fake clientset；生产装配
+// 只用 NewPlatformComponentClusterFromEnv，该构造函数不进入生产源码。
+func newPlatformComponentClusterForTest(client kubernetes.Interface, ttl time.Duration) *PlatformComponentCluster {
+	if ttl <= 0 {
+		ttl = platformComponentDefaultTTL
+	}
+	return &PlatformComponentCluster{client: client, ttl: ttl, now: time.Now}
 }
 
 func deployment(namespace, name string, replicas int32, ready int32, image string) *appsv1.Deployment {

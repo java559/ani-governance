@@ -328,9 +328,9 @@ type platformComponentLogSearchResponse struct {
 }
 
 type platformComponentLogSource struct {
-	Timestamp string `json:"@timestamp"`
-	Log       string `json:"log"`
-	Stream    string `json:"stream"`
+	Timestamp  string `json:"@timestamp"`
+	Log        string `json:"log"`
+	Stream     string `json:"stream"`
 	Kubernetes struct {
 		NamespaceName string `json:"namespace_name"`
 		PodName       string `json:"pod_name"`

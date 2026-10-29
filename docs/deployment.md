@@ -361,4 +361,3 @@ BOSS 日志窗口 `GET /api/v1/platform/components/{component}/logs/stream` 读 
 **回滚**：先停止推广，按容器名/卷名精确恢复镜像与本次新增的 env/volumeMount/volume，
 分别删除本次新增的 ConfigMap 与 Secret（它们不随 Deployment 回滚），并删除只读角色/账号。
 API 目录行与权限 ID 默认保留；索引侧只移除本次新增的 processor，不删索引、不回退此前已修好的原文规范化。
-

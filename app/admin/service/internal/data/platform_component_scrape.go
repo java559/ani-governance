@@ -88,7 +88,7 @@ func (r *PlatformComponentScrapeReader) ReadScrapeStatuses(ctx context.Context) 
 		Status string `json:"status"`
 		Data   struct {
 			Result []struct {
-				Metric map[string]string `json:"metric"`
+				Metric map[string]string  `json:"metric"`
 				Value  [2]json.RawMessage `json:"value"`
 			} `json:"result"`
 		} `json:"data"`

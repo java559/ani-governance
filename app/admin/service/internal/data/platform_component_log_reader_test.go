@@ -91,25 +91,25 @@ func newPlatformComponentLogReaderFixture(
 		t.Fatalf("parse server url: %v", err)
 	}
 	reader, err := NewPlatformComponentLogReader(PlatformComponentLogConfig{
-		Endpoint:          server.URL,
-		ServerName:        parsed.Hostname(),
-		CAFile:            caPath,
-		UsernameFile:      usernamePath,
-		PasswordFile:      passwordPath,
-		IndexPrefix:       "ani-logs-",
-		RetentionDays:     3,
-		QueryTimeout:      2 * time.Second,
-		ResponseMaxBytes:  4 << 20,
-		OpenTimeout:       3 * time.Second,
-		WriteTimeout:      2 * time.Second,
-		Heartbeat:         2 * time.Second,
-		ReplayLimitMax:    200,
-		IncrementMax:      500,
-		Overlap:           30 * time.Second,
-		MaxFrameBytes:     256 << 10,
-		MaxBufferedBytes:  1 << 20,
-		ProcessConnections: 16,
-		UserConnections:    4,
+		Endpoint:             server.URL,
+		ServerName:           parsed.Hostname(),
+		CAFile:               caPath,
+		UsernameFile:         usernamePath,
+		PasswordFile:         passwordPath,
+		IndexPrefix:          "ani-logs-",
+		RetentionDays:        3,
+		QueryTimeout:         2 * time.Second,
+		ResponseMaxBytes:     4 << 20,
+		OpenTimeout:          3 * time.Second,
+		WriteTimeout:         2 * time.Second,
+		Heartbeat:            2 * time.Second,
+		ReplayLimitMax:       200,
+		IncrementMax:         500,
+		Overlap:              30 * time.Second,
+		MaxFrameBytes:        256 << 10,
+		MaxBufferedBytes:     1 << 20,
+		ProcessConnections:   16,
+		UserConnections:      4,
 		ComponentConnections: 4,
 	})
 	if err != nil {
@@ -343,11 +343,11 @@ func TestPlatformComponentLogReaderFailsWhenStillOversized(t *testing.T) {
 // 超时与坏 JSON：分类必须区分"部署问题"和"用户问题"，不能一律 401。
 func TestPlatformComponentLogReaderClassifiesErrors(t *testing.T) {
 	for _, tc := range []struct {
-		name    string
-		status  int
-		body    string
-		delay   time.Duration
-		want    error
+		name   string
+		status int
+		body   string
+		delay  time.Duration
+		want   error
 	}{
 		{name: "unauthorized", status: http.StatusUnauthorized, body: `{}`, want: ErrPlatformComponentLogRejected},
 		{name: "forbidden", status: http.StatusForbidden, body: `{}`, want: ErrPlatformComponentLogRejected},

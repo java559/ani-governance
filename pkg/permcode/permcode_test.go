@@ -213,10 +213,19 @@ func TestCountsAndKeys(t *testing.T) {
 	platformComponentLogStreams := map[string]expectation{
 		"GET /api/v1/platform/components/{component}/logs/stream": {Code: "component:log:read", Source: platformComponentLogSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
 	}
+	// 容器实例重启与 PVC 挂载/卸载（dev 侧随 70807c81 引入 4 条能力）。
+	// 与 instance 其余能力同源，无法按 source 整表对拍，故逐键校验。
+	const instanceRestartPVCSource = "scripts/ops/sql/register-instance-permissions.sql"
+	instanceRestartPVCReads := map[string]expectation{
+		"POST /api/v1/instances/{data.instance_id}:restart":    {Code: "instance:restart", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
+		"POST /api/v1/instances/{data.instance_id}:attach-pvc": {Code: "instance:pvc:attach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
+		"POST /api/v1/instances/{data.instance_id}:detach-pvc": {Code: "instance:pvc:detach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
+		"GET /api/v1/instances/{instance_id}/mountable-pvcs":   {Code: "instance:pvc:attach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
+	}
 	if want := 199 + len(gpuReads) + 5 + 3; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
-	if want := 176 + len(platformEIPReadsAndRelease) + len(homepageReads) + len(platformComponentReads) + len(platformComponentLogStreams) + 5; CapabilityCount() != want {
+	if want := 176 + len(instanceRestartPVCReads) + len(platformEIPReadsAndRelease) + len(homepageReads) + len(platformComponentReads) + len(platformComponentLogStreams) + 5; CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
@@ -273,6 +282,16 @@ func TestCountsAndKeys(t *testing.T) {
 		got, ok := capabilityOperations[key]
 		if !ok || got.Code != want.Code || got.BusinessModule != want.BusinessModule || got.ScopeKind != want.ScopeKind || got.Source != want.Source {
 			t.Errorf("platform component log capability %q = %+v (ok=%v), want %+v", key, got, ok, want)
+		}
+		if !keySet[key] {
+			t.Errorf("AllKeys() missing %q", key)
+		}
+	}
+	// 容器实例重启与 PVC 能力逐键对拍：码、模块、作用域与来源都必须一致。
+	for key, want := range instanceRestartPVCReads {
+		got, ok := capabilityOperations[key]
+		if !ok || got != want {
+			t.Errorf("instance restart/pvc capability %q = %+v (ok=%v), want %+v", key, got, ok, want)
 		}
 		if !keySet[key] {
 			t.Errorf("AllKeys() missing %q", key)
