@@ -207,6 +207,56 @@ func TestTenantRepoSqlite_Update(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("TENANT_SQLITE_%d", 4001), *after.Code, "掩码外字段 code 应保持原值")
 }
 
+// TestTenantRepoSqlite_Create_ZeroPlanStoredAsNull 验证“不选套餐”的写入语义：
+// proto 显式传 planId=0 时必须落库为 NULL，而不是写 0（plan_id 是指向
+// sys_plans 的外键，0 会触发 23503）。
+func TestTenantRepoSqlite_Create_ZeroPlanStoredAsNull(t *testing.T) {
+	repo := newTenantRepoSqlite(t)
+	ctx := testutil.NewSystemViewerCtx(context.Background())
+
+	_, err := repo.Create(ctx, &identityV1.Tenant{
+		Name:   trans.Ptr("无套餐租户"),
+		Code:   trans.Ptr("TENANT_SQLITE_NO_PLAN"),
+		PlanId: trans.Ptr(uint32(0)),
+	})
+	require.NoError(t, err, "planId=0 应按“无套餐”创建成功")
+
+	row, err := repo.entClient.Client().Tenant.Query().
+		Where(tenant.CodeEQ("TENANT_SQLITE_NO_PLAN")).Only(ctx)
+	require.NoError(t, err)
+	require.Nil(t, row.PlanID, "planId=0 必须落库为 NULL，不能写 0")
+}
+
+// TestTenantRepoSqlite_Update_ZeroPlanClearsPlan 验证编辑时清空套餐：
+// planId=0 且 updateMask 含 plan_id 时应把 plan_id 置 NULL。
+func TestTenantRepoSqlite_Update_ZeroPlanClearsPlan(t *testing.T) {
+	repo := newTenantRepoSqlite(t)
+	ctx := testutil.NewSystemViewerCtx(context.Background())
+
+	plan, err := repo.entClient.Client().Plan.Create().SetName("plan-for-clear").Save(ctx)
+	require.NoError(t, err)
+
+	created, err := repo.Create(ctx, &identityV1.Tenant{
+		Name:   trans.Ptr("绑定套餐租户"),
+		Code:   trans.Ptr("TENANT_SQLITE_CLEAR_PLAN"),
+		PlanId: &plan.ID,
+	})
+	require.NoError(t, err)
+	require.Equal(t, plan.ID, created.GetPlanId())
+
+	err = repo.Update(ctx, &identityV1.UpdateTenantRequest{
+		Id:         created.GetId(),
+		Data:       &identityV1.Tenant{PlanId: trans.Ptr(uint32(0))},
+		UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"plan_id"}},
+	})
+	require.NoError(t, err, "清空套餐应成功")
+
+	row, err := repo.entClient.Client().Tenant.Query().
+		Where(tenant.CodeEQ("TENANT_SQLITE_CLEAR_PLAN")).Only(ctx)
+	require.NoError(t, err)
+	require.Nil(t, row.PlanID, "清空套餐后 plan_id 应为 NULL")
+}
+
 // TestTenantRepoSqlite_Delete 验证 TenantRepo.Delete 删除记录后表内计数归零，
 // 且删除不存在的记录返回错误。
 func TestTenantRepoSqlite_Delete(t *testing.T) {

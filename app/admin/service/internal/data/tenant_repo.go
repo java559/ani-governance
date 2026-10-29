@@ -181,6 +181,16 @@ func (r *TenantRepo) BeginTx(ctx context.Context) (tx *ent.Tx, cleanup func(), e
 	return tx, cleanup, nil
 }
 
+// plan_id 是可空的 sys_plans 外键。proto 的 optional uint32 在“未选择套餐”时
+// 会以 0 显式到达这里，直接落库会触发 FK 23503；读取侧已把 0 与 NULL 同义
+// 视为无套餐，写入侧统一归一化为 NULL。
+func normalizePlanID(planID *uint32) *uint32 {
+	if planID != nil && *planID == 0 {
+		return nil
+	}
+	return planID
+}
+
 func (r *TenantRepo) Create(ctx context.Context, data *identityV1.Tenant) (tenant *identityV1.Tenant, err error) {
 	if data == nil {
 		return nil, identityV1.ErrorBadRequest("invalid parameter")
@@ -228,7 +238,7 @@ func (r *TenantRepo) CreateWithTx(ctx context.Context, tx *ent.Tx, data *identit
 		SetNillableExpiredAt(timeutil.TimestamppbToTime(data.ExpiredAt)).
 		SetNillableSubscriptionAt(timeutil.TimestamppbToTime(data.SubscriptionAt)).
 		SetNillableUnsubscribeAt(timeutil.TimestamppbToTime(data.UnsubscribeAt)).
-		SetNillablePlanID(data.PlanId).
+		SetNillablePlanID(normalizePlanID(data.PlanId)).
 		SetNillableCreatedBy(data.CreatedBy).
 		SetCreatedAt(time.Now())
 
@@ -271,6 +281,10 @@ func (r *TenantRepo) Update(ctx context.Context, req *identityV1.UpdateTenantReq
 			return err
 		}
 	}
+
+	// planId=0 表示清空套餐。归一化为 nil 后，UpdateX 的 applyUpdateNilFieldMask
+	// 会在 mask 含 plan_id 时生成 plan_id = NULL；否则 Builder 会写 0 并撞外键。
+	req.Data.PlanId = normalizePlanID(req.Data.PlanId)
 
 	builder := r.entClient.Client().Tenant.Update()
 	err := r.repository.UpdateX(ctx, builder, req.Data, req.GetUpdateMask(),
