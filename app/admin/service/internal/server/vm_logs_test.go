@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-kratos/kratos/v2/middleware"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
-	instance "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
+	vmres "github.com/zhangzhe-ctrl/ani-resource-service/api/vm/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/service"
 	"go-wind-admin/pkg/middleware/auth"
@@ -43,13 +43,13 @@ func (vmLogTenants) ResourceTenantID(_ context.Context, id uint32) (string, erro
 
 type vmLogResource struct {
 	service.VMOwnerClient
-	open   func(context.Context) (grpc.ServerStreamingClient[instance.InstanceLogFrame], error)
+	open   func(context.Context) (grpc.ServerStreamingClient[vmres.VMLogFrame], error)
 	calls  atomic.Int32
 	tail   uint32
 	follow bool
 }
 
-func (p *vmLogResource) Logs(ctx context.Context, tenant, actor, id string, tail uint32, follow bool) (grpc.ServerStreamingClient[instance.InstanceLogFrame], error) {
+func (p *vmLogResource) Logs(ctx context.Context, tenant, actor, id string, tail uint32, follow bool) (grpc.ServerStreamingClient[vmres.VMLogFrame], error) {
 	if tenant != diagnosticTenantID || actor != "governance:user:9" || id != vmLogVMID {
 		return nil, status.Error(codes.PermissionDenied, "VM_SCOPE_DENIED")
 	}
@@ -61,10 +61,10 @@ func (p *vmLogResource) Logs(ctx context.Context, tenant, actor, id string, tail
 type vmLogStream struct {
 	grpc.ClientStream
 	ctx    context.Context
-	frames chan *instance.InstanceLogFrame
+	frames chan *vmres.VMLogFrame
 }
 
-func (s *vmLogStream) Recv() (*instance.InstanceLogFrame, error) {
+func (s *vmLogStream) Recv() (*vmres.VMLogFrame, error) {
 	select {
 	case frame, ok := <-s.frames:
 		if !ok {
@@ -90,8 +90,8 @@ func vmLogHTTPFixture(t *testing.T, peer *vmLogResource, a *vmLogAuthorization, 
 	return actual
 }
 
-func vmFrames(values ...*instance.InstanceLogFrame) chan *instance.InstanceLogFrame {
-	ch := make(chan *instance.InstanceLogFrame, len(values))
+func vmFrames(values ...*vmres.VMLogFrame) chan *vmres.VMLogFrame {
+	ch := make(chan *vmres.VMLogFrame, len(values))
 	for _, value := range values {
 		ch <- value
 	}
@@ -112,12 +112,12 @@ func TestVMLogQueryStrict(t *testing.T) {
 }
 
 func TestVMLogsHTTPReadyUTF8AndTerminalEvents(t *testing.T) {
-	peer := &vmLogResource{open: func(ctx context.Context) (grpc.ServerStreamingClient[instance.InstanceLogFrame], error) {
+	peer := &vmLogResource{open: func(ctx context.Context) (grpc.ServerStreamingClient[vmres.VMLogFrame], error) {
 		return &vmLogStream{ctx: ctx, frames: vmFrames(
-			&instance.InstanceLogFrame{Kind: instance.InstanceLogFrame_READY},
-			&instance.InstanceLogFrame{Kind: instance.InstanceLogFrame_DATA, Data: []byte{0xe4, 0xbd}},
-			&instance.InstanceLogFrame{Kind: instance.InstanceLogFrame_DATA, Data: []byte{0xa0, '\n', '"', 0xff}},
-			&instance.InstanceLogFrame{Kind: instance.InstanceLogFrame_END, Reason: "EOF"},
+			&vmres.VMLogFrame{Kind: vmres.VMLogFrame_READY},
+			&vmres.VMLogFrame{Kind: vmres.VMLogFrame_DATA, Data: []byte{0xe4, 0xbd}},
+			&vmres.VMLogFrame{Kind: vmres.VMLogFrame_DATA, Data: []byte{0xa0, '\n', '"', 0xff}},
+			&vmres.VMLogFrame{Kind: vmres.VMLogFrame_END, Reason: "EOF"},
 		)}, nil
 	}}
 	actual := vmLogHTTPFixture(t, peer, &vmLogAuthorization{}, DefaultInstanceLogLimits())
@@ -159,7 +159,7 @@ func TestVMLogsHTTPReadyUTF8AndTerminalEvents(t *testing.T) {
 }
 
 func TestVMLogsHTTPTargetUnavailable(t *testing.T) {
-	peer := &vmLogResource{open: func(context.Context) (grpc.ServerStreamingClient[instance.InstanceLogFrame], error) {
+	peer := &vmLogResource{open: func(context.Context) (grpc.ServerStreamingClient[vmres.VMLogFrame], error) {
 		return nil, status.Error(codes.FailedPrecondition, "VM_LOG_TARGET_UNAVAILABLE")
 	}}
 	actual := vmLogHTTPFixture(t, peer, &vmLogAuthorization{}, DefaultInstanceLogLimits())
@@ -178,8 +178,8 @@ func TestVMLogsHTTPTargetUnavailable(t *testing.T) {
 }
 
 func TestVMLogsHTTPDeniedAndLimit(t *testing.T) {
-	peer := &vmLogResource{open: func(ctx context.Context) (grpc.ServerStreamingClient[instance.InstanceLogFrame], error) {
-		return &vmLogStream{ctx: ctx, frames: vmFrames(&instance.InstanceLogFrame{Kind: instance.InstanceLogFrame_READY}, &instance.InstanceLogFrame{Kind: instance.InstanceLogFrame_END, Reason: "EOF"})}, nil
+	peer := &vmLogResource{open: func(ctx context.Context) (grpc.ServerStreamingClient[vmres.VMLogFrame], error) {
+		return &vmLogStream{ctx: ctx, frames: vmFrames(&vmres.VMLogFrame{Kind: vmres.VMLogFrame_READY}, &vmres.VMLogFrame{Kind: vmres.VMLogFrame_END, Reason: "EOF"})}, nil
 	}}
 	actual := vmLogHTTPFixture(t, peer, &vmLogAuthorization{deny: true}, DefaultInstanceLogLimits())
 	response, err := http.Get(actual.URL + "/api/v1/virtual-machines/" + vmLogVMID + "/logs")

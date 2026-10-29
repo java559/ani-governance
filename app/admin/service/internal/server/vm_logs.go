@@ -14,7 +14,7 @@ import (
 
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
-	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
+	vmres "github.com/zhangzhe-ctrl/ani-resource-service/api/vm/v1"
 	view "go-wind-admin/api/gen/go/vm/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/service"
@@ -138,7 +138,7 @@ func (h *vmLogHTTP) reserveOpen() (func(), error) {
 }
 
 type vmLogRead struct {
-	frame *res.InstanceLogFrame
+	frame *vmres.VMLogFrame
 	err   error
 }
 
@@ -195,7 +195,7 @@ func (h *vmLogHTTP) stream(parent context.Context, w http.ResponseWriter, r *vie
 		if first.err != nil {
 			return vmLogBeforeReady(first.err)
 		}
-		if first.frame.Kind != res.InstanceLogFrame_READY || len(first.frame.Data) != 0 || first.frame.Reason != "" {
+		if first.frame.Kind != vmres.VMLogFrame_READY || len(first.frame.Data) != 0 || first.frame.Reason != "" {
 			return status.Error(codes.Unavailable, "VM_LOG_UPSTREAM_PROTOCOL")
 		}
 	case <-call.Done():
@@ -255,7 +255,7 @@ func (h *vmLogHTTP) stream(parent context.Context, w http.ResponseWriter, r *vie
 				return nil
 			}
 			switch result.frame.Kind {
-			case res.InstanceLogFrame_DATA:
+			case vmres.VMLogFrame_DATA:
 				if result.frame.Reason != "" {
 					finish("error", "VM_LOG_UPSTREAM_PROTOCOL")
 					return nil
@@ -265,7 +265,7 @@ func (h *vmLogHTTP) stream(parent context.Context, w http.ResponseWriter, r *vie
 						return nil
 					}
 				}
-			case res.InstanceLogFrame_END:
+			case vmres.VMLogFrame_END:
 				reason := result.frame.Reason
 				if len(result.frame.Data) != 0 || (reason != "EOF" && reason != "TIME_LIMIT" && reason != "POD_CHANGED") {
 					finish("error", "VM_LOG_UPSTREAM_PROTOCOL")
@@ -273,7 +273,7 @@ func (h *vmLogHTTP) stream(parent context.Context, w http.ResponseWriter, r *vie
 					finish("end", reason)
 				}
 				return nil
-			case res.InstanceLogFrame_ERROR:
+			case vmres.VMLogFrame_ERROR:
 				if len(result.frame.Data) != 0 {
 					finish("error", "VM_LOG_UPSTREAM_PROTOCOL")
 				} else {

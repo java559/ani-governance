@@ -5,7 +5,7 @@ import (
 
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
-	instance "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
+	vmres "github.com/zhangzhe-ctrl/ani-resource-service/api/vm/v1"
 	view "go-wind-admin/api/gen/go/vm/service/v1"
 	"google.golang.org/grpc"
 )
@@ -15,7 +15,7 @@ import (
 type VMLogSession struct {
 	TenantID string
 	VMID     string
-	Stream   grpc.ServerStreamingClient[instance.InstanceLogFrame]
+	Stream   grpc.ServerStreamingClient[vmres.VMLogFrame]
 }
 
 func (s *VMService) OpenVMLogs(ctx context.Context, r *view.VMLogsRequest) (*VMLogSession, error) {
