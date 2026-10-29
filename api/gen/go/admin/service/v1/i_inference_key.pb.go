@@ -27,8 +27,32 @@ var File_admin_service_v1_i_inference_key_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_inference_key_proto_rawDesc = "" +
 	"\n" +
-	"&admin/service/v1/i_inference_key.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a%inference/service/v1/access_key.proto2\xfd\x06\n" +
-	"\x13InferenceKeyService\x12\xac\x01\n" +
+	"&admin/service/v1/i_inference_key.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a%inference/service/v1/access_key.proto2\xf6\x0f\n" +
+	"\x13InferenceKeyService\x12\xb4\x01\n" +
+	"\x15CreateInferencePolicy\x122.inference.service.v1.CreateInferencePolicyRequest\x1a+.inference.service.v1.InferenceAccessPolicy\":\xbaG\x12Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/inference-policies\x12\xb9\x01\n" +
+	"\x15ListInferencePolicies\x122.inference.service.v1.ListInferencePoliciesRequest\x1a3.inference.service.v1.ListInferencePoliciesResponse\"7\xbaG\x12Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/inference-policies\x12\xb7\x01\n" +
+	"\x12GetInferencePolicy\x12/.inference.service.v1.GetInferencePolicyRequest\x1a+.inference.service.v1.InferenceAccessPolicy\"C\xbaG\x12Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02(\x12&/api/v1/inference-policies/{policy_id}\x12\xc0\x01\n" +
+	"\x15UpdateInferencePolicy\x122.inference.service.v1.UpdateInferencePolicyRequest\x1a+.inference.service.v1.InferenceAccessPolicy\"F\xbaG\x12Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02+:\x01*\x1a&/api/v1/inference-policies/{policy_id}\x12\xc5\x01\n" +
+	"\x15DeleteInferencePolicy\x122.inference.service.v1.DeleteInferencePolicyRequest\x1a3.inference.service.v1.DeleteInferencePolicyResponse\"C\xbaG\x12Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02(*&/api/v1/inference-policies/{policy_id}\x12\xbe\x01\n" +
+	"\x16BindInferenceKeyPolicy\x123.inference.service.v1.BindInferenceKeyPolicyRequest\x1a\".inference.service.v1.InferenceKey\"K\xbaG\x12Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/inference-keys/{key_id}:bind-policy\x12\xac\x01\n" +
 	"\x12CreateInferenceKey\x12/.inference.service.v1.CreateInferenceKeyRequest\x1a-.inference.service.v1.InferenceKeyCredentials\"6\xbaG\x12Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
@@ -52,31 +76,52 @@ const file_admin_service_v1_i_inference_key_proto_rawDesc = "" +
 	"\x14com.admin.service.v1B\x12IInferenceKeyProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_inference_key_proto_goTypes = []any{
-	(*v1.CreateInferenceKeyRequest)(nil), // 0: inference.service.v1.CreateInferenceKeyRequest
-	(*v1.ListInferenceKeysRequest)(nil),  // 1: inference.service.v1.ListInferenceKeysRequest
-	(*v1.GetInferenceKeyRequest)(nil),    // 2: inference.service.v1.GetInferenceKeyRequest
-	(*v1.RevokeInferenceKeyRequest)(nil), // 3: inference.service.v1.RevokeInferenceKeyRequest
-	(*v1.RotateInferenceKeyRequest)(nil), // 4: inference.service.v1.RotateInferenceKeyRequest
-	(*v1.InferenceKeyCredentials)(nil),   // 5: inference.service.v1.InferenceKeyCredentials
-	(*v1.ListInferenceKeysResponse)(nil), // 6: inference.service.v1.ListInferenceKeysResponse
-	(*v1.InferenceKey)(nil),              // 7: inference.service.v1.InferenceKey
+	(*v1.CreateInferencePolicyRequest)(nil),  // 0: inference.service.v1.CreateInferencePolicyRequest
+	(*v1.ListInferencePoliciesRequest)(nil),  // 1: inference.service.v1.ListInferencePoliciesRequest
+	(*v1.GetInferencePolicyRequest)(nil),     // 2: inference.service.v1.GetInferencePolicyRequest
+	(*v1.UpdateInferencePolicyRequest)(nil),  // 3: inference.service.v1.UpdateInferencePolicyRequest
+	(*v1.DeleteInferencePolicyRequest)(nil),  // 4: inference.service.v1.DeleteInferencePolicyRequest
+	(*v1.BindInferenceKeyPolicyRequest)(nil), // 5: inference.service.v1.BindInferenceKeyPolicyRequest
+	(*v1.CreateInferenceKeyRequest)(nil),     // 6: inference.service.v1.CreateInferenceKeyRequest
+	(*v1.ListInferenceKeysRequest)(nil),      // 7: inference.service.v1.ListInferenceKeysRequest
+	(*v1.GetInferenceKeyRequest)(nil),        // 8: inference.service.v1.GetInferenceKeyRequest
+	(*v1.RevokeInferenceKeyRequest)(nil),     // 9: inference.service.v1.RevokeInferenceKeyRequest
+	(*v1.RotateInferenceKeyRequest)(nil),     // 10: inference.service.v1.RotateInferenceKeyRequest
+	(*v1.InferenceAccessPolicy)(nil),         // 11: inference.service.v1.InferenceAccessPolicy
+	(*v1.ListInferencePoliciesResponse)(nil), // 12: inference.service.v1.ListInferencePoliciesResponse
+	(*v1.DeleteInferencePolicyResponse)(nil), // 13: inference.service.v1.DeleteInferencePolicyResponse
+	(*v1.InferenceKey)(nil),                  // 14: inference.service.v1.InferenceKey
+	(*v1.InferenceKeyCredentials)(nil),       // 15: inference.service.v1.InferenceKeyCredentials
+	(*v1.ListInferenceKeysResponse)(nil),     // 16: inference.service.v1.ListInferenceKeysResponse
 }
 var file_admin_service_v1_i_inference_key_proto_depIdxs = []int32{
-	0, // 0: admin.service.v1.InferenceKeyService.CreateInferenceKey:input_type -> inference.service.v1.CreateInferenceKeyRequest
-	1, // 1: admin.service.v1.InferenceKeyService.ListInferenceKeys:input_type -> inference.service.v1.ListInferenceKeysRequest
-	2, // 2: admin.service.v1.InferenceKeyService.GetInferenceKey:input_type -> inference.service.v1.GetInferenceKeyRequest
-	3, // 3: admin.service.v1.InferenceKeyService.RevokeInferenceKey:input_type -> inference.service.v1.RevokeInferenceKeyRequest
-	4, // 4: admin.service.v1.InferenceKeyService.RotateInferenceKey:input_type -> inference.service.v1.RotateInferenceKeyRequest
-	5, // 5: admin.service.v1.InferenceKeyService.CreateInferenceKey:output_type -> inference.service.v1.InferenceKeyCredentials
-	6, // 6: admin.service.v1.InferenceKeyService.ListInferenceKeys:output_type -> inference.service.v1.ListInferenceKeysResponse
-	7, // 7: admin.service.v1.InferenceKeyService.GetInferenceKey:output_type -> inference.service.v1.InferenceKey
-	7, // 8: admin.service.v1.InferenceKeyService.RevokeInferenceKey:output_type -> inference.service.v1.InferenceKey
-	5, // 9: admin.service.v1.InferenceKeyService.RotateInferenceKey:output_type -> inference.service.v1.InferenceKeyCredentials
-	5, // [5:10] is the sub-list for method output_type
-	0, // [0:5] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: admin.service.v1.InferenceKeyService.CreateInferencePolicy:input_type -> inference.service.v1.CreateInferencePolicyRequest
+	1,  // 1: admin.service.v1.InferenceKeyService.ListInferencePolicies:input_type -> inference.service.v1.ListInferencePoliciesRequest
+	2,  // 2: admin.service.v1.InferenceKeyService.GetInferencePolicy:input_type -> inference.service.v1.GetInferencePolicyRequest
+	3,  // 3: admin.service.v1.InferenceKeyService.UpdateInferencePolicy:input_type -> inference.service.v1.UpdateInferencePolicyRequest
+	4,  // 4: admin.service.v1.InferenceKeyService.DeleteInferencePolicy:input_type -> inference.service.v1.DeleteInferencePolicyRequest
+	5,  // 5: admin.service.v1.InferenceKeyService.BindInferenceKeyPolicy:input_type -> inference.service.v1.BindInferenceKeyPolicyRequest
+	6,  // 6: admin.service.v1.InferenceKeyService.CreateInferenceKey:input_type -> inference.service.v1.CreateInferenceKeyRequest
+	7,  // 7: admin.service.v1.InferenceKeyService.ListInferenceKeys:input_type -> inference.service.v1.ListInferenceKeysRequest
+	8,  // 8: admin.service.v1.InferenceKeyService.GetInferenceKey:input_type -> inference.service.v1.GetInferenceKeyRequest
+	9,  // 9: admin.service.v1.InferenceKeyService.RevokeInferenceKey:input_type -> inference.service.v1.RevokeInferenceKeyRequest
+	10, // 10: admin.service.v1.InferenceKeyService.RotateInferenceKey:input_type -> inference.service.v1.RotateInferenceKeyRequest
+	11, // 11: admin.service.v1.InferenceKeyService.CreateInferencePolicy:output_type -> inference.service.v1.InferenceAccessPolicy
+	12, // 12: admin.service.v1.InferenceKeyService.ListInferencePolicies:output_type -> inference.service.v1.ListInferencePoliciesResponse
+	11, // 13: admin.service.v1.InferenceKeyService.GetInferencePolicy:output_type -> inference.service.v1.InferenceAccessPolicy
+	11, // 14: admin.service.v1.InferenceKeyService.UpdateInferencePolicy:output_type -> inference.service.v1.InferenceAccessPolicy
+	13, // 15: admin.service.v1.InferenceKeyService.DeleteInferencePolicy:output_type -> inference.service.v1.DeleteInferencePolicyResponse
+	14, // 16: admin.service.v1.InferenceKeyService.BindInferenceKeyPolicy:output_type -> inference.service.v1.InferenceKey
+	15, // 17: admin.service.v1.InferenceKeyService.CreateInferenceKey:output_type -> inference.service.v1.InferenceKeyCredentials
+	16, // 18: admin.service.v1.InferenceKeyService.ListInferenceKeys:output_type -> inference.service.v1.ListInferenceKeysResponse
+	14, // 19: admin.service.v1.InferenceKeyService.GetInferenceKey:output_type -> inference.service.v1.InferenceKey
+	14, // 20: admin.service.v1.InferenceKeyService.RevokeInferenceKey:output_type -> inference.service.v1.InferenceKey
+	15, // 21: admin.service.v1.InferenceKeyService.RotateInferenceKey:output_type -> inference.service.v1.InferenceKeyCredentials
+	11, // [11:22] is the sub-list for method output_type
+	0,  // [0:11] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_admin_service_v1_i_inference_key_proto_init() }

@@ -316,6 +316,18 @@ Resource 协议、二进制、数据与实例运行对象无需变更。
 失败时停止 Gov，执行 `restore-instance-catalog-route.sql`，恢复原镜像并刷新策略。
 恢复脚本只删除训练/推理到该路由的映射，保留权限本身及角色、套餐状态；恢复之前检查没有外来路由映射。
 
+### Sandbox 父实例删除保护切换
+
+`20261028010000_sandbox_parent_fence.sql` 为创建意图、父删除检查及其凭据增加三张持久表；迁移账号执行 Atlas 后，按本页运行角色授权步骤确认三表的 DML 权限。父实例删除依赖 Resource 的 Sandbox List 可用且 mTLS 权限正确；检查不可用时删除返回 503，已受理删除的同键重放仍可查询。行为以[前端 HTTP 合同](contracts/frontend-http-api.md)为准。
+
+旧 Gov 不登记创建意图，普通滚动升级或仅等待固定时间无法保证旧 RPC 不再到达。切换前必须停止旧版本接单，断开或排空旧连接及代理缓冲，以可核实证据确认旧 Resource 请求处理和相关 PostgreSQL 事务均结束，再启用新版本的写入；无法证明时保持写入关闭，不宣称新屏障覆盖旧流量。历史 Sandbox 由父删除前的 Resource 全量检查覆盖，不通过迁移假设历史子资源为空。回退到旧 Gov 同样不能与新保护并行写入。
+
+切换前还须冻结父实例 DELETE 派发，核对所有既有 `QUEUED`、`DISPATCHING`、`UNKNOWN` 及已受理但尚未完成的删除与其 Sandbox；尤其对曾发送但结果未知的请求，必须证明旧请求已排空，不能仅凭时间或一次查询放行。新受理的 DELETE 事务会记录检查凭据，worker 在派发前核验；历史 DELETE 没有该记录时停止派发，错误码为 `SANDBOX_DELETE_CHECK_MISSING`，不会自动创建检查凭据或宣布历史队列安全。处理这些历史记录需要单独对账和恢复方案。
+
+该顺序保护位于 Gov，Resource 的 `InstanceService.AcceptDelete` 不读取 Gov 的检查凭据。Resource mTLS 白名单中的可信调用身份只能由完成上述协调的新 Gov 正常链路使用；其他进程不得持同一身份直调实例删除或绕过 Gov 创建 Sandbox，否则保护不成立。上线前必须核对证书使用方、代理和直连路径。
+
+未确认创建命令可从 `sys_sandbox_create_intents` 按租户与实例核对，`last_error_code` 是脱敏 RPC 状态码，`retry_at` 与 `lease_until` 仅控制重试调度。创建结果未知时不得删除该记录或仅按超时放行父删除。如果冻结规格被 Resource 新配置拒绝，恢复与原命令一致的可信配置，使 Resource 受理原命令，再通过正常 Sandbox 删除清理；这不是所有永久错误都能自动收敛的保证。运维过程中仍需遵循租户授权与数据库访问边界。
+
 ## 9. 平台组件日志流（PLAT-COMP-02 增量）
 
 BOSS 日志窗口 `GET /api/v1/platform/components/{component}/logs/stream` 读 OpenSearch 的

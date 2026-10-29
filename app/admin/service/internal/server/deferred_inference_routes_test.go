@@ -27,6 +27,12 @@ func TestNewRestServerRegistersInferenceManagement(t *testing.T) {
 		{http.MethodGet, "/api/v1/inference-keys/key-1"},
 		{http.MethodDelete, "/api/v1/inference-keys/key-1"},
 		{http.MethodPost, "/api/v1/inference-keys/key-1:rotate"},
+		{http.MethodPost, "/api/v1/inference-keys/key-1:bind-policy"},
+		{http.MethodGet, "/api/v1/inference-policies"},
+		{http.MethodPost, "/api/v1/inference-policies"},
+		{http.MethodGet, "/api/v1/inference-policies/policy-1"},
+		{http.MethodPut, "/api/v1/inference-policies/policy-1"},
+		{http.MethodDelete, "/api/v1/inference-policies/policy-1"},
 	} {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
 			response := httptest.NewRecorder()

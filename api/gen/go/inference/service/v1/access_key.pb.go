@@ -82,23 +82,19 @@ func (InferenceKeyErrorReason) EnumDescriptor() ([]byte, []int) {
 // Inference-owned data-plane credential. Authorized list/detail responses
 // include the full secret; hashes and encryption material are never exposed.
 type InferenceKey struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	KeyPrefix         string                 `protobuf:"bytes,3,opt,name=key_prefix,proto3" json:"key_prefix,omitempty"`
-	AllowedServiceIds []string               `protobuf:"bytes,4,rep,name=allowed_service_ids,proto3" json:"allowed_service_ids,omitempty"`
-	AllowedModelNames []string               `protobuf:"bytes,5,rep,name=allowed_model_names,proto3" json:"allowed_model_names,omitempty"`
-	RequestsPerSecond int32                  `protobuf:"varint,6,opt,name=requests_per_second,proto3" json:"requests_per_second,omitempty"`
-	RequestsPerMinute int32                  `protobuf:"varint,7,opt,name=requests_per_minute,proto3" json:"requests_per_minute,omitempty"`
-	RequestsPerHour   int32                  `protobuf:"varint,8,opt,name=requests_per_hour,proto3" json:"requests_per_hour,omitempty"`
-	ExpiresAt         *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=expires_at,proto3" json:"expires_at,omitempty"`
-	RevokedAt         *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=revoked_at,proto3" json:"revoked_at,omitempty"`
-	CreatedBy         string                 `protobuf:"bytes,11,opt,name=created_by,proto3" json:"created_by,omitempty"`
-	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,proto3" json:"created_at,omitempty"`
-	LastUsedAt        *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=last_used_at,proto3" json:"last_used_at,omitempty"`
-	Version           int64                  `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	KeyPrefix  string                 `protobuf:"bytes,3,opt,name=key_prefix,proto3" json:"key_prefix,omitempty"`
+	ExpiresAt  *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=expires_at,proto3" json:"expires_at,omitempty"`
+	RevokedAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=revoked_at,proto3" json:"revoked_at,omitempty"`
+	CreatedBy  string                 `protobuf:"bytes,11,opt,name=created_by,proto3" json:"created_by,omitempty"`
+	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	LastUsedAt *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=last_used_at,proto3" json:"last_used_at,omitempty"`
+	Version    int64                  `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"`
 	// Legacy hashes have no secret until successful use or explicit rotation.
 	Secret        *string `protobuf:"bytes,15,opt,name=secret,proto3,oneof" json:"secret,omitempty"`
+	PolicyId      string  `protobuf:"bytes,16,opt,name=policy_id,proto3" json:"policy_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -154,41 +150,6 @@ func (x *InferenceKey) GetKeyPrefix() string {
 	return ""
 }
 
-func (x *InferenceKey) GetAllowedServiceIds() []string {
-	if x != nil {
-		return x.AllowedServiceIds
-	}
-	return nil
-}
-
-func (x *InferenceKey) GetAllowedModelNames() []string {
-	if x != nil {
-		return x.AllowedModelNames
-	}
-	return nil
-}
-
-func (x *InferenceKey) GetRequestsPerSecond() int32 {
-	if x != nil {
-		return x.RequestsPerSecond
-	}
-	return 0
-}
-
-func (x *InferenceKey) GetRequestsPerMinute() int32 {
-	if x != nil {
-		return x.RequestsPerMinute
-	}
-	return 0
-}
-
-func (x *InferenceKey) GetRequestsPerHour() int32 {
-	if x != nil {
-		return x.RequestsPerHour
-	}
-	return 0
-}
-
 func (x *InferenceKey) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ExpiresAt
@@ -238,17 +199,20 @@ func (x *InferenceKey) GetSecret() string {
 	return ""
 }
 
+func (x *InferenceKey) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
 type CreateInferenceKeyData struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	AllowedServiceIds []string               `protobuf:"bytes,2,rep,name=allowed_service_ids,proto3" json:"allowed_service_ids,omitempty"`
-	AllowedModelNames []string               `protobuf:"bytes,3,rep,name=allowed_model_names,proto3" json:"allowed_model_names,omitempty"`
-	RequestsPerSecond int32                  `protobuf:"varint,4,opt,name=requests_per_second,proto3" json:"requests_per_second,omitempty"`
-	RequestsPerMinute int32                  `protobuf:"varint,5,opt,name=requests_per_minute,proto3" json:"requests_per_minute,omitempty"`
-	RequestsPerHour   int32                  `protobuf:"varint,6,opt,name=requests_per_hour,proto3" json:"requests_per_hour,omitempty"`
-	ExpiresAt         *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=expires_at,proto3" json:"expires_at,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=expires_at,proto3" json:"expires_at,omitempty"`
 	// Required on this HTTP surface. Replays never return the secret again.
 	IdempotencyKey string `protobuf:"bytes,8,opt,name=idempotency_key,proto3" json:"idempotency_key,omitempty"`
+	PolicyId       string `protobuf:"bytes,9,opt,name=policy_id,proto3" json:"policy_id,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -290,41 +254,6 @@ func (x *CreateInferenceKeyData) GetName() string {
 	return ""
 }
 
-func (x *CreateInferenceKeyData) GetAllowedServiceIds() []string {
-	if x != nil {
-		return x.AllowedServiceIds
-	}
-	return nil
-}
-
-func (x *CreateInferenceKeyData) GetAllowedModelNames() []string {
-	if x != nil {
-		return x.AllowedModelNames
-	}
-	return nil
-}
-
-func (x *CreateInferenceKeyData) GetRequestsPerSecond() int32 {
-	if x != nil {
-		return x.RequestsPerSecond
-	}
-	return 0
-}
-
-func (x *CreateInferenceKeyData) GetRequestsPerMinute() int32 {
-	if x != nil {
-		return x.RequestsPerMinute
-	}
-	return 0
-}
-
-func (x *CreateInferenceKeyData) GetRequestsPerHour() int32 {
-	if x != nil {
-		return x.RequestsPerHour
-	}
-	return 0
-}
-
 func (x *CreateInferenceKeyData) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.ExpiresAt
@@ -339,6 +268,601 @@ func (x *CreateInferenceKeyData) GetIdempotencyKey() string {
 	return ""
 }
 
+func (x *CreateInferenceKeyData) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+type InferenceAccessPolicy struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	AllowedModelNames []string               `protobuf:"bytes,3,rep,name=allowed_model_names,proto3" json:"allowed_model_names,omitempty"`
+	RequestsPerSecond int32                  `protobuf:"varint,4,opt,name=requests_per_second,proto3" json:"requests_per_second,omitempty"`
+	RequestsPerMinute int32                  `protobuf:"varint,5,opt,name=requests_per_minute,proto3" json:"requests_per_minute,omitempty"`
+	RequestsPerHour   int32                  `protobuf:"varint,6,opt,name=requests_per_hour,proto3" json:"requests_per_hour,omitempty"`
+	Version           int64                  `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *InferenceAccessPolicy) Reset() {
+	*x = InferenceAccessPolicy{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InferenceAccessPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InferenceAccessPolicy) ProtoMessage() {}
+
+func (x *InferenceAccessPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InferenceAccessPolicy.ProtoReflect.Descriptor instead.
+func (*InferenceAccessPolicy) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *InferenceAccessPolicy) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *InferenceAccessPolicy) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *InferenceAccessPolicy) GetAllowedModelNames() []string {
+	if x != nil {
+		return x.AllowedModelNames
+	}
+	return nil
+}
+
+func (x *InferenceAccessPolicy) GetRequestsPerSecond() int32 {
+	if x != nil {
+		return x.RequestsPerSecond
+	}
+	return 0
+}
+
+func (x *InferenceAccessPolicy) GetRequestsPerMinute() int32 {
+	if x != nil {
+		return x.RequestsPerMinute
+	}
+	return 0
+}
+
+func (x *InferenceAccessPolicy) GetRequestsPerHour() int32 {
+	if x != nil {
+		return x.RequestsPerHour
+	}
+	return 0
+}
+
+func (x *InferenceAccessPolicy) GetVersion() int64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+type InferenceAccessPolicyData struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	AllowedModelNames []string               `protobuf:"bytes,2,rep,name=allowed_model_names,proto3" json:"allowed_model_names,omitempty"`
+	RequestsPerSecond int32                  `protobuf:"varint,3,opt,name=requests_per_second,proto3" json:"requests_per_second,omitempty"`
+	RequestsPerMinute int32                  `protobuf:"varint,4,opt,name=requests_per_minute,proto3" json:"requests_per_minute,omitempty"`
+	RequestsPerHour   int32                  `protobuf:"varint,5,opt,name=requests_per_hour,proto3" json:"requests_per_hour,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *InferenceAccessPolicyData) Reset() {
+	*x = InferenceAccessPolicyData{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InferenceAccessPolicyData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InferenceAccessPolicyData) ProtoMessage() {}
+
+func (x *InferenceAccessPolicyData) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InferenceAccessPolicyData.ProtoReflect.Descriptor instead.
+func (*InferenceAccessPolicyData) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *InferenceAccessPolicyData) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *InferenceAccessPolicyData) GetAllowedModelNames() []string {
+	if x != nil {
+		return x.AllowedModelNames
+	}
+	return nil
+}
+
+func (x *InferenceAccessPolicyData) GetRequestsPerSecond() int32 {
+	if x != nil {
+		return x.RequestsPerSecond
+	}
+	return 0
+}
+
+func (x *InferenceAccessPolicyData) GetRequestsPerMinute() int32 {
+	if x != nil {
+		return x.RequestsPerMinute
+	}
+	return 0
+}
+
+func (x *InferenceAccessPolicyData) GetRequestsPerHour() int32 {
+	if x != nil {
+		return x.RequestsPerHour
+	}
+	return 0
+}
+
+type CreateInferencePolicyRequest struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	Data          *InferenceAccessPolicyData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateInferencePolicyRequest) Reset() {
+	*x = CreateInferencePolicyRequest{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateInferencePolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateInferencePolicyRequest) ProtoMessage() {}
+
+func (x *CreateInferencePolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateInferencePolicyRequest.ProtoReflect.Descriptor instead.
+func (*CreateInferencePolicyRequest) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateInferencePolicyRequest) GetData() *InferenceAccessPolicyData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type ListInferencePoliciesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          *int32                 `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *int32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListInferencePoliciesRequest) Reset() {
+	*x = ListInferencePoliciesRequest{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInferencePoliciesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInferencePoliciesRequest) ProtoMessage() {}
+
+func (x *ListInferencePoliciesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInferencePoliciesRequest.ProtoReflect.Descriptor instead.
+func (*ListInferencePoliciesRequest) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListInferencePoliciesRequest) GetPage() int32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
+	}
+	return 0
+}
+
+func (x *ListInferencePoliciesRequest) GetPageSize() int32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
+	}
+	return 0
+}
+
+type ListInferencePoliciesResponse struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	Items         []*InferenceAccessPolicy `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                    `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListInferencePoliciesResponse) Reset() {
+	*x = ListInferencePoliciesResponse{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListInferencePoliciesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListInferencePoliciesResponse) ProtoMessage() {}
+
+func (x *ListInferencePoliciesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListInferencePoliciesResponse.ProtoReflect.Descriptor instead.
+func (*ListInferencePoliciesResponse) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ListInferencePoliciesResponse) GetItems() []*InferenceAccessPolicy {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListInferencePoliciesResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type GetInferencePolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PolicyId      string                 `protobuf:"bytes,1,opt,name=policy_id,proto3" json:"policy_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetInferencePolicyRequest) Reset() {
+	*x = GetInferencePolicyRequest{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetInferencePolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetInferencePolicyRequest) ProtoMessage() {}
+
+func (x *GetInferencePolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetInferencePolicyRequest.ProtoReflect.Descriptor instead.
+func (*GetInferencePolicyRequest) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetInferencePolicyRequest) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+type UpdateInferencePolicyRequest struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	PolicyId      string                     `protobuf:"bytes,1,opt,name=policy_id,proto3" json:"policy_id,omitempty"`
+	Data          *InferenceAccessPolicyData `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateInferencePolicyRequest) Reset() {
+	*x = UpdateInferencePolicyRequest{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateInferencePolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateInferencePolicyRequest) ProtoMessage() {}
+
+func (x *UpdateInferencePolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateInferencePolicyRequest.ProtoReflect.Descriptor instead.
+func (*UpdateInferencePolicyRequest) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UpdateInferencePolicyRequest) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+func (x *UpdateInferencePolicyRequest) GetData() *InferenceAccessPolicyData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type DeleteInferencePolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PolicyId      string                 `protobuf:"bytes,1,opt,name=policy_id,proto3" json:"policy_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteInferencePolicyRequest) Reset() {
+	*x = DeleteInferencePolicyRequest{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteInferencePolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteInferencePolicyRequest) ProtoMessage() {}
+
+func (x *DeleteInferencePolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteInferencePolicyRequest.ProtoReflect.Descriptor instead.
+func (*DeleteInferencePolicyRequest) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DeleteInferencePolicyRequest) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+type DeleteInferencePolicyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteInferencePolicyResponse) Reset() {
+	*x = DeleteInferencePolicyResponse{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteInferencePolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteInferencePolicyResponse) ProtoMessage() {}
+
+func (x *DeleteInferencePolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteInferencePolicyResponse.ProtoReflect.Descriptor instead.
+func (*DeleteInferencePolicyResponse) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{10}
+}
+
+type BindInferenceKeyPolicyData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PolicyId      string                 `protobuf:"bytes,1,opt,name=policy_id,proto3" json:"policy_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BindInferenceKeyPolicyData) Reset() {
+	*x = BindInferenceKeyPolicyData{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindInferenceKeyPolicyData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindInferenceKeyPolicyData) ProtoMessage() {}
+
+func (x *BindInferenceKeyPolicyData) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindInferenceKeyPolicyData.ProtoReflect.Descriptor instead.
+func (*BindInferenceKeyPolicyData) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *BindInferenceKeyPolicyData) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+type BindInferenceKeyPolicyRequest struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	KeyId         string                      `protobuf:"bytes,1,opt,name=key_id,proto3" json:"key_id,omitempty"`
+	Data          *BindInferenceKeyPolicyData `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BindInferenceKeyPolicyRequest) Reset() {
+	*x = BindInferenceKeyPolicyRequest{}
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BindInferenceKeyPolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BindInferenceKeyPolicyRequest) ProtoMessage() {}
+
+func (x *BindInferenceKeyPolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BindInferenceKeyPolicyRequest.ProtoReflect.Descriptor instead.
+func (*BindInferenceKeyPolicyRequest) Descriptor() ([]byte, []int) {
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *BindInferenceKeyPolicyRequest) GetKeyId() string {
+	if x != nil {
+		return x.KeyId
+	}
+	return ""
+}
+
+func (x *BindInferenceKeyPolicyRequest) GetData() *BindInferenceKeyPolicyData {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type CreateInferenceKeyRequest struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
 	Data          *CreateInferenceKeyData `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
@@ -348,7 +872,7 @@ type CreateInferenceKeyRequest struct {
 
 func (x *CreateInferenceKeyRequest) Reset() {
 	*x = CreateInferenceKeyRequest{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[2]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -360,7 +884,7 @@ func (x *CreateInferenceKeyRequest) String() string {
 func (*CreateInferenceKeyRequest) ProtoMessage() {}
 
 func (x *CreateInferenceKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[2]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -373,7 +897,7 @@ func (x *CreateInferenceKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateInferenceKeyRequest.ProtoReflect.Descriptor instead.
 func (*CreateInferenceKeyRequest) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{2}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CreateInferenceKeyRequest) GetData() *CreateInferenceKeyData {
@@ -395,7 +919,7 @@ type InferenceKeyCredentials struct {
 
 func (x *InferenceKeyCredentials) Reset() {
 	*x = InferenceKeyCredentials{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[3]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +931,7 @@ func (x *InferenceKeyCredentials) String() string {
 func (*InferenceKeyCredentials) ProtoMessage() {}
 
 func (x *InferenceKeyCredentials) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[3]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -420,7 +944,7 @@ func (x *InferenceKeyCredentials) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InferenceKeyCredentials.ProtoReflect.Descriptor instead.
 func (*InferenceKeyCredentials) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{3}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *InferenceKeyCredentials) GetKey() *InferenceKey {
@@ -454,7 +978,7 @@ type ListInferenceKeysRequest struct {
 
 func (x *ListInferenceKeysRequest) Reset() {
 	*x = ListInferenceKeysRequest{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[4]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -466,7 +990,7 @@ func (x *ListInferenceKeysRequest) String() string {
 func (*ListInferenceKeysRequest) ProtoMessage() {}
 
 func (x *ListInferenceKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[4]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -479,7 +1003,7 @@ func (x *ListInferenceKeysRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInferenceKeysRequest.ProtoReflect.Descriptor instead.
 func (*ListInferenceKeysRequest) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{4}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListInferenceKeysRequest) GetPage() int32 {
@@ -506,7 +1030,7 @@ type ListInferenceKeysResponse struct {
 
 func (x *ListInferenceKeysResponse) Reset() {
 	*x = ListInferenceKeysResponse{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[5]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -518,7 +1042,7 @@ func (x *ListInferenceKeysResponse) String() string {
 func (*ListInferenceKeysResponse) ProtoMessage() {}
 
 func (x *ListInferenceKeysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[5]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -531,7 +1055,7 @@ func (x *ListInferenceKeysResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInferenceKeysResponse.ProtoReflect.Descriptor instead.
 func (*ListInferenceKeysResponse) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{5}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListInferenceKeysResponse) GetItems() []*InferenceKey {
@@ -557,7 +1081,7 @@ type GetInferenceKeyRequest struct {
 
 func (x *GetInferenceKeyRequest) Reset() {
 	*x = GetInferenceKeyRequest{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[6]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -569,7 +1093,7 @@ func (x *GetInferenceKeyRequest) String() string {
 func (*GetInferenceKeyRequest) ProtoMessage() {}
 
 func (x *GetInferenceKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[6]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -582,7 +1106,7 @@ func (x *GetInferenceKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInferenceKeyRequest.ProtoReflect.Descriptor instead.
 func (*GetInferenceKeyRequest) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{6}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetInferenceKeyRequest) GetKeyId() string {
@@ -601,7 +1125,7 @@ type RevokeInferenceKeyRequest struct {
 
 func (x *RevokeInferenceKeyRequest) Reset() {
 	*x = RevokeInferenceKeyRequest{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[7]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -613,7 +1137,7 @@ func (x *RevokeInferenceKeyRequest) String() string {
 func (*RevokeInferenceKeyRequest) ProtoMessage() {}
 
 func (x *RevokeInferenceKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[7]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -626,7 +1150,7 @@ func (x *RevokeInferenceKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeInferenceKeyRequest.ProtoReflect.Descriptor instead.
 func (*RevokeInferenceKeyRequest) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{7}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *RevokeInferenceKeyRequest) GetKeyId() string {
@@ -645,7 +1169,7 @@ type RotateInferenceKeyData struct {
 
 func (x *RotateInferenceKeyData) Reset() {
 	*x = RotateInferenceKeyData{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[8]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -657,7 +1181,7 @@ func (x *RotateInferenceKeyData) String() string {
 func (*RotateInferenceKeyData) ProtoMessage() {}
 
 func (x *RotateInferenceKeyData) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[8]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -670,7 +1194,7 @@ func (x *RotateInferenceKeyData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RotateInferenceKeyData.ProtoReflect.Descriptor instead.
 func (*RotateInferenceKeyData) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{8}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RotateInferenceKeyData) GetIdempotencyKey() string {
@@ -690,7 +1214,7 @@ type RotateInferenceKeyRequest struct {
 
 func (x *RotateInferenceKeyRequest) Reset() {
 	*x = RotateInferenceKeyRequest{}
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[9]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -702,7 +1226,7 @@ func (x *RotateInferenceKeyRequest) String() string {
 func (*RotateInferenceKeyRequest) ProtoMessage() {}
 
 func (x *RotateInferenceKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_inference_service_v1_access_key_proto_msgTypes[9]
+	mi := &file_inference_service_v1_access_key_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -715,7 +1239,7 @@ func (x *RotateInferenceKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RotateInferenceKeyRequest.ProtoReflect.Descriptor instead.
 func (*RotateInferenceKeyRequest) Descriptor() ([]byte, []int) {
-	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{9}
+	return file_inference_service_v1_access_key_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *RotateInferenceKeyRequest) GetKeyId() string {
@@ -736,18 +1260,13 @@ var File_inference_service_v1_access_key_proto protoreflect.FileDescriptor
 
 const file_inference_service_v1_access_key_proto_rawDesc = "" +
 	"\n" +
-	"%inference/service/v1/access_key.proto\x12\x14inference.service.v1\x1a\x13errors/errors.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16redact/v1/redact.proto\"\xa6\x05\n" +
+	"%inference/service/v1/access_key.proto\x12\x14inference.service.v1\x1a\x13errors/errors.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16redact/v1/redact.proto\"\xd3\x04\n" +
 	"\fInferenceKey\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1e\n" +
 	"\n" +
 	"key_prefix\x18\x03 \x01(\tR\n" +
-	"key_prefix\x120\n" +
-	"\x13allowed_service_ids\x18\x04 \x03(\tR\x13allowed_service_ids\x120\n" +
-	"\x13allowed_model_names\x18\x05 \x03(\tR\x13allowed_model_names\x120\n" +
-	"\x13requests_per_second\x18\x06 \x01(\x05R\x13requests_per_second\x120\n" +
-	"\x13requests_per_minute\x18\a \x01(\x05R\x13requests_per_minute\x12,\n" +
-	"\x11requests_per_hour\x18\b \x01(\x05R\x11requests_per_hour\x12:\n" +
+	"key_prefix\x12:\n" +
 	"\n" +
 	"expires_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"expires_at\x12:\n" +
@@ -763,19 +1282,54 @@ const file_inference_service_v1_access_key_proto_rawDesc = "" +
 	"created_at\x12>\n" +
 	"\flast_used_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\flast_used_at\x12\x18\n" +
 	"\aversion\x18\x0e \x01(\x03R\aversion\x12#\n" +
-	"\x06secret\x18\x0f \x01(\tB\x06ڶ\x1a\x02z\x00H\x00R\x06secret\x88\x01\x01B\t\n" +
-	"\a_secret\"\x88\x03\n" +
+	"\x06secret\x18\x0f \x01(\tB\x06ڶ\x1a\x02z\x00H\x00R\x06secret\x88\x01\x01\x12\x1c\n" +
+	"\tpolicy_id\x18\x10 \x01(\tR\tpolicy_idB\t\n" +
+	"\a_secretJ\x04\b\x04\x10\x05J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tR\x13allowed_service_idsR\x13allowed_model_namesR\x13requests_per_secondR\x13requests_per_minuteR\x11requests_per_hour\"\xb5\x02\n" +
 	"\x16CreateInferenceKeyData\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x120\n" +
-	"\x13allowed_service_ids\x18\x02 \x03(\tR\x13allowed_service_ids\x120\n" +
-	"\x13allowed_model_names\x18\x03 \x03(\tR\x13allowed_model_names\x120\n" +
-	"\x13requests_per_second\x18\x04 \x01(\x05R\x13requests_per_second\x120\n" +
-	"\x13requests_per_minute\x18\x05 \x01(\x05R\x13requests_per_minute\x12,\n" +
-	"\x11requests_per_hour\x18\x06 \x01(\x05R\x11requests_per_hour\x12:\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12:\n" +
 	"\n" +
 	"expires_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"expires_at\x12(\n" +
-	"\x0fidempotency_key\x18\b \x01(\tR\x0fidempotency_key\"]\n" +
+	"\x0fidempotency_key\x18\b \x01(\tR\x0fidempotency_key\x12\x1c\n" +
+	"\tpolicy_id\x18\t \x01(\tR\tpolicy_idJ\x04\b\x02\x10\x03J\x04\b\x03\x10\x04J\x04\b\x04\x10\x05J\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x13allowed_service_idsR\x13allowed_model_namesR\x13requests_per_secondR\x13requests_per_minuteR\x11requests_per_hour\"\x99\x02\n" +
+	"\x15InferenceAccessPolicy\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x120\n" +
+	"\x13allowed_model_names\x18\x03 \x03(\tR\x13allowed_model_names\x120\n" +
+	"\x13requests_per_second\x18\x04 \x01(\x05R\x13requests_per_second\x120\n" +
+	"\x13requests_per_minute\x18\x05 \x01(\x05R\x13requests_per_minute\x12,\n" +
+	"\x11requests_per_hour\x18\x06 \x01(\x05R\x11requests_per_hour\x12\x18\n" +
+	"\aversion\x18\a \x01(\x03R\aversion\"\xf3\x01\n" +
+	"\x19InferenceAccessPolicyData\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x120\n" +
+	"\x13allowed_model_names\x18\x02 \x03(\tR\x13allowed_model_names\x120\n" +
+	"\x13requests_per_second\x18\x03 \x01(\x05R\x13requests_per_second\x120\n" +
+	"\x13requests_per_minute\x18\x04 \x01(\x05R\x13requests_per_minute\x12,\n" +
+	"\x11requests_per_hour\x18\x05 \x01(\x05R\x11requests_per_hour\"c\n" +
+	"\x1cCreateInferencePolicyRequest\x12C\n" +
+	"\x04data\x18\x01 \x01(\v2/.inference.service.v1.InferenceAccessPolicyDataR\x04data\"p\n" +
+	"\x1cListInferencePoliciesRequest\x12\x17\n" +
+	"\x04page\x18\x01 \x01(\x05H\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x02 \x01(\x05H\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_size\"x\n" +
+	"\x1dListInferencePoliciesResponse\x12A\n" +
+	"\x05items\x18\x01 \x03(\v2+.inference.service.v1.InferenceAccessPolicyR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"9\n" +
+	"\x19GetInferencePolicyRequest\x12\x1c\n" +
+	"\tpolicy_id\x18\x01 \x01(\tR\tpolicy_id\"\x81\x01\n" +
+	"\x1cUpdateInferencePolicyRequest\x12\x1c\n" +
+	"\tpolicy_id\x18\x01 \x01(\tR\tpolicy_id\x12C\n" +
+	"\x04data\x18\x02 \x01(\v2/.inference.service.v1.InferenceAccessPolicyDataR\x04data\"<\n" +
+	"\x1cDeleteInferencePolicyRequest\x12\x1c\n" +
+	"\tpolicy_id\x18\x01 \x01(\tR\tpolicy_id\"\x1f\n" +
+	"\x1dDeleteInferencePolicyResponse\":\n" +
+	"\x1aBindInferenceKeyPolicyData\x12\x1c\n" +
+	"\tpolicy_id\x18\x01 \x01(\tR\tpolicy_id\"}\n" +
+	"\x1dBindInferenceKeyPolicyRequest\x12\x16\n" +
+	"\x06key_id\x18\x01 \x01(\tR\x06key_id\x12D\n" +
+	"\x04data\x18\x02 \x01(\v20.inference.service.v1.BindInferenceKeyPolicyDataR\x04data\"]\n" +
 	"\x19CreateInferenceKeyRequest\x12@\n" +
 	"\x04data\x18\x01 \x01(\v2,.inference.service.v1.CreateInferenceKeyDataR\x04data\"\x96\x01\n" +
 	"\x17InferenceKeyCredentials\x12?\n" +
@@ -821,36 +1375,51 @@ func file_inference_service_v1_access_key_proto_rawDescGZIP() []byte {
 }
 
 var file_inference_service_v1_access_key_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_inference_service_v1_access_key_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_inference_service_v1_access_key_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_inference_service_v1_access_key_proto_goTypes = []any{
-	(InferenceKeyErrorReason)(0),      // 0: inference.service.v1.InferenceKeyErrorReason
-	(*InferenceKey)(nil),              // 1: inference.service.v1.InferenceKey
-	(*CreateInferenceKeyData)(nil),    // 2: inference.service.v1.CreateInferenceKeyData
-	(*CreateInferenceKeyRequest)(nil), // 3: inference.service.v1.CreateInferenceKeyRequest
-	(*InferenceKeyCredentials)(nil),   // 4: inference.service.v1.InferenceKeyCredentials
-	(*ListInferenceKeysRequest)(nil),  // 5: inference.service.v1.ListInferenceKeysRequest
-	(*ListInferenceKeysResponse)(nil), // 6: inference.service.v1.ListInferenceKeysResponse
-	(*GetInferenceKeyRequest)(nil),    // 7: inference.service.v1.GetInferenceKeyRequest
-	(*RevokeInferenceKeyRequest)(nil), // 8: inference.service.v1.RevokeInferenceKeyRequest
-	(*RotateInferenceKeyData)(nil),    // 9: inference.service.v1.RotateInferenceKeyData
-	(*RotateInferenceKeyRequest)(nil), // 10: inference.service.v1.RotateInferenceKeyRequest
-	(*timestamppb.Timestamp)(nil),     // 11: google.protobuf.Timestamp
+	(InferenceKeyErrorReason)(0),          // 0: inference.service.v1.InferenceKeyErrorReason
+	(*InferenceKey)(nil),                  // 1: inference.service.v1.InferenceKey
+	(*CreateInferenceKeyData)(nil),        // 2: inference.service.v1.CreateInferenceKeyData
+	(*InferenceAccessPolicy)(nil),         // 3: inference.service.v1.InferenceAccessPolicy
+	(*InferenceAccessPolicyData)(nil),     // 4: inference.service.v1.InferenceAccessPolicyData
+	(*CreateInferencePolicyRequest)(nil),  // 5: inference.service.v1.CreateInferencePolicyRequest
+	(*ListInferencePoliciesRequest)(nil),  // 6: inference.service.v1.ListInferencePoliciesRequest
+	(*ListInferencePoliciesResponse)(nil), // 7: inference.service.v1.ListInferencePoliciesResponse
+	(*GetInferencePolicyRequest)(nil),     // 8: inference.service.v1.GetInferencePolicyRequest
+	(*UpdateInferencePolicyRequest)(nil),  // 9: inference.service.v1.UpdateInferencePolicyRequest
+	(*DeleteInferencePolicyRequest)(nil),  // 10: inference.service.v1.DeleteInferencePolicyRequest
+	(*DeleteInferencePolicyResponse)(nil), // 11: inference.service.v1.DeleteInferencePolicyResponse
+	(*BindInferenceKeyPolicyData)(nil),    // 12: inference.service.v1.BindInferenceKeyPolicyData
+	(*BindInferenceKeyPolicyRequest)(nil), // 13: inference.service.v1.BindInferenceKeyPolicyRequest
+	(*CreateInferenceKeyRequest)(nil),     // 14: inference.service.v1.CreateInferenceKeyRequest
+	(*InferenceKeyCredentials)(nil),       // 15: inference.service.v1.InferenceKeyCredentials
+	(*ListInferenceKeysRequest)(nil),      // 16: inference.service.v1.ListInferenceKeysRequest
+	(*ListInferenceKeysResponse)(nil),     // 17: inference.service.v1.ListInferenceKeysResponse
+	(*GetInferenceKeyRequest)(nil),        // 18: inference.service.v1.GetInferenceKeyRequest
+	(*RevokeInferenceKeyRequest)(nil),     // 19: inference.service.v1.RevokeInferenceKeyRequest
+	(*RotateInferenceKeyData)(nil),        // 20: inference.service.v1.RotateInferenceKeyData
+	(*RotateInferenceKeyRequest)(nil),     // 21: inference.service.v1.RotateInferenceKeyRequest
+	(*timestamppb.Timestamp)(nil),         // 22: google.protobuf.Timestamp
 }
 var file_inference_service_v1_access_key_proto_depIdxs = []int32{
-	11, // 0: inference.service.v1.InferenceKey.expires_at:type_name -> google.protobuf.Timestamp
-	11, // 1: inference.service.v1.InferenceKey.revoked_at:type_name -> google.protobuf.Timestamp
-	11, // 2: inference.service.v1.InferenceKey.created_at:type_name -> google.protobuf.Timestamp
-	11, // 3: inference.service.v1.InferenceKey.last_used_at:type_name -> google.protobuf.Timestamp
-	11, // 4: inference.service.v1.CreateInferenceKeyData.expires_at:type_name -> google.protobuf.Timestamp
-	2,  // 5: inference.service.v1.CreateInferenceKeyRequest.data:type_name -> inference.service.v1.CreateInferenceKeyData
-	1,  // 6: inference.service.v1.InferenceKeyCredentials.key:type_name -> inference.service.v1.InferenceKey
-	1,  // 7: inference.service.v1.ListInferenceKeysResponse.items:type_name -> inference.service.v1.InferenceKey
-	9,  // 8: inference.service.v1.RotateInferenceKeyRequest.data:type_name -> inference.service.v1.RotateInferenceKeyData
-	9,  // [9:9] is the sub-list for method output_type
-	9,  // [9:9] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	22, // 0: inference.service.v1.InferenceKey.expires_at:type_name -> google.protobuf.Timestamp
+	22, // 1: inference.service.v1.InferenceKey.revoked_at:type_name -> google.protobuf.Timestamp
+	22, // 2: inference.service.v1.InferenceKey.created_at:type_name -> google.protobuf.Timestamp
+	22, // 3: inference.service.v1.InferenceKey.last_used_at:type_name -> google.protobuf.Timestamp
+	22, // 4: inference.service.v1.CreateInferenceKeyData.expires_at:type_name -> google.protobuf.Timestamp
+	4,  // 5: inference.service.v1.CreateInferencePolicyRequest.data:type_name -> inference.service.v1.InferenceAccessPolicyData
+	3,  // 6: inference.service.v1.ListInferencePoliciesResponse.items:type_name -> inference.service.v1.InferenceAccessPolicy
+	4,  // 7: inference.service.v1.UpdateInferencePolicyRequest.data:type_name -> inference.service.v1.InferenceAccessPolicyData
+	12, // 8: inference.service.v1.BindInferenceKeyPolicyRequest.data:type_name -> inference.service.v1.BindInferenceKeyPolicyData
+	2,  // 9: inference.service.v1.CreateInferenceKeyRequest.data:type_name -> inference.service.v1.CreateInferenceKeyData
+	1,  // 10: inference.service.v1.InferenceKeyCredentials.key:type_name -> inference.service.v1.InferenceKey
+	1,  // 11: inference.service.v1.ListInferenceKeysResponse.items:type_name -> inference.service.v1.InferenceKey
+	20, // 12: inference.service.v1.RotateInferenceKeyRequest.data:type_name -> inference.service.v1.RotateInferenceKeyData
+	13, // [13:13] is the sub-list for method output_type
+	13, // [13:13] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_inference_service_v1_access_key_proto_init() }
@@ -859,14 +1428,15 @@ func file_inference_service_v1_access_key_proto_init() {
 		return
 	}
 	file_inference_service_v1_access_key_proto_msgTypes[0].OneofWrappers = []any{}
-	file_inference_service_v1_access_key_proto_msgTypes[4].OneofWrappers = []any{}
+	file_inference_service_v1_access_key_proto_msgTypes[5].OneofWrappers = []any{}
+	file_inference_service_v1_access_key_proto_msgTypes[15].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_inference_service_v1_access_key_proto_rawDesc), len(file_inference_service_v1_access_key_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

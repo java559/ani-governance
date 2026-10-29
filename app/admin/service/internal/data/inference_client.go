@@ -126,13 +126,20 @@ func validInferenceIdentity(tenant, actor string) bool {
 }
 
 func (c *InferenceClient) trustedContext(ctx context.Context, tenant, actor string) (context.Context, context.CancelFunc, error) {
-	if c == nil || c.client == nil || c.timeout <= 0 {
+	if c == nil {
+		return nil, nil, errors.New("inference client unavailable")
+	}
+	return c.trustedContextWithTimeout(ctx, tenant, actor, c.timeout)
+}
+
+func (c *InferenceClient) trustedContextWithTimeout(ctx context.Context, tenant, actor string, budget time.Duration) (context.Context, context.CancelFunc, error) {
+	if c == nil || c.client == nil || c.timeout <= 0 || budget <= 0 {
 		return nil, nil, errors.New("inference client unavailable")
 	}
 	if !validInferenceIdentity(tenant, actor) {
 		return nil, nil, errors.New("invalid trusted inference identity")
 	}
-	call, cancel := context.WithTimeout(ctx, c.timeout)
+	call, cancel := context.WithTimeout(ctx, budget)
 	call = metadata.NewOutgoingContext(call, metadata.Pairs(
 		"x-ani-tenant-id", tenant,
 		"x-ani-actor", actor,

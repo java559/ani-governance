@@ -21,11 +21,17 @@ func TestInferenceKeyCatalogIsSeparateFromPlatformKeys(t *testing.T) {
 	catalog, err := Catalog(document)
 	require.NoError(t, err)
 	expected := map[string]string{
-		"POST /api/v1/inference-keys":                 "inference:key:create",
-		"GET /api/v1/inference-keys":                  "inference:key:read",
-		"GET /api/v1/inference-keys/{key_id}":         "inference:key:read",
-		"DELETE /api/v1/inference-keys/{key_id}":      "inference:key:revoke",
-		"POST /api/v1/inference-keys/{key_id}:rotate": "inference:key:rotate",
+		"POST /api/v1/inference-keys":                      "inference:key:create",
+		"GET /api/v1/inference-keys":                       "inference:key:read",
+		"GET /api/v1/inference-keys/{key_id}":              "inference:key:read",
+		"DELETE /api/v1/inference-keys/{key_id}":           "inference:key:revoke",
+		"POST /api/v1/inference-keys/{key_id}:rotate":      "inference:key:rotate",
+		"POST /api/v1/inference-keys/{key_id}:bind-policy": "inference:key:bind-policy",
+		"POST /api/v1/inference-policies":                  "inference:policy:create",
+		"GET /api/v1/inference-policies":                   "inference:policy:read",
+		"GET /api/v1/inference-policies/{policy_id}":       "inference:policy:read",
+		"PUT /api/v1/inference-policies/{policy_id}":       "inference:policy:update",
+		"DELETE /api/v1/inference-policies/{policy_id}":    "inference:policy:delete",
 	}
 	count, platformCount := 0, 0
 	for _, route := range catalog {
@@ -43,7 +49,7 @@ func TestInferenceKeyCatalogIsSeparateFromPlatformKeys(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, expected[route.Method+" "+route.Path], grant.Code)
 	}
-	require.Equal(t, 5, count)
+	require.Equal(t, len(expected), count)
 	require.Equal(t, 6, platformCount)
 }
 

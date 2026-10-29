@@ -17,6 +17,9 @@ import (
 //go:embed constraints.sql
 var deferredConstraints string
 
+//go:embed sandbox_parent_fence.sql
+var sandboxParentFenceSchema string
+
 func main() {
 	// Ent edges cannot express a tenant-preserving composite foreign key. Keep
 	// the extra constraint in this source exporter so future Atlas diffs retain
@@ -144,6 +147,7 @@ func main() {
 	}
 	fmt.Print(strings.Join(lines, "\n"))
 	fmt.Print(deferredConstraints)
+	fmt.Print("\n", sandboxParentFenceSchema)
 }
 
 // mustTable 在导出表中查找指定表，缺失即 panic（导出期失败优于生成不一致的 schema）。

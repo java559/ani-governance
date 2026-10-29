@@ -57,6 +57,13 @@ func (s *ComputePresetService) ListPresets(ctx context.Context, r *computeview.L
 	if _, _, ok := permcode.ComputeCatalogGrant(r.Usage); !ok {
 		return nil, kratoserrors.BadRequest("INVALID_COMPUTE_REQUEST", "valid usage required")
 	}
+	computeType := r.ComputeType
+	if r.Usage == "SANDBOX" {
+		if (computeType != "" && computeType != "cpu") || r.GpuMode != "" {
+			return nil, kratoserrors.BadRequest("INVALID_COMPUTE_REQUEST", "Sandbox supports CPU presets only")
+		}
+		computeType = "cpu"
+	}
 	tenant, actor, e := s.catalogScope(ctx, r.Usage)
 	if e != nil {
 		return nil, e
@@ -68,7 +75,7 @@ func (s *ComputePresetService) ListPresets(ctx context.Context, r *computeview.L
 	if e != nil {
 		return nil, e
 	}
-	items, e := s.catalog.Compute.ListPresets(ctx, tenant, actor, &compute.ListPresetsRequest{Usage: compute.Usage(compute.Usage_value[r.Usage]), TenantId: tenant, Page: page, PageSize: size, Name: r.Name, Code: r.Code, ComputeType: r.ComputeType, GpuMode: r.GpuMode})
+	items, e := s.catalog.Compute.ListPresets(ctx, tenant, actor, &compute.ListPresetsRequest{Usage: compute.Usage(compute.Usage_value[r.Usage]), TenantId: tenant, Page: page, PageSize: size, Name: r.Name, Code: r.Code, ComputeType: computeType, GpuMode: r.GpuMode})
 	if e != nil {
 		return nil, e
 	}
@@ -77,7 +84,7 @@ func (s *ComputePresetService) ListPresets(ctx context.Context, r *computeview.L
 	}
 	catalogStatus, reason := "OK", ""
 	var profileStates map[string]acc.ProfileState
-	if items.HasGpuCandidates && r.ComputeType != "cpu" {
+	if items.HasGpuCandidates && computeType != "cpu" {
 		allowed, states, err := s.allowedPresetGPU(ctx, tenant)
 		profileStates = states
 		if err != nil {
@@ -86,7 +93,7 @@ func (s *ComputePresetService) ListPresets(ctx context.Context, r *computeview.L
 				catalogStatus, reason = "NO_PERMISSION", "GPU_CATALOG_NO_PERMISSION"
 			}
 		} else {
-			items, e = s.catalog.Compute.ListPresets(ctx, tenant, actor, &compute.ListPresetsRequest{Usage: compute.Usage(compute.Usage_value[r.Usage]), TenantId: tenant, Page: page, PageSize: size, Name: r.Name, Code: r.Code, ComputeType: r.ComputeType, GpuMode: r.GpuMode, AllowedGpuProfiles: allowed})
+			items, e = s.catalog.Compute.ListPresets(ctx, tenant, actor, &compute.ListPresetsRequest{Usage: compute.Usage(compute.Usage_value[r.Usage]), TenantId: tenant, Page: page, PageSize: size, Name: r.Name, Code: r.Code, ComputeType: computeType, GpuMode: r.GpuMode, AllowedGpuProfiles: allowed})
 			if e != nil {
 				return nil, e
 			}

@@ -141,7 +141,7 @@ def format_go(content):
 
 def render_management(entries):
     lines = [HEADER,
-             "// 源自 %s（管理面 180 行，生成期固化）。\n" % rel(MANAGEMENT_TSV),
+             "// 源自 %s（管理面 %d 行，生成期固化）。\n" % (rel(MANAGEMENT_TSV), len(entries)),
              "package permcode\n\n",
              "var managementOperations = map[string]expectation{\n"]
     for key, op, code, source, module, scope in sorted(entries, key=lambda e: e[0]):

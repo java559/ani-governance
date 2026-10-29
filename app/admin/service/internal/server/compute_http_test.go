@@ -156,9 +156,9 @@ func TestComputeHTTPRequiresUsageAndDeletesOldRoute(t *testing.T) {
 	response := httptest.NewRecorder()
 	server.ServeHTTP(response, httptest.NewRequest("GET", "/api/v1/instance-presets", nil))
 	require.Equal(t, 404, response.Code)
-	for _, usage := range []string{"CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "VIRTUAL_MACHINE"} {
+	for _, usage := range []string{"SANDBOX", "CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "VIRTUAL_MACHINE"} {
 		response := httptest.NewRecorder()
 		server.ServeHTTP(response, httptest.NewRequest("GET", "/api/v1/compute-presets?usage="+usage, nil))
-		require.NotEqual(t, 200, response.Code, "anonymous must not reach owner")
+		require.Equal(t, 401, response.Code, "valid usage must reach identity validation, without reaching owner: "+response.Body.String())
 	}
 }

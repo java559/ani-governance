@@ -21,6 +21,7 @@ var _ = binding.EncodeURL
 const _ = http.SupportPackageIsVersion1
 
 const OperationModelDevServiceAuthorizeArtifactDownload = "/admin.service.v1.ModelDevService/AuthorizeArtifactDownload"
+const OperationModelDevServiceCheckFinetuningReadiness = "/admin.service.v1.ModelDevService/CheckFinetuningReadiness"
 const OperationModelDevServiceCreateExecution = "/admin.service.v1.ModelDevService/CreateExecution"
 const OperationModelDevServiceGetExecution = "/admin.service.v1.ModelDevService/GetExecution"
 const OperationModelDevServiceGetExecutionLogs = "/admin.service.v1.ModelDevService/GetExecutionLogs"
@@ -37,6 +38,7 @@ const OperationModelDevServiceStopExecution = "/admin.service.v1.ModelDevService
 
 type ModelDevServiceHTTPServer interface {
 	AuthorizeArtifactDownload(context.Context, *v1.AuthorizeArtifactDownloadRequest) (*v1.AuthorizeArtifactDownloadResponse, error)
+	CheckFinetuningReadiness(context.Context, *v1.CheckFinetuningReadinessRequest) (*v1.CheckFinetuningReadinessResponse, error)
 	CreateExecution(context.Context, *v1.CreateExecutionRequest) (*v1.CreateExecutionResponse, error)
 	GetExecution(context.Context, *v1.GetExecutionRequest) (*v1.GetExecutionResponse, error)
 	GetExecutionLogs(context.Context, *v1.GetExecutionLogsRequest) (*v1.GetExecutionLogsResponse, error)
@@ -54,6 +56,7 @@ type ModelDevServiceHTTPServer interface {
 
 func RegisterModelDevServiceHTTPServer(s *http.Server, srv ModelDevServiceHTTPServer) {
 	r := s.Route("/")
+	r.POST("/api/v1/modeldev/finetuning/readiness/check", _ModelDevService_CheckFinetuningReadiness0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/implementations", _ModelDevService_ListImplementations0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/input-versions/{input_version_id}", _ModelDevService_GetInputVersion0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/input-versions", _ModelDevService_ListInputVersions0_HTTP_Handler(srv))
@@ -68,6 +71,28 @@ func RegisterModelDevServiceHTTPServer(s *http.Server, srv ModelDevServiceHTTPSe
 	r.GET("/api/v1/modeldev/executions/{execution_id}/artifacts", _ModelDevService_ListExecutionArtifacts0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/artifacts/{artifact_id}/content", _ModelDevService_AuthorizeArtifactDownload0_HTTP_Handler(srv))
 	r.POST("/api/v1/modeldev/executions", _ModelDevService_CreateExecution0_HTTP_Handler(srv))
+}
+
+func _ModelDevService_CheckFinetuningReadiness0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CheckFinetuningReadinessRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelDevServiceCheckFinetuningReadiness)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CheckFinetuningReadiness(ctx, req.(*v1.CheckFinetuningReadinessRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.CheckFinetuningReadinessResponse)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _ModelDevService_ListImplementations0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
@@ -371,6 +396,7 @@ func _ModelDevService_CreateExecution0_HTTP_Handler(srv ModelDevServiceHTTPServe
 
 type ModelDevServiceHTTPClient interface {
 	AuthorizeArtifactDownload(ctx context.Context, req *v1.AuthorizeArtifactDownloadRequest, opts ...http.CallOption) (rsp *v1.AuthorizeArtifactDownloadResponse, err error)
+	CheckFinetuningReadiness(ctx context.Context, req *v1.CheckFinetuningReadinessRequest, opts ...http.CallOption) (rsp *v1.CheckFinetuningReadinessResponse, err error)
 	CreateExecution(ctx context.Context, req *v1.CreateExecutionRequest, opts ...http.CallOption) (rsp *v1.CreateExecutionResponse, err error)
 	GetExecution(ctx context.Context, req *v1.GetExecutionRequest, opts ...http.CallOption) (rsp *v1.GetExecutionResponse, err error)
 	GetExecutionLogs(ctx context.Context, req *v1.GetExecutionLogsRequest, opts ...http.CallOption) (rsp *v1.GetExecutionLogsResponse, err error)
@@ -401,6 +427,19 @@ func (c *ModelDevServiceHTTPClientImpl) AuthorizeArtifactDownload(ctx context.Co
 	opts = append(opts, http.Operation(OperationModelDevServiceAuthorizeArtifactDownload))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelDevServiceHTTPClientImpl) CheckFinetuningReadiness(ctx context.Context, in *v1.CheckFinetuningReadinessRequest, opts ...http.CallOption) (*v1.CheckFinetuningReadinessResponse, error) {
+	var out v1.CheckFinetuningReadinessResponse
+	pattern := "/api/v1/modeldev/finetuning/readiness/check"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationModelDevServiceCheckFinetuningReadiness))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

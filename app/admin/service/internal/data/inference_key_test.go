@@ -22,6 +22,25 @@ type inferenceKeyRPCPeer struct {
 	runtimev1.UnimplementedInferenceAccessKeyServiceServer
 }
 
+func (*inferenceKeyRPCPeer) CreateInferenceAccessPolicy(context.Context, *runtimev1.CreateInferenceAccessPolicyRequest) (*runtimev1.InferenceAccessPolicy, error) {
+	return &runtimev1.InferenceAccessPolicy{}, nil
+}
+func (*inferenceKeyRPCPeer) ListInferenceAccessPolicies(context.Context, *runtimev1.ListInferenceAccessPoliciesRequest) (*runtimev1.ListInferenceAccessPoliciesResponse, error) {
+	return &runtimev1.ListInferenceAccessPoliciesResponse{}, nil
+}
+func (*inferenceKeyRPCPeer) GetInferenceAccessPolicy(context.Context, *runtimev1.GetInferenceAccessPolicyRequest) (*runtimev1.InferenceAccessPolicy, error) {
+	return &runtimev1.InferenceAccessPolicy{}, nil
+}
+func (*inferenceKeyRPCPeer) UpdateInferenceAccessPolicy(context.Context, *runtimev1.UpdateInferenceAccessPolicyRequest) (*runtimev1.InferenceAccessPolicy, error) {
+	return &runtimev1.InferenceAccessPolicy{}, nil
+}
+func (*inferenceKeyRPCPeer) DeleteInferenceAccessPolicy(context.Context, *runtimev1.DeleteInferenceAccessPolicyRequest) (*runtimev1.DeleteInferenceAccessPolicyResponse, error) {
+	return &runtimev1.DeleteInferenceAccessPolicyResponse{}, nil
+}
+func (*inferenceKeyRPCPeer) BindInferenceAccessKeyPolicy(context.Context, *runtimev1.BindInferenceAccessKeyPolicyRequest) (*runtimev1.InferenceAccessKey, error) {
+	return &runtimev1.InferenceAccessKey{}, nil
+}
+
 func (*inferenceKeyRPCPeer) CreateInferenceAccessKey(context.Context, *runtimev1.CreateInferenceAccessKeyRequest) (*runtimev1.CreateInferenceAccessKeyResponse, error) {
 	return &runtimev1.CreateInferenceAccessKeyResponse{}, nil
 }
@@ -86,6 +105,30 @@ func TestInferenceKeyClientUsesManagedMTLSAndRebuiltMetadata(t *testing.T) {
 		method string
 		invoke func() error
 	}{
+		{"CreateInferenceAccessPolicy", func() error {
+			_, err := c.CreateInferencePolicyTrusted(ctx, tenant, actor, &runtimev1.CreateInferenceAccessPolicyRequest{})
+			return err
+		}},
+		{"ListInferenceAccessPolicies", func() error {
+			_, err := c.ListInferencePoliciesTrusted(ctx, tenant, actor, &runtimev1.ListInferenceAccessPoliciesRequest{})
+			return err
+		}},
+		{"GetInferenceAccessPolicy", func() error {
+			_, err := c.GetInferencePolicyTrusted(ctx, tenant, actor, &runtimev1.GetInferenceAccessPolicyRequest{})
+			return err
+		}},
+		{"UpdateInferenceAccessPolicy", func() error {
+			_, err := c.UpdateInferencePolicyTrusted(ctx, tenant, actor, &runtimev1.UpdateInferenceAccessPolicyRequest{})
+			return err
+		}},
+		{"DeleteInferenceAccessPolicy", func() error {
+			_, err := c.DeleteInferencePolicyTrusted(ctx, tenant, actor, &runtimev1.DeleteInferenceAccessPolicyRequest{})
+			return err
+		}},
+		{"BindInferenceAccessKeyPolicy", func() error {
+			_, err := c.BindInferenceKeyPolicyTrusted(ctx, tenant, actor, &runtimev1.BindInferenceAccessKeyPolicyRequest{})
+			return err
+		}},
 		{"CreateInferenceAccessKey", func() error {
 			_, err := c.CreateInferenceKeyTrusted(ctx, tenant, actor, &runtimev1.CreateInferenceAccessKeyRequest{})
 			return err

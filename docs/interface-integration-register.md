@@ -24,6 +24,7 @@
 | VPC 详情查询的机器调用 | NET-01；复用 AK-* | 必要 vpc-read 接收已整合，双 actor 与真实 mTLS 查询 PASS | AKSK-VPC-20260922 已完成本批 |
 | Network 租户面读写对接 | NET-01～NET-25；复用 AK-*、AUTH-* | 当前 25 方法支持 JWT/AK；NET-01～24 的历史三条主链验收和 NET-25 增量结果分批记录 | 当前合同见下方增量与 [AK/SK 合同](contracts/aksk-signature.md)；真实环境按批次验收 |
 | Gov → Resource 调用规范收敛 | S2S-RES-01；复用 NET-01～NET-25 与既有 Image 11 RPC | Network/Image 调用端与 Resource 接收端已修改；隔离真实业务链路通过，生产验收未执行 | 传输与可信上下文即时修复，见下方结果；不调整 HTTP 风格 |
+| Gov → Resource Sandbox 生命周期 | SANDBOX-01～08 | 当前需求为独立 Sandbox：源码调整、跨仓兼容和验收结果见 Resource 唯一状态；旧父实例模型的历史证据不能代表新模型已验收 | Gov 需固定支持独立创建的 Resource 正式版本；升级前执行切换门禁，整体验收待完成 |
 | 通用配额、GPU 实例与 Inference 接入 | QUOTA-01～03；INF-01/02；QUOTA-LAB-01～04；复用 PLAN-11～14、TENANT-04/08 | 保留 ACC 目录与 Resource 实例执行/释放合同；Inference 管理由 Governance BFF 接入并通过受信 mTLS 客户端投递；旧模拟 owner 入口退役 | 当前合同见 [GPU owner 指南](contracts/gpu-owner-integration-guide.md)；源码、部署与真实 GPU 验收分别记录 |
 | ModelDev 训练、微调及原登记恢复 | MODELDEV-01～MODELDEV-08、MODELDEV-12；服务间调用登记 S2S-MODELDEV-CPUP01-01 | 单一 typed 受理/查询及当前授权恢复已实现；原登记 Resume 的 HTTP/JWT/PG/mTLS 边界 GREEN，真实 provider Resume 与完整微调/GPU分别验收；历史 CPU-P01 结果保留原范围 | v2.1，进行中 |
 | 存储接入（独立盘与对象只读） | STORAGE-01～STORAGE-10 | 已实现并在 kcn 新环境完成正/负向验证；对象列表是本登记中唯一分页合同例外 | 待指定；前端合同与交付文档另行提供 |
@@ -1358,7 +1359,7 @@ FINETUNING 同时省略 `new_model_name` 与 `target_model_id` 表示仅发布�
 | MODELDEV-01 | 创建执行 | implementation/compute/typed parameters/总时长；拒绝旧Release字段；202为持久受理 |
 | MODELDEV-02 | 已退役Release操作 | import-release/enable/pause/binding/generation不再注册；历史证据不作为新受理许可 |
 | MODELDEV-03～06 | 详情、产物、下载、停止、列表、日志 | 原当前授权/租户隔离和正交状态保留；下载不缓存、不存有效URL |
-| MODELDEV-07 | 实现规则与输入 | `/api/v1/modeldev/implementations`；可选 `kind`（`GENERAL_TRAINING`/`FINETUNING`，分页前筛选，非法值400）；公共compute复用TRAINING目录；输入独立 `modeldev:manage_input`；不要求Release导入批准 |
+| MODELDEV-07 | 实现规则与输入 | `/api/v1/modeldev/implementations`；必填 `device_mode`（`cpu`/`gpu`），缺失/空值/非法/重复值400，无默认值；能力摘要仅来自该模式材料，按现有Readiness类型公开 `runtime_capabilities`/`runtime_capabilities_sha256`；可选 `kind`（`GENERAL_TRAINING`/`FINETUNING`，分页前筛选，非法值400）；公共compute复用TRAINING目录；输入独立 `modeldev:manage_input`；不要求Release导入批准 |
 | MODELDEV-08 | inspect/reconcile/cleanup | 当前独立execution权限，精确原UID清理；不自动删PVC/publication/模型 |
 | MODELDEV-12 | 恢复原模型登记 | `POST /api/v1/modeldev/executions/{execution_id}:resume-model-registration`；空 body/no query，仅原 CLOSED FINETUNING，当前 manage+GET+Model 原目标分支权限；同详情返回 `model_registration`/`history` |
 | MODELDEV-13 | 资源曲线（一次一个 Pod） | `GET /api/v1/modeldev/executions/{execution_id}/resource-metrics`；必填 `pod_uid`/`container`/`start`/`end`/`metric_codes`，可选 `step_seconds`（30–3600、30 的整数倍）；容器由 layer 钉死（worker=`node`、step=`main`）；namespace 与 cluster 取本租户冻结受理，不接受调用方传值；每租户并发 4，BFF 排队；当前 GPU 无 exporter，`gpu_requested=true` 时 `gpu_available=false` |
@@ -1397,21 +1398,21 @@ implementation/compute、原 accepted_at/deadline/Timing 均与原 source 绑定
 | 调用服务身份 | 客户端唯一精确 DNS SAN `ani-governance`（无 URI/IP/email） | `data/modeldev_client.go` |
 | 接收服务身份 | 服务器字面 DNS SAN `ani-modeldev-service`（固定 `ServerName` 校验） | `data/modeldev_client.go` |
 | 传输 | TLS 1.3、双向证书、`RequireAndVerifyClientCert`，无明文 fallback | 双方 |
-| 允许清单 | 接收方按精确 `FullMethod` 白名单，未知方法默认 `PermissionDenied`，流式一律拒绝 | `internal/server/governance_command.go` |
+| 允许清单 | 接收方按精确 `FullMethod` 白名单，未知方法默认 `PermissionDenied`；训练日志流仅允许登记的 GetExecutionLogStream | `internal/server/governance_command.go` |
 | 用户委托 | `PrepareAdmission`、`FinalizeAdmission`（两次只读计划）；Query/Management/Operations 各方法（新签发 mTLS 委派，附 `x-ani-authorized-method` 与 `x-ani-data-scope=tenant-all`） | 见下 RPC 列表 |
 | 后台事实 | `AcceptExecution`、`ApplyCloseIntent`（持久投递事实，不伪造用户 Principal） | `data/modeldev_dispatch_client.go`、`data/modeldev_close_client.go` |
 | 允许业务范围 | v2.1 单一 typed 普通训练/微调及原登记恢复；历史 CPU-P01 见下节 | 本组 |
 | 租户来源 | Governance 已持久化的内部租户主键 → 业务租户 UUID 映射（ResourceTenantResolver），不使用公网 tenant | MODELDEV-01 |
 | 幂等键 | `operation_id`（受理/投递）；关闭意图 `intent_generation` | — |
-| 超时 | `ANI_MODELDEV_TIMEOUT` 默认 3s；精确 owner HTTP 入口接受最大24h有限预算，继承更短父 deadline/取消，单次 RPC、不自动 retry | `data/modeldev_client_config.go`、`server/instance_timeout.go` |
-| 出站元数据 | 每次重建 `x-ani-tenant-id`/`x-ani-actor`/`x-ani-request-id`；查询另加 `x-ani-authorized-method`、`x-ani-data-scope`；不透传 Authorization/AK-SK/身份头 | 各 client |
+| 超时 | B=`ANI_MODELDEV_TIMEOUT` 默认3s；R=`ANI_MODELDEV_MODEL_RESOLUTION_TIMEOUT_SECONDS` 正整数秒、默认300。Readiness HTTP=R+B（前置B、RPC R）；Create HTTP=R+4B（前置B、Prepare R、GPU B、Finalize B、持久受理B）。AcceptedAt 在Prepare前冻结，后续各阶段同时受 AcceptedAt+T 和更短父deadline/取消约束；不自动retry | `data/modeldev_client_config.go`、`server/instance_timeout.go` |
+| 出站元数据 | 每次重建 `x-ani-tenant-id`/`x-ani-actor`/`x-ani-request-id`；可信浏览器request_id另以 `x-ani-parent-request-id` 关联；查询另加 `x-ani-authorized-method`、`x-ani-data-scope`；不透传 Authorization/AK-SK/身份头 | 各 client |
 | 证书轮换 | 客户端与服务器证书仅在启动期读取一次，续期后必须重启 Pod | — |
 
 RPC 方法清单（接收方白名单，精确 FullMethod）：
 
 - `ModelDevAdmissionService/PrepareAdmission`、`ModelDevAdmissionService/FinalizeAdmission`
 - `ModelDevCommandService/AcceptExecution`、`ModelDevCommandService/ApplyCloseIntent`
-- `ModelDevQueryService/GetExecution`、`ListExecutions`、`GetExecutionLogs`、`ListExecutionArtifacts`、`AuthorizeArtifactDownload`、`ListImplementations`、`GetInputVersion`、`ListInputVersions`
+- `ModelDevQueryService/GetExecution`、`ListExecutions`、`GetExecutionLogs`、`ListExecutionArtifacts`、`AuthorizeArtifactDownload`、`ListImplementations`、`GetInputVersion`、`ListInputVersions`、`CheckFinetuningReadiness`、`ListExecutionPods`
 - `ModelDevManagementService/ImportCSV`、`ImportFinetuningDataset`
 - `ModelDevOperationsService/InspectExecution`、`ReconcileExecution`、`PlanExecutionCleanup`、`ApplyExecutionCleanup`、`ResumeModelRegistration`（完整方法 `/ani.modeldev.v1.ModelDevOperationsService/ResumeModelRegistration`）
 
@@ -1419,13 +1420,23 @@ Resume 沿 Query/Operations 的当前方法委派重建 tenant/actor/request ID�
 未知结果先按原 execution 查询或由 owner 核实原 key。严格 mTLS/CA/精确 SAN 和接收方法白名单保持，
 不能以裸 gRPC、客户端重试或原受理时的权限替代当前授权。
 
-Model 和 ModelDev 的 owner RPC/HTTP 预算均为有限配置，部署目标最大24h；Model 默认30s，ModelDev默认3s，
-更短父 deadline 与取消始终生效。当前 Model client 已在 env/构造处拒绝超过24h，有限预算 RED/GREEN 收据为
-任务目录 `contracts/governance-model-budget/receipt.json`。HTTP 仅以下精确入口取对应 owner 配置：
-ModelDev POST executions、GET artifacts/{UUID}/content、POST executions/{UUID}:resume-model-registration；
-Model POST models/{UUID}/upload-url 和 POST model-versions。Model CreateModelVersion 的原存储导入同步校验全量对象，
-因此其调用预算必须贯穿 HTTP/consumer/provider。其他 API 沿原普通短预算，admin/shutdown 不随之放大；
-不因扩大配置上限宣称真实大对象导入或 Resume 已通过。
+日志 tail 与 SSE 均要求显式 `pod_uid`，来源为当前授权 `ListExecutionPods` 返回的原始 UID；无 UID 默认 worker 分支已删除。Pods 返回字段 `pods`、`layer=all/trainer/pipeline` 和 `includeRecycled` 保持现有合同。
+
+新增 Readiness route-map 记录的 `source_sha` 为所列 BFF Proto 文件的 SHA-256。
+
+Readiness 的公开请求仅 `base_model_version_id`、`compute_preset_id` 与可选 `finetuning_template`。
+当前读取授权包括独立Readiness API、源版本详情/下载与TRAINING计算目录权，后者沿用
+`modeldev:compute-preset:read`（SYSTEM目录API、MODEL套餐）。检查不要求目标写权，不分配GPU，
+不创建受理或执行；200的ELIGIBLE/TEMPLATE_REQUIRED/UNSUPPORTED不是创建/训练成功。
+响应仅有限能力、结构限额、模板计划与归一化模型概要；所有int64以十进制字符串编码。
+
+模型读取/内容/结构/模板拒绝采用当前有限ErrorDetail原因：422不支持/内容策略，429验证并发忙，
+403权限、404可见源不存在、409幂等冲突、503真实依赖不可用、504期限。下游私有消息、配置正文、
+访问URL和凭据不得穿透。浏览器request_id与可信内部correlation_id需可关联。
+
+Model导入仅其精确上传/版本入口扩大；ModelDev同步导入在现有管理CLI与ImportCSV/ImportFinetuningDataset使用 `ANI_MODELDEV_IMPORT_TIMEOUT_SECONDS`（正uint32秒，默认1800），保留更早父期限。其他ModelDev查询/命令保持B。
+显式日志请求必须选择原Pod UID；通过 `/api/v1/modeldev/executions/{execution_id}/pods` 获取
+TRAINER/PIPELINE和LIVE/RECYCLED的真实owner视图，禁止猜单worker或用同名Pod替代原UID。
 
 配置依赖定性（本轮评审确认）：Governance 对 ModelDev 为**可选依赖**。`ANI_MODELDEV_*` 全空时客户端置 nil，仅禁用远程解析/投递并返回不可用，不启动失败。
 
@@ -1935,6 +1946,21 @@ Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_
 
 组合编译核验发现既有 ModelDev 根 SDK `v0.0.0-20261021184454-44188466290f` 仍引入 Model 根 SDK `v0.0.0-20261013092523-8951c85bc150`，其 `api/model/v1` 与本仓已固定的 Model/api 子模块同路径冲突。Gov 显式将该间接父模块固定到与现有 Model/api 同一提交的 `v0.0.0-20261021113912-a21befaaa5e5`；该提交含 `api/go.mod`，父模块不再导出该子树。不更改 Model/ModelDev 源码，不回退既有 API，也不以本地 replace 作为正式依赖修复。
 
+## Sandbox 规格目录与权限接入（2026-10-27）
+
+**当前合同更新：** Sandbox 是独立资源，接口及安全边界见[前端 HTTP 合同](contracts/frontend-http-api.md)。以下为历史记录，父实例相关规则已被本次需求取代，历史验收不能证明独立创建已验证。
+
+管理入口为 Governance BFF；七条路由以 `api/protos/admin/service/v1/i_sandbox.proto` 为准，写请求保留 `data` 包装。各动作使用独立 `sandbox:create/list/read/operation:read/pause/resume/delete` 权限，均检查当前 INSTANCE 套餐、真实父实例租户归属，再经 mTLS 委托 Resource。新建与重放的父实例删除准入、查询/清理边界及 Pod/PVC/PV 引用响应见[前端 HTTP 合同](contracts/frontend-http-api.md)。映射维护于 `docs/contracts/permission-code-capability-map.tsv`。
+
+`GET /api/v1/compute-presets?usage=SANDBOX` 使用 INSTANCE 套餐及独立 `sandbox:preset:read` 权限；默认 `compute_type=cpu`，显式 GPU 类型或非空 `gpu_mode` 返回 400。保持 SANDBOX 用途传给 Resource，不复用容器实例用途或权限。目录同步不自动授权；`scripts/ops/sql/register-sandbox-permissions.sql` 只准备默认 OFF 的权限及 API 关系，角色/套餐通过正常管理入口单独配置。
+
+**联调前历史检查点（由下节后续结果替代）：** 集群 Provider 的 Kata 生命周期已验证；Governance 独立候选 r7 的 SANDBOX 目录查询已由 400 进入授权检查并返回 403。tenant-a/admin 登录 200，但缺 Sandbox 授权且实例为空；完整租户 HTTP → Governance → Resource DB/worker → Kata 生命周期尚待平台管理身份准备测试授权和合法父实例，不能据此段登记声称验收通过。原仓与候选的完整 API 生成、相关 Go 包/HTTP 用例及独占 PostgreSQL 授权/登记回归已定向验证；完整验收证据统一见 Resource 的 `docs/execution/records/SANDBOX-20261027/cluster-integration.json`。
+
+### Sandbox 接口复核修正（2026-10-27）
+
+原先登记的“待平台管理身份/合法父实例”是联调前检查点；随后已通过正常管理入口准备临时租户，完成完整 HTTP 生命周期、工作盘保留、重放与清理。真实证据和当前验收边界统一见 Resource `docs/execution/status.md` 与 `docs/execution/records/SANDBOX-20261027/http-lifecycle/result.json`，不由下述源码修正扩展原验收结论。
+
+本次复核修正创建重放受当前 preset 变化影响、公共页码偏移与默认值、错误 `reason` 丢失及重放标志恒 false。HTTP 路径和 `data` 结构保留；严格校验 query/body、路径重复身份，错误映射回稳定业务原因。新意图摘要使用 Resource API helper；旧记录从冻结快照匹配。修正后的源码测试、生成和候选部署结果只在上述 Resource 唯一状态登记；原 Kata 实测不自动覆盖本轮新源码。
 ## OBS-TREND-20261027：首页资源趋势（租户级聚合）
 
 新增 `GET /api/v1/observability/resource-trend`（权限码 `observability:resource-trend:read`，挂 `INSTANCE` 业务模块——2026-10-27 定案，现有 plan2/plan3 均含 INSTANCE、均无 DASHBOARD，不修改套餐数据）。目录通过生成的 HTTP 路由发现；部署时先 `admin sync-apis --dry-run` 审查，再同步并执行 `scripts/ops/sql/register-observability-permissions.sql`（权限点 + API 关联 + 向已持有 `instance:read` 的角色继承授予），最后重启刷新策略。
@@ -1958,6 +1984,17 @@ Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_
 Contract: [GPU monitoring](contracts/gpu-monitoring.md); authority: [accepted v1.1 plan](plans/gpu-monitoring-backend-phase1-plan.md). Implements dedicated physical, tenant and authorized-resource reads, retained ACC attribution and readonly quota summaries. Container and inference detail types use original UsageRef; ModelDev execution is a reviewed extension contract. GPU transport/response and budget rules are separate from existing CPU/training reads. Implementation, Fedora checks and real-cluster acceptance are tracked separately in the task's single execution index; registration does not assert live completion. API/permission catalogue synchronization is explicit, with no user/role/policy changes.
 
 `GET /api/v1/admin/tenants/quota-account-summaries` additionally returns `summary` with configured-tenant counts and per-quota limit/occupied/available totals. Aggregation retains platform-only `tenant:quota-read`, existing filters and the current read-only snapshot; it is independent of pagination. Shared-plan limits count per tenant, unconfigured account occupation is retained, and every aggregate number is a decimal string. No route, database migration, new permission or quota mutation is added; complete field semantics are maintained in the contract linked above.
+
+### GOV-MODEL-INF-20261012：AK 策略合同更新（2026-10-29）
+
+策略为独立租户资源，通过 `/api/v1/inference-policies` 创建、列表、查询、
+完整更新和删除；AK 创建必带 `policy_id`，`POST /api/v1/inference-keys/{key_id}:bind-policy`
+可重新绑定。旧服务策略接口退役。请求与权限及迁移边界见
+[推理调用 Key 和策略合同](contracts/inference-keys.md)。所有管理请求由 Governance
+认证并重建租户/actor，mTLS 转发 Inference；Higress 仅处理 `/v1/...`。
+API 目录、权限和套餐关系须按部署流程显式登记，不能仅凭代码生成推断已部署。
+
+前端页面迁移与请求示例见[推理 AK 与策略前端对接](frontend-inference-ak-policy.md)。
 
 ## USAGE-01：平台受管业务工作负载使用统计
 

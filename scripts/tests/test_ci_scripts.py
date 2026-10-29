@@ -104,6 +104,9 @@ if os.environ.get('FAIL_KIND') == kind: sys.exit(43 if kind == 'quota-server' el
             (source / 'api/protos/deleted.proto').unlink()
             (source / 'api/protos/new.proto').write_text('new input\n')
             (source / 'api/protos/private.env').write_text('private fixture')
+            (source / 'app/admin/service/cmd/schema').mkdir(parents=True)
+            (source / 'app/admin/service/cmd/schema/sandbox_parent_fence.sql').write_text('schema input\n')
+            (source / 'app/admin/service/cmd/schema/unrelated.sql').write_text('unrelated fixture')
             (source / 'notes.txt').write_text('unrelated fixture')
             (source / '_agent').mkdir()
             (source / '_agent/do-not-copy.zip').write_bytes(b'private fixture')
@@ -114,6 +117,8 @@ if os.environ.get('FAIL_KIND') == kind: sys.exit(43 if kind == 'quota-server' el
             self.assertEqual((staged / 'api/protos/changed.proto').read_text(), 'newer\n')
             self.assertFalse((staged / 'api/protos/deleted.proto').exists())
             self.assertEqual((staged / 'api/protos/new.proto').read_text(), 'new input\n')
+            self.assertEqual((staged / 'app/admin/service/cmd/schema/sandbox_parent_fence.sql').read_text(), 'schema input\n')
+            self.assertFalse((staged / 'app/admin/service/cmd/schema/unrelated.sql').exists())
             self.assertFalse((staged / 'api/protos/private.env').exists())
             self.assertFalse((staged / 'notes.txt').exists())
             self.assertFalse((staged / '_agent').exists())
@@ -216,6 +221,7 @@ if os.environ.get('FAIL_KIND') == kind: sys.exit(43 if kind == 'quota-server' el
                 'go.mod', 'go.sum', 'scripts/build-redact-plugin.sh',
                 'scripts/finalize-aksk-openapi.py', 'tools/config/pgv-scope.json',
                 'tools/config/tool-lock.json', 'api/example.proto',
+                'app/admin/service/cmd/schema/sandbox_parent_fence.sql',
             ]:
                 target = root / name
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -231,6 +237,11 @@ if os.environ.get('FAIL_KIND') == kind: sys.exit(43 if kind == 'quota-server' el
             self.assertEqual(snap(first).returncode, 0)
             self.assertEqual(snap(second).returncode, 0)
             self.assertEqual(compare().returncode, 0)
+            schema_input = root / 'app/admin/service/cmd/schema/sandbox_parent_fence.sql'
+            schema_input.write_text('changed input\n')
+            self.assertEqual(snap(second).returncode, 0)
+            self.assertIn(b'app/admin/service/cmd/schema/sandbox_parent_fence.sql', compare().stderr)
+            schema_input.write_text('original\n')
             target = root / 'pkg/localdeps/go-crud/api/gen/go/pagination.pb.go'
             target.write_text('changed\n')
             self.assertEqual(snap(second).returncode, 0)

@@ -1,0 +1,96 @@
+syntax = "proto3";
+package sandbox.service.v1;
+
+import "google/protobuf/timestamp.proto";
+
+message CreateSandboxData {
+  string idempotency_key = 1 [json_name = "idempotency_key"];
+  string name = 2;
+  string image_reference = 3 [json_name = "image_reference"];
+  string preset_id = 4 [json_name = "preset_id"];
+  string workspace_size = 5 [json_name = "workspace_size"];
+  string instance_id = 6 [json_name = "instance_id", deprecated = true];
+}
+message CreateSandboxRequest { CreateSandboxData data = 1; }
+message SandboxAcceptance {
+  string operation_id = 1 [json_name = "operation_id"];
+  string resource_id = 2 [json_name = "resource_id"];
+  bool accepted = 3;
+  bool replayed = 4;
+}
+message GetSandboxRequest { string instance_id = 1 [json_name = "instance_id", deprecated = true]; string sandbox_id = 2 [json_name = "sandbox_id"]; }
+message ListSandboxesRequest {
+  string instance_id = 1 [json_name = "instance_id", deprecated = true];
+  optional uint32 page = 2;
+  optional uint32 page_size = 3 [json_name = "pageSize"];
+}
+message Sandbox {
+  string id = 1;
+  string instance_id = 2 [json_name = "instance_id", deprecated = true];
+  int64 version = 3;
+  string desired_state = 4 [json_name = "desired_state"];
+  string observed_state = 5 [json_name = "observed_state"];
+  string reason = 6;
+  string create_operation_id = 7 [json_name = "create_operation_id"];
+  string last_operation_id = 8 [json_name = "last_operation_id"];
+  SandboxSnapshot snapshot = 9;
+  ProviderRefs provider_refs = 10 [json_name = "provider_refs"];
+  google.protobuf.Timestamp observed_at = 11 [json_name = "observed_at"];
+}
+message SandboxSnapshot {
+  string name = 1;
+  string image_reference = 2 [json_name = "image_reference"];
+  string preset_id = 3 [json_name = "preset_id"];
+  string image_digest = 4 [json_name = "image_digest"];
+  int64 cpu_millis = 5 [json_name = "cpu_millis"];
+  int64 memory_mib = 6 [json_name = "memory_mib"];
+  string compute_type = 7 [json_name = "compute_type"];
+  string cluster_id = 8 [json_name = "cluster_id"];
+  string namespace = 9;
+  string runtime_class = 10 [json_name = "runtime_class"];
+  string selection_digest = 11 [json_name = "selection_digest"];
+  string preset_code = 12 [json_name = "preset_code"];
+  string preset_name = 13 [json_name = "preset_name"];
+  string spec_digest = 14 [json_name = "spec_digest"];
+  WorkspaceSpec workspace = 15;
+}
+message WorkspaceSpec {
+  string mount_path = 1 [json_name = "mount_path"];
+  string size = 2;
+  string storage_class = 3 [json_name = "storage_class"];
+  string reclaim_policy = 4 [json_name = "reclaim_policy"];
+}
+message ProviderRefs {
+  string pvc_name = 1 [json_name = "pvc_name"];
+  string pvc_uid = 2 [json_name = "pvc_uid"];
+  string pod_name = 3 [json_name = "pod_name"];
+  string pod_uid = 4 [json_name = "pod_uid"];
+  string resource_version = 5 [json_name = "resource_version"];
+  string cleanup_receipt = 6 [json_name = "cleanup_receipt"];
+  string pvc_resource_version = 7 [json_name = "pvc_resource_version"];
+  string pod_resource_version = 8 [json_name = "pod_resource_version"];
+  string pv_name = 9 [json_name = "pv_name"];
+  string pv_uid = 10 [json_name = "pv_uid"];
+}
+message GetSandboxResponse { Sandbox sandbox = 1; }
+message ListSandboxesResponse { repeated Sandbox items = 1; int64 total = 2; }
+message SandboxActionData {
+  string sandbox_id = 1 [json_name = "sandbox_id"];
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  int64 expected_version = 3 [json_name = "expected_version"];
+  string instance_id = 4 [json_name = "instance_id", deprecated = true];
+}
+message PauseSandboxRequest { SandboxActionData data = 1; }
+message ResumeSandboxRequest { SandboxActionData data = 1; }
+message DeleteSandboxRequest { SandboxActionData data = 1; }
+message GetSandboxOperationRequest { string instance_id = 1 [json_name = "instance_id", deprecated = true]; string operation_id = 2 [json_name = "operation_id"]; }
+message SandboxOperation {
+  string id = 1;
+  string sandbox_id = 2 [json_name = "sandbox_id"];
+  string instance_id = 3 [json_name = "instance_id", deprecated = true];
+  string action = 4;
+  int64 intent_version = 5 [json_name = "intent_version"];
+  string state = 6;
+  string reason = 7;
+  google.protobuf.Timestamp created_at = 8 [json_name = "created_at"];
+}

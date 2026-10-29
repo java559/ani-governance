@@ -25,7 +25,7 @@ func (s *ModelDevService) OpenExecutionLogStream(ctx context.Context, in *modeld
 		return nil, err
 	}
 	if in == nil || !modelDevQueryUUID(in.ExecutionId) ||
-		(in.PodUid != nil && !modelDevQueryUUID(in.GetPodUid())) || !modelDevQueryContainer(in.Container) ||
+		!modelDevQueryUUID(in.GetPodUid()) || !modelDevQueryContainer(in.Container) ||
 		(in.SinceBytes != nil && (*in.SinceBytes < 0 || *in.SinceBytes > 1<<30)) {
 		return nil, errors.BadRequest("INVALID_MODELDEV_QUERY", "invalid modeldev query")
 	}

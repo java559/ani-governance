@@ -35,6 +35,7 @@ import (
 )
 
 const inferenceHTTPKeyID = "22222222-2222-4222-8222-222222222222"
+const inferenceHTTPPolicyID = "33333333-3333-4333-8333-333333333333"
 const inferenceHTTPSecret = "iak_0000000000000000000000000000000000000000000"
 
 // External Inference protocol responses only; no fake local credential store.
@@ -56,7 +57,7 @@ func (p *inferenceKeyHTTPPeer) observe(tenant, actor string, in proto.Message) e
 	return nil
 }
 func inferenceHTTPKey() *runtimev1.InferenceAccessKey {
-	return &runtimev1.InferenceAccessKey{Id: inferenceHTTPKeyID, Name: "app", KeyPrefix: inferenceHTTPSecret[:16], AllowedModelNames: []string{"model"}, CreatedAt: timestamppb.Now(), Version: 1, Secret: proto.String(inferenceHTTPSecret)}
+	return &runtimev1.InferenceAccessKey{Id: inferenceHTTPKeyID, Name: "app", KeyPrefix: inferenceHTTPSecret[:16], PolicyId: "33333333-3333-4333-8333-333333333333", CreatedAt: timestamppb.Now(), Version: 1, Secret: proto.String(inferenceHTTPSecret)}
 }
 func (p *inferenceKeyHTTPPeer) CreateInferenceKeyTrusted(_ context.Context, tenant, actor string, in *runtimev1.CreateInferenceAccessKeyRequest) (*runtimev1.CreateInferenceAccessKeyResponse, error) {
 	err := p.observe(tenant, actor, in)
@@ -82,6 +83,27 @@ func (p *inferenceKeyHTTPPeer) RotateInferenceKeyTrusted(_ context.Context, tena
 	err := p.observe(tenant, actor, in)
 	return &runtimev1.RotateInferenceAccessKeyResponse{Key: inferenceHTTPKey(), Secret: inferenceHTTPSecret, Replayed: p.replayed}, err
 }
+func httpPolicy() *runtimev1.InferenceAccessPolicy {
+	return &runtimev1.InferenceAccessPolicy{Id: inferenceHTTPPolicyID, Name: "policy", AllowedModelNames: []string{"model"}, Version: 1}
+}
+func (p *inferenceKeyHTTPPeer) CreateInferencePolicyTrusted(_ context.Context, t, a string, in *runtimev1.CreateInferenceAccessPolicyRequest) (*runtimev1.InferenceAccessPolicy, error) {
+	return httpPolicy(), p.observe(t, a, in)
+}
+func (p *inferenceKeyHTTPPeer) ListInferencePoliciesTrusted(_ context.Context, t, a string, in *runtimev1.ListInferenceAccessPoliciesRequest) (*runtimev1.ListInferenceAccessPoliciesResponse, error) {
+	return &runtimev1.ListInferenceAccessPoliciesResponse{Items: []*runtimev1.InferenceAccessPolicy{httpPolicy()}, Total: 1}, p.observe(t, a, in)
+}
+func (p *inferenceKeyHTTPPeer) GetInferencePolicyTrusted(_ context.Context, t, a string, in *runtimev1.GetInferenceAccessPolicyRequest) (*runtimev1.InferenceAccessPolicy, error) {
+	return httpPolicy(), p.observe(t, a, in)
+}
+func (p *inferenceKeyHTTPPeer) UpdateInferencePolicyTrusted(_ context.Context, t, a string, in *runtimev1.UpdateInferenceAccessPolicyRequest) (*runtimev1.InferenceAccessPolicy, error) {
+	return httpPolicy(), p.observe(t, a, in)
+}
+func (p *inferenceKeyHTTPPeer) DeleteInferencePolicyTrusted(_ context.Context, t, a string, in *runtimev1.DeleteInferenceAccessPolicyRequest) (*runtimev1.DeleteInferenceAccessPolicyResponse, error) {
+	return &runtimev1.DeleteInferenceAccessPolicyResponse{}, p.observe(t, a, in)
+}
+func (p *inferenceKeyHTTPPeer) BindInferenceKeyPolicyTrusted(_ context.Context, t, a string, in *runtimev1.BindInferenceAccessKeyPolicyRequest) (*runtimev1.InferenceAccessKey, error) {
+	return inferenceHTTPKey(), p.observe(t, a, in)
+}
 
 func TestInferenceKeyHTTPManagementWithRealTenantGateAndCasbin(t *testing.T) {
 	ctx := testutil.NewSystemViewerCtx(context.Background())
@@ -104,6 +126,9 @@ func TestInferenceKeyHTTPManagementWithRealTenantGateAndCasbin(t *testing.T) {
 		{"POST", "/api/v1/inference-keys"}, {"GET", "/api/v1/inference-keys"},
 		{"GET", "/api/v1/inference-keys/{key_id}"}, {"DELETE", "/api/v1/inference-keys/{key_id}"},
 		{"POST", "/api/v1/inference-keys/{key_id}:rotate"},
+		{"POST", "/api/v1/inference-keys/{key_id}:bind-policy"},
+		{"POST", "/api/v1/inference-policies"}, {"GET", "/api/v1/inference-policies"},
+		{"GET", "/api/v1/inference-policies/{policy_id}"}, {"PUT", "/api/v1/inference-policies/{policy_id}"}, {"DELETE", "/api/v1/inference-policies/{policy_id}"},
 	} {
 		grant, err := permcode.Resolve(route.method, route.path)
 		require.NoError(t, err)
@@ -164,7 +189,21 @@ func TestInferenceKeyHTTPManagementWithRealTenantGateAndCasbin(t *testing.T) {
 	}
 	base := "/api/v1/inference-keys"
 	item := base + "/" + inferenceHTTPKeyID
-	body := `{"data":{"name":"app","allowed_model_names":["model"],"idempotency_key":"create-1"}}`
+	body := `{"data":{"name":"app","policy_id":"33333333-3333-4333-8333-333333333333","idempotency_key":"create-1"}}`
+	policyBase := "/api/v1/inference-policies"
+	policyItem := policyBase + "/" + inferenceHTTPPolicyID
+	policyBody := `{"data":{"name":"policy","allowed_model_names":["model"],"requests_per_second":2}}`
+	createdPolicy := fire("POST", policyBase, policyBody, "user-a", 200)
+	require.Equal(t, inferenceHTTPPolicyID, createdPolicy["id"])
+	fire("GET", policyBase, "", "reader", 200)
+	fire("GET", policyItem, "", "user-a", 200)
+	fire("PUT", policyItem, policyBody, "user-a", 200)
+	bound := fire("POST", item+":bind-policy", `{"data":{"policy_id":"`+inferenceHTTPPolicyID+`"}}`, "user-a", 200)
+	require.Equal(t, inferenceHTTPPolicyID, bound["policy_id"])
+	require.NotContains(t, bound, "secret")
+	fire("DELETE", policyItem, "", "user-a", 200)
+	fire("POST", policyBase, policyBody, "reader", 403)
+	fire("GET", policyItem, "", "user-b", 404)
 	created := fire("POST", base, body, "user-a", 200)
 	require.Equal(t, inferenceHTTPSecret, created["secret"])
 	require.Equal(t, "governance:user:33", peer.actor)
@@ -252,7 +291,7 @@ func TestInferenceKeyHTTPRejectsMalformedInputAndSigningCredentials(t *testing.T
 		require.Equal(t, 400, w.Code, "%s %s: %s", tc.method, tc.path, w.Body.String())
 	}
 	for _, method := range []string{http.MethodGet, http.MethodPost} {
-		r := httptest.NewRequest(method, base, strings.NewReader(`{"data":{"name":"app","allowed_model_names":["model"],"idempotency_key":"x"}}`))
+		r := httptest.NewRequest(method, base, strings.NewReader(`{"data":{"name":"app","policy_id":"33333333-3333-4333-8333-333333333333","idempotency_key":"x"}}`))
 		if method == "GET" {
 			r.Body, r.ContentLength = http.NoBody, 0
 		}

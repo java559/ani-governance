@@ -57,22 +57,8 @@ Inference 仅按 `inference-managed-v2` schema 解释。历史普通资源没有
 Gov 不用这些字符串计算退款；例如通知 ACK 丢失时允许 owner 尚在
 `report_resource_released` 而 Gov `refund_state=APPLIED`，原事件重试不会二次退款。
 
-## 服务访问策略
+## 推理 AK 策略
 
-`GET /api/v1/inference/services/{resource_id}/policy` 返回 `{policy:{resource_id,
-allowed_tenants,rate_limits,updated_at}}`；`PUT` 同一路径接受
-`{policy:{allowed_tenants:["<resource-tenant-uuid>"],rate_limits:{"<resource-tenant-uuid>":
-{requests_per_minute:2,requests_per_hour:30}}}}`。顶层 resource_id 可省略，由路径绑定；
-存在时必须匹配，policy.resource_id 同样不得冲突，updated_at 只读。拒绝未知字段、
-重复 JSON 键、query 和公网身份 header。
-
-PUT 完整替换并直接绑定该服务：空白名单拒绝所有调用，省略 rate_limits 移除服务
-额度。尚未保存时默认只允许所属租户。额度按服务和调用方租户共享，0 表示不限，
-同时受 AK 自身范围和额度限制。修改不重置已经记录的固定窗口桶。
-此合同未提供独立策略目录、乐观版本或幂等字段，前端不得自行添加 token。
-
-接口要求 `inference:policy:read` / `inference:policy:update`、当前租户 INFERENCE
-资格；租户和 actor 由 Governance 重建，经现有 mTLS 调用正式 Inference RPC。
-更新没有额外占退额。管理权限始终仅覆盖服务所属租户；白名单允许的是推理数据面。
-先执行 API dry-run 和同步，再执行 `register-inference-policy-permissions.sql`，
-最后按明确 tenant/role/plan 执行 `enable-inference-policy-access.sql`；目录同步不授权。
+策略为同租户独立资源，绑定 AK 而非推理服务。完整管理合同、请求与权限见
+[推理调用 Key 和策略](inference-keys.md)。旧 `/api/v1/inference/services/{resource_id}/policy`
+接口已退役。管理请求走 Governance；Higress 只承载 `/v1/...` 推理。

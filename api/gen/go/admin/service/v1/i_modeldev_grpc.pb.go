@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	ModelDevService_CheckFinetuningReadiness_FullMethodName  = "/admin.service.v1.ModelDevService/CheckFinetuningReadiness"
 	ModelDevService_ListImplementations_FullMethodName       = "/admin.service.v1.ModelDevService/ListImplementations"
 	ModelDevService_GetInputVersion_FullMethodName           = "/admin.service.v1.ModelDevService/GetInputVersion"
 	ModelDevService_ListInputVersions_FullMethodName         = "/admin.service.v1.ModelDevService/ListInputVersions"
@@ -42,6 +43,7 @@ const (
 //
 // CPU-P01 entry in the existing Governance BFF.
 type ModelDevServiceClient interface {
+	CheckFinetuningReadiness(ctx context.Context, in *v1.CheckFinetuningReadinessRequest, opts ...grpc.CallOption) (*v1.CheckFinetuningReadinessResponse, error)
 	ListImplementations(ctx context.Context, in *v1.ListImplementationsRequest, opts ...grpc.CallOption) (*v1.ListImplementationsResponse, error)
 	GetInputVersion(ctx context.Context, in *v1.GetInputVersionRequest, opts ...grpc.CallOption) (*v1.GetInputVersionResponse, error)
 	ListInputVersions(ctx context.Context, in *v1.ListInputVersionsRequest, opts ...grpc.CallOption) (*v1.ListInputVersionsResponse, error)
@@ -64,6 +66,16 @@ type modelDevServiceClient struct {
 
 func NewModelDevServiceClient(cc grpc.ClientConnInterface) ModelDevServiceClient {
 	return &modelDevServiceClient{cc}
+}
+
+func (c *modelDevServiceClient) CheckFinetuningReadiness(ctx context.Context, in *v1.CheckFinetuningReadinessRequest, opts ...grpc.CallOption) (*v1.CheckFinetuningReadinessResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.CheckFinetuningReadinessResponse)
+	err := c.cc.Invoke(ctx, ModelDevService_CheckFinetuningReadiness_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *modelDevServiceClient) ListImplementations(ctx context.Context, in *v1.ListImplementationsRequest, opts ...grpc.CallOption) (*v1.ListImplementationsResponse, error) {
@@ -212,6 +224,7 @@ func (c *modelDevServiceClient) CreateExecution(ctx context.Context, in *v1.Crea
 //
 // CPU-P01 entry in the existing Governance BFF.
 type ModelDevServiceServer interface {
+	CheckFinetuningReadiness(context.Context, *v1.CheckFinetuningReadinessRequest) (*v1.CheckFinetuningReadinessResponse, error)
 	ListImplementations(context.Context, *v1.ListImplementationsRequest) (*v1.ListImplementationsResponse, error)
 	GetInputVersion(context.Context, *v1.GetInputVersionRequest) (*v1.GetInputVersionResponse, error)
 	ListInputVersions(context.Context, *v1.ListInputVersionsRequest) (*v1.ListInputVersionsResponse, error)
@@ -236,6 +249,9 @@ type ModelDevServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedModelDevServiceServer struct{}
 
+func (UnimplementedModelDevServiceServer) CheckFinetuningReadiness(context.Context, *v1.CheckFinetuningReadinessRequest) (*v1.CheckFinetuningReadinessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckFinetuningReadiness not implemented")
+}
 func (UnimplementedModelDevServiceServer) ListImplementations(context.Context, *v1.ListImplementationsRequest) (*v1.ListImplementationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListImplementations not implemented")
 }
@@ -297,6 +313,24 @@ func RegisterModelDevServiceServer(s grpc.ServiceRegistrar, srv ModelDevServiceS
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&ModelDevService_ServiceDesc, srv)
+}
+
+func _ModelDevService_CheckFinetuningReadiness_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CheckFinetuningReadinessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelDevServiceServer).CheckFinetuningReadiness(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelDevService_CheckFinetuningReadiness_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelDevServiceServer).CheckFinetuningReadiness(ctx, req.(*v1.CheckFinetuningReadinessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ModelDevService_ListImplementations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -558,6 +592,10 @@ var ModelDevService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "admin.service.v1.ModelDevService",
 	HandlerType: (*ModelDevServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CheckFinetuningReadiness",
+			Handler:    _ModelDevService_CheckFinetuningReadiness_Handler,
+		},
 		{
 			MethodName: "ListImplementations",
 			Handler:    _ModelDevService_ListImplementations_Handler,

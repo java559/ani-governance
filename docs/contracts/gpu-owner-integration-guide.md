@@ -46,6 +46,11 @@ Res 只有确认计算资源已清理、没有残留 GPU 访问、没有在途�
 
 `QuotaReleaseService/ReportResourceReleased` 仅在内部 TLS 1.3 双向认证 listener 注册。客户端证书必须含唯一精确 DNS SAN，映射到已登记 owner，且只允许登记方法。请求没有可信 tenant/owner 字段；Gov 用认证 owner 和原 CREATE 查租户，锁定租户、原操作及 charges，再核对 resource。退款数量只取原账剩余量，不按现有目录重算。
 
+Inference 接入通过 `ANI_QUOTA_INFERENCE_ENABLED=true` 显式注册唯一 DNS
+`ani-inference-service` 到固定原账本 owner `ani-inference`。该开关不接受任意 owner 或别名；
+与 Resource 身份冲突时启动失败。证书使用现有 cert-manager ClusterIssuer 签发，
+部署、信任切换和续期加载见 [内部服务证书配置](../../scripts/deploy/service-mtls/README.md)。
+
 同 event 不同内容拒绝；同资源换 event 重报不重复退款。新完整事件使用现有全局唯一 receipt ID 约束封闭跨租户或跨 owner 重用。响应回同 event/create/resource，status 为 `APPLIED` 或 `ALREADY_APPLIED`；Res 仅接受引用全部匹配的确认。
 
 旧 `ReportQuotaRelease` 仅保留非 GPU 的独立累计释放语义，新的 GPU code 不能走该入口。本期不新增 CPU、主机内存或 GPU 核心 quota。

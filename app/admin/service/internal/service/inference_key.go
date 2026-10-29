@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/base64"
-	"slices"
 	"strings"
 
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
@@ -54,27 +53,17 @@ func (s *InferenceService) CreateInferenceKey(ctx context.Context, in *view.Crea
 		return nil, view.ErrorInvalidInferenceKeyRequest("data is required")
 	}
 	d := in.Data
-	if strings.TrimSpace(d.Name) == "" || len(d.Name) > 256 || !validInferenceKeyIdempotency(d.IdempotencyKey) || len(d.AllowedServiceIds)+len(d.AllowedModelNames) == 0 || d.RequestsPerSecond < 0 || d.RequestsPerMinute < 0 || d.RequestsPerHour < 0 {
-		return nil, view.ErrorInvalidInferenceKeyRequest("name, scope and idempotency_key are required; rate limits must be nonnegative")
+	if strings.TrimSpace(d.Name) == "" || len(d.Name) > 256 || !validInferenceKeyIdempotency(d.IdempotencyKey) || !canonicalInferenceKeyID(d.PolicyId) {
+		return nil, view.ErrorInvalidInferenceKeyRequest("name, policy_id and idempotency_key are required")
 	}
 	if d.ExpiresAt != nil && d.ExpiresAt.CheckValid() != nil {
 		return nil, view.ErrorInvalidInferenceKeyRequest("invalid expires_at")
-	}
-	for _, id := range d.AllowedServiceIds {
-		if !canonicalInferenceKeyID(id) {
-			return nil, view.ErrorInvalidInferenceKeyRequest("allowed_service_ids must contain canonical UUIDs")
-		}
-	}
-	for _, model := range d.AllowedModelNames {
-		if strings.TrimSpace(model) == "" || len(model) > 256 {
-			return nil, view.ErrorInvalidInferenceKeyRequest("allowed_model_names must contain model names")
-		}
 	}
 	owner, tenant, actor, err := s.inferenceKeyScope(ctx)
 	if err != nil {
 		return nil, err
 	}
-	request := &runtimev1.CreateInferenceAccessKeyRequest{RequestId: uuid.NewString(), Name: strings.TrimSpace(d.Name), AllowedServiceIds: normalizedInferenceKeyScope(d.AllowedServiceIds), AllowedModelNames: normalizedInferenceKeyScope(d.AllowedModelNames), RequestsPerSecond: d.RequestsPerSecond, RequestsPerMinute: d.RequestsPerMinute, RequestsPerHour: d.RequestsPerHour, ExpiresAt: d.ExpiresAt, IdempotencyKey: d.IdempotencyKey}
+	request := &runtimev1.CreateInferenceAccessKeyRequest{RequestId: uuid.NewString(), Name: strings.TrimSpace(d.Name), PolicyId: d.PolicyId, ExpiresAt: d.ExpiresAt, IdempotencyKey: d.IdempotencyKey}
 	result, err := owner.CreateInferenceKeyTrusted(ctx, tenant, actor, request)
 	if err != nil {
 		return nil, mapInferenceKeyError(err)
@@ -187,27 +176,18 @@ func validInferenceKeyIdempotency(value string) bool {
 	return value != "" && len(value) <= 128 && strings.TrimSpace(value) == value
 }
 
-func normalizedInferenceKeyScope(values []string) []string {
-	out := make([]string, 0, len(values))
-	for _, value := range values {
-		out = append(out, strings.TrimSpace(value))
-	}
-	slices.Sort(out)
-	return slices.Compact(out)
-}
-
 func sameInferenceKeyIntent(in *runtimev1.CreateInferenceAccessKeyRequest, key *runtimev1.InferenceAccessKey) bool {
-	return key != nil && in.Name == key.Name && slices.Equal(normalizedInferenceKeyScope(in.AllowedServiceIds), normalizedInferenceKeyScope(key.AllowedServiceIds)) && slices.Equal(normalizedInferenceKeyScope(in.AllowedModelNames), normalizedInferenceKeyScope(key.AllowedModelNames)) && in.RequestsPerSecond == key.RequestsPerSecond && in.RequestsPerMinute == key.RequestsPerMinute && in.RequestsPerHour == key.RequestsPerHour && proto.Equal(in.ExpiresAt, key.ExpiresAt)
+	return key != nil && in.Name == key.Name && in.PolicyId == key.PolicyId && proto.Equal(in.ExpiresAt, key.ExpiresAt)
 }
 
 func projectInferenceKey(key *runtimev1.InferenceAccessKey, id string, includeSecret bool) (*view.InferenceKey, error) {
-	if key == nil || !canonicalInferenceKeyID(key.Id) || (id != "" && key.Id != id) || !strings.HasPrefix(key.KeyPrefix, "iak_") || len(key.KeyPrefix) != 16 || key.Version < 1 || key.CreatedAt == nil {
+	if key == nil || !canonicalInferenceKeyID(key.Id) || (id != "" && key.Id != id) || (key.PolicyId != "" && !canonicalInferenceKeyID(key.PolicyId)) || !strings.HasPrefix(key.KeyPrefix, "iak_") || len(key.KeyPrefix) != 16 || key.Version < 1 || key.CreatedAt == nil {
 		return nil, view.ErrorInferenceKeyUnavailable("invalid inference key response")
 	}
 	if key.CreatedAt.CheckValid() != nil || (key.ExpiresAt != nil && key.ExpiresAt.CheckValid() != nil) || (key.RevokedAt != nil && key.RevokedAt.CheckValid() != nil) || (key.LastUsedAt != nil && key.LastUsedAt.CheckValid() != nil) {
 		return nil, view.ErrorInferenceKeyUnavailable("invalid inference key response")
 	}
-	out := &view.InferenceKey{Id: key.Id, Name: key.Name, KeyPrefix: key.KeyPrefix, AllowedServiceIds: append([]string(nil), key.AllowedServiceIds...), AllowedModelNames: append([]string(nil), key.AllowedModelNames...), RequestsPerSecond: key.RequestsPerSecond, RequestsPerMinute: key.RequestsPerMinute, RequestsPerHour: key.RequestsPerHour, ExpiresAt: key.ExpiresAt, RevokedAt: key.RevokedAt, CreatedBy: key.CreatedBy, CreatedAt: key.CreatedAt, LastUsedAt: key.LastUsedAt, Version: key.Version}
+	out := &view.InferenceKey{Id: key.Id, Name: key.Name, KeyPrefix: key.KeyPrefix, PolicyId: key.PolicyId, ExpiresAt: key.ExpiresAt, RevokedAt: key.RevokedAt, CreatedBy: key.CreatedBy, CreatedAt: key.CreatedAt, LastUsedAt: key.LastUsedAt, Version: key.Version}
 	if includeSecret && key.Secret != nil {
 		secret := key.GetSecret()
 		decoded, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(secret, "iak_"))

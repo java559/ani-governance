@@ -43,7 +43,8 @@ type QuotaInternalServerConfig struct {
 // QuotaInternalConfigFromEnv 从环境变量解析：
 // ANI_QUOTA_ENABLED / ANI_QUOTA_INTERNAL_ADDR / ANI_QUOTA_CA_FILE /
 // ANI_QUOTA_CERT_FILE / ANI_QUOTA_KEY_FILE /
-// ANI_QUOTA_RESOURCE_DNS_SAN。
+// ANI_QUOTA_RESOURCE_DNS_SAN / ANI_QUOTA_MODELDEV_ENABLED /
+// ANI_QUOTA_INFERENCE_ENABLED。
 // The environment configures the exact deployed name of the compiled Resource
 // owner, never an arbitrary owner or wildcard.
 func QuotaInternalConfigFromEnv() QuotaInternalServerConfig {
@@ -69,6 +70,17 @@ func QuotaInternalConfigFromEnv() QuotaInternalServerConfig {
 			config.CertOwnerMap[commandcontract.ModelDevOwner] = commandcontract.ModelDevOwner
 		}
 	}
+	if os.Getenv("ANI_QUOTA_INFERENCE_ENABLED") == "true" {
+		if config.CertOwnerMap == nil {
+			config.CertOwnerMap = make(map[string]string)
+		}
+		const name = "ani-inference-service"
+		if owner, exists := config.CertOwnerMap[name]; exists && owner != commandcontract.InferenceOwner {
+			config.CertOwnerMap[name] = ""
+		} else {
+			config.CertOwnerMap[name] = commandcontract.InferenceOwner
+		}
+	}
 	return config
 }
 
@@ -89,6 +101,9 @@ func (c *QuotaInternalServerConfig) Validate() error {
 		}
 		if (owner == commandcontract.ModelDevOwner || name == commandcontract.ModelDevOwner) && owner != name {
 			return fmt.Errorf("ModelDev quota release requires its unique compiled DNS identity")
+		}
+		if (owner == commandcontract.InferenceOwner || name == "ani-inference-service") && (owner != commandcontract.InferenceOwner || name != "ani-inference-service") {
+			return fmt.Errorf("Inference quota release requires its unique compiled DNS identity")
 		}
 	}
 	return nil

@@ -55,20 +55,22 @@ func TestComputeCatalogCurrentUsageAuthorizationPostgres(t *testing.T) {
 	require.Equal(t, api.StatusOn, *route.Status)
 	gate := data.NewComputeCatalogAuthorizationRepo(c)
 	checker := data.NewTenantAccessCheckerImpl(testutil.NewBootstrapContext(nil), c).(auth.TenantRequestAccessChecker)
-	usages := []string{"CONTAINER_INSTANCE", "TRAINING", "INFERENCE"}
+	usages := []string{"CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "SANDBOX"}
 	entitlements := map[string]uint32{}
 	for _, usage := range usages {
 		module, _, _ := permcode.ComputeCatalogGrant(usage)
-		row, e := c.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.Module(module)).Save(sys)
-		require.NoError(t, e)
-		entitlements[usage] = row.ID
+		if _, exists := entitlements[module]; !exists {
+			row, e := c.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.Module(module)).Save(sys)
+			require.NoError(t, e)
+			entitlements[module] = row.ID
+		}
 	}
 
 	// No INSTANCE dependency for training/inference, no cross-usage role leakage.
 	for _, usage := range usages {
 		t.Run(usage, func(t *testing.T) {
 			module, code, _ := permcode.ComputeCatalogGrant(usage)
-			entitlementID := entitlements[usage]
+			entitlementID := entitlements[module]
 			grant, err := c.Client().Permission.Query().Where(permission.CodeEQ(code)).Only(sys)
 			if ent.IsNotFound(err) {
 				grant, err = c.Client().Permission.Create().SetName(code).SetCode(code).SetStatus(permission.StatusOn).Save(sys)
@@ -102,13 +104,13 @@ func TestComputeCatalogCurrentUsageAuthorizationPostgres(t *testing.T) {
 			require.Error(t, checker.CheckTenantRequestAccess(sys, tenant.ID, data.ComputeCatalogPath, "GET", &view.ListPresetsRequest{Usage: usage}))
 			restored, e := c.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.Module(module)).Save(sys)
 			require.NoError(t, e)
-			entitlements[usage] = restored.ID
+			entitlements[module] = restored.ID
 			if usage == "TRAINING" {
-				require.NoError(t, c.Client().PlanModule.DeleteOneID(entitlements["CONTAINER_INSTANCE"]).Exec(sys))
+				require.NoError(t, c.Client().PlanModule.DeleteOneID(entitlements["INSTANCE"]).Exec(sys))
 				require.NoError(t, gate.AuthorizeComputeCatalog(sys, tenant.ID, member.ID, usage), "training must not require INSTANCE")
 				restored, e = c.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleInstance).Save(sys)
 				require.NoError(t, e)
-				entitlements["CONTAINER_INSTANCE"] = restored.ID
+				entitlements["INSTANCE"] = restored.ID
 			}
 			require.NoError(t, c.Client().RolePermission.DeleteOneID(relation.ID).Exec(sys))
 		})

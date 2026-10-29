@@ -53,5 +53,7 @@ func quotaTLSFixture(t *testing.T) (string, *x509.CertPool) {
 	issueQuotaCert(t, ca, key, []string{"ani-modeldev-service"}, x509.ExtKeyUsageClientAuth, dir, "modeldev")
 	issueQuotaCert(t, ca, key, []string{"ani-modeldev-service", "ani-inference"}, x509.ExtKeyUsageClientAuth, dir, "modeldev-mixed")
 	issueQuotaCert(t, ca, key, []string{"ani-modeldev.alias"}, x509.ExtKeyUsageClientAuth, dir, "modeldev-alias")
+	issueQuotaCert(t, ca, key, []string{"ani-inference-service"}, x509.ExtKeyUsageClientAuth, dir, "inference")
+	issueQuotaCert(t, ca, key, []string{"ani-inference-service", "ani-governance"}, x509.ExtKeyUsageClientAuth, dir, "inference-mixed")
 	return dir, pool
 }

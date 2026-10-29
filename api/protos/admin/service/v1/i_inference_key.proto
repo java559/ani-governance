@@ -10,6 +10,30 @@ import "inference/service/v1/access_key.proto";
 // INFERENCE subscription and explicit inference:key:* permissions. Separate
 // from AccessKeyService and /api/v1/auth/api-keys; never routed through Higress.
 service InferenceKeyService {
+  rpc CreateInferencePolicy(inference.service.v1.CreateInferencePolicyRequest) returns (inference.service.v1.InferenceAccessPolicy) {
+    option (google.api.http) = {post: "/api/v1/inference-policies" body: "*"};
+    option (gnostic.openapi.v3.operation) = {security: {additional_properties: {name: "BearerAuth" value: {}}}};
+  }
+  rpc ListInferencePolicies(inference.service.v1.ListInferencePoliciesRequest) returns (inference.service.v1.ListInferencePoliciesResponse) {
+    option (google.api.http) = {get: "/api/v1/inference-policies"};
+    option (gnostic.openapi.v3.operation) = {security: {additional_properties: {name: "BearerAuth" value: {}}}};
+  }
+  rpc GetInferencePolicy(inference.service.v1.GetInferencePolicyRequest) returns (inference.service.v1.InferenceAccessPolicy) {
+    option (google.api.http) = {get: "/api/v1/inference-policies/{policy_id}"};
+    option (gnostic.openapi.v3.operation) = {security: {additional_properties: {name: "BearerAuth" value: {}}}};
+  }
+  rpc UpdateInferencePolicy(inference.service.v1.UpdateInferencePolicyRequest) returns (inference.service.v1.InferenceAccessPolicy) {
+    option (google.api.http) = {put: "/api/v1/inference-policies/{policy_id}" body: "*"};
+    option (gnostic.openapi.v3.operation) = {security: {additional_properties: {name: "BearerAuth" value: {}}}};
+  }
+  rpc DeleteInferencePolicy(inference.service.v1.DeleteInferencePolicyRequest) returns (inference.service.v1.DeleteInferencePolicyResponse) {
+    option (google.api.http) = {delete: "/api/v1/inference-policies/{policy_id}"};
+    option (gnostic.openapi.v3.operation) = {security: {additional_properties: {name: "BearerAuth" value: {}}}};
+  }
+  rpc BindInferenceKeyPolicy(inference.service.v1.BindInferenceKeyPolicyRequest) returns (inference.service.v1.InferenceKey) {
+    option (google.api.http) = {post: "/api/v1/inference-keys/{key_id}:bind-policy" body: "*"};
+    option (gnostic.openapi.v3.operation) = {security: {additional_properties: {name: "BearerAuth" value: {}}}};
+  }
   rpc CreateInferenceKey(inference.service.v1.CreateInferenceKeyRequest) returns (inference.service.v1.InferenceKeyCredentials) {
     option (google.api.http) = {post: "/api/v1/inference-keys" body: "*"};
     option (gnostic.openapi.v3.operation) = {security: {additional_properties: {name: "BearerAuth" value: {}}}};

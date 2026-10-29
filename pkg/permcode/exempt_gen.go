@@ -34,6 +34,7 @@ var exemptReasons = map[string]string{
 	"POST /api/v1/auth/reset-password-by-code":                        "既有认证/会话域接口（不在权限码范围）",
 	"POST /api/v1/modeldev/executions":                                "业务域接口（不在管理面/六域权限码范围）",
 	"POST /api/v1/modeldev/executions/{execution_id}:stop":            "业务域接口（不在管理面/六域权限码范围）",
+	"POST /api/v1/modeldev/finetuning/readiness/check":                "业务域接口（不在管理面/六域权限码范围）",
 	"PUT /api/v1/auth/api-keys/{key_id}":                              "既有认证/会话域接口（不在权限码范围）",
 	"PUT /api/v1/auth/api-keys/{key_id}/secret":                       "既有认证/会话域接口（不在权限码范围）",
 }

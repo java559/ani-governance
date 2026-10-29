@@ -2,20 +2,26 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	modeldevv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/modeldev/v1"
 	trainingv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/training/v1"
+	"github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func (c *ModelDevClient) ListImplementations(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32, kind *trainingv1.ExecutionKind) (*modeldevv1.ListImplementationsResponse, error) {
+func (c *ModelDevClient) ListImplementations(ctx context.Context, scope ModelDevResolveScope, page, pageSize uint32, kind *trainingv1.ExecutionKind, deviceMode string) (*modeldevv1.ListImplementationsResponse, error) {
+	if deviceMode != "cpu" && deviceMode != "gpu" {
+		return nil, modelDevQueryUnavailable()
+	}
 	call, cancel, err := c.queryContext(ctx, scope, modeldevv1.ModelDevQueryService_ListImplementations_FullMethodName)
 	if err != nil {
 		return nil, err
 	}
 	defer cancel()
-	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListImplementations(call, &modeldevv1.ListImplementationsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}, Kind: kind}, grpc.WaitForReady(true))
+	out, err := modeldevv1.NewModelDevQueryServiceClient(c.connection).ListImplementations(call, &modeldevv1.ListImplementationsRequest{Page: &modeldevv1.PageRequest{Page: &page, PageSize: &pageSize}, Kind: kind, DeviceMode: &deviceMode}, grpc.WaitForReady(true))
 	if err != nil {
 		return nil, modelDevQueryError(err)
 	}
@@ -28,6 +34,24 @@ func (c *ModelDevClient) ListImplementations(ctx context.Context, scope ModelDev
 		// new field would otherwise silently widen a narrowed request.
 		if preset == nil || (preset.ImplementationId != "builtin.mlp" && preset.ImplementationId != "builtin.sft_lora") || seen[preset.ImplementationId] || preset.Name == "" || len(preset.Name) > 256 || strings.ContainsAny(preset.Name, "\r\n\t") || !modelDevSupportedExecutionKind(preset.Kind) || (kind != nil && preset.Kind != *kind) || len(preset.ParameterRules) > 32 {
 			return nil, modelDevQueryUnavailable()
+		}
+		if len(preset.SupportedDeviceModes) > 1 || len(preset.SupportedDeviceModes) == 1 && preset.SupportedDeviceModes[0] != deviceMode {
+			return nil, modelDevQueryUnavailable()
+		}
+		if preset.RuntimeCapabilities == nil {
+			if preset.RuntimeCapabilitiesSha256 != "" || preset.Available && preset.Kind == trainingv1.ExecutionKind_EXECUTION_KIND_FINETUNING {
+				return nil, modelDevQueryUnavailable()
+			}
+		} else {
+			var capabilities cpup01.RuntimeCapabilities
+			raw, err := (protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true}).Marshal(preset.RuntimeCapabilities)
+			if err != nil || json.Unmarshal(raw, &capabilities) != nil {
+				return nil, modelDevQueryUnavailable()
+			}
+			digest, err := capabilities.Digest()
+			if err != nil || digest != preset.RuntimeCapabilitiesSha256 {
+				return nil, modelDevQueryUnavailable()
+			}
 		}
 		seen[preset.ImplementationId] = true
 		names := map[string]bool{}
@@ -87,7 +111,7 @@ func (c *ModelDevClient) ListInputVersions(ctx context.Context, scope ModelDevRe
 }
 
 func modelDevValidInput(in *modeldevv1.InputVersionView) bool {
-	if in == nil || !modelDevCanonicalUUID(in.InputVersionId) || in.State == modeldevv1.InputState_INPUT_STATE_UNSPECIFIED || in.SizeBytes <= 0 || in.SizeBytes > 32<<20 || !modelDevDigest(in.Sha256) || !modelDevValidTimestamp(in.CreatedAt) {
+	if in == nil || !modelDevCanonicalUUID(in.InputVersionId) || in.State == modeldevv1.InputState_INPUT_STATE_UNSPECIFIED || in.SizeBytes <= 0 || !modelDevDigest(in.Sha256) || !modelDevValidTimestamp(in.CreatedAt) {
 		return false
 	}
 	if in.State != modeldevv1.InputState_INPUT_STATE_READY {

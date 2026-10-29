@@ -28,6 +28,7 @@ INPUT_FILES = (
     "go.mod", "go.sum", "scripts/build-redact-plugin.sh",
     "scripts/finalize-aksk-openapi.py", "tools/config/pgv-scope.json",
     "tools/config/tool-lock.json",
+    "app/admin/service/cmd/schema/sandbox_parent_fence.sql",
 )
 TEMP_PREFIXES = ("_agent/", ".artifacts/", ".scratch/")
 
@@ -44,7 +45,10 @@ def generation_source(name: str) -> bool:
     if name.startswith("api/gen/go/"):
         return path.suffix == ".go"
     if name.startswith("app/admin/service/"):
-        return path.suffix == ".go" or name == "app/admin/service/cmd/server/assets/openapi.yaml"
+        return path.suffix == ".go" or name in (
+            "app/admin/service/cmd/server/assets/openapi.yaml",
+            "app/admin/service/cmd/schema/sandbox_parent_fence.sql",
+        )
     if name.startswith("pkg/") or name.startswith("tools/localdeps/"):
         return path.suffix in (".go", ".proto", ".tmpl")
     if name.startswith("scripts/ci/") or name.startswith("scripts/tests/"):

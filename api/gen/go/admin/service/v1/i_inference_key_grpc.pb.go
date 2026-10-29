@@ -20,11 +20,17 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	InferenceKeyService_CreateInferenceKey_FullMethodName = "/admin.service.v1.InferenceKeyService/CreateInferenceKey"
-	InferenceKeyService_ListInferenceKeys_FullMethodName  = "/admin.service.v1.InferenceKeyService/ListInferenceKeys"
-	InferenceKeyService_GetInferenceKey_FullMethodName    = "/admin.service.v1.InferenceKeyService/GetInferenceKey"
-	InferenceKeyService_RevokeInferenceKey_FullMethodName = "/admin.service.v1.InferenceKeyService/RevokeInferenceKey"
-	InferenceKeyService_RotateInferenceKey_FullMethodName = "/admin.service.v1.InferenceKeyService/RotateInferenceKey"
+	InferenceKeyService_CreateInferencePolicy_FullMethodName  = "/admin.service.v1.InferenceKeyService/CreateInferencePolicy"
+	InferenceKeyService_ListInferencePolicies_FullMethodName  = "/admin.service.v1.InferenceKeyService/ListInferencePolicies"
+	InferenceKeyService_GetInferencePolicy_FullMethodName     = "/admin.service.v1.InferenceKeyService/GetInferencePolicy"
+	InferenceKeyService_UpdateInferencePolicy_FullMethodName  = "/admin.service.v1.InferenceKeyService/UpdateInferencePolicy"
+	InferenceKeyService_DeleteInferencePolicy_FullMethodName  = "/admin.service.v1.InferenceKeyService/DeleteInferencePolicy"
+	InferenceKeyService_BindInferenceKeyPolicy_FullMethodName = "/admin.service.v1.InferenceKeyService/BindInferenceKeyPolicy"
+	InferenceKeyService_CreateInferenceKey_FullMethodName     = "/admin.service.v1.InferenceKeyService/CreateInferenceKey"
+	InferenceKeyService_ListInferenceKeys_FullMethodName      = "/admin.service.v1.InferenceKeyService/ListInferenceKeys"
+	InferenceKeyService_GetInferenceKey_FullMethodName        = "/admin.service.v1.InferenceKeyService/GetInferenceKey"
+	InferenceKeyService_RevokeInferenceKey_FullMethodName     = "/admin.service.v1.InferenceKeyService/RevokeInferenceKey"
+	InferenceKeyService_RotateInferenceKey_FullMethodName     = "/admin.service.v1.InferenceKeyService/RotateInferenceKey"
 )
 
 // InferenceKeyServiceClient is the client API for InferenceKeyService service.
@@ -35,6 +41,12 @@ const (
 // INFERENCE subscription and explicit inference:key:* permissions. Separate
 // from AccessKeyService and /api/v1/auth/api-keys; never routed through Higress.
 type InferenceKeyServiceClient interface {
+	CreateInferencePolicy(ctx context.Context, in *v1.CreateInferencePolicyRequest, opts ...grpc.CallOption) (*v1.InferenceAccessPolicy, error)
+	ListInferencePolicies(ctx context.Context, in *v1.ListInferencePoliciesRequest, opts ...grpc.CallOption) (*v1.ListInferencePoliciesResponse, error)
+	GetInferencePolicy(ctx context.Context, in *v1.GetInferencePolicyRequest, opts ...grpc.CallOption) (*v1.InferenceAccessPolicy, error)
+	UpdateInferencePolicy(ctx context.Context, in *v1.UpdateInferencePolicyRequest, opts ...grpc.CallOption) (*v1.InferenceAccessPolicy, error)
+	DeleteInferencePolicy(ctx context.Context, in *v1.DeleteInferencePolicyRequest, opts ...grpc.CallOption) (*v1.DeleteInferencePolicyResponse, error)
+	BindInferenceKeyPolicy(ctx context.Context, in *v1.BindInferenceKeyPolicyRequest, opts ...grpc.CallOption) (*v1.InferenceKey, error)
 	CreateInferenceKey(ctx context.Context, in *v1.CreateInferenceKeyRequest, opts ...grpc.CallOption) (*v1.InferenceKeyCredentials, error)
 	ListInferenceKeys(ctx context.Context, in *v1.ListInferenceKeysRequest, opts ...grpc.CallOption) (*v1.ListInferenceKeysResponse, error)
 	GetInferenceKey(ctx context.Context, in *v1.GetInferenceKeyRequest, opts ...grpc.CallOption) (*v1.InferenceKey, error)
@@ -49,6 +61,66 @@ type inferenceKeyServiceClient struct {
 
 func NewInferenceKeyServiceClient(cc grpc.ClientConnInterface) InferenceKeyServiceClient {
 	return &inferenceKeyServiceClient{cc}
+}
+
+func (c *inferenceKeyServiceClient) CreateInferencePolicy(ctx context.Context, in *v1.CreateInferencePolicyRequest, opts ...grpc.CallOption) (*v1.InferenceAccessPolicy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InferenceAccessPolicy)
+	err := c.cc.Invoke(ctx, InferenceKeyService_CreateInferencePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inferenceKeyServiceClient) ListInferencePolicies(ctx context.Context, in *v1.ListInferencePoliciesRequest, opts ...grpc.CallOption) (*v1.ListInferencePoliciesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListInferencePoliciesResponse)
+	err := c.cc.Invoke(ctx, InferenceKeyService_ListInferencePolicies_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inferenceKeyServiceClient) GetInferencePolicy(ctx context.Context, in *v1.GetInferencePolicyRequest, opts ...grpc.CallOption) (*v1.InferenceAccessPolicy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InferenceAccessPolicy)
+	err := c.cc.Invoke(ctx, InferenceKeyService_GetInferencePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inferenceKeyServiceClient) UpdateInferencePolicy(ctx context.Context, in *v1.UpdateInferencePolicyRequest, opts ...grpc.CallOption) (*v1.InferenceAccessPolicy, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InferenceAccessPolicy)
+	err := c.cc.Invoke(ctx, InferenceKeyService_UpdateInferencePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inferenceKeyServiceClient) DeleteInferencePolicy(ctx context.Context, in *v1.DeleteInferencePolicyRequest, opts ...grpc.CallOption) (*v1.DeleteInferencePolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.DeleteInferencePolicyResponse)
+	err := c.cc.Invoke(ctx, InferenceKeyService_DeleteInferencePolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *inferenceKeyServiceClient) BindInferenceKeyPolicy(ctx context.Context, in *v1.BindInferenceKeyPolicyRequest, opts ...grpc.CallOption) (*v1.InferenceKey, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.InferenceKey)
+	err := c.cc.Invoke(ctx, InferenceKeyService_BindInferenceKeyPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *inferenceKeyServiceClient) CreateInferenceKey(ctx context.Context, in *v1.CreateInferenceKeyRequest, opts ...grpc.CallOption) (*v1.InferenceKeyCredentials, error) {
@@ -109,6 +181,12 @@ func (c *inferenceKeyServiceClient) RotateInferenceKey(ctx context.Context, in *
 // INFERENCE subscription and explicit inference:key:* permissions. Separate
 // from AccessKeyService and /api/v1/auth/api-keys; never routed through Higress.
 type InferenceKeyServiceServer interface {
+	CreateInferencePolicy(context.Context, *v1.CreateInferencePolicyRequest) (*v1.InferenceAccessPolicy, error)
+	ListInferencePolicies(context.Context, *v1.ListInferencePoliciesRequest) (*v1.ListInferencePoliciesResponse, error)
+	GetInferencePolicy(context.Context, *v1.GetInferencePolicyRequest) (*v1.InferenceAccessPolicy, error)
+	UpdateInferencePolicy(context.Context, *v1.UpdateInferencePolicyRequest) (*v1.InferenceAccessPolicy, error)
+	DeleteInferencePolicy(context.Context, *v1.DeleteInferencePolicyRequest) (*v1.DeleteInferencePolicyResponse, error)
+	BindInferenceKeyPolicy(context.Context, *v1.BindInferenceKeyPolicyRequest) (*v1.InferenceKey, error)
 	CreateInferenceKey(context.Context, *v1.CreateInferenceKeyRequest) (*v1.InferenceKeyCredentials, error)
 	ListInferenceKeys(context.Context, *v1.ListInferenceKeysRequest) (*v1.ListInferenceKeysResponse, error)
 	GetInferenceKey(context.Context, *v1.GetInferenceKeyRequest) (*v1.InferenceKey, error)
@@ -125,6 +203,24 @@ type InferenceKeyServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedInferenceKeyServiceServer struct{}
 
+func (UnimplementedInferenceKeyServiceServer) CreateInferencePolicy(context.Context, *v1.CreateInferencePolicyRequest) (*v1.InferenceAccessPolicy, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateInferencePolicy not implemented")
+}
+func (UnimplementedInferenceKeyServiceServer) ListInferencePolicies(context.Context, *v1.ListInferencePoliciesRequest) (*v1.ListInferencePoliciesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListInferencePolicies not implemented")
+}
+func (UnimplementedInferenceKeyServiceServer) GetInferencePolicy(context.Context, *v1.GetInferencePolicyRequest) (*v1.InferenceAccessPolicy, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetInferencePolicy not implemented")
+}
+func (UnimplementedInferenceKeyServiceServer) UpdateInferencePolicy(context.Context, *v1.UpdateInferencePolicyRequest) (*v1.InferenceAccessPolicy, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateInferencePolicy not implemented")
+}
+func (UnimplementedInferenceKeyServiceServer) DeleteInferencePolicy(context.Context, *v1.DeleteInferencePolicyRequest) (*v1.DeleteInferencePolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteInferencePolicy not implemented")
+}
+func (UnimplementedInferenceKeyServiceServer) BindInferenceKeyPolicy(context.Context, *v1.BindInferenceKeyPolicyRequest) (*v1.InferenceKey, error) {
+	return nil, status.Error(codes.Unimplemented, "method BindInferenceKeyPolicy not implemented")
+}
 func (UnimplementedInferenceKeyServiceServer) CreateInferenceKey(context.Context, *v1.CreateInferenceKeyRequest) (*v1.InferenceKeyCredentials, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateInferenceKey not implemented")
 }
@@ -159,6 +255,114 @@ func RegisterInferenceKeyServiceServer(s grpc.ServiceRegistrar, srv InferenceKey
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&InferenceKeyService_ServiceDesc, srv)
+}
+
+func _InferenceKeyService_CreateInferencePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateInferencePolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InferenceKeyServiceServer).CreateInferencePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InferenceKeyService_CreateInferencePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InferenceKeyServiceServer).CreateInferencePolicy(ctx, req.(*v1.CreateInferencePolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InferenceKeyService_ListInferencePolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListInferencePoliciesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InferenceKeyServiceServer).ListInferencePolicies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InferenceKeyService_ListInferencePolicies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InferenceKeyServiceServer).ListInferencePolicies(ctx, req.(*v1.ListInferencePoliciesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InferenceKeyService_GetInferencePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetInferencePolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InferenceKeyServiceServer).GetInferencePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InferenceKeyService_GetInferencePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InferenceKeyServiceServer).GetInferencePolicy(ctx, req.(*v1.GetInferencePolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InferenceKeyService_UpdateInferencePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdateInferencePolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InferenceKeyServiceServer).UpdateInferencePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InferenceKeyService_UpdateInferencePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InferenceKeyServiceServer).UpdateInferencePolicy(ctx, req.(*v1.UpdateInferencePolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InferenceKeyService_DeleteInferencePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteInferencePolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InferenceKeyServiceServer).DeleteInferencePolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InferenceKeyService_DeleteInferencePolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InferenceKeyServiceServer).DeleteInferencePolicy(ctx, req.(*v1.DeleteInferencePolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InferenceKeyService_BindInferenceKeyPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.BindInferenceKeyPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InferenceKeyServiceServer).BindInferenceKeyPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InferenceKeyService_BindInferenceKeyPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InferenceKeyServiceServer).BindInferenceKeyPolicy(ctx, req.(*v1.BindInferenceKeyPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _InferenceKeyService_CreateInferenceKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -258,6 +462,30 @@ var InferenceKeyService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "admin.service.v1.InferenceKeyService",
 	HandlerType: (*InferenceKeyServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateInferencePolicy",
+			Handler:    _InferenceKeyService_CreateInferencePolicy_Handler,
+		},
+		{
+			MethodName: "ListInferencePolicies",
+			Handler:    _InferenceKeyService_ListInferencePolicies_Handler,
+		},
+		{
+			MethodName: "GetInferencePolicy",
+			Handler:    _InferenceKeyService_GetInferencePolicy_Handler,
+		},
+		{
+			MethodName: "UpdateInferencePolicy",
+			Handler:    _InferenceKeyService_UpdateInferencePolicy_Handler,
+		},
+		{
+			MethodName: "DeleteInferencePolicy",
+			Handler:    _InferenceKeyService_DeleteInferencePolicy_Handler,
+		},
+		{
+			MethodName: "BindInferenceKeyPolicy",
+			Handler:    _InferenceKeyService_BindInferenceKeyPolicy_Handler,
+		},
 		{
 			MethodName: "CreateInferenceKey",
 			Handler:    _InferenceKeyService_CreateInferenceKey_Handler,

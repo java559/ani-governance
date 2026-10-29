@@ -31,8 +31,8 @@ Inference 的管理面统一由 Governance BFF 提供，入口是 `/api/v1/infer
 | `GET /api/v1/inference/services/{resource_id}/logs` | 一次性日志查询 | `inference:service:read` |
 | `GET /api/v1/inference/services/{resource_id}/logs:stream` | SSE 日志流 | `inference:service:read` |
 | `GET /api/v1/inference/services/{resource_id}/events` | 运行事件列表 | `inference:service:read` |
-| `GET /api/v1/inference/services/{resource_id}/policy` | 查询数据面访问策略 | `inference:policy:read` |
-| `PUT /api/v1/inference/services/{resource_id}/policy` | 完整替换访问策略 | `inference:policy:update` |
+| `/api/v1/inference-policies` | AK 策略 CRUD | `inference:policy:*` |
+| `POST /api/v1/inference-keys/{key_id}:bind-policy` | 绑定 AK 策略 | `inference:key:bind-policy` |
 
 接口目录登记和权限关系不是自动授权。新增诊断路由使用 `scripts/ops/sql/register-inference-diagnostics-permissions.sql`；访问策略使用 `scripts/ops/sql/register-inference-policy-permissions.sql`。登记后仍需按目标租户、角色和套餐明确启用。
 
@@ -56,6 +56,8 @@ Inference 的管理面统一由 Governance BFF 提供，入口是 `/api/v1/infer
 
 `invocation_endpoint` 只来自 Governance 受管配置，不能由请求传入。没有独立调用探针观测时，`health_observed_at` 可以为空；不能把运行时 Ready 当成推理调用成功。
 
+运行诊断可能包含真实推理健康探测，owner RPC 使用独立的 15 秒预算，`/runtime` HTTP 请求预算为 20 秒；一次性日志查询也使用 15 秒 RPC 预算和 20 秒 HTTP 预算，其他普通 Inference RPC 仍为 3 秒。调用方更早的 deadline 和取消始终生效。
+
 ### 3.2 Prometheus 指标
 
 请求示例：
@@ -72,6 +74,8 @@ curl -G "$GOV/api/v1/inference/services/$RESOURCE_ID/metrics" \
 
 Prometheus 查询按 owner 返回的 Pod UID 和配置的 namespace 限定，不按 Pod 名称猜测历史实例。未配置指标源时返回依赖不可用；Prometheus 地址只在 Governance 服务端使用，不能暴露给浏览器。
 
+`/metrics` HTTP 请求预算为 30 秒，覆盖一次 owner 运行诊断和两个各自有界的 Prometheus 查询；指标源未配置时，完成可信身份和租户映射校验后直接返回不可用，不触发健康探测。
+
 ### 3.3 日志查询和 SSE
 
 一次性日志：
@@ -83,58 +87,32 @@ GET /api/v1/inference/services/{resource_id}/logs
   &tail_lines=200&level=error
 ```
 
-允许的参数为 `instance`、`container`、`since`、`until`、`tail_lines` 和 `level`。`tail_lines` 为 1～1000；`level` 为 `trace/debug/info/warn/error/fatal/unknown`。响应为 `{items:[{timestamp,message,level}],truncated}`。日志等级由结构化 `level/severity` 或文本首字段归一化，无法判断时为 `unknown`。
+允许的参数为 `instance`、`container`、`since`、`until`、`tail_lines` 和 `level`。`instance` 必须使用 `/runtime` 返回的真实实例名称；多容器实例须同时选择返回的 `container`，不能使用推理服务 ID 代替 Pod 名称。`tail_lines` 为 1～1000；`level` 为 `trace/debug/info/warn/error/fatal/unknown`。响应为 `{items:[{timestamp,message,level}],truncated}`。日志等级由结构化 `level/severity` 或文本首字段归一化，无法判断时为 `unknown`。
 
 SSE 使用相同的过滤参数：
 
 ```bash
-curl -N "$GOV/api/v1/inference/services/$RESOURCE_ID/logs:stream?level=error" \
+curl -N -G "$GOV/api/v1/inference/services/$RESOURCE_ID/logs:stream" \
+  --data-urlencode "instance=$INSTANCE" \
+  --data-urlencode "container=$CONTAINER" \
+  --data-urlencode 'level=error' \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 响应 `Content-Type` 为 `text/event-stream`。事件类型为 `log`、`heartbeat`、`done` 和 `error`；`log` 的 data 是 ProtoJSON 日志行，heartbeat 和 done 的 data 为空对象。单个连接最长 5 分钟，建立上游流最多等待 10 秒；进程最多 32 条并发流、每个租户最多 4 条。客户端应处理 heartbeat、断线和重复查询，不要把 SSE 断开解释为 owner 已完成。
 
+上游返回首个原始日志帧即视为连接就绪，即使该帧因 `level` 过滤不会产生 `log` 事件；就绪确认后才开始应用等级过滤，后续仍持续发送匹配日志和 heartbeat。因此，`level=error` 不会因为上游持续发送 INFO 而在 10 秒后误报 503。
+
 ### 3.4 运行事件
 
 `GET /api/v1/inference/services/{resource_id}/events` 支持 `since`、`until`、`type`、`page` 和 `pageSize`。`page` 必须为正数，`pageSize` 为 1～100；重复参数、未知参数、空值、非规范数字和与路径不一致的资源 ID 均拒绝。响应为 `{items:[...],total:"..."}`，事件项包含 `id/type/reason/message/timestamp/instance/count`。
 
-## 4. 服务访问策略
+## 4. AK 访问策略
 
-策略控制 Inference 数据面允许哪些租户调用当前服务。管理面权限只控制谁能读写策略，不能替代数据面自身的调用鉴权。
-
-查询：
-
-```bash
-curl "$GOV/api/v1/inference/services/$RESOURCE_ID/policy" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
-返回形状为：
-
-```json
-{
-  "policy": {
-    "resource_id": "<resource-uuid>",
-    "allowed_tenants": ["<tenant-uuid>"],
-    "rate_limits": {
-      "<tenant-uuid>": {"requests_per_minute": 2, "requests_per_hour": 30}
-    },
-    "updated_at": "2026-10-23T08:00:00Z"
-  }
-}
-```
-
-更新是完整替换：
-
-```bash
-curl -X PUT "$GOV/api/v1/inference/services/$RESOURCE_ID/policy" \
-  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"policy":{"allowed_tenants":["<tenant-uuid>"],"rate_limits":{"<tenant-uuid>":{"requests_per_minute":2,"requests_per_hour":30}}}}'
-```
-
-路径中的 `resource_id` 是权威值；正文若带顶层或 policy 内 `resource_id`，必须与路径一致。`updated_at` 只读，不能提交。空 `allowed_tenants` 表示拒绝所有数据面调用；省略 `rate_limits` 会移除额度限制，值为 0 表示该维度不限。首次没有策略时，默认只允许服务所属租户。此接口没有版本号或幂等字段，不要自行添加 token。
-
-请求不接受 query、重复 JSON key、未知字段或 `X-Ani-Tenant-Id`、`X-Tenant-Id`、`X-Ani-Actor` 等公网身份 header。
+策略是独立的同租户资源，控制允许调用的模型及 QPS、RPM、RPH。每个 AK 绑定
+一个策略，多把 AK 绑定同一策略时分别计数。策略目录的创建、列表、详情、完整
+更新、删除，以及 AK 绑定接口的报文和权限见 [推理调用 Key 和策略](inference-keys.md)。
+旧的服务绑定策略入口已退役。
 
 ## 5. Inference owner 对接要求
 
@@ -173,7 +151,7 @@ downstream:
 
 ## 7. 发布和验收顺序
 
-1. 发布带上述 owner RPC 和消息的 Inference API，确认模块版本和服务端 mTLS listener 已就绪。
+1. 发布带上述 owner RPC 和消息的 Inference API，确认模块版本和服务端 mTLS listener 已就绪。策略接口要求 Inference 自有数据库已应用 `000023_inference_service_policies.sql`；仍处于第 21 版的环境须先补第 22 版，再应用第 23 版。以 owner 的迁移目录、实际表结构和迁移记录为准，更新 Gov 不会替 Inference 建表。
 2. 部署 Governance，并设置 Inference 地址、server name、CA、客户端证书和可选诊断配置。
 3. 执行 `admin sync-apis --dry-run`，审核 17 条 Inference 管理/诊断/策略路由后再执行同步。
 4. 执行 `register-inference-permissions.sql`、`register-inference-diagnostics-permissions.sql` 和 `register-inference-policy-permissions.sql`；目录同步不会替角色授权。

@@ -62,7 +62,7 @@ func TestStorageQueriesHTTPContract(t *testing.T) {
 	require.Equal(t, len(valid), calls)
 
 	// 写接口带 JSON body 不带查询串必须放行（过滤器只校验查询参数）。
-	body := strings.NewReader(`{"data":{"create_token":"9441be7c-d5a5-4cdf-993a-347a147609a3","display_name":"数据盘","capacity_gb":20,"storage_class_name":"ani-block"}}`)
+	body := strings.NewReader(`{"data":{"create_token":"00000000-0000-4000-8000-000000000010","display_name":"数据盘","capacity_gb":20,"storage_class_name":"ani-block"}}`)
 	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/storage/volumes", body)
 	createRequest.Header.Set("Content-Type", "application/json")
 	r := httptest.NewRecorder()

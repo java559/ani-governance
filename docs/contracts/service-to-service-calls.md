@@ -1,6 +1,6 @@
 # ANI 服务间调用规则
 
-Governance 当前通过受信 Inference API 客户端提供推理服务管理 BFF。Gov → Inference 使用 TLS 1.3 双向认证、精确 DNS SAN 和登记的 RPC；客户端重建租户与 actor metadata，不透传公网 Authorization 或自报 owner。Inference 的 GPU 命令还携带冻结业务摘要、执行/展示快照和操作幂等 ID，Gov 原始 quota_items 仍只保存在 Gov。Model、Resource 与 ACC 的现行合同保持各自范围。
+Governance 当前通过受信 Inference API 客户端提供推理服务管理 BFF。Gov → Inference 使用 TLS 1.3 双向认证、精确 DNS SAN 和登记的 RPC；客户端重建租户与 actor metadata，不透传公网 Authorization 或自报 owner。Sandbox 管理使用同一 Resource mTLS listener 的 `sandbox.v1.SandboxService` 精确八方法白名单，Gov 先完成用户权限、INSTANCE 套餐检查和持久化 `resource_tenant_id` 映射，再重建 `x-ani-tenant-id`、`x-ani-actor`、`x-ani-request-id`。Resource 负责 immutable image、冻结规格、持久幂等和 PostgreSQL/Kubernetes worker。 Sandbox 新创建同时携带公共意图摘要 `create_intent_digest` 与完整冻结命令摘要；Governance 使用 Resource API 模块的 canonical helper，不另建摘要算法。重放先读原 Sandbox 的持久摘要与创建 operation，不依赖当前 preset 或运行配置；仅新请求进入解析/受理。Inference 的 GPU 命令还携带冻结业务摘要、执行/展示快照和操作幂等 ID，Gov 原始 quota_items 仍只保存在 Gov。Model、Resource 与 ACC 的现行合同保持各自范围。
 
 适用：Gov → svc、svc → Gov、svc → svc 的内部业务 RPC。本文是新接入及修改服务间调用时必须遵守的统一规范；存量差异须在明确范围的独立迁移中处理，见[当前差异与迁移边界](#current-differences)。规范入仓不表示当前运行实现已全部符合。本文不改变各服务的业务职责、已发布字段或历史验收结论。
 
@@ -269,3 +269,7 @@ ModelClient 重建 `x-ani-tenant-id`、`x-ani-actor` 和 `x-ani-request-id`，�
 中的 tenant，保留调用取消并使用现有受管 Model timeout。不透传 Authorization。
 Model 服务端只允许登记的 Governance mTLS 身份读取当前租户所属模型的历史，
 Inference 身份不获得该 RPC 权限。查询不产生副作用，不使用业务幂等键。
+
+### Sandbox 独立模型切换门禁
+
+新 Gov 不传 Sandbox 的 `instance_id`；Resource 新版本拒绝携带该字段的读取和动作。发布两个版本前必须先停止旧 Gov 的 Sandbox 新建及全部旧投递 worker，并保持停用直到完成协调切换；对目标 Gov 数据库执行只读 [旧创建意图检查](../../scripts/ops/sql/preflight-sandbox-independent.sql)。存在未确认且带旧实例引用的命令时脚本报错，禁止切换，须逐条查明并安全处理。只读检查通过不代表两版本可以混用；升级期间还需限制旧客户端和旧 worker。历史命令保留摘要与原字段，超时或查无对象不证明命令未执行；不得自动清除或重建幂等键。

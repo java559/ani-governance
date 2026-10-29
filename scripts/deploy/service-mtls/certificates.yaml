@@ -1,0 +1,226 @@
+# Internal mTLS identities. Use the existing platform ClusterIssuer; never create a second root.
+# VM session URI identities are an explicit existing contract, isolated from DNS clients.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-governance-client-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-governance-client-tls
+  dnsNames:
+    - ani-governance
+  usages:
+    - digital signature
+    - client auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-governance-server-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-governance-server-tls
+  dnsNames:
+    - ani-governance
+  usages:
+    - digital signature
+    - server auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-accelerator-server-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-accelerator-server-tls
+  dnsNames:
+    - ani-accelerator-service
+  usages:
+    - digital signature
+    - server auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-resource-client-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-resource-client-tls
+  dnsNames:
+    - ani-resource-service
+  usages:
+    - digital signature
+    - client auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-resource-server-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-resource-server-tls
+  dnsNames:
+    - ani-network-service
+  usages:
+    - digital signature
+    - server auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-node-agent-client-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-node-agent-client-tls
+  dnsNames:
+    - ani-node-agent
+  usages:
+    - digital signature
+    - client auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-governance-session-client-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-governance-session-client-tls
+  uris:
+    - spiffe://ani.internal/service/ani-governance
+  usages:
+    - digital signature
+    - client auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-session-gateway-server-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-session-gateway-server-tls
+  dnsNames:
+    - ani-session-gateway
+  usages:
+    - digital signature
+    - server auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ani-session-gateway-client-tls
+  namespace: ani-system
+  labels:
+    app.kubernetes.io/part-of: ani
+spec:
+  secretName: ani-session-gateway-client-tls
+  uris:
+    - spiffe://ani.internal/service/ani-session-gateway
+  usages:
+    - digital signature
+    - client auth
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+    group: cert-manager.io

@@ -430,7 +430,7 @@ func TestInstancePresetAvailabilityReasons(t *testing.T) {
 }
 
 func TestComputeCatalogForwardsOnlyValidatedUsage(t *testing.T) {
-	for _, usage := range []res.Usage{res.Usage_CONTAINER_INSTANCE, res.Usage_TRAINING, res.Usage_INFERENCE, res.Usage_VIRTUAL_MACHINE} {
+	for _, usage := range []res.Usage{res.Usage_SANDBOX, res.Usage_CONTAINER_INSTANCE, res.Usage_TRAINING, res.Usage_INFERENCE, res.Usage_VIRTUAL_MACHINE} {
 		t.Run(usage.String(), func(t *testing.T) {
 			owner := &instancePresetOwnerProbe{t: t, tenant: presetTenant, usage: usage, reply: func(_ int, _ *res.ListPresetsRequest) (*res.ListPresetsResponse, error) {
 				return &res.ListPresetsResponse{Items: []*res.Preset{instancePresetCPU()}, Total: 1}, nil
@@ -448,5 +448,46 @@ func TestComputeCatalogForwardsOnlyValidatedUsage(t *testing.T) {
 		if _, err := svc.ListPresets(instancePresetContext(7), &view.ListPresetsRequest{Usage: usage}); kratoserrors.Code(err) != 400 {
 			t.Fatalf("invalid usage %q: %v", usage, err)
 		}
+	}
+}
+
+func TestSandboxCatalogCPUOnly(t *testing.T) {
+	for _, tc := range []struct {
+		name, compute, mode string
+		denied              bool
+		wantCode            int
+	}{
+		{name: "default CPU"},
+		{name: "explicit CPU", compute: "cpu"},
+		{name: "GPU rejected", compute: "gpu", wantCode: 400},
+		{name: "GPU mode rejected", mode: "whole", wantCode: 400},
+		{name: "CPU GPU mode rejected", compute: "cpu", mode: "whole", wantCode: 400},
+		{name: "permission denied", denied: true, wantCode: 403},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			owner := &instancePresetOwnerProbe{t: t, tenant: presetTenant, usage: res.Usage_SANDBOX, reply: func(_ int, r *res.ListPresetsRequest) (*res.ListPresetsResponse, error) {
+				if r.ComputeType != "cpu" || r.GpuMode != "" {
+					t.Fatalf("Sandbox catalog must request CPU only: %+v", r)
+				}
+				return &res.ListPresetsResponse{Items: []*res.Preset{instancePresetCPU()}, Total: 1, HasGpuCandidates: true}, nil
+			}}
+			gate := &instancePresetAuthorization{usage: "SANDBOX"}
+			if tc.denied {
+				gate.instanceErr = data.ErrActionAuthorizationDenied
+			}
+			req := &view.ListPresetsRequest{Usage: "SANDBOX", ComputeType: tc.compute, GpuMode: tc.mode}
+			before := proto.Clone(req)
+			result, err := instancePresetService(owner, gate, nil, "").ListPresets(instancePresetContext(7), req)
+			if tc.wantCode != 0 {
+				if kratoserrors.Code(err) != tc.wantCode || len(owner.requests) != 0 {
+					t.Fatalf("rejected request reached Resource: %v %+v", err, owner.requests)
+				}
+			} else if err != nil || result.Total != 1 || len(owner.requests) != 1 || gate.instanceCalls != 1 || gate.catalogCalls != 0 {
+				t.Fatalf("Sandbox CPU flow: %v %+v", err, result)
+			}
+			if !proto.Equal(req, before) {
+				t.Fatal("caller request mutated")
+			}
+		})
 	}
 }

@@ -50,12 +50,17 @@ func (s *InferenceService) GetInferenceMetrics(ctx context.Context, in *view.Inf
 	if span <= 0 || span > 24*time.Hour || span/time.Second/time.Duration(in.Step) > 1440 || in.End.AsTime().After(now.Add(time.Minute)) {
 		return nil, status.Error(codes.InvalidArgument, "metrics range must be positive, at most 24 hours and 1440 intervals")
 	}
+	if s.metrics == nil {
+		// Keep trusted identity and tenant checks, without probing the owner
+		// when no metrics source can serve the request.
+		if _, _, _, err := s.diagnosticsScope(ctx, in.ResourceId); err != nil {
+			return nil, err
+		}
+		return nil, status.Error(codes.Unavailable, "metrics source is not configured")
+	}
 	runtime, err := s.GetRuntimeDiagnostics(ctx, &view.GetRuntimeDiagnosticsRequest{ResourceId: in.ResourceId})
 	if err != nil {
 		return nil, err
-	}
-	if s.metrics == nil {
-		return nil, status.Error(codes.Unavailable, "metrics source is not configured")
 	}
 	out, err := s.metrics.Query(ctx, in, runtime.Instances)
 	if err != nil {

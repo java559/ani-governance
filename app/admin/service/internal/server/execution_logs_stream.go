@@ -67,7 +67,7 @@ func decodeExecutionLogStreamQuery(r *http.Request) (*modeldevcontractv1.GetExec
 		}
 		value := list[0]
 		switch key {
-		case "podUid":
+		case "pod_uid":
 			if !modelDevQueryCanonicalUUID(value) {
 				return nil, invalid
 			}
@@ -97,6 +97,9 @@ func decodeExecutionLogStreamQuery(r *http.Request) (*modeldevcontractv1.GetExec
 		default:
 			return nil, invalid
 		}
+	}
+	if out.PodUid == nil {
+		return nil, invalid
 	}
 	return out, nil
 }

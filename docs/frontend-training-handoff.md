@@ -356,7 +356,7 @@ Content-Type: application/json
     "epochs": 5,
     "batch_size": 32
   },
-  "idempotency_key": "3f2b9c14-8e5a-4a0e-9a6f-1d2c3b4a5e60"
+  "idempotency_key": "00000000-0000-4000-8000-000000000101"
 }
 ```
 
@@ -377,7 +377,7 @@ Content-Type: application/json
   "base_model_version_id": "9a1f0f43-0f6e-4f45-9a34-1f1d4b0e2c31",
   "target_model_id": "712515ef-1eab-4bad-968f-7c661677f688",
   "parameters": {"max_steps": 50},
-  "idempotency_key": "c1a2b3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d"
+  "idempotency_key": "00000000-0000-4000-8000-000000000102"
 }
 ```
 
@@ -1127,7 +1127,7 @@ curl -s -o resp.json -w '%{http_code}\n' -X POST "$B/api/v1/modeldev/executions"
     "compute_preset_id": "84547768-be1b-45dd-bdb9-be824f58d583",
     "dataset_version_id": "04790fcc-dcd6-46e1-869e-84da77a975a8",
     "parameters": {"epochs": 5, "batch_size": 32},
-    "idempotency_key": "3f2b9c14-8e5a-4a0e-9a6f-1d2c3b4a5e60"
+    "idempotency_key": "00000000-0000-4000-8000-000000000101"
   }'
 ```
 

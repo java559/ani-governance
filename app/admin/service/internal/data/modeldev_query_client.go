@@ -35,9 +35,18 @@ func (c *ModelDevClient) queryContext(ctx context.Context, scope ModelDevResolve
 	if !modelDevCanonicalUUID(scope.ResourceTenantID) || !validModelDevClientActor(scope.Actor) {
 		return nil, nil, modelDevQueryUnavailable()
 	}
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	return metadata.NewOutgoingContext(ctx, metadata.Pairs("x-ani-tenant-id", scope.ResourceTenantID, "x-ani-actor", scope.Actor,
-		"x-ani-request-id", uuid.NewString(), "x-ani-authorized-method", method, "x-ani-data-scope", "tenant-all")), cancel, nil
+	budget := c.timeout
+	if method == modeldevv1.ModelDevQueryService_CheckFinetuningReadiness_FullMethodName {
+		budget = c.resolutionTimeout
+	}
+	if method == modeldevv1.ModelDevManagementService_ImportCSV_FullMethodName || method == modeldevv1.ModelDevManagementService_ImportFinetuningDataset_FullMethodName {
+		budget = c.importTimeout
+	}
+	ctx, cancel := context.WithTimeout(ctx, budget)
+	delegation := metadata.Pairs("x-ani-tenant-id", scope.ResourceTenantID, "x-ani-actor", scope.Actor,
+		"x-ani-request-id", uuid.NewString(), "x-ani-authorized-method", method, "x-ani-data-scope", "tenant-all")
+	modelDevAttachParentRequest(ctx, delegation)
+	return metadata.NewOutgoingContext(ctx, delegation), cancel, nil
 }
 
 // streamContext rebuilds outgoing metadata for a long-lived stream. Unlike a

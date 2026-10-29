@@ -31,8 +31,6 @@ const (
 	InferenceService_StopInference_FullMethodName           = "/admin.service.v1.InferenceService/StopInference"
 	InferenceService_RestartInference_FullMethodName        = "/admin.service.v1.InferenceService/RestartInference"
 	InferenceService_ListInferenceOperations_FullMethodName = "/admin.service.v1.InferenceService/ListInferenceOperations"
-	InferenceService_GetServicePolicy_FullMethodName        = "/admin.service.v1.InferenceService/GetServicePolicy"
-	InferenceService_UpdateServicePolicy_FullMethodName     = "/admin.service.v1.InferenceService/UpdateServicePolicy"
 )
 
 // InferenceServiceClient is the client API for InferenceService service.
@@ -54,10 +52,6 @@ type InferenceServiceClient interface {
 	StopInference(ctx context.Context, in *v1.InferenceServiceCommandRequest, opts ...grpc.CallOption) (*v1.InferenceAcceptance, error)
 	RestartInference(ctx context.Context, in *v1.InferenceServiceCommandRequest, opts ...grpc.CallOption) (*v1.InferenceAcceptance, error)
 	ListInferenceOperations(ctx context.Context, in *v1.ListInferenceOperationsRequest, opts ...grpc.CallOption) (*v1.ListInferenceOperationsResponse, error)
-	// Requires inference:policy:read and an active INFERENCE subscription.
-	GetServicePolicy(ctx context.Context, in *v1.GetServicePolicyRequest, opts ...grpc.CallOption) (*v1.GetServicePolicyResponse, error)
-	// Requires inference:policy:update. Full replacement; empty allowlist denies all.
-	UpdateServicePolicy(ctx context.Context, in *v1.UpdateServicePolicyRequest, opts ...grpc.CallOption) (*v1.UpdateServicePolicyResponse, error)
 }
 
 type inferenceServiceClient struct {
@@ -168,26 +162,6 @@ func (c *inferenceServiceClient) ListInferenceOperations(ctx context.Context, in
 	return out, nil
 }
 
-func (c *inferenceServiceClient) GetServicePolicy(ctx context.Context, in *v1.GetServicePolicyRequest, opts ...grpc.CallOption) (*v1.GetServicePolicyResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(v1.GetServicePolicyResponse)
-	err := c.cc.Invoke(ctx, InferenceService_GetServicePolicy_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *inferenceServiceClient) UpdateServicePolicy(ctx context.Context, in *v1.UpdateServicePolicyRequest, opts ...grpc.CallOption) (*v1.UpdateServicePolicyResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(v1.UpdateServicePolicyResponse)
-	err := c.cc.Invoke(ctx, InferenceService_UpdateServicePolicy_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // InferenceServiceServer is the server API for InferenceService service.
 // All implementations must embed UnimplementedInferenceServiceServer
 // for forward compatibility.
@@ -207,10 +181,6 @@ type InferenceServiceServer interface {
 	StopInference(context.Context, *v1.InferenceServiceCommandRequest) (*v1.InferenceAcceptance, error)
 	RestartInference(context.Context, *v1.InferenceServiceCommandRequest) (*v1.InferenceAcceptance, error)
 	ListInferenceOperations(context.Context, *v1.ListInferenceOperationsRequest) (*v1.ListInferenceOperationsResponse, error)
-	// Requires inference:policy:read and an active INFERENCE subscription.
-	GetServicePolicy(context.Context, *v1.GetServicePolicyRequest) (*v1.GetServicePolicyResponse, error)
-	// Requires inference:policy:update. Full replacement; empty allowlist denies all.
-	UpdateServicePolicy(context.Context, *v1.UpdateServicePolicyRequest) (*v1.UpdateServicePolicyResponse, error)
 	mustEmbedUnimplementedInferenceServiceServer()
 }
 
@@ -250,12 +220,6 @@ func (UnimplementedInferenceServiceServer) RestartInference(context.Context, *v1
 }
 func (UnimplementedInferenceServiceServer) ListInferenceOperations(context.Context, *v1.ListInferenceOperationsRequest) (*v1.ListInferenceOperationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListInferenceOperations not implemented")
-}
-func (UnimplementedInferenceServiceServer) GetServicePolicy(context.Context, *v1.GetServicePolicyRequest) (*v1.GetServicePolicyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetServicePolicy not implemented")
-}
-func (UnimplementedInferenceServiceServer) UpdateServicePolicy(context.Context, *v1.UpdateServicePolicyRequest) (*v1.UpdateServicePolicyResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateServicePolicy not implemented")
 }
 func (UnimplementedInferenceServiceServer) mustEmbedUnimplementedInferenceServiceServer() {}
 func (UnimplementedInferenceServiceServer) testEmbeddedByValue()                          {}
@@ -458,42 +422,6 @@ func _InferenceService_ListInferenceOperations_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _InferenceService_GetServicePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.GetServicePolicyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(InferenceServiceServer).GetServicePolicy(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: InferenceService_GetServicePolicy_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InferenceServiceServer).GetServicePolicy(ctx, req.(*v1.GetServicePolicyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _InferenceService_UpdateServicePolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(v1.UpdateServicePolicyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(InferenceServiceServer).UpdateServicePolicy(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: InferenceService_UpdateServicePolicy_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InferenceServiceServer).UpdateServicePolicy(ctx, req.(*v1.UpdateServicePolicyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // InferenceService_ServiceDesc is the grpc.ServiceDesc for InferenceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -540,14 +468,6 @@ var InferenceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListInferenceOperations",
 			Handler:    _InferenceService_ListInferenceOperations_Handler,
-		},
-		{
-			MethodName: "GetServicePolicy",
-			Handler:    _InferenceService_GetServicePolicy_Handler,
-		},
-		{
-			MethodName: "UpdateServicePolicy",
-			Handler:    _InferenceService_UpdateServicePolicy_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

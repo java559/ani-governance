@@ -151,6 +151,7 @@ func TestExempt(t *testing.T) {
 		{"POST", "/api/v1/auth/password/login"},
 		{"GET", "/api/v1/events"},
 		{"GET", "/api/v1/modeldev/executions"},
+		{"POST", "/api/v1/modeldev/finetuning/readiness/check"},
 		{"GET", "/api/v1/auth/api-keys"},
 	}
 	for _, tc := range cases {
@@ -222,15 +223,15 @@ func TestCountsAndKeys(t *testing.T) {
 		"POST /api/v1/instances/{data.instance_id}:detach-pvc": {Code: "instance:pvc:detach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 		"GET /api/v1/instances/{instance_id}/mountable-pvcs":   {Code: "instance:pvc:attach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 	}
-	if want := 199 + len(gpuReads) + 5 + 3; ManagementCount() != want {
+	if want := 227; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
-	if want := 176 + len(instanceRestartPVCReads) + len(platformEIPReadsAndRelease) + len(homepageReads) + len(platformComponentReads) + len(platformComponentLogStreams) + 5; CapabilityCount() != want {
+	if want := 204 + len(platformComponentReads) + len(platformComponentLogStreams); CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if len(keys) < 272 {
-		t.Errorf("AllKeys() = %d, want >= 272", len(keys))
+	if len(keys) != 390 {
+		t.Errorf("AllKeys() = %d, want 390", len(keys))
 	}
 	keySet := make(map[string]bool, len(keys))
 	for _, k := range keys {
@@ -352,5 +353,26 @@ func TestResourceUsageReadHasIndependentPlatformPermission(t *testing.T) {
 		if exp.Code != "resource-usage:read" || exp.BusinessModule != "DASHBOARD" || exp.ScopeKind != "platform" {
 			t.Fatalf("unexpected resource usage grant: %+v", exp)
 		}
+	}
+}
+
+func TestSandboxCapabilities(t *testing.T) {
+	for _, r := range []struct{ method, path, action string }{
+		{"POST", "/api/v1/sandbox", "create"},
+		{"GET", "/api/v1/sandbox", "list"},
+		{"GET", "/api/v1/sandbox/{sandbox_id}", "read"},
+		{"GET", "/api/v1/sandbox/operations/{operation_id}", "operation:read"},
+		{"POST", "/api/v1/sandbox/{data.sandbox_id}:pause", "pause"},
+		{"POST", "/api/v1/sandbox/{data.sandbox_id}:resume", "resume"},
+		{"DELETE", "/api/v1/sandbox/{data.sandbox_id}", "delete"},
+	} {
+		exp, err := Resolve(r.method, r.path)
+		if err != nil || exp.Code != "sandbox:"+r.action || exp.BusinessModule != "INSTANCE" || exp.ScopeKind != "tenant" {
+			t.Fatalf("Sandbox capability %s %s: %+v %v", r.method, r.path, exp, err)
+		}
+	}
+	module, code, ok := ComputeCatalogGrant("SANDBOX")
+	if !ok || module != "INSTANCE" || code != "sandbox:preset:read" {
+		t.Fatalf("Sandbox catalog grant: %s %s %v", module, code, ok)
 	}
 }

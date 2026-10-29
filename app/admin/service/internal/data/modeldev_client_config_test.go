@@ -28,11 +28,13 @@ func TestModelDevConfigFromEnvLoadsExplicitConnection(t *testing.T) {
 			t.Setenv("ANI_MODELDEV_TIMEOUT", tc.timeout)
 			got, err := ModelDevConfigFromEnv()
 			want := ModelDevClientConfig{
-				Address:  "modeldev.internal:9443",
-				CAFile:   "/managed/modeldev/ca.pem",
-				CertFile: "/managed/modeldev/client.pem",
-				KeyFile:  "/managed/modeldev/client.key",
-				Timeout:  tc.want,
+				Address:                "modeldev.internal:9443",
+				CAFile:                 "/managed/modeldev/ca.pem",
+				CertFile:               "/managed/modeldev/client.pem",
+				KeyFile:                "/managed/modeldev/client.key",
+				Timeout:                tc.want,
+				ModelResolutionTimeout: 300 * time.Second,
+				ImportTimeout:          1800 * time.Second,
 			}
 			if err != nil || got != want {
 				t.Fatalf("explicit connection settings must be loaded without reading certificate files: got=%+v want=%+v err=%v", got, want, err)
@@ -71,8 +73,49 @@ func TestModelDevConfigFromEnvRejectsInvalidTimeout(t *testing.T) {
 
 func clearModelDevConfigEnvironment(t *testing.T) {
 	t.Helper()
-	for _, name := range []string{"ANI_MODELDEV_ADDR", "ANI_MODELDEV_CA", "ANI_MODELDEV_CERT", "ANI_MODELDEV_KEY", "ANI_MODELDEV_TIMEOUT"} {
+	for _, name := range []string{"ANI_MODELDEV_ADDR", "ANI_MODELDEV_CA", "ANI_MODELDEV_CERT", "ANI_MODELDEV_KEY", "ANI_MODELDEV_TIMEOUT", "ANI_MODELDEV_MODEL_RESOLUTION_TIMEOUT_SECONDS", "ANI_MODELDEV_IMPORT_TIMEOUT_SECONDS"} {
 		t.Setenv(name, "")
+	}
+}
+
+func TestModelDevImportTimeoutConfigurationUsesIndependentFiniteSeconds(t *testing.T) {
+	for _, value := range []string{"0", "-1", "1800s", "1.5", " 2", "+2", "02", "4294967296"} {
+		t.Run(value, func(t *testing.T) {
+			clearModelDevConfigEnvironment(t)
+			setModelDevConfigConnection(t)
+			t.Setenv("ANI_MODELDEV_IMPORT_TIMEOUT_SECONDS", value)
+			_, err := ModelDevConfigFromEnv()
+			if err == nil {
+				t.Fatal("invalid import timeout accepted")
+			}
+		})
+	}
+	clearModelDevConfigEnvironment(t)
+	setModelDevConfigConnection(t)
+	t.Setenv("ANI_MODELDEV_IMPORT_TIMEOUT_SECONDS", "2400")
+	got, err := ModelDevConfigFromEnv()
+	if err != nil || got.ImportTimeout != 2400*time.Second || got.Timeout != 3*time.Second || got.ModelResolutionTimeout != 300*time.Second {
+		t.Fatal("import budget must not replace short query or model resolution budgets")
+	}
+	t.Setenv("ANI_MODELDEV_IMPORT_TIMEOUT_SECONDS", "4294967295")
+	t.Setenv("ANI_MODELDEV_MODEL_RESOLUTION_TIMEOUT_SECONDS", "4294967295")
+	got, err = ModelDevConfigFromEnv()
+	if err != nil || got.ImportTimeout != 4294967295*time.Second || got.ModelResolutionTimeout != 4294967295*time.Second {
+		t.Fatal("Gov must accept the same positive uint32-second range as ModelDev")
+	}
+}
+
+func TestModelDevResolutionTimeoutConfigurationIsPositiveSeconds(t *testing.T) {
+	for _, value := range []string{"0", "-1", "1s", "1.5", " 2", "+2", "02", "4294967296"} {
+		t.Run(value, func(t *testing.T) {
+			clearModelDevConfigEnvironment(t)
+			setModelDevConfigConnection(t)
+			t.Setenv("ANI_MODELDEV_MODEL_RESOLUTION_TIMEOUT_SECONDS", value)
+			_, err := ModelDevConfigFromEnv()
+			if err == nil {
+				t.Fatal("invalid model resolution timeout accepted")
+			}
+		})
 	}
 }
 

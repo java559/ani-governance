@@ -123,16 +123,23 @@ func TestModelDevRegistrationHTTPUsesOriginalSourceAndCurrentGrants(t *testing.T
 		{"/api/v1/models", "POST", 0},
 		{data.ModelDevGetExecutionPath, "GET", 0},
 		{"/api/v1/modeldev/executions", "POST", 0},
+		{data.ModelDevReadinessPath, "POST", 0},
+		{"/api/v1/compute-presets", "GET", 0},
+		{data.ModelDevListImplementationsPath, "GET", 0},
 	}
 	for i := range routes {
 		code := "registration." + uuid.NewString()
 		if i == 0 {
 			code = data.ModelDevManageExecutionPermissionCode
 		}
+		businessModule := api.BusinessModuleModel
+		if i == 9 {
+			code, businessModule = "modeldev:compute-preset:read", api.BusinessModuleSystem
+		}
 		p, e := writer.Client().Permission.Create().SetName("registration " + id).SetCode(code).SetStatus(permission.StatusOn).Save(sys)
 		require.NoError(t, e)
 		cleanup(func(c context.Context) error { return writer.Client().Permission.DeleteOneID(p.ID).Exec(c) })
-		a, e := writer.Client().Api.Create().SetModule("ModelDevRegistration" + id).SetOperation("registration" + uuid.NewString()).SetScope(api.ScopeAdmin).SetPath(routes[i].path).SetMethod(routes[i].method).SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(sys)
+		a, e := writer.Client().Api.Create().SetModule("ModelDevRegistration" + id).SetOperation("registration" + uuid.NewString()).SetScope(api.ScopeAdmin).SetPath(routes[i].path).SetMethod(routes[i].method).SetBusinessModule(businessModule).SetStatus(api.StatusOn).Save(sys)
 		require.NoError(t, e)
 		cleanup(func(c context.Context) error { return writer.Client().Api.DeleteOneID(a.ID).Exec(c) })
 		link, e := writer.Client().PermissionApi.Create().SetPermissionID(p.ID).SetAPIID(a.ID).Save(sys)
@@ -240,9 +247,12 @@ func TestModelDevRegistrationHTTPUsesOriginalSourceAndCurrentGrants(t *testing.T
 		}}
 	}
 	peer.setReply(view(accepted, snapshot))
-	bff := service.NewModelDevService(data.NewModelDevAuthorizationRepo(runtime), data.NewTenantRepo(bctx, runtime), acceptances, client, nil)
+	computeReader := &readinessHTTPCompute{t: t, tenant: owner.ResourceTenantID, actor: actor}
+	bff := service.NewModelDevService(data.NewModelDevAuthorizationRepo(runtime), data.NewTenantRepo(bctx, runtime), acceptances, client, computeReader)
 	server := khttp.NewServer(khttp.Middleware(auth.CredentialHeaders(), auth.Server(auth.WithAccessTokenChecker(checker), auth.WithTenantAccessChecker(tenantChecker), auth.WithInjectMetadata(false), auth.WithInjectEnt(true)), authzMiddleware.Server(policy.Engine())))
 	registerModelDevRegistrationHTTP(server, bff)
+	registerModelDevReadinessHTTP(server, bff)
+	registerModelDevCatalogueHTTP(server, bff)
 	web := httptest.NewServer(server)
 	t.Cleanup(web.Close)
 	post := func(execution, body, query, access string) (int, map[string]any) {
@@ -265,6 +275,106 @@ func TestModelDevRegistrationHTTPUsesOriginalSourceAndCurrentGrants(t *testing.T
 		require.Contains(t, resp.Header.Get("Cache-Control"), "no-store")
 		return resp.StatusCode, out
 	}
+
+	t.Run("implementation mode and capability tuple", func(t *testing.T) {
+		get := func(query, access string) (int, map[string]any) {
+			request, e := http.NewRequestWithContext(ctx, "GET", web.URL+data.ModelDevListImplementationsPath+query, nil)
+			require.NoError(t, e)
+			if access != "" {
+				request.Header.Set("Authorization", "Bearer "+access)
+			}
+			response, e := web.Client().Do(request)
+			require.NoError(t, e)
+			defer response.Body.Close()
+			raw, e := io.ReadAll(io.LimitReader(response.Body, cpup01.MaxControlRPCBytes+1))
+			require.NoError(t, e)
+			out := map[string]any{}
+			require.NoError(t, json.Unmarshal(raw, &out))
+			return response.StatusCode, out
+		}
+		for _, mode := range []string{"cpu", "gpu"} {
+			code, out := get("?device_mode="+mode+"&kind=FINETUNING&page=1&pageSize=20", token)
+			require.Equal(t, http.StatusOK, code, "CURRENT_CATALOGUE_HTTP: explicit mode must reach the current owner contract: %v", out)
+			require.Equal(t, "1", out["total"])
+			items := out["items"].([]any)
+			require.Len(t, items, 1)
+			item := items[0].(map[string]any)
+			require.Equal(t, "builtin.sft_lora", item["implementation_id"])
+			caps := catalogueHTTPCapabilities(mode)
+			digest, e := caps.Digest()
+			require.NoError(t, e)
+			require.Equal(t, digest, item["runtime_capabilities_sha256"], "CURRENT_CATALOGUE_CAPABILITIES: preserve exact owner capability digest")
+			wire := item["runtime_capabilities"].(map[string]any)
+			require.Equal(t, caps.ImageDigest, wire["image_digest"])
+			require.Equal(t, caps.EntrypointSHA256, wire["entrypoint_sha256"])
+			require.Equal(t, []any{mode}, item["supported_device_modes"])
+		}
+		require.Equal(t, int32(2), peer.catalogueCalls.Load())
+		code, _ := get("?device_mode=cpu", "")
+		require.Equal(t, http.StatusUnauthorized, code)
+		for _, query := range []string{"", "?device_mode=", "?device_mode=CPU", "?device_mode=tpu", "?device_mode=cpu&device_mode=gpu", "?deviceMode=cpu"} {
+			code, _ := get(query, token)
+			require.Equal(t, http.StatusBadRequest, code, query)
+		}
+		require.Equal(t, int32(2), peer.catalogueCalls.Load(), "invalid or unauthenticated requests must not enter the external owner")
+		calls := peer.catalogueCalls.Load()
+		require.NoError(t, writer.Client().RolePermission.UpdateOneID(routes[10].id).SetStatus(rolepermission.StatusOff).Exec(sys))
+		code, _ = get("?device_mode=cpu", token)
+		require.Equal(t, http.StatusForbidden, code)
+		require.Equal(t, calls, peer.catalogueCalls.Load(), "revoked ordinary list permission must stop before RPC")
+		require.NoError(t, writer.Client().RolePermission.UpdateOneID(routes[10].id).SetStatus(rolepermission.StatusOn).Exec(sys))
+	})
+	// Source-only Readiness runs through the same real JWT, tenant, Casbin and
+	// restricted PG path. Only external service facts are substituted.
+	t.Run("source-only Readiness current HTTP grants", func(t *testing.T) {
+		requestReadiness := func(access string) (int, map[string]any) {
+			body := `{"base_model_version_id":"` + conformance.FinetuningSnapshotV1().Finetuning.BaseModel.VersionID + `","compute_preset_id":"` + conformance.FinetuningIntentV1().ComputePresetID + `"}`
+			req, e := http.NewRequestWithContext(ctx, "POST", web.URL+data.ModelDevReadinessPath, strings.NewReader(body))
+			require.NoError(t, e)
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("x-ani-tenant-id", uuid.NewString())
+			req.Header.Set("x-ani-actor", "governance:user:7")
+			if access != "" {
+				req.Header.Set("Authorization", "Bearer "+access)
+			}
+			resp, e := web.Client().Do(req)
+			require.NoError(t, e)
+			defer resp.Body.Close()
+			raw, e := io.ReadAll(io.LimitReader(resp.Body, cpup01.MaxControlRPCBytes+1))
+			require.NoError(t, e)
+			out := map[string]any{}
+			require.NoError(t, json.Unmarshal(raw, &out))
+			return resp.StatusCode, out
+		}
+		before, e := runtime.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(owner.ID)).Count(sys)
+		require.NoError(t, e)
+		code, _ := requestReadiness("")
+		require.Equal(t, http.StatusUnauthorized, code)
+		for _, index := range []int{3, 4, 5, 7} {
+			require.NoError(t, writer.Client().RolePermission.UpdateOneID(routes[index].id).SetStatus(rolepermission.StatusOff).Exec(sys))
+		}
+		code, out := requestReadiness(token)
+		require.Equal(t, http.StatusOK, code, "source-only Readiness must not require target write/read or execution Create")
+		require.Equal(t, "ELIGIBLE", out["assessment"])
+		require.Equal(t, "9007199254740993", out["limits"].(map[string]any)["max_content_bytes"])
+		require.Equal(t, conformance.FinetuningSnapshotV1().Finetuning.BaseModel.VersionID, out["model_version_id"])
+		require.True(t, out["runtime_validation_required"].(bool))
+		require.Equal(t, int32(1), peer.readinessCalls.Load())
+		for _, index := range []int{1, 2, 8, 9} {
+			require.NoError(t, writer.Client().RolePermission.UpdateOneID(routes[index].id).SetStatus(rolepermission.StatusOff).Exec(sys))
+			code, _ = requestReadiness(token)
+			require.Equal(t, http.StatusForbidden, code, "revoked current source, Readiness or TRAINING compute grant must stop before the external RPC")
+			require.Equal(t, int32(1), peer.readinessCalls.Load())
+			require.NoError(t, writer.Client().RolePermission.UpdateOneID(routes[index].id).SetStatus(rolepermission.StatusOn).Exec(sys))
+		}
+		for _, index := range []int{3, 4, 5, 7} {
+			require.NoError(t, writer.Client().RolePermission.UpdateOneID(routes[index].id).SetStatus(rolepermission.StatusOn).Exec(sys))
+		}
+		after, e := runtime.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(owner.ID)).Count(sys)
+		require.NoError(t, e)
+		require.Equal(t, before, after, "Readiness cannot persist execution acceptance")
+		require.Equal(t, 1, computeReader.calls)
+	})
 	code, out := post(accepted.ExecutionID, "", "", token)
 	require.Equal(t, http.StatusOK, code, "current real auth, original frozen source and owner receipt must resume")
 	require.Equal(t, accepted.ExecutionID, out["execution_id"])
@@ -420,11 +530,14 @@ func TestModelDevRegistrationHTTPUsesOriginalSourceAndCurrentGrants(t *testing.T
 
 type registrationHTTPPeer struct {
 	ownerpb.UnimplementedModelDevOperationsServiceServer
-	mu            sync.Mutex
-	tenant, actor string
-	reply         *ownerpb.GetExecutionResponse
-	remote        error
-	calls         atomic.Int32
+	ownerpb.UnimplementedModelDevQueryServiceServer
+	readinessCalls atomic.Int32
+	catalogueCalls atomic.Int32
+	mu             sync.Mutex
+	tenant, actor  string
+	reply          *ownerpb.GetExecutionResponse
+	remote         error
+	calls          atomic.Int32
 }
 
 func (p *registrationHTTPPeer) ResumeModelRegistration(ctx context.Context, in *ownerpb.ResumeModelRegistrationRequest) (*ownerpb.GetExecutionResponse, error) {
@@ -505,6 +618,7 @@ func registrationHTTPClient(t *testing.T, peer *registrationHTTPPeer) *data.Mode
 	require.NoError(t, e)
 	server := grpc.NewServer(grpc.Creds(credentials.NewTLS(security)))
 	ownerpb.RegisterModelDevOperationsServiceServer(server, peer)
+	ownerpb.RegisterModelDevQueryServiceServer(server, peer)
 	go func() { _ = server.Serve(listener) }()
 	t.Cleanup(server.Stop)
 	config.Address = listener.Addr().String()
@@ -593,3 +707,87 @@ func (p *registrationHTTPPeer) response() *ownerpb.GetExecutionResponse {
 	return p.reply
 }
 func (p *registrationHTTPPeer) setRemote(err error) { p.mu.Lock(); defer p.mu.Unlock(); p.remote = err }
+
+// The compute service is an external boundary; current TRAINING authorization
+// remains the real Governance repository before this fact can be requested.
+type readinessHTTPCompute struct {
+	t             *testing.T
+	tenant, actor string
+	calls         int
+}
+
+func (p *readinessHTTPCompute) ResolveComputePreset(_ context.Context, tenant, actor string, request *compute.ResolveComputePresetRequest) (*compute.ComputeSelection, error) {
+	require.Equal(p.t, p.tenant, tenant)
+	require.Equal(p.t, p.actor, actor)
+	require.Equal(p.t, p.tenant, request.TenantId)
+	require.Equal(p.t, compute.Usage_TRAINING, request.Usage)
+	p.calls++
+	selection := &compute.ComputeSelection{SchemaVersion: compute.SelectionSchemaVersion, PresetId: request.PresetId, Code: "cpu-small", Name: "CPU small", ComputeType: "cpu", CpuMillis: 1000, MemoryMib: 1024}
+	var err error
+	selection.SelectionDigest, err = compute.SelectionDigest(selection)
+	return selection, err
+}
+func (p *registrationHTTPPeer) CheckFinetuningReadiness(ctx context.Context, in *ownerpb.CheckFinetuningReadinessRequest) (*ownerpb.CheckFinetuningReadinessResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	for key, want := range map[string]string{"x-ani-tenant-id": p.tenant, "x-ani-actor": p.actor, "x-ani-data-scope": "tenant-all", "x-ani-authorized-method": ownerpb.ModelDevQueryService_CheckFinetuningReadiness_FullMethodName} {
+		if values := md.Get(key); len(values) != 1 || values[0] != want {
+			return nil, status.Error(codes.PermissionDenied, "delegation mismatch")
+		}
+	}
+	origin, err := contractpb.DecodeComputeOrigin(in.ComputeOrigin)
+	if err != nil || origin.ComputePresetID != in.ComputePresetId {
+		return nil, status.Error(codes.InvalidArgument, "invalid compute origin")
+	}
+	p.readinessCalls.Add(1)
+	caps := conformance.FinetuningRuntimeCapabilities()
+	wire, err := contractpb.EncodeRuntimeCapabilities(caps)
+	if err != nil {
+		return nil, err
+	}
+	digest, err := caps.Digest()
+	if err != nil {
+		return nil, err
+	}
+	plan, err := contractpb.EncodeTemplatePlan(conformance.FinetuningTemplatePlan())
+	if err != nil {
+		return nil, err
+	}
+	base := conformance.FinetuningSnapshotV1().Finetuning.BaseModel
+	return &ownerpb.CheckFinetuningReadinessResponse{Assessment: ownerpb.FinetuningAssessment_FINETUNING_ASSESSMENT_ELIGIBLE, RuntimeCapabilities: wire, RuntimeCapabilitiesSha256: digest, TemplateCandidates: wire.RegisteredTemplates, RuntimeValidationRequired: true,
+		ModelId: base.ModelID, ModelVersionId: in.BaseModelVersionId, ModelType: base.Facts.ModelType, ContextLimit: base.Facts.ContextLimit, TemplatePlan: plan,
+		Limits:          &ownerpb.ContentLimits{MaxContentBytes: 9007199254740993},
+		StructureLimits: &ownerpb.StructureLimits{MaxModelFiles: cpup01.MaxModelFiles, MaxOutputFiles: cpup01.MaxOutputFiles, MaxArchiveEntries: cpup01.MaxArchiveEntries, MaxRelativePathBytes: cpup01.MaxRelativePathBytes, MaxStorageKeyBytes: cpup01.MaxStorageKeyBytes, MaxManifestBytes: cpup01.MaxManifestBytes, MaxMaterialBytes: cpup01.MaxMaterialBytes, MaxModelConfigBytes: cpup01.MaxModelConfigBytes, MaxArchiveMetadataBytes: cpup01.MaxArchiveMetadataBytes, MaxRecordBytes: cpup01.MaxRecordBytes, MaxJsonDepth: cpup01.MaxJSONDepth, MaxControlRpcBytes: cpup01.MaxControlRPCBytes, MaxPublicationCandidateBytes: cpup01.MaxPublicationCandidateBytes, MaxPublicationRefBytes: cpup01.MaxPublicationRefBytes}}, nil
+}
+
+func catalogueHTTPCapabilities(mode string) cpup01.RuntimeCapabilities {
+	caps := conformance.FinetuningRuntimeCapabilities()
+	if mode == "gpu" {
+		caps.ImageDigest = "registry.example.test/gpu/sft@sha256:" + strings.Repeat("b", 64)
+	}
+	return caps
+}
+func (p *registrationHTTPPeer) ListImplementations(ctx context.Context, in *ownerpb.ListImplementationsRequest) (*ownerpb.ListImplementationsResponse, error) {
+	p.catalogueCalls.Add(1)
+	md, _ := metadata.FromIncomingContext(ctx)
+	for key, want := range map[string]string{"x-ani-tenant-id": p.tenant, "x-ani-actor": p.actor, "x-ani-data-scope": "tenant-all", "x-ani-authorized-method": ownerpb.ModelDevQueryService_ListImplementations_FullMethodName} {
+		if got := md.Get(key); len(got) != 1 || got[0] != want {
+			return nil, status.Error(codes.PermissionDenied, "delegation mismatch")
+		}
+	}
+	if in.DeviceMode == nil || (*in.DeviceMode != "cpu" && *in.DeviceMode != "gpu") {
+		return nil, status.Error(codes.InvalidArgument, "explicit device mode required")
+	}
+	if in.Kind == nil || *in.Kind != trainingpb.ExecutionKind_EXECUTION_KIND_FINETUNING || in.Page == nil || in.Page.Page == nil || *in.Page.Page != 1 || in.Page.PageSize == nil || *in.Page.PageSize != 20 {
+		return nil, status.Error(codes.InvalidArgument, "kind/page mismatch")
+	}
+	caps := catalogueHTTPCapabilities(*in.DeviceMode)
+	wire, err := contractpb.EncodeRuntimeCapabilities(caps)
+	if err != nil {
+		return nil, err
+	}
+	digest, err := caps.Digest()
+	if err != nil {
+		return nil, err
+	}
+	return &ownerpb.ListImplementationsResponse{Total: 1, Implementations: []*ownerpb.ImplementationView{{ImplementationId: "builtin.sft_lora", Name: "SFT LoRA", Kind: trainingpb.ExecutionKind_EXECUTION_KIND_FINETUNING, Version: "1", ParameterContractVersion: "ani.sft.parameters.v3", SupportedDeviceModes: []string{*in.DeviceMode}, Available: true, RuntimeCapabilities: wire, RuntimeCapabilitiesSha256: digest}}}, nil
+}

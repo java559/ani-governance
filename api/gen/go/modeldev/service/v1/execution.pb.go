@@ -8,6 +8,7 @@ package servicev1
 
 import (
 	_ "github.com/google/gnostic/openapiv3"
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -37,6 +38,7 @@ type CreateExecutionRequest struct {
 	ComputePresetId    string                 `protobuf:"bytes,14,opt,name=compute_preset_id,proto3" json:"compute_preset_id,omitempty"`
 	Parameters         *ExecutionParameters   `protobuf:"bytes,15,opt,name=parameters,proto3" json:"parameters,omitempty"`
 	TimeoutSeconds     *uint64                `protobuf:"varint,16,opt,name=timeout_seconds,proto3,oneof" json:"timeout_seconds,omitempty"`
+	FinetuningTemplate *string                `protobuf:"bytes,17,opt,name=finetuning_template,proto3,oneof" json:"finetuning_template,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -148,6 +150,855 @@ func (x *CreateExecutionRequest) GetTimeoutSeconds() uint64 {
 	return 0
 }
 
+func (x *CreateExecutionRequest) GetFinetuningTemplate() string {
+	if x != nil && x.FinetuningTemplate != nil {
+		return *x.FinetuningTemplate
+	}
+	return ""
+}
+
+// Source-only check. Tenant/actor, compute observations and registration targets
+// are deliberately absent; they come from current authorization and resolution.
+type CheckFinetuningReadinessRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	BaseModelVersionId string                 `protobuf:"bytes,1,opt,name=base_model_version_id,proto3" json:"base_model_version_id,omitempty"`
+	ComputePresetId    string                 `protobuf:"bytes,2,opt,name=compute_preset_id,proto3" json:"compute_preset_id,omitempty"`
+	FinetuningTemplate *string                `protobuf:"bytes,3,opt,name=finetuning_template,proto3,oneof" json:"finetuning_template,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *CheckFinetuningReadinessRequest) Reset() {
+	*x = CheckFinetuningReadinessRequest{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckFinetuningReadinessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckFinetuningReadinessRequest) ProtoMessage() {}
+
+func (x *CheckFinetuningReadinessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckFinetuningReadinessRequest.ProtoReflect.Descriptor instead.
+func (*CheckFinetuningReadinessRequest) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CheckFinetuningReadinessRequest) GetBaseModelVersionId() string {
+	if x != nil {
+		return x.BaseModelVersionId
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessRequest) GetComputePresetId() string {
+	if x != nil {
+		return x.ComputePresetId
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessRequest) GetFinetuningTemplate() string {
+	if x != nil && x.FinetuningTemplate != nil {
+		return *x.FinetuningTemplate
+	}
+	return ""
+}
+
+type CheckFinetuningReadinessResponse struct {
+	state                     protoimpl.MessageState          `protogen:"open.v1"`
+	Assessment                string                          `protobuf:"bytes,1,opt,name=assessment,proto3" json:"assessment,omitempty"`
+	Reason                    string                          `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	TemplateCandidates        []*FinetuningRegisteredTemplate `protobuf:"bytes,3,rep,name=template_candidates,proto3" json:"template_candidates,omitempty"`
+	RuntimeCapabilities       *FinetuningRuntimeCapabilities  `protobuf:"bytes,4,opt,name=runtime_capabilities,proto3" json:"runtime_capabilities,omitempty"`
+	RuntimeCapabilitiesSha256 string                          `protobuf:"bytes,5,opt,name=runtime_capabilities_sha256,proto3" json:"runtime_capabilities_sha256,omitempty"`
+	Limits                    *FinetuningContentLimits        `protobuf:"bytes,6,opt,name=limits,proto3" json:"limits,omitempty"`
+	StructureLimits           *FinetuningStructureLimits      `protobuf:"bytes,7,opt,name=structure_limits,proto3" json:"structure_limits,omitempty"`
+	RuntimeValidationRequired bool                            `protobuf:"varint,8,opt,name=runtime_validation_required,proto3" json:"runtime_validation_required,omitempty"`
+	ModelId                   string                          `protobuf:"bytes,9,opt,name=model_id,proto3" json:"model_id,omitempty"`
+	ModelVersionId            string                          `protobuf:"bytes,10,opt,name=model_version_id,proto3" json:"model_version_id,omitempty"`
+	TemplatePlan              *FinetuningTemplatePlan         `protobuf:"bytes,11,opt,name=template_plan,proto3" json:"template_plan,omitempty"`
+	ModelType                 string                          `protobuf:"bytes,12,opt,name=model_type,proto3" json:"model_type,omitempty"`
+	ContextLimit              int64                           `protobuf:"varint,13,opt,name=context_limit,proto3" json:"context_limit,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *CheckFinetuningReadinessResponse) Reset() {
+	*x = CheckFinetuningReadinessResponse{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckFinetuningReadinessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckFinetuningReadinessResponse) ProtoMessage() {}
+
+func (x *CheckFinetuningReadinessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckFinetuningReadinessResponse.ProtoReflect.Descriptor instead.
+func (*CheckFinetuningReadinessResponse) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CheckFinetuningReadinessResponse) GetAssessment() string {
+	if x != nil {
+		return x.Assessment
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessResponse) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessResponse) GetTemplateCandidates() []*FinetuningRegisteredTemplate {
+	if x != nil {
+		return x.TemplateCandidates
+	}
+	return nil
+}
+
+func (x *CheckFinetuningReadinessResponse) GetRuntimeCapabilities() *FinetuningRuntimeCapabilities {
+	if x != nil {
+		return x.RuntimeCapabilities
+	}
+	return nil
+}
+
+func (x *CheckFinetuningReadinessResponse) GetRuntimeCapabilitiesSha256() string {
+	if x != nil {
+		return x.RuntimeCapabilitiesSha256
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessResponse) GetLimits() *FinetuningContentLimits {
+	if x != nil {
+		return x.Limits
+	}
+	return nil
+}
+
+func (x *CheckFinetuningReadinessResponse) GetStructureLimits() *FinetuningStructureLimits {
+	if x != nil {
+		return x.StructureLimits
+	}
+	return nil
+}
+
+func (x *CheckFinetuningReadinessResponse) GetRuntimeValidationRequired() bool {
+	if x != nil {
+		return x.RuntimeValidationRequired
+	}
+	return false
+}
+
+func (x *CheckFinetuningReadinessResponse) GetModelId() string {
+	if x != nil {
+		return x.ModelId
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessResponse) GetModelVersionId() string {
+	if x != nil {
+		return x.ModelVersionId
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessResponse) GetTemplatePlan() *FinetuningTemplatePlan {
+	if x != nil {
+		return x.TemplatePlan
+	}
+	return nil
+}
+
+func (x *CheckFinetuningReadinessResponse) GetModelType() string {
+	if x != nil {
+		return x.ModelType
+	}
+	return ""
+}
+
+func (x *CheckFinetuningReadinessResponse) GetContextLimit() int64 {
+	if x != nil {
+		return x.ContextLimit
+	}
+	return 0
+}
+
+type FinetuningRegisteredTemplate struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	SourceSha256      string                 `protobuf:"bytes,2,opt,name=source_sha256,proto3" json:"source_sha256,omitempty"`
+	SupportsSystem    bool                   `protobuf:"varint,3,opt,name=supports_system,proto3" json:"supports_system,omitempty"`
+	SupportsMultiTurn bool                   `protobuf:"varint,4,opt,name=supports_multi_turn,proto3" json:"supports_multi_turn,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *FinetuningRegisteredTemplate) Reset() {
+	*x = FinetuningRegisteredTemplate{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningRegisteredTemplate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningRegisteredTemplate) ProtoMessage() {}
+
+func (x *FinetuningRegisteredTemplate) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningRegisteredTemplate.ProtoReflect.Descriptor instead.
+func (*FinetuningRegisteredTemplate) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *FinetuningRegisteredTemplate) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *FinetuningRegisteredTemplate) GetSourceSha256() string {
+	if x != nil {
+		return x.SourceSha256
+	}
+	return ""
+}
+
+func (x *FinetuningRegisteredTemplate) GetSupportsSystem() bool {
+	if x != nil {
+		return x.SupportsSystem
+	}
+	return false
+}
+
+func (x *FinetuningRegisteredTemplate) GetSupportsMultiTurn() bool {
+	if x != nil {
+		return x.SupportsMultiTurn
+	}
+	return false
+}
+
+type FinetuningRuntimePackage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinetuningRuntimePackage) Reset() {
+	*x = FinetuningRuntimePackage{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningRuntimePackage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningRuntimePackage) ProtoMessage() {}
+
+func (x *FinetuningRuntimePackage) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningRuntimePackage.ProtoReflect.Descriptor instead.
+func (*FinetuningRuntimePackage) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *FinetuningRuntimePackage) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FinetuningRuntimePackage) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+type FinetuningContextLimitField struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Source        string                 `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
+	Field         string                 `protobuf:"bytes,2,opt,name=field,proto3" json:"field,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinetuningContextLimitField) Reset() {
+	*x = FinetuningContextLimitField{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningContextLimitField) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningContextLimitField) ProtoMessage() {}
+
+func (x *FinetuningContextLimitField) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningContextLimitField.ProtoReflect.Descriptor instead.
+func (*FinetuningContextLimitField) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *FinetuningContextLimitField) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *FinetuningContextLimitField) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+type FinetuningRuntimeCapabilities struct {
+	state               protoimpl.MessageState          `protogen:"open.v1"`
+	SchemaVersion       string                          `protobuf:"bytes,1,opt,name=schema_version,proto3" json:"schema_version,omitempty"`
+	ImageDigest         string                          `protobuf:"bytes,2,opt,name=image_digest,proto3" json:"image_digest,omitempty"`
+	EntrypointSha256    string                          `protobuf:"bytes,3,opt,name=entrypoint_sha256,proto3" json:"entrypoint_sha256,omitempty"`
+	Packages            []*FinetuningRuntimePackage     `protobuf:"bytes,4,rep,name=packages,proto3" json:"packages,omitempty"`
+	CausalLmModelTypes  []string                        `protobuf:"bytes,5,rep,name=causal_lm_model_types,proto3" json:"causal_lm_model_types,omitempty"`
+	RegisteredTemplates []*FinetuningRegisteredTemplate `protobuf:"bytes,6,rep,name=registered_templates,proto3" json:"registered_templates,omitempty"`
+	ContextLimitFields  []*FinetuningContextLimitField  `protobuf:"bytes,7,rep,name=context_limit_fields,proto3" json:"context_limit_fields,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *FinetuningRuntimeCapabilities) Reset() {
+	*x = FinetuningRuntimeCapabilities{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningRuntimeCapabilities) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningRuntimeCapabilities) ProtoMessage() {}
+
+func (x *FinetuningRuntimeCapabilities) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningRuntimeCapabilities.ProtoReflect.Descriptor instead.
+func (*FinetuningRuntimeCapabilities) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *FinetuningRuntimeCapabilities) GetSchemaVersion() string {
+	if x != nil {
+		return x.SchemaVersion
+	}
+	return ""
+}
+
+func (x *FinetuningRuntimeCapabilities) GetImageDigest() string {
+	if x != nil {
+		return x.ImageDigest
+	}
+	return ""
+}
+
+func (x *FinetuningRuntimeCapabilities) GetEntrypointSha256() string {
+	if x != nil {
+		return x.EntrypointSha256
+	}
+	return ""
+}
+
+func (x *FinetuningRuntimeCapabilities) GetPackages() []*FinetuningRuntimePackage {
+	if x != nil {
+		return x.Packages
+	}
+	return nil
+}
+
+func (x *FinetuningRuntimeCapabilities) GetCausalLmModelTypes() []string {
+	if x != nil {
+		return x.CausalLmModelTypes
+	}
+	return nil
+}
+
+func (x *FinetuningRuntimeCapabilities) GetRegisteredTemplates() []*FinetuningRegisteredTemplate {
+	if x != nil {
+		return x.RegisteredTemplates
+	}
+	return nil
+}
+
+func (x *FinetuningRuntimeCapabilities) GetContextLimitFields() []*FinetuningContextLimitField {
+	if x != nil {
+		return x.ContextLimitFields
+	}
+	return nil
+}
+
+type FinetuningTemplateSource struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          string                 `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Default       bool                   `protobuf:"varint,4,opt,name=default,proto3" json:"default,omitempty"`
+	SizeBytes     int64                  `protobuf:"varint,5,opt,name=size_bytes,proto3" json:"size_bytes,omitempty"`
+	Sha256        string                 `protobuf:"bytes,6,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FinetuningTemplateSource) Reset() {
+	*x = FinetuningTemplateSource{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningTemplateSource) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningTemplateSource) ProtoMessage() {}
+
+func (x *FinetuningTemplateSource) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningTemplateSource.ProtoReflect.Descriptor instead.
+func (*FinetuningTemplateSource) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FinetuningTemplateSource) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *FinetuningTemplateSource) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *FinetuningTemplateSource) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FinetuningTemplateSource) GetDefault() bool {
+	if x != nil {
+		return x.Default
+	}
+	return false
+}
+
+func (x *FinetuningTemplateSource) GetSizeBytes() int64 {
+	if x != nil {
+		return x.SizeBytes
+	}
+	return 0
+}
+
+func (x *FinetuningTemplateSource) GetSha256() string {
+	if x != nil {
+		return x.Sha256
+	}
+	return ""
+}
+
+type FinetuningTemplatePlan struct {
+	state                     protoimpl.MessageState    `protogen:"open.v1"`
+	SchemaVersion             string                    `protobuf:"bytes,1,opt,name=schema_version,proto3" json:"schema_version,omitempty"`
+	Mode                      string                    `protobuf:"bytes,2,opt,name=mode,proto3" json:"mode,omitempty"`
+	SelectionSource           string                    `protobuf:"bytes,3,opt,name=selection_source,proto3" json:"selection_source,omitempty"`
+	TemplateId                *string                   `protobuf:"bytes,4,opt,name=template_id,proto3,oneof" json:"template_id,omitempty"`
+	Source                    *FinetuningTemplateSource `protobuf:"bytes,5,opt,name=source,proto3" json:"source,omitempty"`
+	SourceSha256              string                    `protobuf:"bytes,6,opt,name=source_sha256,proto3" json:"source_sha256,omitempty"`
+	RuntimeCapabilitiesSha256 string                    `protobuf:"bytes,7,opt,name=runtime_capabilities_sha256,proto3" json:"runtime_capabilities_sha256,omitempty"`
+	ImageDigest               string                    `protobuf:"bytes,8,opt,name=image_digest,proto3" json:"image_digest,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *FinetuningTemplatePlan) Reset() {
+	*x = FinetuningTemplatePlan{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningTemplatePlan) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningTemplatePlan) ProtoMessage() {}
+
+func (x *FinetuningTemplatePlan) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningTemplatePlan.ProtoReflect.Descriptor instead.
+func (*FinetuningTemplatePlan) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FinetuningTemplatePlan) GetSchemaVersion() string {
+	if x != nil {
+		return x.SchemaVersion
+	}
+	return ""
+}
+
+func (x *FinetuningTemplatePlan) GetMode() string {
+	if x != nil {
+		return x.Mode
+	}
+	return ""
+}
+
+func (x *FinetuningTemplatePlan) GetSelectionSource() string {
+	if x != nil {
+		return x.SelectionSource
+	}
+	return ""
+}
+
+func (x *FinetuningTemplatePlan) GetTemplateId() string {
+	if x != nil && x.TemplateId != nil {
+		return *x.TemplateId
+	}
+	return ""
+}
+
+func (x *FinetuningTemplatePlan) GetSource() *FinetuningTemplateSource {
+	if x != nil {
+		return x.Source
+	}
+	return nil
+}
+
+func (x *FinetuningTemplatePlan) GetSourceSha256() string {
+	if x != nil {
+		return x.SourceSha256
+	}
+	return ""
+}
+
+func (x *FinetuningTemplatePlan) GetRuntimeCapabilitiesSha256() string {
+	if x != nil {
+		return x.RuntimeCapabilitiesSha256
+	}
+	return ""
+}
+
+func (x *FinetuningTemplatePlan) GetImageDigest() string {
+	if x != nil {
+		return x.ImageDigest
+	}
+	return ""
+}
+
+type FinetuningContentLimits struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	MaxContentBytes int64                  `protobuf:"varint,1,opt,name=max_content_bytes,proto3" json:"max_content_bytes,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *FinetuningContentLimits) Reset() {
+	*x = FinetuningContentLimits{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningContentLimits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningContentLimits) ProtoMessage() {}
+
+func (x *FinetuningContentLimits) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningContentLimits.ProtoReflect.Descriptor instead.
+func (*FinetuningContentLimits) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *FinetuningContentLimits) GetMaxContentBytes() int64 {
+	if x != nil {
+		return x.MaxContentBytes
+	}
+	return 0
+}
+
+type FinetuningStructureLimits struct {
+	state                        protoimpl.MessageState `protogen:"open.v1"`
+	MaxModelFiles                int64                  `protobuf:"varint,1,opt,name=max_model_files,proto3" json:"max_model_files,omitempty"`
+	MaxOutputFiles               int64                  `protobuf:"varint,2,opt,name=max_output_files,proto3" json:"max_output_files,omitempty"`
+	MaxArchiveEntries            int64                  `protobuf:"varint,3,opt,name=max_archive_entries,proto3" json:"max_archive_entries,omitempty"`
+	MaxRelativePathBytes         int64                  `protobuf:"varint,4,opt,name=max_relative_path_bytes,proto3" json:"max_relative_path_bytes,omitempty"`
+	MaxStorageKeyBytes           int64                  `protobuf:"varint,5,opt,name=max_storage_key_bytes,proto3" json:"max_storage_key_bytes,omitempty"`
+	MaxManifestBytes             int64                  `protobuf:"varint,6,opt,name=max_manifest_bytes,proto3" json:"max_manifest_bytes,omitempty"`
+	MaxModelConfigBytes          int64                  `protobuf:"varint,7,opt,name=max_model_config_bytes,proto3" json:"max_model_config_bytes,omitempty"`
+	MaxMaterialBytes             int64                  `protobuf:"varint,8,opt,name=max_material_bytes,proto3" json:"max_material_bytes,omitempty"`
+	MaxArchiveMetadataBytes      int64                  `protobuf:"varint,9,opt,name=max_archive_metadata_bytes,proto3" json:"max_archive_metadata_bytes,omitempty"`
+	MaxRecordBytes               int64                  `protobuf:"varint,10,opt,name=max_record_bytes,proto3" json:"max_record_bytes,omitempty"`
+	MaxJsonDepth                 int64                  `protobuf:"varint,11,opt,name=max_json_depth,proto3" json:"max_json_depth,omitempty"`
+	MaxControlRpcBytes           int64                  `protobuf:"varint,12,opt,name=max_control_rpc_bytes,proto3" json:"max_control_rpc_bytes,omitempty"`
+	MaxPublicationCandidateBytes int64                  `protobuf:"varint,13,opt,name=max_publication_candidate_bytes,proto3" json:"max_publication_candidate_bytes,omitempty"`
+	MaxPublicationRefBytes       int64                  `protobuf:"varint,14,opt,name=max_publication_ref_bytes,proto3" json:"max_publication_ref_bytes,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
+}
+
+func (x *FinetuningStructureLimits) Reset() {
+	*x = FinetuningStructureLimits{}
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FinetuningStructureLimits) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FinetuningStructureLimits) ProtoMessage() {}
+
+func (x *FinetuningStructureLimits) ProtoReflect() protoreflect.Message {
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FinetuningStructureLimits.ProtoReflect.Descriptor instead.
+func (*FinetuningStructureLimits) Descriptor() ([]byte, []int) {
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *FinetuningStructureLimits) GetMaxModelFiles() int64 {
+	if x != nil {
+		return x.MaxModelFiles
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxOutputFiles() int64 {
+	if x != nil {
+		return x.MaxOutputFiles
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxArchiveEntries() int64 {
+	if x != nil {
+		return x.MaxArchiveEntries
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxRelativePathBytes() int64 {
+	if x != nil {
+		return x.MaxRelativePathBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxStorageKeyBytes() int64 {
+	if x != nil {
+		return x.MaxStorageKeyBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxManifestBytes() int64 {
+	if x != nil {
+		return x.MaxManifestBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxModelConfigBytes() int64 {
+	if x != nil {
+		return x.MaxModelConfigBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxMaterialBytes() int64 {
+	if x != nil {
+		return x.MaxMaterialBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxArchiveMetadataBytes() int64 {
+	if x != nil {
+		return x.MaxArchiveMetadataBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxRecordBytes() int64 {
+	if x != nil {
+		return x.MaxRecordBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxJsonDepth() int64 {
+	if x != nil {
+		return x.MaxJsonDepth
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxControlRpcBytes() int64 {
+	if x != nil {
+		return x.MaxControlRpcBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxPublicationCandidateBytes() int64 {
+	if x != nil {
+		return x.MaxPublicationCandidateBytes
+	}
+	return 0
+}
+
+func (x *FinetuningStructureLimits) GetMaxPublicationRefBytes() int64 {
+	if x != nil {
+		return x.MaxPublicationRefBytes
+	}
+	return 0
+}
+
 // The implementation's strict parser selects its own typed parameters.
 // Omitted fields use implementation defaults; null/unknown fields are rejected.
 type ExecutionParameters struct {
@@ -169,7 +1020,7 @@ type ExecutionParameters struct {
 
 func (x *ExecutionParameters) Reset() {
 	*x = ExecutionParameters{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[1]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -181,7 +1032,7 @@ func (x *ExecutionParameters) String() string {
 func (*ExecutionParameters) ProtoMessage() {}
 
 func (x *ExecutionParameters) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[1]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -194,7 +1045,7 @@ func (x *ExecutionParameters) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionParameters.ProtoReflect.Descriptor instead.
 func (*ExecutionParameters) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{1}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ExecutionParameters) GetLearningRate() string {
@@ -285,7 +1136,7 @@ type GeneralParameter struct {
 
 func (x *GeneralParameter) Reset() {
 	*x = GeneralParameter{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[2]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -297,7 +1148,7 @@ func (x *GeneralParameter) String() string {
 func (*GeneralParameter) ProtoMessage() {}
 
 func (x *GeneralParameter) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[2]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -310,7 +1161,7 @@ func (x *GeneralParameter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GeneralParameter.ProtoReflect.Descriptor instead.
 func (*GeneralParameter) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{2}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GeneralParameter) GetName() string {
@@ -339,17 +1190,19 @@ func (x *GeneralParameter) GetValue() string {
 // kind filters by task type before pagination and reuses the value returned in
 // ImplementationView.kind.
 type ListImplementationsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *uint32                `protobuf:"varint,3,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	PageSize      *uint32                `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
-	Kind          *string                `protobuf:"bytes,5,opt,name=kind,proto3,oneof" json:"kind,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Page     *uint32                `protobuf:"varint,3,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize *uint32                `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	Kind     *string                `protobuf:"bytes,5,opt,name=kind,proto3,oneof" json:"kind,omitempty"`
+	// Explicit material selector; absence, aliases and unknown modes are rejected.
+	DeviceMode    *string `protobuf:"bytes,6,opt,name=device_mode,proto3,oneof" json:"device_mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListImplementationsRequest) Reset() {
 	*x = ListImplementationsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[3]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -361,7 +1214,7 @@ func (x *ListImplementationsRequest) String() string {
 func (*ListImplementationsRequest) ProtoMessage() {}
 
 func (x *ListImplementationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[3]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +1227,7 @@ func (x *ListImplementationsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListImplementationsRequest.ProtoReflect.Descriptor instead.
 func (*ListImplementationsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{3}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListImplementationsRequest) GetPage() uint32 {
@@ -398,6 +1251,13 @@ func (x *ListImplementationsRequest) GetKind() string {
 	return ""
 }
 
+func (x *ListImplementationsRequest) GetDeviceMode() string {
+	if x != nil && x.DeviceMode != nil {
+		return *x.DeviceMode
+	}
+	return ""
+}
+
 type ListImplementationsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*ImplementationView  `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -408,7 +1268,7 @@ type ListImplementationsResponse struct {
 
 func (x *ListImplementationsResponse) Reset() {
 	*x = ListImplementationsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[4]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -420,7 +1280,7 @@ func (x *ListImplementationsResponse) String() string {
 func (*ListImplementationsResponse) ProtoMessage() {}
 
 func (x *ListImplementationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[4]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -433,7 +1293,7 @@ func (x *ListImplementationsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListImplementationsResponse.ProtoReflect.Descriptor instead.
 func (*ListImplementationsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{4}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListImplementationsResponse) GetItems() []*ImplementationView {
@@ -451,25 +1311,27 @@ func (x *ListImplementationsResponse) GetTotal() uint64 {
 }
 
 type ImplementationView struct {
-	state                          protoimpl.MessageState `protogen:"open.v1"`
-	Name                           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Kind                           string                 `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
-	ParameterRules                 []*ParameterRule       `protobuf:"bytes,8,rep,name=parameter_rules,proto3" json:"parameter_rules,omitempty"`
-	ImplementationId               string                 `protobuf:"bytes,9,opt,name=implementation_id,proto3" json:"implementation_id,omitempty"`
-	Version                        string                 `protobuf:"bytes,10,opt,name=version,proto3" json:"version,omitempty"`
-	ParameterContractVersion       string                 `protobuf:"bytes,11,opt,name=parameter_contract_version,proto3" json:"parameter_contract_version,omitempty"`
-	SupportedDeviceModes           []string               `protobuf:"bytes,12,rep,name=supported_device_modes,proto3" json:"supported_device_modes,omitempty"`
-	Available                      bool                   `protobuf:"varint,13,opt,name=available,proto3" json:"available,omitempty"`
-	ExecutionTimeoutDefaultSeconds uint64                 `protobuf:"varint,14,opt,name=execution_timeout_default_seconds,proto3" json:"execution_timeout_default_seconds,omitempty"`
-	ExecutionTimeoutMaxSeconds     uint64                 `protobuf:"varint,15,opt,name=execution_timeout_max_seconds,proto3" json:"execution_timeout_max_seconds,omitempty"`
-	StepTimeoutSeconds             uint64                 `protobuf:"varint,16,opt,name=step_timeout_seconds,proto3" json:"step_timeout_seconds,omitempty"`
+	state                          protoimpl.MessageState         `protogen:"open.v1"`
+	Name                           string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Kind                           string                         `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	ParameterRules                 []*ParameterRule               `protobuf:"bytes,8,rep,name=parameter_rules,proto3" json:"parameter_rules,omitempty"`
+	ImplementationId               string                         `protobuf:"bytes,9,opt,name=implementation_id,proto3" json:"implementation_id,omitempty"`
+	Version                        string                         `protobuf:"bytes,10,opt,name=version,proto3" json:"version,omitempty"`
+	ParameterContractVersion       string                         `protobuf:"bytes,11,opt,name=parameter_contract_version,proto3" json:"parameter_contract_version,omitempty"`
+	SupportedDeviceModes           []string                       `protobuf:"bytes,12,rep,name=supported_device_modes,proto3" json:"supported_device_modes,omitempty"`
+	Available                      bool                           `protobuf:"varint,13,opt,name=available,proto3" json:"available,omitempty"`
+	ExecutionTimeoutDefaultSeconds uint64                         `protobuf:"varint,14,opt,name=execution_timeout_default_seconds,proto3" json:"execution_timeout_default_seconds,omitempty"`
+	ExecutionTimeoutMaxSeconds     uint64                         `protobuf:"varint,15,opt,name=execution_timeout_max_seconds,proto3" json:"execution_timeout_max_seconds,omitempty"`
+	StepTimeoutSeconds             uint64                         `protobuf:"varint,16,opt,name=step_timeout_seconds,proto3" json:"step_timeout_seconds,omitempty"`
+	RuntimeCapabilities            *FinetuningRuntimeCapabilities `protobuf:"bytes,17,opt,name=runtime_capabilities,proto3" json:"runtime_capabilities,omitempty"`
+	RuntimeCapabilitiesSha256      string                         `protobuf:"bytes,18,opt,name=runtime_capabilities_sha256,proto3" json:"runtime_capabilities_sha256,omitempty"`
 	unknownFields                  protoimpl.UnknownFields
 	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *ImplementationView) Reset() {
 	*x = ImplementationView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[5]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -481,7 +1343,7 @@ func (x *ImplementationView) String() string {
 func (*ImplementationView) ProtoMessage() {}
 
 func (x *ImplementationView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[5]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -494,7 +1356,7 @@ func (x *ImplementationView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImplementationView.ProtoReflect.Descriptor instead.
 func (*ImplementationView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{5}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ImplementationView) GetName() string {
@@ -574,6 +1436,20 @@ func (x *ImplementationView) GetStepTimeoutSeconds() uint64 {
 	return 0
 }
 
+func (x *ImplementationView) GetRuntimeCapabilities() *FinetuningRuntimeCapabilities {
+	if x != nil {
+		return x.RuntimeCapabilities
+	}
+	return nil
+}
+
+func (x *ImplementationView) GetRuntimeCapabilitiesSha256() string {
+	if x != nil {
+		return x.RuntimeCapabilitiesSha256
+	}
+	return ""
+}
+
 type ParameterRule struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	Name                  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -600,7 +1476,7 @@ type ParameterRule struct {
 
 func (x *ParameterRule) Reset() {
 	*x = ParameterRule{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[6]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -612,7 +1488,7 @@ func (x *ParameterRule) String() string {
 func (*ParameterRule) ProtoMessage() {}
 
 func (x *ParameterRule) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[6]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -625,7 +1501,7 @@ func (x *ParameterRule) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ParameterRule.ProtoReflect.Descriptor instead.
 func (*ParameterRule) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{6}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ParameterRule) GetName() string {
@@ -728,7 +1604,7 @@ type GetInputVersionRequest struct {
 
 func (x *GetInputVersionRequest) Reset() {
 	*x = GetInputVersionRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[7]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -740,7 +1616,7 @@ func (x *GetInputVersionRequest) String() string {
 func (*GetInputVersionRequest) ProtoMessage() {}
 
 func (x *GetInputVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[7]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -753,7 +1629,7 @@ func (x *GetInputVersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInputVersionRequest.ProtoReflect.Descriptor instead.
 func (*GetInputVersionRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{7}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetInputVersionRequest) GetInputVersionId() string {
@@ -772,7 +1648,7 @@ type GetInputVersionResponse struct {
 
 func (x *GetInputVersionResponse) Reset() {
 	*x = GetInputVersionResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[8]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -784,7 +1660,7 @@ func (x *GetInputVersionResponse) String() string {
 func (*GetInputVersionResponse) ProtoMessage() {}
 
 func (x *GetInputVersionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[8]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -797,7 +1673,7 @@ func (x *GetInputVersionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetInputVersionResponse.ProtoReflect.Descriptor instead.
 func (*GetInputVersionResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{8}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetInputVersionResponse) GetInputVersion() *InputVersionView {
@@ -822,7 +1698,7 @@ type ListInputVersionsRequest struct {
 
 func (x *ListInputVersionsRequest) Reset() {
 	*x = ListInputVersionsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[9]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -834,7 +1710,7 @@ func (x *ListInputVersionsRequest) String() string {
 func (*ListInputVersionsRequest) ProtoMessage() {}
 
 func (x *ListInputVersionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[9]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -847,7 +1723,7 @@ func (x *ListInputVersionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInputVersionsRequest.ProtoReflect.Descriptor instead.
 func (*ListInputVersionsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{9}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ListInputVersionsRequest) GetState() string {
@@ -888,7 +1764,7 @@ type ListInputVersionsResponse struct {
 
 func (x *ListInputVersionsResponse) Reset() {
 	*x = ListInputVersionsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[10]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -900,7 +1776,7 @@ func (x *ListInputVersionsResponse) String() string {
 func (*ListInputVersionsResponse) ProtoMessage() {}
 
 func (x *ListInputVersionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[10]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -913,7 +1789,7 @@ func (x *ListInputVersionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListInputVersionsResponse.ProtoReflect.Descriptor instead.
 func (*ListInputVersionsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{10}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListInputVersionsResponse) GetItems() []*InputVersionView {
@@ -937,7 +1813,7 @@ type InputVersionView struct {
 	Format         string                 `protobuf:"bytes,3,opt,name=format,proto3" json:"format,omitempty"`
 	SizeBytes      int64                  `protobuf:"varint,4,opt,name=size_bytes,proto3" json:"size_bytes,omitempty"`
 	Sha256         string                 `protobuf:"bytes,5,opt,name=sha256,proto3" json:"sha256,omitempty"`
-	RowCount       uint32                 `protobuf:"varint,6,opt,name=row_count,proto3" json:"row_count,omitempty"`
+	RowCount       int64                  `protobuf:"varint,6,opt,name=row_count,proto3" json:"row_count,omitempty"`
 	FeatureCount   uint32                 `protobuf:"varint,7,opt,name=feature_count,proto3" json:"feature_count,omitempty"`
 	CreatedAt      string                 `protobuf:"bytes,8,opt,name=created_at,proto3" json:"created_at,omitempty"`
 	unknownFields  protoimpl.UnknownFields
@@ -946,7 +1822,7 @@ type InputVersionView struct {
 
 func (x *InputVersionView) Reset() {
 	*x = InputVersionView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[11]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -958,7 +1834,7 @@ func (x *InputVersionView) String() string {
 func (*InputVersionView) ProtoMessage() {}
 
 func (x *InputVersionView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[11]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +1847,7 @@ func (x *InputVersionView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InputVersionView.ProtoReflect.Descriptor instead.
 func (*InputVersionView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{11}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *InputVersionView) GetInputVersionId() string {
@@ -1009,7 +1885,7 @@ func (x *InputVersionView) GetSha256() string {
 	return ""
 }
 
-func (x *InputVersionView) GetRowCount() uint32 {
+func (x *InputVersionView) GetRowCount() int64 {
 	if x != nil {
 		return x.RowCount
 	}
@@ -1047,7 +1923,7 @@ type CreateExecutionResponse struct {
 
 func (x *CreateExecutionResponse) Reset() {
 	*x = CreateExecutionResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[12]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1059,7 +1935,7 @@ func (x *CreateExecutionResponse) String() string {
 func (*CreateExecutionResponse) ProtoMessage() {}
 
 func (x *CreateExecutionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[12]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1072,7 +1948,7 @@ func (x *CreateExecutionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateExecutionResponse.ProtoReflect.Descriptor instead.
 func (*CreateExecutionResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{12}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateExecutionResponse) GetOperationId() string {
@@ -1134,7 +2010,7 @@ type StopExecutionRequest struct {
 
 func (x *StopExecutionRequest) Reset() {
 	*x = StopExecutionRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[13]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1146,7 +2022,7 @@ func (x *StopExecutionRequest) String() string {
 func (*StopExecutionRequest) ProtoMessage() {}
 
 func (x *StopExecutionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[13]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1159,7 +2035,7 @@ func (x *StopExecutionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopExecutionRequest.ProtoReflect.Descriptor instead.
 func (*StopExecutionRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{13}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *StopExecutionRequest) GetExecutionId() string {
@@ -1180,7 +2056,7 @@ type ResumeModelRegistrationRequest struct {
 
 func (x *ResumeModelRegistrationRequest) Reset() {
 	*x = ResumeModelRegistrationRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[14]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1192,7 +2068,7 @@ func (x *ResumeModelRegistrationRequest) String() string {
 func (*ResumeModelRegistrationRequest) ProtoMessage() {}
 
 func (x *ResumeModelRegistrationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[14]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1205,7 +2081,7 @@ func (x *ResumeModelRegistrationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResumeModelRegistrationRequest.ProtoReflect.Descriptor instead.
 func (*ResumeModelRegistrationRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{14}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ResumeModelRegistrationRequest) GetExecutionId() string {
@@ -1229,7 +2105,7 @@ type StopExecutionResponse struct {
 
 func (x *StopExecutionResponse) Reset() {
 	*x = StopExecutionResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[15]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1241,7 +2117,7 @@ func (x *StopExecutionResponse) String() string {
 func (*StopExecutionResponse) ProtoMessage() {}
 
 func (x *StopExecutionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[15]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1254,7 +2130,7 @@ func (x *StopExecutionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StopExecutionResponse.ProtoReflect.Descriptor instead.
 func (*StopExecutionResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{15}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *StopExecutionResponse) GetOperationId() string {
@@ -1292,7 +2168,8 @@ func (x *StopExecutionResponse) GetReplayed() bool {
 	return false
 }
 
-// Public query selectors never accept tenant, Pod, namespace or object keys.
+// Public queries never accept tenant, namespace or object keys. Logs require
+// the original Pod UID discovered through the authorized workload view.
 type GetExecutionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ExecutionId   string                 `protobuf:"bytes,1,opt,name=execution_id,proto3" json:"execution_id,omitempty"`
@@ -1302,7 +2179,7 @@ type GetExecutionRequest struct {
 
 func (x *GetExecutionRequest) Reset() {
 	*x = GetExecutionRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[16]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1314,7 +2191,7 @@ func (x *GetExecutionRequest) String() string {
 func (*GetExecutionRequest) ProtoMessage() {}
 
 func (x *GetExecutionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[16]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1327,7 +2204,7 @@ func (x *GetExecutionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetExecutionRequest.ProtoReflect.Descriptor instead.
 func (*GetExecutionRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{16}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetExecutionRequest) GetExecutionId() string {
@@ -1346,7 +2223,7 @@ type GetExecutionResponse struct {
 
 func (x *GetExecutionResponse) Reset() {
 	*x = GetExecutionResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[17]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1358,7 +2235,7 @@ func (x *GetExecutionResponse) String() string {
 func (*GetExecutionResponse) ProtoMessage() {}
 
 func (x *GetExecutionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[17]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1371,7 +2248,7 @@ func (x *GetExecutionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetExecutionResponse.ProtoReflect.Descriptor instead.
 func (*GetExecutionResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{17}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetExecutionResponse) GetExecution() *ExecutionView {
@@ -1403,7 +2280,7 @@ type ListExecutionsRequest struct {
 
 func (x *ListExecutionsRequest) Reset() {
 	*x = ListExecutionsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[18]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1415,7 +2292,7 @@ func (x *ListExecutionsRequest) String() string {
 func (*ListExecutionsRequest) ProtoMessage() {}
 
 func (x *ListExecutionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[18]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1428,7 +2305,7 @@ func (x *ListExecutionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionsRequest.ProtoReflect.Descriptor instead.
 func (*ListExecutionsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{18}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ListExecutionsRequest) GetPage() uint32 {
@@ -1490,7 +2367,7 @@ type ListExecutionsResponse struct {
 
 func (x *ListExecutionsResponse) Reset() {
 	*x = ListExecutionsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[19]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1502,7 +2379,7 @@ func (x *ListExecutionsResponse) String() string {
 func (*ListExecutionsResponse) ProtoMessage() {}
 
 func (x *ListExecutionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[19]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1515,7 +2392,7 @@ func (x *ListExecutionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionsResponse.ProtoReflect.Descriptor instead.
 func (*ListExecutionsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{19}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ListExecutionsResponse) GetItems() []*ExecutionView {
@@ -1539,7 +2416,7 @@ type GetExecutionLogsRequest struct {
 	MaxBytes    uint32                 `protobuf:"varint,3,opt,name=max_bytes,proto3" json:"max_bytes,omitempty"`
 	// Opaque owner-issued log ID; container selection stays a separate field.
 	LogId *string `protobuf:"bytes,4,opt,name=log_id,proto3,oneof" json:"log_id,omitempty"`
-	// Absent keeps the original single-worker behaviour.
+	// Required original Pod UID from ListExecutionPods; no worker fallback.
 	PodUid    *string `protobuf:"bytes,5,opt,name=pod_uid,proto3,oneof" json:"pod_uid,omitempty"`
 	Container *string `protobuf:"bytes,6,opt,name=container,proto3,oneof" json:"container,omitempty"`
 	// Reads the last terminated instance of the same container.
@@ -1550,7 +2427,7 @@ type GetExecutionLogsRequest struct {
 
 func (x *GetExecutionLogsRequest) Reset() {
 	*x = GetExecutionLogsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[20]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1562,7 +2439,7 @@ func (x *GetExecutionLogsRequest) String() string {
 func (*GetExecutionLogsRequest) ProtoMessage() {}
 
 func (x *GetExecutionLogsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[20]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1575,7 +2452,7 @@ func (x *GetExecutionLogsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetExecutionLogsRequest.ProtoReflect.Descriptor instead.
 func (*GetExecutionLogsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{20}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *GetExecutionLogsRequest) GetExecutionId() string {
@@ -1627,7 +2504,7 @@ func (x *GetExecutionLogsRequest) GetPrevious() bool {
 	return false
 }
 
-// Bounded actual training output. Pod identity and selectors remain internal.
+// Bounded actual output bound to the explicitly selected original Pod UID.
 type GetExecutionLogsResponse struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	LogId      string                 `protobuf:"bytes,1,opt,name=log_id,proto3" json:"log_id,omitempty"`
@@ -1639,13 +2516,14 @@ type GetExecutionLogsResponse struct {
 	ContainerName string `protobuf:"bytes,6,opt,name=container_name,proto3" json:"container_name,omitempty"`
 	Previous      bool   `protobuf:"varint,7,opt,name=previous,proto3" json:"previous,omitempty"`
 	Available     bool   `protobuf:"varint,8,opt,name=available,proto3" json:"available,omitempty"`
+	PodUid        string `protobuf:"bytes,9,opt,name=pod_uid,proto3" json:"pod_uid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetExecutionLogsResponse) Reset() {
 	*x = GetExecutionLogsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[21]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1657,7 +2535,7 @@ func (x *GetExecutionLogsResponse) String() string {
 func (*GetExecutionLogsResponse) ProtoMessage() {}
 
 func (x *GetExecutionLogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[21]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1670,7 +2548,7 @@ func (x *GetExecutionLogsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetExecutionLogsResponse.ProtoReflect.Descriptor instead.
 func (*GetExecutionLogsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{21}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetExecutionLogsResponse) GetLogId() string {
@@ -1729,6 +2607,13 @@ func (x *GetExecutionLogsResponse) GetAvailable() bool {
 	return false
 }
 
+func (x *GetExecutionLogsResponse) GetPodUid() string {
+	if x != nil {
+		return x.PodUid
+	}
+	return ""
+}
+
 type ExecutionLogLine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp     string                 `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
@@ -1739,7 +2624,7 @@ type ExecutionLogLine struct {
 
 func (x *ExecutionLogLine) Reset() {
 	*x = ExecutionLogLine{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[22]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1751,7 +2636,7 @@ func (x *ExecutionLogLine) String() string {
 func (*ExecutionLogLine) ProtoMessage() {}
 
 func (x *ExecutionLogLine) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[22]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1764,7 +2649,7 @@ func (x *ExecutionLogLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionLogLine.ProtoReflect.Descriptor instead.
 func (*ExecutionLogLine) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{22}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ExecutionLogLine) GetTimestamp() string {
@@ -1803,7 +2688,7 @@ type ExecutionContainerView struct {
 
 func (x *ExecutionContainerView) Reset() {
 	*x = ExecutionContainerView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[23]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1815,7 +2700,7 @@ func (x *ExecutionContainerView) String() string {
 func (*ExecutionContainerView) ProtoMessage() {}
 
 func (x *ExecutionContainerView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[23]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1828,7 +2713,7 @@ func (x *ExecutionContainerView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionContainerView.ProtoReflect.Descriptor instead.
 func (*ExecutionContainerView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{23}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ExecutionContainerView) GetName() string {
@@ -1938,7 +2823,7 @@ type ExecutionPodView struct {
 
 func (x *ExecutionPodView) Reset() {
 	*x = ExecutionPodView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[24]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1950,7 +2835,7 @@ func (x *ExecutionPodView) String() string {
 func (*ExecutionPodView) ProtoMessage() {}
 
 func (x *ExecutionPodView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[24]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1963,7 +2848,7 @@ func (x *ExecutionPodView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionPodView.ProtoReflect.Descriptor instead.
 func (*ExecutionPodView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{24}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ExecutionPodView) GetPodName() string {
@@ -2147,7 +3032,7 @@ type ExecutionEventView struct {
 
 func (x *ExecutionEventView) Reset() {
 	*x = ExecutionEventView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[25]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2159,7 +3044,7 @@ func (x *ExecutionEventView) String() string {
 func (*ExecutionEventView) ProtoMessage() {}
 
 func (x *ExecutionEventView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[25]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2172,7 +3057,7 @@ func (x *ExecutionEventView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionEventView.ProtoReflect.Descriptor instead.
 func (*ExecutionEventView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{25}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ExecutionEventView) GetType() string {
@@ -2271,7 +3156,7 @@ type ListExecutionPodsRequest struct {
 
 func (x *ListExecutionPodsRequest) Reset() {
 	*x = ListExecutionPodsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[26]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2283,7 +3168,7 @@ func (x *ListExecutionPodsRequest) String() string {
 func (*ListExecutionPodsRequest) ProtoMessage() {}
 
 func (x *ListExecutionPodsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[26]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2296,7 +3181,7 @@ func (x *ListExecutionPodsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionPodsRequest.ProtoReflect.Descriptor instead.
 func (*ListExecutionPodsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{26}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ListExecutionPodsRequest) GetExecutionId() string {
@@ -2331,7 +3216,7 @@ type ListExecutionPodsResponse struct {
 
 func (x *ListExecutionPodsResponse) Reset() {
 	*x = ListExecutionPodsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[27]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2343,7 +3228,7 @@ func (x *ListExecutionPodsResponse) String() string {
 func (*ListExecutionPodsResponse) ProtoMessage() {}
 
 func (x *ListExecutionPodsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[27]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2356,7 +3241,7 @@ func (x *ListExecutionPodsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionPodsResponse.ProtoReflect.Descriptor instead.
 func (*ListExecutionPodsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{27}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ListExecutionPodsResponse) GetPods() []*ExecutionPodView {
@@ -2391,7 +3276,7 @@ type ListExecutionEventsRequest struct {
 
 func (x *ListExecutionEventsRequest) Reset() {
 	*x = ListExecutionEventsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[28]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2403,7 +3288,7 @@ func (x *ListExecutionEventsRequest) String() string {
 func (*ListExecutionEventsRequest) ProtoMessage() {}
 
 func (x *ListExecutionEventsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[28]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2416,7 +3301,7 @@ func (x *ListExecutionEventsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionEventsRequest.ProtoReflect.Descriptor instead.
 func (*ListExecutionEventsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{28}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ListExecutionEventsRequest) GetExecutionId() string {
@@ -2445,7 +3330,7 @@ type ListExecutionEventsResponse struct {
 
 func (x *ListExecutionEventsResponse) Reset() {
 	*x = ListExecutionEventsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[29]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2457,7 +3342,7 @@ func (x *ListExecutionEventsResponse) String() string {
 func (*ListExecutionEventsResponse) ProtoMessage() {}
 
 func (x *ListExecutionEventsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[29]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2470,7 +3355,7 @@ func (x *ListExecutionEventsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionEventsResponse.ProtoReflect.Descriptor instead.
 func (*ListExecutionEventsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{29}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ListExecutionEventsResponse) GetEvents() []*ExecutionEventView {
@@ -2523,7 +3408,7 @@ type QueryExecutionMetricsRequest struct {
 
 func (x *QueryExecutionMetricsRequest) Reset() {
 	*x = QueryExecutionMetricsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[30]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2535,7 +3420,7 @@ func (x *QueryExecutionMetricsRequest) String() string {
 func (*QueryExecutionMetricsRequest) ProtoMessage() {}
 
 func (x *QueryExecutionMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[30]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2548,7 +3433,7 @@ func (x *QueryExecutionMetricsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryExecutionMetricsRequest.ProtoReflect.Descriptor instead.
 func (*QueryExecutionMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{30}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *QueryExecutionMetricsRequest) GetExecutionId() string {
@@ -2633,7 +3518,7 @@ type QueryExecutionMetricsResponse struct {
 
 func (x *QueryExecutionMetricsResponse) Reset() {
 	*x = QueryExecutionMetricsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[31]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2645,7 +3530,7 @@ func (x *QueryExecutionMetricsResponse) String() string {
 func (*QueryExecutionMetricsResponse) ProtoMessage() {}
 
 func (x *QueryExecutionMetricsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[31]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2658,7 +3543,7 @@ func (x *QueryExecutionMetricsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QueryExecutionMetricsResponse.ProtoReflect.Descriptor instead.
 func (*QueryExecutionMetricsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{31}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *QueryExecutionMetricsResponse) GetExecutionId() string {
@@ -2772,7 +3657,7 @@ type ExecutionMetricSeries struct {
 
 func (x *ExecutionMetricSeries) Reset() {
 	*x = ExecutionMetricSeries{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[32]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2784,7 +3669,7 @@ func (x *ExecutionMetricSeries) String() string {
 func (*ExecutionMetricSeries) ProtoMessage() {}
 
 func (x *ExecutionMetricSeries) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[32]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2797,7 +3682,7 @@ func (x *ExecutionMetricSeries) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionMetricSeries.ProtoReflect.Descriptor instead.
 func (*ExecutionMetricSeries) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{32}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ExecutionMetricSeries) GetMetricCode() string {
@@ -2841,7 +3726,7 @@ type ExecutionMetricPoint struct {
 
 func (x *ExecutionMetricPoint) Reset() {
 	*x = ExecutionMetricPoint{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[33]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2853,7 +3738,7 @@ func (x *ExecutionMetricPoint) String() string {
 func (*ExecutionMetricPoint) ProtoMessage() {}
 
 func (x *ExecutionMetricPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[33]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2866,7 +3751,7 @@ func (x *ExecutionMetricPoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionMetricPoint.ProtoReflect.Descriptor instead.
 func (*ExecutionMetricPoint) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{33}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ExecutionMetricPoint) GetTimestamp() string {
@@ -2907,7 +3792,9 @@ type ExecutionView struct {
 	ModelRegistration           *ModelRegistrationView `protobuf:"bytes,27,opt,name=model_registration,proto3" json:"model_registration,omitempty"`
 	History                     *ExecutionHistoryView  `protobuf:"bytes,28,opt,name=history,proto3" json:"history,omitempty"`
 	InputVersionId              string                 `protobuf:"bytes,7,opt,name=input_version_id,proto3" json:"input_version_id,omitempty"`
-	ImageVersionId              string                 `protobuf:"bytes,8,opt,name=image_version_id,proto3" json:"image_version_id,omitempty"`
+	ImageId                     string                 `protobuf:"bytes,34,opt,name=image_id,proto3" json:"image_id,omitempty"`
+	ImageVersion                int64                  `protobuf:"varint,35,opt,name=image_version,proto3" json:"image_version,omitempty"`
+	ImageScope                  string                 `protobuf:"bytes,36,opt,name=image_scope,proto3" json:"image_scope,omitempty"`
 	ComputeState                string                 `protobuf:"bytes,9,opt,name=compute_state,proto3" json:"compute_state,omitempty"`
 	DeliveryState               string                 `protobuf:"bytes,10,opt,name=delivery_state,proto3" json:"delivery_state,omitempty"`
 	CloseState                  string                 `protobuf:"bytes,11,opt,name=close_state,proto3" json:"close_state,omitempty"`
@@ -2938,7 +3825,7 @@ type ExecutionView struct {
 
 func (x *ExecutionView) Reset() {
 	*x = ExecutionView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[34]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2950,7 +3837,7 @@ func (x *ExecutionView) String() string {
 func (*ExecutionView) ProtoMessage() {}
 
 func (x *ExecutionView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[34]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2963,7 +3850,7 @@ func (x *ExecutionView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionView.ProtoReflect.Descriptor instead.
 func (*ExecutionView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{34}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ExecutionView) GetOperationId() string {
@@ -3071,9 +3958,23 @@ func (x *ExecutionView) GetInputVersionId() string {
 	return ""
 }
 
-func (x *ExecutionView) GetImageVersionId() string {
+func (x *ExecutionView) GetImageId() string {
 	if x != nil {
-		return x.ImageVersionId
+		return x.ImageId
+	}
+	return ""
+}
+
+func (x *ExecutionView) GetImageVersion() int64 {
+	if x != nil {
+		return x.ImageVersion
+	}
+	return 0
+}
+
+func (x *ExecutionView) GetImageScope() string {
+	if x != nil {
+		return x.ImageScope
 	}
 	return ""
 }
@@ -3188,8 +4089,6 @@ type ExecutionBaseModelView struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	ModelId   string                 `protobuf:"bytes,1,opt,name=model_id,proto3" json:"model_id,omitempty"`
 	VersionId string                 `protobuf:"bytes,2,opt,name=version_id,proto3" json:"version_id,omitempty"`
-	// 模型族名，如 Qwen2.5-0.5B-Instruct。
-	Family string `protobuf:"bytes,3,opt,name=family,proto3" json:"family,omitempty"`
 	// 权重格式，如 safetensors。
 	Format        string `protobuf:"bytes,4,opt,name=format,proto3" json:"format,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -3198,7 +4097,7 @@ type ExecutionBaseModelView struct {
 
 func (x *ExecutionBaseModelView) Reset() {
 	*x = ExecutionBaseModelView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[35]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3210,7 +4109,7 @@ func (x *ExecutionBaseModelView) String() string {
 func (*ExecutionBaseModelView) ProtoMessage() {}
 
 func (x *ExecutionBaseModelView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[35]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3223,7 +4122,7 @@ func (x *ExecutionBaseModelView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionBaseModelView.ProtoReflect.Descriptor instead.
 func (*ExecutionBaseModelView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{35}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ExecutionBaseModelView) GetModelId() string {
@@ -3236,13 +4135,6 @@ func (x *ExecutionBaseModelView) GetModelId() string {
 func (x *ExecutionBaseModelView) GetVersionId() string {
 	if x != nil {
 		return x.VersionId
-	}
-	return ""
-}
-
-func (x *ExecutionBaseModelView) GetFamily() string {
-	if x != nil {
-		return x.Family
 	}
 	return ""
 }
@@ -3270,7 +4162,7 @@ type ExecutionFailureView struct {
 
 func (x *ExecutionFailureView) Reset() {
 	*x = ExecutionFailureView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[36]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3282,7 +4174,7 @@ func (x *ExecutionFailureView) String() string {
 func (*ExecutionFailureView) ProtoMessage() {}
 
 func (x *ExecutionFailureView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[36]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3295,7 +4187,7 @@ func (x *ExecutionFailureView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionFailureView.ProtoReflect.Descriptor instead.
 func (*ExecutionFailureView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{36}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ExecutionFailureView) GetReason() string {
@@ -3336,7 +4228,7 @@ type ExecutionFieldViolationView struct {
 
 func (x *ExecutionFieldViolationView) Reset() {
 	*x = ExecutionFieldViolationView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[37]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3348,7 +4240,7 @@ func (x *ExecutionFieldViolationView) String() string {
 func (*ExecutionFieldViolationView) ProtoMessage() {}
 
 func (x *ExecutionFieldViolationView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[37]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3361,7 +4253,7 @@ func (x *ExecutionFieldViolationView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionFieldViolationView.ProtoReflect.Descriptor instead.
 func (*ExecutionFieldViolationView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{37}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *ExecutionFieldViolationView) GetField() string {
@@ -3400,7 +4292,6 @@ type ExecutionManagedSettingsView struct {
 	FlashAttn                 string `protobuf:"bytes,14,opt,name=flash_attn,proto3" json:"flash_attn,omitempty"`
 	ReportTo                  string `protobuf:"bytes,15,opt,name=report_to,proto3" json:"report_to,omitempty"`
 	SaveStrategy              string `protobuf:"bytes,16,opt,name=save_strategy,proto3" json:"save_strategy,omitempty"`
-	Template                  string `protobuf:"bytes,17,opt,name=template,proto3" json:"template,omitempty"`
 	TrainDtype                string `protobuf:"bytes,18,opt,name=train_dtype,proto3" json:"train_dtype,omitempty"`
 	ExportDtype               string `protobuf:"bytes,19,opt,name=export_dtype,proto3" json:"export_dtype,omitempty"`
 	VerifyDtype               string `protobuf:"bytes,20,opt,name=verify_dtype,proto3" json:"verify_dtype,omitempty"`
@@ -3417,7 +4308,7 @@ type ExecutionManagedSettingsView struct {
 
 func (x *ExecutionManagedSettingsView) Reset() {
 	*x = ExecutionManagedSettingsView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[38]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3429,7 +4320,7 @@ func (x *ExecutionManagedSettingsView) String() string {
 func (*ExecutionManagedSettingsView) ProtoMessage() {}
 
 func (x *ExecutionManagedSettingsView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[38]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3442,7 +4333,7 @@ func (x *ExecutionManagedSettingsView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionManagedSettingsView.ProtoReflect.Descriptor instead.
 func (*ExecutionManagedSettingsView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{38}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *ExecutionManagedSettingsView) GetStage() string {
@@ -3557,13 +4448,6 @@ func (x *ExecutionManagedSettingsView) GetSaveStrategy() string {
 	return ""
 }
 
-func (x *ExecutionManagedSettingsView) GetTemplate() string {
-	if x != nil {
-		return x.Template
-	}
-	return ""
-}
-
 func (x *ExecutionManagedSettingsView) GetTrainDtype() string {
 	if x != nil {
 		return x.TrainDtype
@@ -3650,7 +4534,7 @@ type ExecutionStepView struct {
 
 func (x *ExecutionStepView) Reset() {
 	*x = ExecutionStepView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[39]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3662,7 +4546,7 @@ func (x *ExecutionStepView) String() string {
 func (*ExecutionStepView) ProtoMessage() {}
 
 func (x *ExecutionStepView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[39]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3675,7 +4559,7 @@ func (x *ExecutionStepView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionStepView.ProtoReflect.Descriptor instead.
 func (*ExecutionStepView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{39}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *ExecutionStepView) GetRole() string {
@@ -3732,7 +4616,7 @@ type ExecutionMetricView struct {
 
 func (x *ExecutionMetricView) Reset() {
 	*x = ExecutionMetricView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[40]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3744,7 +4628,7 @@ func (x *ExecutionMetricView) String() string {
 func (*ExecutionMetricView) ProtoMessage() {}
 
 func (x *ExecutionMetricView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[40]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3757,7 +4641,7 @@ func (x *ExecutionMetricView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionMetricView.ProtoReflect.Descriptor instead.
 func (*ExecutionMetricView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{40}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *ExecutionMetricView) GetName() string {
@@ -3794,7 +4678,7 @@ type ExecutionComputeView struct {
 
 func (x *ExecutionComputeView) Reset() {
 	*x = ExecutionComputeView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[41]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3806,7 +4690,7 @@ func (x *ExecutionComputeView) String() string {
 func (*ExecutionComputeView) ProtoMessage() {}
 
 func (x *ExecutionComputeView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[41]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3819,7 +4703,7 @@ func (x *ExecutionComputeView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionComputeView.ProtoReflect.Descriptor instead.
 func (*ExecutionComputeView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{41}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ExecutionComputeView) GetComputePresetId() string {
@@ -3868,7 +4752,7 @@ type ExecutionTimingView struct {
 
 func (x *ExecutionTimingView) Reset() {
 	*x = ExecutionTimingView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[42]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3880,7 +4764,7 @@ func (x *ExecutionTimingView) String() string {
 func (*ExecutionTimingView) ProtoMessage() {}
 
 func (x *ExecutionTimingView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[42]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3893,7 +4777,7 @@ func (x *ExecutionTimingView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionTimingView.ProtoReflect.Descriptor instead.
 func (*ExecutionTimingView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{42}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ExecutionTimingView) GetExecutionTimeoutSeconds() uint64 {
@@ -3932,7 +4816,7 @@ type ModelRegistrationView struct {
 
 func (x *ModelRegistrationView) Reset() {
 	*x = ModelRegistrationView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[43]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3944,7 +4828,7 @@ func (x *ModelRegistrationView) String() string {
 func (*ModelRegistrationView) ProtoMessage() {}
 
 func (x *ModelRegistrationView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[43]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3957,7 +4841,7 @@ func (x *ModelRegistrationView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ModelRegistrationView.ProtoReflect.Descriptor instead.
 func (*ModelRegistrationView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{43}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ModelRegistrationView) GetState() string {
@@ -4006,7 +4890,7 @@ type ListExecutionArtifactsRequest struct {
 
 func (x *ListExecutionArtifactsRequest) Reset() {
 	*x = ListExecutionArtifactsRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[44]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4018,7 +4902,7 @@ func (x *ListExecutionArtifactsRequest) String() string {
 func (*ListExecutionArtifactsRequest) ProtoMessage() {}
 
 func (x *ListExecutionArtifactsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[44]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4031,7 +4915,7 @@ func (x *ListExecutionArtifactsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionArtifactsRequest.ProtoReflect.Descriptor instead.
 func (*ListExecutionArtifactsRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{44}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *ListExecutionArtifactsRequest) GetExecutionId() string {
@@ -4065,7 +4949,7 @@ type ListExecutionArtifactsResponse struct {
 
 func (x *ListExecutionArtifactsResponse) Reset() {
 	*x = ListExecutionArtifactsResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[45]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4077,7 +4961,7 @@ func (x *ListExecutionArtifactsResponse) String() string {
 func (*ListExecutionArtifactsResponse) ProtoMessage() {}
 
 func (x *ListExecutionArtifactsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[45]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4090,7 +4974,7 @@ func (x *ListExecutionArtifactsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListExecutionArtifactsResponse.ProtoReflect.Descriptor instead.
 func (*ListExecutionArtifactsResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{45}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ListExecutionArtifactsResponse) GetItems() []*ArtifactView {
@@ -4123,7 +5007,7 @@ type ArtifactView struct {
 
 func (x *ArtifactView) Reset() {
 	*x = ArtifactView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[46]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4135,7 +5019,7 @@ func (x *ArtifactView) String() string {
 func (*ArtifactView) ProtoMessage() {}
 
 func (x *ArtifactView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[46]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4148,7 +5032,7 @@ func (x *ArtifactView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ArtifactView.ProtoReflect.Descriptor instead.
 func (*ArtifactView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{46}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ArtifactView) GetArtifactId() string {
@@ -4216,7 +5100,7 @@ type AuthorizeArtifactDownloadRequest struct {
 
 func (x *AuthorizeArtifactDownloadRequest) Reset() {
 	*x = AuthorizeArtifactDownloadRequest{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[47]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4228,7 +5112,7 @@ func (x *AuthorizeArtifactDownloadRequest) String() string {
 func (*AuthorizeArtifactDownloadRequest) ProtoMessage() {}
 
 func (x *AuthorizeArtifactDownloadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[47]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4241,7 +5125,7 @@ func (x *AuthorizeArtifactDownloadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuthorizeArtifactDownloadRequest.ProtoReflect.Descriptor instead.
 func (*AuthorizeArtifactDownloadRequest) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{47}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *AuthorizeArtifactDownloadRequest) GetArtifactId() string {
@@ -4263,7 +5147,7 @@ type AuthorizeArtifactDownloadResponse struct {
 
 func (x *AuthorizeArtifactDownloadResponse) Reset() {
 	*x = AuthorizeArtifactDownloadResponse{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[48]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4275,7 +5159,7 @@ func (x *AuthorizeArtifactDownloadResponse) String() string {
 func (*AuthorizeArtifactDownloadResponse) ProtoMessage() {}
 
 func (x *AuthorizeArtifactDownloadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[48]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4288,7 +5172,7 @@ func (x *AuthorizeArtifactDownloadResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use AuthorizeArtifactDownloadResponse.ProtoReflect.Descriptor instead.
 func (*AuthorizeArtifactDownloadResponse) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{48}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *AuthorizeArtifactDownloadResponse) GetArtifact() *ArtifactView {
@@ -4331,7 +5215,7 @@ type ExecutionHistoryView struct {
 
 func (x *ExecutionHistoryView) Reset() {
 	*x = ExecutionHistoryView{}
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[49]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4343,7 +5227,7 @@ func (x *ExecutionHistoryView) String() string {
 func (*ExecutionHistoryView) ProtoMessage() {}
 
 func (x *ExecutionHistoryView) ProtoReflect() protoreflect.Message {
-	mi := &file_modeldev_service_v1_execution_proto_msgTypes[49]
+	mi := &file_modeldev_service_v1_execution_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4356,7 +5240,7 @@ func (x *ExecutionHistoryView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ExecutionHistoryView.ProtoReflect.Descriptor instead.
 func (*ExecutionHistoryView) Descriptor() ([]byte, []int) {
-	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{49}
+	return file_modeldev_service_v1_execution_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *ExecutionHistoryView) GetRunId() string {
@@ -4426,7 +5310,7 @@ var File_modeldev_service_v1_execution_proto protoreflect.FileDescriptor
 
 const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\n" +
-	"#modeldev/service/v1/execution.proto\x12\x13modeldev.service.v1\x1a$gnostic/openapi/v3/annotations.proto\"\xd2\x06\n" +
+	"#modeldev/service/v1/execution.proto\x12\x13modeldev.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\xa1\a\n" +
 	"\x16CreateExecutionRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12.\n" +
@@ -4440,14 +5324,96 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\n" +
 	"parameters\x18\x0f \x01(\v2(.modeldev.service.v1.ExecutionParametersR\n" +
 	"parameters\x12E\n" +
-	"\x0ftimeout_seconds\x18\x10 \x01(\x04B\x16\xbaG\x13\xca\x01\ainteger\x9a\x02\x06uint64H\x03R\x0ftimeout_seconds\x88\x01\x01:m\xbaGj\xba\x01\x04name\xba\x01\x04kind\xba\x01\x11implementation_id\xba\x01\x11compute_preset_id\xba\x01\x12dataset_version_id\xba\x01\n" +
+	"\x0ftimeout_seconds\x18\x10 \x01(\x04B\x16\xbaG\x13\xca\x01\ainteger\x9a\x02\x06uint64H\x03R\x0ftimeout_seconds\x88\x01\x01\x125\n" +
+	"\x13finetuning_template\x18\x11 \x01(\tH\x04R\x13finetuning_template\x88\x01\x01:m\xbaGj\xba\x01\x04name\xba\x01\x04kind\xba\x01\x11implementation_id\xba\x01\x11compute_preset_id\xba\x01\x12dataset_version_id\xba\x01\n" +
 	"parameters\xba\x01\x0fidempotency_keyB\x18\n" +
 	"\x16_base_model_version_idB\x12\n" +
 	"\x10_target_model_idB\x11\n" +
 	"\x0f_new_model_nameB\x12\n" +
-	"\x10_timeout_secondsJ\x04\b\x03\x10\x04J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\n" +
+	"\x10_timeout_secondsB\x16\n" +
+	"\x14_finetuning_templateJ\x04\b\x03\x10\x04J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\n" +
 	"\x10\vR\tpreset_idR\x10image_version_idR\x12general_parametersR\x13source_execution_idR\n" +
-	"finetuning\"\xda\x06\n" +
+	"finetuning\"\x85\x02\n" +
+	"\x1fCheckFinetuningReadinessRequest\x124\n" +
+	"\x15base_model_version_id\x18\x01 \x01(\tR\x15base_model_version_id\x12,\n" +
+	"\x11compute_preset_id\x18\x02 \x01(\tR\x11compute_preset_id\x125\n" +
+	"\x13finetuning_template\x18\x03 \x01(\tH\x00R\x13finetuning_template\x88\x01\x01:/\xbaG,\xba\x01\x15base_model_version_id\xba\x01\x11compute_preset_idB\x16\n" +
+	"\x14_finetuning_template\"\xae\x06\n" +
+	" CheckFinetuningReadinessResponse\x12\x1e\n" +
+	"\n" +
+	"assessment\x18\x01 \x01(\tR\n" +
+	"assessment\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\x12c\n" +
+	"\x13template_candidates\x18\x03 \x03(\v21.modeldev.service.v1.FinetuningRegisteredTemplateR\x13template_candidates\x12f\n" +
+	"\x14runtime_capabilities\x18\x04 \x01(\v22.modeldev.service.v1.FinetuningRuntimeCapabilitiesR\x14runtime_capabilities\x12@\n" +
+	"\x1bruntime_capabilities_sha256\x18\x05 \x01(\tR\x1bruntime_capabilities_sha256\x12D\n" +
+	"\x06limits\x18\x06 \x01(\v2,.modeldev.service.v1.FinetuningContentLimitsR\x06limits\x12Z\n" +
+	"\x10structure_limits\x18\a \x01(\v2..modeldev.service.v1.FinetuningStructureLimitsR\x10structure_limits\x12@\n" +
+	"\x1bruntime_validation_required\x18\b \x01(\bR\x1bruntime_validation_required\x12\x1a\n" +
+	"\bmodel_id\x18\t \x01(\tR\bmodel_id\x12*\n" +
+	"\x10model_version_id\x18\n" +
+	" \x01(\tR\x10model_version_id\x12Q\n" +
+	"\rtemplate_plan\x18\v \x01(\v2+.modeldev.service.v1.FinetuningTemplatePlanR\rtemplate_plan\x12\x1e\n" +
+	"\n" +
+	"model_type\x18\f \x01(\tR\n" +
+	"model_type\x12$\n" +
+	"\rcontext_limit\x18\r \x01(\x03R\rcontext_limit\"\xb0\x01\n" +
+	"\x1cFinetuningRegisteredTemplate\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12$\n" +
+	"\rsource_sha256\x18\x02 \x01(\tR\rsource_sha256\x12(\n" +
+	"\x0fsupports_system\x18\x03 \x01(\bR\x0fsupports_system\x120\n" +
+	"\x13supports_multi_turn\x18\x04 \x01(\bR\x13supports_multi_turn\"H\n" +
+	"\x18FinetuningRuntimePackage\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\"K\n" +
+	"\x1bFinetuningContextLimitField\x12\x16\n" +
+	"\x06source\x18\x01 \x01(\tR\x06source\x12\x14\n" +
+	"\x05field\x18\x02 \x01(\tR\x05field\"\xe7\x03\n" +
+	"\x1dFinetuningRuntimeCapabilities\x12&\n" +
+	"\x0eschema_version\x18\x01 \x01(\tR\x0eschema_version\x12\"\n" +
+	"\fimage_digest\x18\x02 \x01(\tR\fimage_digest\x12,\n" +
+	"\x11entrypoint_sha256\x18\x03 \x01(\tR\x11entrypoint_sha256\x12I\n" +
+	"\bpackages\x18\x04 \x03(\v2-.modeldev.service.v1.FinetuningRuntimePackageR\bpackages\x124\n" +
+	"\x15causal_lm_model_types\x18\x05 \x03(\tR\x15causal_lm_model_types\x12e\n" +
+	"\x14registered_templates\x18\x06 \x03(\v21.modeldev.service.v1.FinetuningRegisteredTemplateR\x14registered_templates\x12d\n" +
+	"\x14context_limit_fields\x18\a \x03(\v20.modeldev.service.v1.FinetuningContextLimitFieldR\x14context_limit_fields\"\xa8\x01\n" +
+	"\x18FinetuningTemplateSource\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x18\n" +
+	"\adefault\x18\x04 \x01(\bR\adefault\x12\x1e\n" +
+	"\n" +
+	"size_bytes\x18\x05 \x01(\x03R\n" +
+	"size_bytes\x12\x16\n" +
+	"\x06sha256\x18\x06 \x01(\tR\x06sha256\"\x8a\x03\n" +
+	"\x16FinetuningTemplatePlan\x12&\n" +
+	"\x0eschema_version\x18\x01 \x01(\tR\x0eschema_version\x12\x12\n" +
+	"\x04mode\x18\x02 \x01(\tR\x04mode\x12*\n" +
+	"\x10selection_source\x18\x03 \x01(\tR\x10selection_source\x12%\n" +
+	"\vtemplate_id\x18\x04 \x01(\tH\x00R\vtemplate_id\x88\x01\x01\x12E\n" +
+	"\x06source\x18\x05 \x01(\v2-.modeldev.service.v1.FinetuningTemplateSourceR\x06source\x12$\n" +
+	"\rsource_sha256\x18\x06 \x01(\tR\rsource_sha256\x12@\n" +
+	"\x1bruntime_capabilities_sha256\x18\a \x01(\tR\x1bruntime_capabilities_sha256\x12\"\n" +
+	"\fimage_digest\x18\b \x01(\tR\fimage_digestB\x0e\n" +
+	"\f_template_id\"G\n" +
+	"\x17FinetuningContentLimits\x12,\n" +
+	"\x11max_content_bytes\x18\x01 \x01(\x03R\x11max_content_bytes\"\xfd\x05\n" +
+	"\x19FinetuningStructureLimits\x12(\n" +
+	"\x0fmax_model_files\x18\x01 \x01(\x03R\x0fmax_model_files\x12*\n" +
+	"\x10max_output_files\x18\x02 \x01(\x03R\x10max_output_files\x120\n" +
+	"\x13max_archive_entries\x18\x03 \x01(\x03R\x13max_archive_entries\x128\n" +
+	"\x17max_relative_path_bytes\x18\x04 \x01(\x03R\x17max_relative_path_bytes\x124\n" +
+	"\x15max_storage_key_bytes\x18\x05 \x01(\x03R\x15max_storage_key_bytes\x12.\n" +
+	"\x12max_manifest_bytes\x18\x06 \x01(\x03R\x12max_manifest_bytes\x126\n" +
+	"\x16max_model_config_bytes\x18\a \x01(\x03R\x16max_model_config_bytes\x12.\n" +
+	"\x12max_material_bytes\x18\b \x01(\x03R\x12max_material_bytes\x12>\n" +
+	"\x1amax_archive_metadata_bytes\x18\t \x01(\x03R\x1amax_archive_metadata_bytes\x12*\n" +
+	"\x10max_record_bytes\x18\n" +
+	" \x01(\x03R\x10max_record_bytes\x12&\n" +
+	"\x0emax_json_depth\x18\v \x01(\x03R\x0emax_json_depth\x124\n" +
+	"\x15max_control_rpc_bytes\x18\f \x01(\x03R\x15max_control_rpc_bytes\x12H\n" +
+	"\x1fmax_publication_candidate_bytes\x18\r \x01(\x03R\x1fmax_publication_candidate_bytes\x12<\n" +
+	"\x19max_publication_ref_bytes\x18\x0e \x01(\x03R\x19max_publication_ref_bytes\"\xda\x06\n" +
 	"\x13ExecutionParameters\x12)\n" +
 	"\rlearning_rate\x18\x01 \x01(\tH\x00R\rlearning_rate\x88\x01\x01\x122\n" +
 	"\x06epochs\x18\x02 \x01(\x03B\x15\xbaG\x12\xca\x01\ainteger\x9a\x02\x05int64H\x01R\x06epochs\x88\x01\x01\x12:\n" +
@@ -4484,18 +5450,20 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x10GeneralParameter\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
-	"\x05value\x18\x03 \x01(\tR\x05value\"\xab\x01\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\"\xd7\x02\n" +
 	"\x1aListImplementationsRequest\x12\x17\n" +
 	"\x04page\x18\x03 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
 	"\tpage_size\x18\x04 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x17\n" +
-	"\x04kind\x18\x05 \x01(\tH\x02R\x04kind\x88\x01\x01B\a\n" +
+	"\x04kind\x18\x05 \x01(\tH\x02R\x04kind\x88\x01\x01\x12\x86\x01\n" +
+	"\vdevice_mode\x18\x06 \x01(\tB_\xe0A\x02\xbaGY\xc2\x01\x05\x12\x03cpu\xc2\x01\x05\x12\x03gpu\x92\x02FRequired exact cpu or gpu; no default and no merged mode capabilities.H\x03R\vdevice_mode\x88\x01\x01:\x11\xbaG\x0e\xba\x01\vdevice_modeB\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
 	"_page_sizeB\a\n" +
-	"\x05_kindJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\x05limitR\x06cursor\"\x85\x01\n" +
+	"\x05_kindB\x0e\n" +
+	"\f_device_modeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\x05limitR\x06cursor\"\x85\x01\n" +
 	"\x1bListImplementationsResponse\x12=\n" +
 	"\x05items\x18\x01 \x03(\v2'.modeldev.service.v1.ImplementationViewR\x05items\x12\x14\n" +
-	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"\xac\x05\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"\xd6\x06\n" +
 	"\x12ImplementationView\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x03 \x01(\tR\x04kind\x12L\n" +
@@ -4508,7 +5476,9 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\tavailable\x18\r \x01(\bR\tavailable\x12L\n" +
 	"!execution_timeout_default_seconds\x18\x0e \x01(\x04R!execution_timeout_default_seconds\x12D\n" +
 	"\x1dexecution_timeout_max_seconds\x18\x0f \x01(\x04R\x1dexecution_timeout_max_seconds\x122\n" +
-	"\x14step_timeout_seconds\x18\x10 \x01(\x04R\x14step_timeout_secondsJ\x04\b\x01\x10\x02J\x04\b\x04\x10\x05J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bR\tpreset_idR\x11image_version_idsR\x11active_release_idR\x12binding_generationR\x17new_submissions_enabled\"\xc1\x05\n" +
+	"\x14step_timeout_seconds\x18\x10 \x01(\x04R\x14step_timeout_seconds\x12f\n" +
+	"\x14runtime_capabilities\x18\x11 \x01(\v22.modeldev.service.v1.FinetuningRuntimeCapabilitiesR\x14runtime_capabilities\x12@\n" +
+	"\x1bruntime_capabilities_sha256\x18\x12 \x01(\tR\x1bruntime_capabilities_sha256J\x04\b\x01\x10\x02J\x04\b\x04\x10\x05J\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\a\x10\bR\tpreset_idR\x11image_version_idsR\x11active_release_idR\x12binding_generationR\x17new_submissions_enabled\"\xc1\x05\n" +
 	"\rParameterRule\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x1a\n" +
@@ -4551,7 +5521,7 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"size_bytes\x18\x04 \x01(\x03R\n" +
 	"size_bytes\x12\x16\n" +
 	"\x06sha256\x18\x05 \x01(\tR\x06sha256\x12\x1c\n" +
-	"\trow_count\x18\x06 \x01(\rR\trow_count\x12$\n" +
+	"\trow_count\x18\x06 \x01(\x03R\trow_count\x12$\n" +
 	"\rfeature_count\x18\a \x01(\rR\rfeature_count\x12\x1e\n" +
 	"\n" +
 	"created_at\x18\b \x01(\tR\n" +
@@ -4596,7 +5566,7 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x05_kindJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\x05limitR\x06cursor\"{\n" +
 	"\x16ListExecutionsResponse\x128\n" +
 	"\x05items\x18\x01 \x03(\v2\".modeldev.service.v1.ExecutionViewR\x05items\x12\x14\n" +
-	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"\xad\x02\n" +
+	"\x05total\x18\x03 \x01(\x04R\x05totalJ\x04\b\x02\x10\x03R\vnext_cursor\"\xcb\x02\n" +
 	"\x17GetExecutionLogsRequest\x12\"\n" +
 	"\fexecution_id\x18\x01 \x01(\tR\fexecution_id\x12\x1e\n" +
 	"\n" +
@@ -4606,13 +5576,13 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x06log_id\x18\x04 \x01(\tH\x00R\x06log_id\x88\x01\x01\x12\x1d\n" +
 	"\apod_uid\x18\x05 \x01(\tH\x01R\apod_uid\x88\x01\x01\x12!\n" +
 	"\tcontainer\x18\x06 \x01(\tH\x02R\tcontainer\x88\x01\x01\x12\x1f\n" +
-	"\bprevious\x18\a \x01(\bH\x03R\bprevious\x88\x01\x01B\t\n" +
+	"\bprevious\x18\a \x01(\bH\x03R\bprevious\x88\x01\x01:\x1c\xbaG\x19\xba\x01\fexecution_id\xba\x01\apod_uidB\t\n" +
 	"\a_log_idB\n" +
 	"\n" +
 	"\b_pod_uidB\f\n" +
 	"\n" +
 	"_containerB\v\n" +
-	"\t_previous\"\xb3\x02\n" +
+	"\t_previous\"\xcd\x02\n" +
 	"\x18GetExecutionLogsResponse\x12\x16\n" +
 	"\x06log_id\x18\x01 \x01(\tR\x06log_id\x12;\n" +
 	"\x05lines\x18\x02 \x03(\v2%.modeldev.service.v1.ExecutionLogLineR\x05lines\x12\x1c\n" +
@@ -4621,7 +5591,8 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\vsource_kind\x18\x05 \x01(\tR\vsource_kind\x12&\n" +
 	"\x0econtainer_name\x18\x06 \x01(\tR\x0econtainer_name\x12\x1a\n" +
 	"\bprevious\x18\a \x01(\bR\bprevious\x12\x1c\n" +
-	"\tavailable\x18\b \x01(\bR\tavailable\"D\n" +
+	"\tavailable\x18\b \x01(\bR\tavailable\x12\x18\n" +
+	"\apod_uid\x18\t \x01(\tR\apod_uid\"D\n" +
 	"\x10ExecutionLogLine\x12\x1c\n" +
 	"\ttimestamp\x18\x01 \x01(\tR\ttimestamp\x12\x12\n" +
 	"\x04text\x18\x02 \x01(\tR\x04text\"\xee\x02\n" +
@@ -4748,7 +5719,7 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"gap_reason\x18\x03 \x01(\tH\x01R\n" +
 	"gap_reason\x88\x01\x01B\b\n" +
 	"\x06_valueB\r\n" +
-	"\v_gap_reason\"\xa2\r\n" +
+	"\v_gap_reason\"\xf2\r\n" +
 	"\rExecutionView\x12\"\n" +
 	"\foperation_id\x18\x01 \x01(\tR\foperation_id\x12\"\n" +
 	"\fexecution_id\x18\x02 \x01(\tR\fexecution_id\x12\x12\n" +
@@ -4764,8 +5735,10 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x06timing\x18\x1a \x01(\v2(.modeldev.service.v1.ExecutionTimingViewR\x06timing\x12Z\n" +
 	"\x12model_registration\x18\x1b \x01(\v2*.modeldev.service.v1.ModelRegistrationViewR\x12model_registration\x12C\n" +
 	"\ahistory\x18\x1c \x01(\v2).modeldev.service.v1.ExecutionHistoryViewR\ahistory\x12*\n" +
-	"\x10input_version_id\x18\a \x01(\tR\x10input_version_id\x12*\n" +
-	"\x10image_version_id\x18\b \x01(\tR\x10image_version_id\x12$\n" +
+	"\x10input_version_id\x18\a \x01(\tR\x10input_version_id\x12\x1a\n" +
+	"\bimage_id\x18\" \x01(\tR\bimage_id\x12$\n" +
+	"\rimage_version\x18# \x01(\x03R\rimage_version\x12 \n" +
+	"\vimage_scope\x18$ \x01(\tR\vimage_scope\x12$\n" +
 	"\rcompute_state\x18\t \x01(\tR\rcompute_state\x12&\n" +
 	"\x0edelivery_state\x18\n" +
 	" \x01(\tR\x0edelivery_state\x12 \n" +
@@ -4783,15 +5756,14 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x10managed_settings\x18  \x01(\v21.modeldev.service.v1.ExecutionManagedSettingsViewR\x10managed_settings\x12K\n" +
 	"\n" +
 	"base_model\x18! \x01(\v2+.modeldev.service.v1.ExecutionBaseModelViewR\n" +
-	"base_modelJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\tpreset_idR\n" +
-	"release_id\"\x84\x01\n" +
+	"base_modelJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aJ\x04\b\b\x10\tR\tpreset_idR\n" +
+	"release_idR\x10image_version_id\"z\n" +
 	"\x16ExecutionBaseModelView\x12\x1a\n" +
 	"\bmodel_id\x18\x01 \x01(\tR\bmodel_id\x12\x1e\n" +
 	"\n" +
 	"version_id\x18\x02 \x01(\tR\n" +
 	"version_id\x12\x16\n" +
-	"\x06family\x18\x03 \x01(\tR\x06family\x12\x16\n" +
-	"\x06format\x18\x04 \x01(\tR\x06format\"\xcc\x01\n" +
+	"\x06format\x18\x04 \x01(\tR\x06formatJ\x04\b\x03\x10\x04R\x06family\"\xcc\x01\n" +
 	"\x14ExecutionFailureView\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\x12\"\n" +
 	"\fsafe_message\x18\x02 \x01(\tR\fsafe_message\x12P\n" +
@@ -4801,7 +5773,7 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x0ecorrelation_id\x18\x04 \x01(\tR\x0ecorrelation_id\"K\n" +
 	"\x1bExecutionFieldViolationView\x12\x14\n" +
 	"\x05field\x18\x01 \x01(\tR\x05field\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xc0\a\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xb4\a\n" +
 	"\x1cExecutionManagedSettingsView\x12\x14\n" +
 	"\x05stage\x18\x01 \x01(\tR\x05stage\x12(\n" +
 	"\x0ffinetuning_type\x18\x02 \x01(\tR\x0ffinetuning_type\x12 \n" +
@@ -4825,8 +5797,7 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"flash_attn\x18\x0e \x01(\tR\n" +
 	"flash_attn\x12\x1c\n" +
 	"\treport_to\x18\x0f \x01(\tR\treport_to\x12$\n" +
-	"\rsave_strategy\x18\x10 \x01(\tR\rsave_strategy\x12\x1a\n" +
-	"\btemplate\x18\x11 \x01(\tR\btemplate\x12 \n" +
+	"\rsave_strategy\x18\x10 \x01(\tR\rsave_strategy\x12 \n" +
 	"\vtrain_dtype\x18\x12 \x01(\tR\vtrain_dtype\x12\"\n" +
 	"\fexport_dtype\x18\x13 \x01(\tR\fexport_dtype\x12\"\n" +
 	"\fverify_dtype\x18\x14 \x01(\tR\fverify_dtype\x12,\n" +
@@ -4836,7 +5807,7 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\flora_dropout\x18\x18 \x01(\tR\flora_dropout\x12*\n" +
 	"\x10num_train_epochs\x18\x19 \x01(\x03R\x10num_train_epochs\x12\x14\n" +
 	"\x05optim\x18\x1a \x01(\tR\x05optim\x12$\n" +
-	"\rlogging_steps\x18\x1b \x01(\x03R\rlogging_steps\"\xbf\x01\n" +
+	"\rlogging_steps\x18\x1b \x01(\x03R\rlogging_stepsJ\x04\b\x11\x10\x12R\btemplate\"\xbf\x01\n" +
 	"\x11ExecutionStepView\x12\x12\n" +
 	"\x04role\x18\x01 \x01(\tR\x04role\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x1e\n" +
@@ -4924,99 +5895,119 @@ func file_modeldev_service_v1_execution_proto_rawDescGZIP() []byte {
 	return file_modeldev_service_v1_execution_proto_rawDescData
 }
 
-var file_modeldev_service_v1_execution_proto_msgTypes = make([]protoimpl.MessageInfo, 50)
+var file_modeldev_service_v1_execution_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
 var file_modeldev_service_v1_execution_proto_goTypes = []any{
 	(*CreateExecutionRequest)(nil),            // 0: modeldev.service.v1.CreateExecutionRequest
-	(*ExecutionParameters)(nil),               // 1: modeldev.service.v1.ExecutionParameters
-	(*GeneralParameter)(nil),                  // 2: modeldev.service.v1.GeneralParameter
-	(*ListImplementationsRequest)(nil),        // 3: modeldev.service.v1.ListImplementationsRequest
-	(*ListImplementationsResponse)(nil),       // 4: modeldev.service.v1.ListImplementationsResponse
-	(*ImplementationView)(nil),                // 5: modeldev.service.v1.ImplementationView
-	(*ParameterRule)(nil),                     // 6: modeldev.service.v1.ParameterRule
-	(*GetInputVersionRequest)(nil),            // 7: modeldev.service.v1.GetInputVersionRequest
-	(*GetInputVersionResponse)(nil),           // 8: modeldev.service.v1.GetInputVersionResponse
-	(*ListInputVersionsRequest)(nil),          // 9: modeldev.service.v1.ListInputVersionsRequest
-	(*ListInputVersionsResponse)(nil),         // 10: modeldev.service.v1.ListInputVersionsResponse
-	(*InputVersionView)(nil),                  // 11: modeldev.service.v1.InputVersionView
-	(*CreateExecutionResponse)(nil),           // 12: modeldev.service.v1.CreateExecutionResponse
-	(*StopExecutionRequest)(nil),              // 13: modeldev.service.v1.StopExecutionRequest
-	(*ResumeModelRegistrationRequest)(nil),    // 14: modeldev.service.v1.ResumeModelRegistrationRequest
-	(*StopExecutionResponse)(nil),             // 15: modeldev.service.v1.StopExecutionResponse
-	(*GetExecutionRequest)(nil),               // 16: modeldev.service.v1.GetExecutionRequest
-	(*GetExecutionResponse)(nil),              // 17: modeldev.service.v1.GetExecutionResponse
-	(*ListExecutionsRequest)(nil),             // 18: modeldev.service.v1.ListExecutionsRequest
-	(*ListExecutionsResponse)(nil),            // 19: modeldev.service.v1.ListExecutionsResponse
-	(*GetExecutionLogsRequest)(nil),           // 20: modeldev.service.v1.GetExecutionLogsRequest
-	(*GetExecutionLogsResponse)(nil),          // 21: modeldev.service.v1.GetExecutionLogsResponse
-	(*ExecutionLogLine)(nil),                  // 22: modeldev.service.v1.ExecutionLogLine
-	(*ExecutionContainerView)(nil),            // 23: modeldev.service.v1.ExecutionContainerView
-	(*ExecutionPodView)(nil),                  // 24: modeldev.service.v1.ExecutionPodView
-	(*ExecutionEventView)(nil),                // 25: modeldev.service.v1.ExecutionEventView
-	(*ListExecutionPodsRequest)(nil),          // 26: modeldev.service.v1.ListExecutionPodsRequest
-	(*ListExecutionPodsResponse)(nil),         // 27: modeldev.service.v1.ListExecutionPodsResponse
-	(*ListExecutionEventsRequest)(nil),        // 28: modeldev.service.v1.ListExecutionEventsRequest
-	(*ListExecutionEventsResponse)(nil),       // 29: modeldev.service.v1.ListExecutionEventsResponse
-	(*QueryExecutionMetricsRequest)(nil),      // 30: modeldev.service.v1.QueryExecutionMetricsRequest
-	(*QueryExecutionMetricsResponse)(nil),     // 31: modeldev.service.v1.QueryExecutionMetricsResponse
-	(*ExecutionMetricSeries)(nil),             // 32: modeldev.service.v1.ExecutionMetricSeries
-	(*ExecutionMetricPoint)(nil),              // 33: modeldev.service.v1.ExecutionMetricPoint
-	(*ExecutionView)(nil),                     // 34: modeldev.service.v1.ExecutionView
-	(*ExecutionBaseModelView)(nil),            // 35: modeldev.service.v1.ExecutionBaseModelView
-	(*ExecutionFailureView)(nil),              // 36: modeldev.service.v1.ExecutionFailureView
-	(*ExecutionFieldViolationView)(nil),       // 37: modeldev.service.v1.ExecutionFieldViolationView
-	(*ExecutionManagedSettingsView)(nil),      // 38: modeldev.service.v1.ExecutionManagedSettingsView
-	(*ExecutionStepView)(nil),                 // 39: modeldev.service.v1.ExecutionStepView
-	(*ExecutionMetricView)(nil),               // 40: modeldev.service.v1.ExecutionMetricView
-	(*ExecutionComputeView)(nil),              // 41: modeldev.service.v1.ExecutionComputeView
-	(*ExecutionTimingView)(nil),               // 42: modeldev.service.v1.ExecutionTimingView
-	(*ModelRegistrationView)(nil),             // 43: modeldev.service.v1.ModelRegistrationView
-	(*ListExecutionArtifactsRequest)(nil),     // 44: modeldev.service.v1.ListExecutionArtifactsRequest
-	(*ListExecutionArtifactsResponse)(nil),    // 45: modeldev.service.v1.ListExecutionArtifactsResponse
-	(*ArtifactView)(nil),                      // 46: modeldev.service.v1.ArtifactView
-	(*AuthorizeArtifactDownloadRequest)(nil),  // 47: modeldev.service.v1.AuthorizeArtifactDownloadRequest
-	(*AuthorizeArtifactDownloadResponse)(nil), // 48: modeldev.service.v1.AuthorizeArtifactDownloadResponse
-	(*ExecutionHistoryView)(nil),              // 49: modeldev.service.v1.ExecutionHistoryView
+	(*CheckFinetuningReadinessRequest)(nil),   // 1: modeldev.service.v1.CheckFinetuningReadinessRequest
+	(*CheckFinetuningReadinessResponse)(nil),  // 2: modeldev.service.v1.CheckFinetuningReadinessResponse
+	(*FinetuningRegisteredTemplate)(nil),      // 3: modeldev.service.v1.FinetuningRegisteredTemplate
+	(*FinetuningRuntimePackage)(nil),          // 4: modeldev.service.v1.FinetuningRuntimePackage
+	(*FinetuningContextLimitField)(nil),       // 5: modeldev.service.v1.FinetuningContextLimitField
+	(*FinetuningRuntimeCapabilities)(nil),     // 6: modeldev.service.v1.FinetuningRuntimeCapabilities
+	(*FinetuningTemplateSource)(nil),          // 7: modeldev.service.v1.FinetuningTemplateSource
+	(*FinetuningTemplatePlan)(nil),            // 8: modeldev.service.v1.FinetuningTemplatePlan
+	(*FinetuningContentLimits)(nil),           // 9: modeldev.service.v1.FinetuningContentLimits
+	(*FinetuningStructureLimits)(nil),         // 10: modeldev.service.v1.FinetuningStructureLimits
+	(*ExecutionParameters)(nil),               // 11: modeldev.service.v1.ExecutionParameters
+	(*GeneralParameter)(nil),                  // 12: modeldev.service.v1.GeneralParameter
+	(*ListImplementationsRequest)(nil),        // 13: modeldev.service.v1.ListImplementationsRequest
+	(*ListImplementationsResponse)(nil),       // 14: modeldev.service.v1.ListImplementationsResponse
+	(*ImplementationView)(nil),                // 15: modeldev.service.v1.ImplementationView
+	(*ParameterRule)(nil),                     // 16: modeldev.service.v1.ParameterRule
+	(*GetInputVersionRequest)(nil),            // 17: modeldev.service.v1.GetInputVersionRequest
+	(*GetInputVersionResponse)(nil),           // 18: modeldev.service.v1.GetInputVersionResponse
+	(*ListInputVersionsRequest)(nil),          // 19: modeldev.service.v1.ListInputVersionsRequest
+	(*ListInputVersionsResponse)(nil),         // 20: modeldev.service.v1.ListInputVersionsResponse
+	(*InputVersionView)(nil),                  // 21: modeldev.service.v1.InputVersionView
+	(*CreateExecutionResponse)(nil),           // 22: modeldev.service.v1.CreateExecutionResponse
+	(*StopExecutionRequest)(nil),              // 23: modeldev.service.v1.StopExecutionRequest
+	(*ResumeModelRegistrationRequest)(nil),    // 24: modeldev.service.v1.ResumeModelRegistrationRequest
+	(*StopExecutionResponse)(nil),             // 25: modeldev.service.v1.StopExecutionResponse
+	(*GetExecutionRequest)(nil),               // 26: modeldev.service.v1.GetExecutionRequest
+	(*GetExecutionResponse)(nil),              // 27: modeldev.service.v1.GetExecutionResponse
+	(*ListExecutionsRequest)(nil),             // 28: modeldev.service.v1.ListExecutionsRequest
+	(*ListExecutionsResponse)(nil),            // 29: modeldev.service.v1.ListExecutionsResponse
+	(*GetExecutionLogsRequest)(nil),           // 30: modeldev.service.v1.GetExecutionLogsRequest
+	(*GetExecutionLogsResponse)(nil),          // 31: modeldev.service.v1.GetExecutionLogsResponse
+	(*ExecutionLogLine)(nil),                  // 32: modeldev.service.v1.ExecutionLogLine
+	(*ExecutionContainerView)(nil),            // 33: modeldev.service.v1.ExecutionContainerView
+	(*ExecutionPodView)(nil),                  // 34: modeldev.service.v1.ExecutionPodView
+	(*ExecutionEventView)(nil),                // 35: modeldev.service.v1.ExecutionEventView
+	(*ListExecutionPodsRequest)(nil),          // 36: modeldev.service.v1.ListExecutionPodsRequest
+	(*ListExecutionPodsResponse)(nil),         // 37: modeldev.service.v1.ListExecutionPodsResponse
+	(*ListExecutionEventsRequest)(nil),        // 38: modeldev.service.v1.ListExecutionEventsRequest
+	(*ListExecutionEventsResponse)(nil),       // 39: modeldev.service.v1.ListExecutionEventsResponse
+	(*QueryExecutionMetricsRequest)(nil),      // 40: modeldev.service.v1.QueryExecutionMetricsRequest
+	(*QueryExecutionMetricsResponse)(nil),     // 41: modeldev.service.v1.QueryExecutionMetricsResponse
+	(*ExecutionMetricSeries)(nil),             // 42: modeldev.service.v1.ExecutionMetricSeries
+	(*ExecutionMetricPoint)(nil),              // 43: modeldev.service.v1.ExecutionMetricPoint
+	(*ExecutionView)(nil),                     // 44: modeldev.service.v1.ExecutionView
+	(*ExecutionBaseModelView)(nil),            // 45: modeldev.service.v1.ExecutionBaseModelView
+	(*ExecutionFailureView)(nil),              // 46: modeldev.service.v1.ExecutionFailureView
+	(*ExecutionFieldViolationView)(nil),       // 47: modeldev.service.v1.ExecutionFieldViolationView
+	(*ExecutionManagedSettingsView)(nil),      // 48: modeldev.service.v1.ExecutionManagedSettingsView
+	(*ExecutionStepView)(nil),                 // 49: modeldev.service.v1.ExecutionStepView
+	(*ExecutionMetricView)(nil),               // 50: modeldev.service.v1.ExecutionMetricView
+	(*ExecutionComputeView)(nil),              // 51: modeldev.service.v1.ExecutionComputeView
+	(*ExecutionTimingView)(nil),               // 52: modeldev.service.v1.ExecutionTimingView
+	(*ModelRegistrationView)(nil),             // 53: modeldev.service.v1.ModelRegistrationView
+	(*ListExecutionArtifactsRequest)(nil),     // 54: modeldev.service.v1.ListExecutionArtifactsRequest
+	(*ListExecutionArtifactsResponse)(nil),    // 55: modeldev.service.v1.ListExecutionArtifactsResponse
+	(*ArtifactView)(nil),                      // 56: modeldev.service.v1.ArtifactView
+	(*AuthorizeArtifactDownloadRequest)(nil),  // 57: modeldev.service.v1.AuthorizeArtifactDownloadRequest
+	(*AuthorizeArtifactDownloadResponse)(nil), // 58: modeldev.service.v1.AuthorizeArtifactDownloadResponse
+	(*ExecutionHistoryView)(nil),              // 59: modeldev.service.v1.ExecutionHistoryView
 }
 var file_modeldev_service_v1_execution_proto_depIdxs = []int32{
-	1,  // 0: modeldev.service.v1.CreateExecutionRequest.parameters:type_name -> modeldev.service.v1.ExecutionParameters
-	5,  // 1: modeldev.service.v1.ListImplementationsResponse.items:type_name -> modeldev.service.v1.ImplementationView
-	6,  // 2: modeldev.service.v1.ImplementationView.parameter_rules:type_name -> modeldev.service.v1.ParameterRule
-	2,  // 3: modeldev.service.v1.ParameterRule.default_value:type_name -> modeldev.service.v1.GeneralParameter
-	2,  // 4: modeldev.service.v1.ParameterRule.allowed_values:type_name -> modeldev.service.v1.GeneralParameter
-	2,  // 5: modeldev.service.v1.ParameterRule.minimum:type_name -> modeldev.service.v1.GeneralParameter
-	2,  // 6: modeldev.service.v1.ParameterRule.maximum:type_name -> modeldev.service.v1.GeneralParameter
-	11, // 7: modeldev.service.v1.GetInputVersionResponse.input_version:type_name -> modeldev.service.v1.InputVersionView
-	11, // 8: modeldev.service.v1.ListInputVersionsResponse.items:type_name -> modeldev.service.v1.InputVersionView
-	34, // 9: modeldev.service.v1.GetExecutionResponse.execution:type_name -> modeldev.service.v1.ExecutionView
-	34, // 10: modeldev.service.v1.ListExecutionsResponse.items:type_name -> modeldev.service.v1.ExecutionView
-	22, // 11: modeldev.service.v1.GetExecutionLogsResponse.lines:type_name -> modeldev.service.v1.ExecutionLogLine
-	23, // 12: modeldev.service.v1.ExecutionContainerView.last_state:type_name -> modeldev.service.v1.ExecutionContainerView
-	23, // 13: modeldev.service.v1.ExecutionPodView.containers:type_name -> modeldev.service.v1.ExecutionContainerView
-	23, // 14: modeldev.service.v1.ExecutionPodView.init_containers:type_name -> modeldev.service.v1.ExecutionContainerView
-	23, // 15: modeldev.service.v1.ExecutionPodView.ephemeral_containers:type_name -> modeldev.service.v1.ExecutionContainerView
-	24, // 16: modeldev.service.v1.ListExecutionPodsResponse.pods:type_name -> modeldev.service.v1.ExecutionPodView
-	25, // 17: modeldev.service.v1.ListExecutionEventsResponse.events:type_name -> modeldev.service.v1.ExecutionEventView
-	32, // 18: modeldev.service.v1.QueryExecutionMetricsResponse.series:type_name -> modeldev.service.v1.ExecutionMetricSeries
-	33, // 19: modeldev.service.v1.ExecutionMetricSeries.points:type_name -> modeldev.service.v1.ExecutionMetricPoint
-	41, // 20: modeldev.service.v1.ExecutionView.compute:type_name -> modeldev.service.v1.ExecutionComputeView
-	2,  // 21: modeldev.service.v1.ExecutionView.resolved_parameters:type_name -> modeldev.service.v1.GeneralParameter
-	1,  // 22: modeldev.service.v1.ExecutionView.explicit_parameters:type_name -> modeldev.service.v1.ExecutionParameters
-	42, // 23: modeldev.service.v1.ExecutionView.timing:type_name -> modeldev.service.v1.ExecutionTimingView
-	43, // 24: modeldev.service.v1.ExecutionView.model_registration:type_name -> modeldev.service.v1.ModelRegistrationView
-	49, // 25: modeldev.service.v1.ExecutionView.history:type_name -> modeldev.service.v1.ExecutionHistoryView
-	39, // 26: modeldev.service.v1.ExecutionView.steps:type_name -> modeldev.service.v1.ExecutionStepView
-	40, // 27: modeldev.service.v1.ExecutionView.metrics:type_name -> modeldev.service.v1.ExecutionMetricView
-	36, // 28: modeldev.service.v1.ExecutionView.failure:type_name -> modeldev.service.v1.ExecutionFailureView
-	38, // 29: modeldev.service.v1.ExecutionView.managed_settings:type_name -> modeldev.service.v1.ExecutionManagedSettingsView
-	35, // 30: modeldev.service.v1.ExecutionView.base_model:type_name -> modeldev.service.v1.ExecutionBaseModelView
-	37, // 31: modeldev.service.v1.ExecutionFailureView.violations:type_name -> modeldev.service.v1.ExecutionFieldViolationView
-	46, // 32: modeldev.service.v1.ListExecutionArtifactsResponse.items:type_name -> modeldev.service.v1.ArtifactView
-	46, // 33: modeldev.service.v1.AuthorizeArtifactDownloadResponse.artifact:type_name -> modeldev.service.v1.ArtifactView
-	34, // [34:34] is the sub-list for method output_type
-	34, // [34:34] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	11, // 0: modeldev.service.v1.CreateExecutionRequest.parameters:type_name -> modeldev.service.v1.ExecutionParameters
+	3,  // 1: modeldev.service.v1.CheckFinetuningReadinessResponse.template_candidates:type_name -> modeldev.service.v1.FinetuningRegisteredTemplate
+	6,  // 2: modeldev.service.v1.CheckFinetuningReadinessResponse.runtime_capabilities:type_name -> modeldev.service.v1.FinetuningRuntimeCapabilities
+	9,  // 3: modeldev.service.v1.CheckFinetuningReadinessResponse.limits:type_name -> modeldev.service.v1.FinetuningContentLimits
+	10, // 4: modeldev.service.v1.CheckFinetuningReadinessResponse.structure_limits:type_name -> modeldev.service.v1.FinetuningStructureLimits
+	8,  // 5: modeldev.service.v1.CheckFinetuningReadinessResponse.template_plan:type_name -> modeldev.service.v1.FinetuningTemplatePlan
+	4,  // 6: modeldev.service.v1.FinetuningRuntimeCapabilities.packages:type_name -> modeldev.service.v1.FinetuningRuntimePackage
+	3,  // 7: modeldev.service.v1.FinetuningRuntimeCapabilities.registered_templates:type_name -> modeldev.service.v1.FinetuningRegisteredTemplate
+	5,  // 8: modeldev.service.v1.FinetuningRuntimeCapabilities.context_limit_fields:type_name -> modeldev.service.v1.FinetuningContextLimitField
+	7,  // 9: modeldev.service.v1.FinetuningTemplatePlan.source:type_name -> modeldev.service.v1.FinetuningTemplateSource
+	15, // 10: modeldev.service.v1.ListImplementationsResponse.items:type_name -> modeldev.service.v1.ImplementationView
+	16, // 11: modeldev.service.v1.ImplementationView.parameter_rules:type_name -> modeldev.service.v1.ParameterRule
+	6,  // 12: modeldev.service.v1.ImplementationView.runtime_capabilities:type_name -> modeldev.service.v1.FinetuningRuntimeCapabilities
+	12, // 13: modeldev.service.v1.ParameterRule.default_value:type_name -> modeldev.service.v1.GeneralParameter
+	12, // 14: modeldev.service.v1.ParameterRule.allowed_values:type_name -> modeldev.service.v1.GeneralParameter
+	12, // 15: modeldev.service.v1.ParameterRule.minimum:type_name -> modeldev.service.v1.GeneralParameter
+	12, // 16: modeldev.service.v1.ParameterRule.maximum:type_name -> modeldev.service.v1.GeneralParameter
+	21, // 17: modeldev.service.v1.GetInputVersionResponse.input_version:type_name -> modeldev.service.v1.InputVersionView
+	21, // 18: modeldev.service.v1.ListInputVersionsResponse.items:type_name -> modeldev.service.v1.InputVersionView
+	44, // 19: modeldev.service.v1.GetExecutionResponse.execution:type_name -> modeldev.service.v1.ExecutionView
+	44, // 20: modeldev.service.v1.ListExecutionsResponse.items:type_name -> modeldev.service.v1.ExecutionView
+	32, // 21: modeldev.service.v1.GetExecutionLogsResponse.lines:type_name -> modeldev.service.v1.ExecutionLogLine
+	33, // 22: modeldev.service.v1.ExecutionContainerView.last_state:type_name -> modeldev.service.v1.ExecutionContainerView
+	33, // 23: modeldev.service.v1.ExecutionPodView.containers:type_name -> modeldev.service.v1.ExecutionContainerView
+	33, // 24: modeldev.service.v1.ExecutionPodView.init_containers:type_name -> modeldev.service.v1.ExecutionContainerView
+	33, // 25: modeldev.service.v1.ExecutionPodView.ephemeral_containers:type_name -> modeldev.service.v1.ExecutionContainerView
+	34, // 26: modeldev.service.v1.ListExecutionPodsResponse.pods:type_name -> modeldev.service.v1.ExecutionPodView
+	35, // 27: modeldev.service.v1.ListExecutionEventsResponse.events:type_name -> modeldev.service.v1.ExecutionEventView
+	42, // 28: modeldev.service.v1.QueryExecutionMetricsResponse.series:type_name -> modeldev.service.v1.ExecutionMetricSeries
+	43, // 29: modeldev.service.v1.ExecutionMetricSeries.points:type_name -> modeldev.service.v1.ExecutionMetricPoint
+	51, // 30: modeldev.service.v1.ExecutionView.compute:type_name -> modeldev.service.v1.ExecutionComputeView
+	12, // 31: modeldev.service.v1.ExecutionView.resolved_parameters:type_name -> modeldev.service.v1.GeneralParameter
+	11, // 32: modeldev.service.v1.ExecutionView.explicit_parameters:type_name -> modeldev.service.v1.ExecutionParameters
+	52, // 33: modeldev.service.v1.ExecutionView.timing:type_name -> modeldev.service.v1.ExecutionTimingView
+	53, // 34: modeldev.service.v1.ExecutionView.model_registration:type_name -> modeldev.service.v1.ModelRegistrationView
+	59, // 35: modeldev.service.v1.ExecutionView.history:type_name -> modeldev.service.v1.ExecutionHistoryView
+	49, // 36: modeldev.service.v1.ExecutionView.steps:type_name -> modeldev.service.v1.ExecutionStepView
+	50, // 37: modeldev.service.v1.ExecutionView.metrics:type_name -> modeldev.service.v1.ExecutionMetricView
+	46, // 38: modeldev.service.v1.ExecutionView.failure:type_name -> modeldev.service.v1.ExecutionFailureView
+	48, // 39: modeldev.service.v1.ExecutionView.managed_settings:type_name -> modeldev.service.v1.ExecutionManagedSettingsView
+	45, // 40: modeldev.service.v1.ExecutionView.base_model:type_name -> modeldev.service.v1.ExecutionBaseModelView
+	47, // 41: modeldev.service.v1.ExecutionFailureView.violations:type_name -> modeldev.service.v1.ExecutionFieldViolationView
+	56, // 42: modeldev.service.v1.ListExecutionArtifactsResponse.items:type_name -> modeldev.service.v1.ArtifactView
+	56, // 43: modeldev.service.v1.AuthorizeArtifactDownloadResponse.artifact:type_name -> modeldev.service.v1.ArtifactView
+	44, // [44:44] is the sub-list for method output_type
+	44, // [44:44] is the sub-list for method input_type
+	44, // [44:44] is the sub-list for extension type_name
+	44, // [44:44] is the sub-list for extension extendee
+	0,  // [0:44] is the sub-list for field type_name
 }
 
 func init() { file_modeldev_service_v1_execution_proto_init() }
@@ -5026,26 +6017,28 @@ func file_modeldev_service_v1_execution_proto_init() {
 	}
 	file_modeldev_service_v1_execution_proto_msgTypes[0].OneofWrappers = []any{}
 	file_modeldev_service_v1_execution_proto_msgTypes[1].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[3].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[6].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[9].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[18].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[20].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[23].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[24].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[26].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[8].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[11].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[13].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[16].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[19].OneofWrappers = []any{}
 	file_modeldev_service_v1_execution_proto_msgTypes[28].OneofWrappers = []any{}
 	file_modeldev_service_v1_execution_proto_msgTypes[30].OneofWrappers = []any{}
 	file_modeldev_service_v1_execution_proto_msgTypes[33].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[34].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[36].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[38].OneofWrappers = []any{}
 	file_modeldev_service_v1_execution_proto_msgTypes[40].OneofWrappers = []any{}
-	file_modeldev_service_v1_execution_proto_msgTypes[44].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[43].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[50].OneofWrappers = []any{}
+	file_modeldev_service_v1_execution_proto_msgTypes[54].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_modeldev_service_v1_execution_proto_rawDesc), len(file_modeldev_service_v1_execution_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   50,
+			NumMessages:   60,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

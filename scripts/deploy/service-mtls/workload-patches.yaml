@@ -1,0 +1,618 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-resource-service
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: input
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-resource-private
+              items:
+              - key: compute.json
+                path: compute.json
+              - key: config.yaml
+                path: config.yaml
+              - key: harbor-ca.crt
+                path: harbor-ca.crt
+              - key: harbor.password
+                path: harbor.password
+              - key: image-cursor.key
+                path: image-cursor.key
+              - key: image-keyring.json
+                path: image-keyring.json
+              - key: image-runtime.dsn
+                path: image-runtime.dsn
+              - key: instance.json
+                path: instance.json
+              - key: owner.key
+                path: owner.key
+              - key: runtime.dsn
+                path: runtime.dsn
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+          - secret:
+              name: ani-resource-client-tls
+              items:
+              - key: tls.crt
+                path: client.crt
+              - key: tls.key
+                path: client.key
+          - secret:
+              name: ani-resource-server-tls
+              items:
+              - key: tls.crt
+                path: server.crt
+              - key: tls.key
+                path: server.key
+        secret: null
+        configMap: null
+      - name: vm-client-ca-input
+        projected:
+          defaultMode: 288
+          sources:
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: client-ca.crt
+        secret: null
+        configMap: null
+      - name: image-runtime-tls
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-resource-server-tls
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-resource-sandbox-20261027
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: input
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-resource-private
+              items:
+              - key: compute.json
+                path: compute.json
+              - key: config.yaml
+                path: config.yaml
+              - key: harbor-ca.crt
+                path: harbor-ca.crt
+              - key: harbor.password
+                path: harbor.password
+              - key: image-cursor.key
+                path: image-cursor.key
+              - key: image-keyring.json
+                path: image-keyring.json
+              - key: image-runtime.dsn
+                path: image-runtime.dsn
+              - key: instance.json
+                path: instance.json
+              - key: owner.key
+                path: owner.key
+              - key: runtime.dsn
+                path: runtime.dsn
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+          - secret:
+              name: ani-resource-client-tls
+              items:
+              - key: tls.crt
+                path: client.crt
+              - key: tls.key
+                path: client.key
+          - secret:
+              name: ani-resource-server-tls
+              items:
+              - key: tls.crt
+                path: server.crt
+              - key: tls.key
+                path: server.key
+        secret: null
+        configMap: null
+      - name: vm-client-ca-input
+        projected:
+          defaultMode: 288
+          sources:
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: client-ca.crt
+        secret: null
+        configMap: null
+      - name: image-runtime-tls
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-resource-server-tls
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-accelerator-service
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: runtime-source
+        projected:
+          defaultMode: 384
+          sources:
+          - secret:
+              name: ani-accelerator-runtime
+              items:
+              - key: cursor-key
+                path: cursor-key
+              - key: database-dsn
+                path: database-dsn
+              - key: inference-owner.pub
+                path: inference-owner.pub
+              - key: resource-owner.pub
+                path: resource-owner.pub
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: client-ca.pem
+          - secret:
+              name: ani-accelerator-server-tls
+              items:
+              - key: tls.crt
+                path: server.pem
+              - key: tls.key
+                path: server.key
+        secret: null
+        configMap: null
+      - name: modeldev-public-trust
+        projected:
+          defaultMode: 292
+          sources:
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: accelerator-client-ca-bundle.pem
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: governance-quota-client-ca-bundle.pem
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: modeldev-server-ca.pem
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ani-node-agent
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: identity
+        projected:
+          defaultMode: 256
+          sources:
+          - serviceAccountToken:
+              audience: ani-node-agent
+              expirationSeconds: 600
+              path: token
+        secret: null
+        configMap: null
+      - name: tls
+        projected:
+          defaultMode: 256
+          sources:
+          - secret:
+              name: ani-node-agent-client-tls
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-session-gateway
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: vm-mtls
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-session-gateway-server-tls
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: resource-ca.crt
+          - secret:
+              name: ani-session-gateway-client-tls
+              items:
+              - key: tls.crt
+                path: client.crt
+              - key: tls.key
+                path: client.key
+        secret: null
+        configMap: null
+      containers:
+      - name: session-gateway
+        env:
+        - name: RESOURCE_INSTANCE_CERT_FILE
+          value: /var/run/secrets/ani-vm/client.crt
+        - name: RESOURCE_INSTANCE_KEY_FILE
+          value: /var/run/secrets/ani-vm/client.key
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-governance
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: runtime-input
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-governance-runtime
+              items:
+              - key: runtime.yaml
+                path: runtime.yaml
+              - key: access-key-encryption-key
+                path: access-key-encryption-key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+          - secret:
+              name: ani-governance-client-tls
+              items:
+              - key: tls.crt
+                path: gov-client.crt
+              - key: tls.key
+                path: gov-client.key
+          - secret:
+              name: ani-governance-server-tls
+              items:
+              - key: tls.crt
+                path: gov-server.crt
+              - key: tls.key
+                path: gov-server.key
+        secret: null
+        configMap: null
+      - name: modeldev-public-trust
+        projected:
+          defaultMode: 292
+          sources:
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: accelerator-client-ca-bundle.pem
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: governance-quota-client-ca-bundle.pem
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: modeldev-server-ca.pem
+        secret: null
+        configMap: null
+      - name: vm-sg-mtls
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-governance-session-client-tls
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-governance-sandbox-20261027
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: runtime-input
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-governance-runtime
+              items:
+              - key: runtime.yaml
+                path: runtime.yaml
+              - key: access-key-encryption-key
+                path: access-key-encryption-key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+          - secret:
+              name: ani-governance-client-tls
+              items:
+              - key: tls.crt
+                path: gov-client.crt
+              - key: tls.key
+                path: gov-client.key
+          - secret:
+              name: ani-governance-server-tls
+              items:
+              - key: tls.crt
+                path: gov-server.crt
+              - key: tls.key
+                path: gov-server.key
+        secret: null
+        configMap: null
+      - name: modeldev-public-trust
+        projected:
+          defaultMode: 292
+          sources:
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: accelerator-client-ca-bundle.pem
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: governance-quota-client-ca-bundle.pem
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: modeldev-server-ca.pem
+        secret: null
+        configMap: null
+      - name: vm-sg-mtls
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: ani-governance-session-client-tls
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-modeldev
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: config-v21
+        projected:
+          defaultMode: 292
+          sources:
+          - configMap:
+              name: modeldev-newenv-main-fine-7c3f16f3fe60
+              items:
+              - key: config.yaml
+                path: config.yaml
+              - key: dispatch-binding.json
+                path: dispatch-binding.json
+              - key: facts.json
+                path: facts.json
+              - key: fine-facts.json
+                path: fine-facts.json
+              - key: kfp-ca.crt
+                path: kfp-ca.crt
+              - key: model-ca.crt
+                path: model-ca.crt
+              - key: s3-ca.crt
+                path: s3-ca.crt
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: accelerator-ca.crt
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: governance-ca.crt
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: grpc-ca.crt
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-model-service
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: model-client-ca
+        projected:
+          defaultMode: 292
+          sources:
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ani-inference-service
+  namespace: ani-system
+spec:
+  template:
+    metadata:
+      annotations:
+        ani.io/service-mtls: cert-manager
+    spec:
+      volumes:
+      - name: platform-ca
+        projected:
+          defaultMode: 292
+          sources:
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null
+      - name: image-runtime-tls
+        projected:
+          defaultMode: 288
+          sources:
+          - secret:
+              name: inference-accelerator-mtls
+              items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+          - configMap:
+              name: ani-internal-service-ca
+              items:
+              - key: ca.crt
+                path: ca.crt
+        secret: null
+        configMap: null

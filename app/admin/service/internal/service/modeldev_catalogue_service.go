@@ -10,6 +10,7 @@ import (
 	trainingv1 "github.com/zhangzhe-ctrl/ani-modeldev-service/api/ani/training/v1"
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func (s *ModelDevService) ListImplementations(ctx context.Context, in *modeldevv1.ListImplementationsRequest) (*modeldevv1.ListImplementationsResponse, error) {
@@ -17,7 +18,7 @@ func (s *ModelDevService) ListImplementations(ctx context.Context, in *modeldevv
 	if err != nil {
 		return nil, err
 	}
-	if in == nil {
+	if in == nil || in.DeviceMode == nil || (*in.DeviceMode != "cpu" && *in.DeviceMode != "gpu") {
 		return nil, modelDevQueryInvalid()
 	}
 	page, pageSize, err := resolveModelDevPage(in.Page, in.PageSize)
@@ -33,13 +34,25 @@ func (s *ModelDevService) ListImplementations(ctx context.Context, in *modeldevv
 		parsed := trainingv1.ExecutionKind(value)
 		kind = &parsed
 	}
-	out, err := s.resolver.ListImplementations(ctx, scope, page, pageSize, kind)
+	out, err := s.resolver.ListImplementations(ctx, scope, page, pageSize, kind, *in.DeviceMode)
 	if err != nil {
 		return nil, modelDevQueryFailure(err)
 	}
 	reply := &modeldevv1.ListImplementationsResponse{Total: out.Total, Items: []*modeldevv1.ImplementationView{}}
 	for _, preset := range out.Implementations {
 		view := &modeldevv1.ImplementationView{ImplementationId: preset.ImplementationId, Name: preset.Name, Kind: strings.TrimPrefix(preset.Kind.String(), "EXECUTION_KIND_"), Version: preset.Version, ParameterContractVersion: preset.ParameterContractVersion, SupportedDeviceModes: preset.SupportedDeviceModes, Available: preset.Available, ExecutionTimeoutDefaultSeconds: preset.ExecutionTimeoutDefaultSeconds, ExecutionTimeoutMaxSeconds: preset.ExecutionTimeoutMaxSeconds, StepTimeoutSeconds: preset.StepTimeoutSeconds}
+		if preset.RuntimeCapabilities != nil {
+			raw, err := (protojson.MarshalOptions{UseProtoNames: true, EmitUnpopulated: true}).Marshal(preset.RuntimeCapabilities)
+			if err != nil {
+				return nil, modelDevQueryFailure(err)
+			}
+			capabilities := new(modeldevv1.FinetuningRuntimeCapabilities)
+			if err := (protojson.UnmarshalOptions{DiscardUnknown: false}).Unmarshal(raw, capabilities); err != nil {
+				return nil, modelDevQueryFailure(err)
+			}
+			view.RuntimeCapabilities = capabilities
+			view.RuntimeCapabilitiesSha256 = preset.RuntimeCapabilitiesSha256
+		}
 		for _, rule := range preset.ParameterRules {
 			view.ParameterRules = append(view.ParameterRules, modelDevPublicParameterRule(rule))
 			for _, allowed := range rule.AllowedValues {

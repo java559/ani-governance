@@ -8,6 +8,10 @@ import "modeldev/service/v1/execution.proto";
 
 // CPU-P01 entry in the existing Governance BFF.
 service ModelDevService {
+  rpc CheckFinetuningReadiness (modeldev.service.v1.CheckFinetuningReadinessRequest) returns (modeldev.service.v1.CheckFinetuningReadinessResponse) {
+    option (google.api.http) = { post: "/api/v1/modeldev/finetuning/readiness/check" body: "*" };
+    option (gnostic.openapi.v3.operation) = { description: "Source-only model eligibility under current model-read and training compute-catalog grants; no target write or GPU allocation. 200 assessment is not execution acceptance." };
+  }
   rpc ListImplementations (modeldev.service.v1.ListImplementationsRequest) returns (modeldev.service.v1.ListImplementationsResponse) {
     option (google.api.http) = { get: "/api/v1/modeldev/implementations" };
   }

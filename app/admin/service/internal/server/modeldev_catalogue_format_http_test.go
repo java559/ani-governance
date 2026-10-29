@@ -47,10 +47,10 @@ func TestModelDevInputVersionFormatSelection(t *testing.T) {
 	}
 }
 
-// The implementations route declares kind only; adding format to the catalogue
+// The implementations route declares kind and device_mode only; adding format to the catalogue
 // must not widen that route.
 func TestModelDevImplementationsRouteRejectsFormat(t *testing.T) {
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/modeldev/implementations?format=CSV", nil)
-	_, err := modelDevCatalogueSelectors(request, map[string]bool{"kind": true})
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/modeldev/implementations?device_mode=cpu&format=CSV", nil)
+	_, err := modelDevCatalogueSelectors(request, map[string]bool{"kind": true, "device_mode": true})
 	require.Error(t, err)
 }

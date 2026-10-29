@@ -481,7 +481,7 @@ def require_compute_usage(text, proto_source=None):
     if field is None or "(google.api.field_behavior) = REQUIRED" not in field.group(1):
         raise SystemExit("compute usage must be required in Proto")
     values = re.findall(r'yaml:\s*"([A-Z_]+)"', field.group(1))
-    if len(values) != 4 or len(set(values)) != 4:
+    if not values or len(set(values)) != len(values):
         raise SystemExit("compute usage enum missing or ambiguous")
     start = text.index(marker)
     end = text.find("\n    /", start + len(marker))
@@ -501,7 +501,41 @@ def require_compute_usage(text, proto_source=None):
     return text[:start] + section + text[end:]
 
 
+def require_modeldev_device_mode(text):
+    # The same pinned gnostic GET limitation as compute usage above. This
+    # operation selects one current owner material; it has no default mode.
+    marker = "    /api/v1/modeldev/implementations:\n"
+    if marker not in text:
+        return text
+    if text.count(marker) != 1:
+        raise SystemExit("expected one implementation catalogue route")
+    source = (pathlib.Path(__file__).resolve().parents[1] / "api/protos/modeldev/service/v1/execution.proto").read_text()
+    field = re.search(r"optional string device_mode = 6 \[(.*?)\];", source, re.S)
+    if field is None or "(google.api.field_behavior) = REQUIRED" not in field.group(1):
+        raise SystemExit("implementation device_mode must be required in Proto")
+    values = re.findall(r'yaml:\s*"([a-z]+)"', field.group(1))
+    if values != ["cpu", "gpu"]:
+        raise SystemExit("implementation device_mode enum missing or ambiguous")
+    start = text.index(marker)
+    end = text.find("\n    /", start + len(marker))
+    if end < 0:
+        end = text.index("\ncomponents:", start)
+    section = text[start:end]
+    pattern = r"(                - name: device_mode\n                  in: query\n)(.*?)(?=                - name:|            responses:)"
+    def annotate(match):
+        body = match.group(2)
+        if "required:" in body or "enum:" in body:
+            raise SystemExit("implementation device_mode query was already annotated")
+        body = body.replace("                    type: string\n", "                    type: string\n                    enum:\n" + "".join("                        - " + value + "\n" for value in values), 1)
+        return match.group(1) + "                  required: true\n" + body
+    section, count = re.subn(pattern, annotate, section, flags=re.S)
+    if count != 1:
+        raise SystemExit("expected one implementation device_mode query")
+    return text[:start] + section + text[end:]
+
+
 def finalize(text):
+    text = require_modeldev_device_mode(text)
     text = remove_synthetic_200(text, "/api/v1/auth/api-keys", "201")
     # Minimal generator fixtures may omit ModelDev. Its public contract test
     # separately requires this path in the complete service document.

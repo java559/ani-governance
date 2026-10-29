@@ -38,16 +38,6 @@ func (x *InferenceKey) Redact() {
 
 	// Safe field: KeyPrefix
 
-	// Safe field: AllowedServiceIds
-
-	// Safe field: AllowedModelNames
-
-	// Safe field: RequestsPerSecond
-
-	// Safe field: RequestsPerMinute
-
-	// Safe field: RequestsPerHour
-
 	// Safe field: ExpiresAt
 
 	// Safe field: RevokedAt
@@ -63,6 +53,8 @@ func (x *InferenceKey) Redact() {
 	// Redacting field: Secret
 	SecretTmp := ``
 	x.Secret = &SecretTmp
+
+	// Safe field: PolicyId
 }
 
 // Ensure CreateInferenceKeyData implements the Redactor interface at compile time.
@@ -76,7 +68,25 @@ func (x *CreateInferenceKeyData) Redact() {
 
 	// Safe field: Name
 
-	// Safe field: AllowedServiceIds
+	// Safe field: ExpiresAt
+
+	// Safe field: IdempotencyKey
+
+	// Safe field: PolicyId
+}
+
+// Ensure InferenceAccessPolicy implements the Redactor interface at compile time.
+var _ redact.Redactor = (*InferenceAccessPolicy)(nil)
+
+// Redact method implementation for InferenceAccessPolicy
+func (x *InferenceAccessPolicy) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Id
+
+	// Safe field: Name
 
 	// Safe field: AllowedModelNames
 
@@ -86,9 +96,141 @@ func (x *CreateInferenceKeyData) Redact() {
 
 	// Safe field: RequestsPerHour
 
-	// Safe field: ExpiresAt
+	// Safe field: Version
+}
 
-	// Safe field: IdempotencyKey
+// Ensure InferenceAccessPolicyData implements the Redactor interface at compile time.
+var _ redact.Redactor = (*InferenceAccessPolicyData)(nil)
+
+// Redact method implementation for InferenceAccessPolicyData
+func (x *InferenceAccessPolicyData) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Name
+
+	// Safe field: AllowedModelNames
+
+	// Safe field: RequestsPerSecond
+
+	// Safe field: RequestsPerMinute
+
+	// Safe field: RequestsPerHour
+}
+
+// Ensure CreateInferencePolicyRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*CreateInferencePolicyRequest)(nil)
+
+// Redact method implementation for CreateInferencePolicyRequest
+func (x *CreateInferencePolicyRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Data
+}
+
+// Ensure ListInferencePoliciesRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*ListInferencePoliciesRequest)(nil)
+
+// Redact method implementation for ListInferencePoliciesRequest
+func (x *ListInferencePoliciesRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Page
+
+	// Safe field: PageSize
+}
+
+// Ensure ListInferencePoliciesResponse implements the Redactor interface at compile time.
+var _ redact.Redactor = (*ListInferencePoliciesResponse)(nil)
+
+// Redact method implementation for ListInferencePoliciesResponse
+func (x *ListInferencePoliciesResponse) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Items
+
+	// Safe field: Total
+}
+
+// Ensure GetInferencePolicyRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*GetInferencePolicyRequest)(nil)
+
+// Redact method implementation for GetInferencePolicyRequest
+func (x *GetInferencePolicyRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: PolicyId
+}
+
+// Ensure UpdateInferencePolicyRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*UpdateInferencePolicyRequest)(nil)
+
+// Redact method implementation for UpdateInferencePolicyRequest
+func (x *UpdateInferencePolicyRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: PolicyId
+
+	// Safe field: Data
+}
+
+// Ensure DeleteInferencePolicyRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*DeleteInferencePolicyRequest)(nil)
+
+// Redact method implementation for DeleteInferencePolicyRequest
+func (x *DeleteInferencePolicyRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: PolicyId
+}
+
+// Ensure DeleteInferencePolicyResponse implements the Redactor interface at compile time.
+var _ redact.Redactor = (*DeleteInferencePolicyResponse)(nil)
+
+// Redact method implementation for DeleteInferencePolicyResponse
+func (x *DeleteInferencePolicyResponse) Redact() {
+	if x == nil {
+		return
+	}
+}
+
+// Ensure BindInferenceKeyPolicyData implements the Redactor interface at compile time.
+var _ redact.Redactor = (*BindInferenceKeyPolicyData)(nil)
+
+// Redact method implementation for BindInferenceKeyPolicyData
+func (x *BindInferenceKeyPolicyData) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: PolicyId
+}
+
+// Ensure BindInferenceKeyPolicyRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*BindInferenceKeyPolicyRequest)(nil)
+
+// Redact method implementation for BindInferenceKeyPolicyRequest
+func (x *BindInferenceKeyPolicyRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: KeyId
+
+	// Safe field: Data
 }
 
 // Ensure CreateInferenceKeyRequest implements the Redactor interface at compile time.

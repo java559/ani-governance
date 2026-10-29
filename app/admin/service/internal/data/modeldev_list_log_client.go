@@ -9,8 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// LogSelection is one already-authorized container instance. An absent pod UID
-// keeps the original single-worker behaviour; an absent container keeps the
+// LogSelection is one already-authorized original Pod UID. An absent container keeps the
 // source default. The log ID stays an opaque owner-issued UUID.
 type LogSelection struct {
 	LogID     string
@@ -120,7 +119,7 @@ func (c *ModelDevClient) GetExecutionLogs(ctx context.Context, scope ModelDevRes
 // would not accept. Only the container and the previous flag are free text; a
 // pod UID is always a canonical UUID issued by the pods response.
 func modelDevValidLogSelection(selection LogSelection) bool {
-	if selection.PodUID != "" && !modelDevCanonicalUUID(selection.PodUID) {
+	if !modelDevCanonicalUUID(selection.PodUID) {
 		return false
 	}
 	if len(selection.Container) > 63 || !utf8.ValidString(selection.Container) {
@@ -138,6 +137,9 @@ func modelDevValidLogSelection(selection LogSelection) bool {
 // A step container is `main` unless a step declared its own; a worker container
 // is `node` by contract, so the BFF cannot be handed a foreign container name.
 func modelDevValidLogSource(out *modeldevv1.GetExecutionLogsResponse, selection LogSelection) bool {
+	if out.Source == nil || out.Source.ResourceUid != selection.PodUID || selection.LogID != "" && selection.LogID != out.Source.LogId {
+		return false
+	}
 	switch out.SourceKind {
 	case modeldevv1.LogSourceKind_LOG_SOURCE_KIND_TRAINER:
 		// Training workers only ever publish a bounded tail of the fixed

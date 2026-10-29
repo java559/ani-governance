@@ -180,10 +180,13 @@ components:
 """
         result = finalizer.require_compute_usage(text)
         self.assertIn("required: true", result)
-        for usage in ["CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "VIRTUAL_MACHINE"]:
+        for usage in ["SANDBOX", "CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "VIRTUAL_MACHINE"]:
             self.assertIn("- " + usage, result)
         with self.assertRaises(SystemExit):
             finalizer.require_compute_usage(text, 'string usage = 7;')
+        for enum in ['', 'enum: [{yaml: "SANDBOX"}, {yaml: "SANDBOX"}]']:
+            with self.assertRaises(SystemExit):
+                finalizer.require_compute_usage(text, 'string usage = 7 [(google.api.field_behavior) = REQUIRED, ' + enum + '];')
 
     def test_platform_component_log_stream_is_declared_once_as_sse(self):
         text = """paths:
@@ -244,6 +247,16 @@ components:
         self.assertNotIn("                code:\n                    type: integer\n", result)
         with self.assertRaises(SystemExit):
             finalizer.add_platform_component_log_error_schema(result)
+
+    def test_implementation_mode_is_required_and_explicit_in_public_document(self):
+        # Read the real generated public operation. The runtime's mandatory
+        # selector must not be documented as optional by the pinned generator.
+        document = (Path(__file__).resolve().parents[2] / "app/admin/service/cmd/server/assets/openapi.yaml").read_text()
+        operation = document.split("    /api/v1/modeldev/implementations:\n", 1)[1].split("\n    /", 1)[0]
+        parameter = operation.split("- name: device_mode\n", 1)[1].split("            responses:", 1)[0]
+        self.assertIn("required: true", parameter)
+        self.assertIn("- cpu", parameter)
+        self.assertIn("- gpu", parameter)
 
 
 if __name__ == '__main__':

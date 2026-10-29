@@ -20,28 +20,181 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationInferenceKeyServiceBindInferenceKeyPolicy = "/admin.service.v1.InferenceKeyService/BindInferenceKeyPolicy"
 const OperationInferenceKeyServiceCreateInferenceKey = "/admin.service.v1.InferenceKeyService/CreateInferenceKey"
+const OperationInferenceKeyServiceCreateInferencePolicy = "/admin.service.v1.InferenceKeyService/CreateInferencePolicy"
+const OperationInferenceKeyServiceDeleteInferencePolicy = "/admin.service.v1.InferenceKeyService/DeleteInferencePolicy"
 const OperationInferenceKeyServiceGetInferenceKey = "/admin.service.v1.InferenceKeyService/GetInferenceKey"
+const OperationInferenceKeyServiceGetInferencePolicy = "/admin.service.v1.InferenceKeyService/GetInferencePolicy"
 const OperationInferenceKeyServiceListInferenceKeys = "/admin.service.v1.InferenceKeyService/ListInferenceKeys"
+const OperationInferenceKeyServiceListInferencePolicies = "/admin.service.v1.InferenceKeyService/ListInferencePolicies"
 const OperationInferenceKeyServiceRevokeInferenceKey = "/admin.service.v1.InferenceKeyService/RevokeInferenceKey"
 const OperationInferenceKeyServiceRotateInferenceKey = "/admin.service.v1.InferenceKeyService/RotateInferenceKey"
+const OperationInferenceKeyServiceUpdateInferencePolicy = "/admin.service.v1.InferenceKeyService/UpdateInferencePolicy"
 
 type InferenceKeyServiceHTTPServer interface {
+	BindInferenceKeyPolicy(context.Context, *v1.BindInferenceKeyPolicyRequest) (*v1.InferenceKey, error)
 	CreateInferenceKey(context.Context, *v1.CreateInferenceKeyRequest) (*v1.InferenceKeyCredentials, error)
+	CreateInferencePolicy(context.Context, *v1.CreateInferencePolicyRequest) (*v1.InferenceAccessPolicy, error)
+	DeleteInferencePolicy(context.Context, *v1.DeleteInferencePolicyRequest) (*v1.DeleteInferencePolicyResponse, error)
 	GetInferenceKey(context.Context, *v1.GetInferenceKeyRequest) (*v1.InferenceKey, error)
+	GetInferencePolicy(context.Context, *v1.GetInferencePolicyRequest) (*v1.InferenceAccessPolicy, error)
 	ListInferenceKeys(context.Context, *v1.ListInferenceKeysRequest) (*v1.ListInferenceKeysResponse, error)
+	ListInferencePolicies(context.Context, *v1.ListInferencePoliciesRequest) (*v1.ListInferencePoliciesResponse, error)
 	// RevokeInferenceKey Revokes the credential; retains its metadata and audit history.
 	RevokeInferenceKey(context.Context, *v1.RevokeInferenceKeyRequest) (*v1.InferenceKey, error)
 	RotateInferenceKey(context.Context, *v1.RotateInferenceKeyRequest) (*v1.InferenceKeyCredentials, error)
+	UpdateInferencePolicy(context.Context, *v1.UpdateInferencePolicyRequest) (*v1.InferenceAccessPolicy, error)
 }
 
 func RegisterInferenceKeyServiceHTTPServer(s *http.Server, srv InferenceKeyServiceHTTPServer) {
 	r := s.Route("/")
+	r.POST("/api/v1/inference-policies", _InferenceKeyService_CreateInferencePolicy0_HTTP_Handler(srv))
+	r.GET("/api/v1/inference-policies", _InferenceKeyService_ListInferencePolicies0_HTTP_Handler(srv))
+	r.GET("/api/v1/inference-policies/{policy_id}", _InferenceKeyService_GetInferencePolicy0_HTTP_Handler(srv))
+	r.PUT("/api/v1/inference-policies/{policy_id}", _InferenceKeyService_UpdateInferencePolicy0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/inference-policies/{policy_id}", _InferenceKeyService_DeleteInferencePolicy0_HTTP_Handler(srv))
+	r.POST("/api/v1/inference-keys/{key_id}:bind-policy", _InferenceKeyService_BindInferenceKeyPolicy0_HTTP_Handler(srv))
 	r.POST("/api/v1/inference-keys", _InferenceKeyService_CreateInferenceKey0_HTTP_Handler(srv))
 	r.GET("/api/v1/inference-keys", _InferenceKeyService_ListInferenceKeys0_HTTP_Handler(srv))
 	r.GET("/api/v1/inference-keys/{key_id}", _InferenceKeyService_GetInferenceKey0_HTTP_Handler(srv))
 	r.DELETE("/api/v1/inference-keys/{key_id}", _InferenceKeyService_RevokeInferenceKey0_HTTP_Handler(srv))
 	r.POST("/api/v1/inference-keys/{key_id}:rotate", _InferenceKeyService_RotateInferenceKey0_HTTP_Handler(srv))
+}
+
+func _InferenceKeyService_CreateInferencePolicy0_HTTP_Handler(srv InferenceKeyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CreateInferencePolicyRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInferenceKeyServiceCreateInferencePolicy)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateInferencePolicy(ctx, req.(*v1.CreateInferencePolicyRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InferenceAccessPolicy)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InferenceKeyService_ListInferencePolicies0_HTTP_Handler(srv InferenceKeyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListInferencePoliciesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInferenceKeyServiceListInferencePolicies)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListInferencePolicies(ctx, req.(*v1.ListInferencePoliciesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListInferencePoliciesResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InferenceKeyService_GetInferencePolicy0_HTTP_Handler(srv InferenceKeyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetInferencePolicyRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInferenceKeyServiceGetInferencePolicy)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetInferencePolicy(ctx, req.(*v1.GetInferencePolicyRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InferenceAccessPolicy)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InferenceKeyService_UpdateInferencePolicy0_HTTP_Handler(srv InferenceKeyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.UpdateInferencePolicyRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInferenceKeyServiceUpdateInferencePolicy)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateInferencePolicy(ctx, req.(*v1.UpdateInferencePolicyRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InferenceAccessPolicy)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InferenceKeyService_DeleteInferencePolicy0_HTTP_Handler(srv InferenceKeyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteInferencePolicyRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInferenceKeyServiceDeleteInferencePolicy)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteInferencePolicy(ctx, req.(*v1.DeleteInferencePolicyRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.DeleteInferencePolicyResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _InferenceKeyService_BindInferenceKeyPolicy0_HTTP_Handler(srv InferenceKeyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.BindInferenceKeyPolicyRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationInferenceKeyServiceBindInferenceKeyPolicy)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.BindInferenceKeyPolicy(ctx, req.(*v1.BindInferenceKeyPolicyRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.InferenceKey)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _InferenceKeyService_CreateInferenceKey0_HTTP_Handler(srv InferenceKeyServiceHTTPServer) func(ctx http.Context) error {
@@ -155,12 +308,18 @@ func _InferenceKeyService_RotateInferenceKey0_HTTP_Handler(srv InferenceKeyServi
 }
 
 type InferenceKeyServiceHTTPClient interface {
+	BindInferenceKeyPolicy(ctx context.Context, req *v1.BindInferenceKeyPolicyRequest, opts ...http.CallOption) (rsp *v1.InferenceKey, err error)
 	CreateInferenceKey(ctx context.Context, req *v1.CreateInferenceKeyRequest, opts ...http.CallOption) (rsp *v1.InferenceKeyCredentials, err error)
+	CreateInferencePolicy(ctx context.Context, req *v1.CreateInferencePolicyRequest, opts ...http.CallOption) (rsp *v1.InferenceAccessPolicy, err error)
+	DeleteInferencePolicy(ctx context.Context, req *v1.DeleteInferencePolicyRequest, opts ...http.CallOption) (rsp *v1.DeleteInferencePolicyResponse, err error)
 	GetInferenceKey(ctx context.Context, req *v1.GetInferenceKeyRequest, opts ...http.CallOption) (rsp *v1.InferenceKey, err error)
+	GetInferencePolicy(ctx context.Context, req *v1.GetInferencePolicyRequest, opts ...http.CallOption) (rsp *v1.InferenceAccessPolicy, err error)
 	ListInferenceKeys(ctx context.Context, req *v1.ListInferenceKeysRequest, opts ...http.CallOption) (rsp *v1.ListInferenceKeysResponse, err error)
+	ListInferencePolicies(ctx context.Context, req *v1.ListInferencePoliciesRequest, opts ...http.CallOption) (rsp *v1.ListInferencePoliciesResponse, err error)
 	// RevokeInferenceKey Revokes the credential; retains its metadata and audit history.
 	RevokeInferenceKey(ctx context.Context, req *v1.RevokeInferenceKeyRequest, opts ...http.CallOption) (rsp *v1.InferenceKey, err error)
 	RotateInferenceKey(ctx context.Context, req *v1.RotateInferenceKeyRequest, opts ...http.CallOption) (rsp *v1.InferenceKeyCredentials, err error)
+	UpdateInferencePolicy(ctx context.Context, req *v1.UpdateInferencePolicyRequest, opts ...http.CallOption) (rsp *v1.InferenceAccessPolicy, err error)
 }
 
 type InferenceKeyServiceHTTPClientImpl struct {
@@ -171,6 +330,19 @@ func NewInferenceKeyServiceHTTPClient(client *http.Client) InferenceKeyServiceHT
 	return &InferenceKeyServiceHTTPClientImpl{client}
 }
 
+func (c *InferenceKeyServiceHTTPClientImpl) BindInferenceKeyPolicy(ctx context.Context, in *v1.BindInferenceKeyPolicyRequest, opts ...http.CallOption) (*v1.InferenceKey, error) {
+	var out v1.InferenceKey
+	pattern := "/api/v1/inference-keys/{key_id}:bind-policy"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInferenceKeyServiceBindInferenceKeyPolicy))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *InferenceKeyServiceHTTPClientImpl) CreateInferenceKey(ctx context.Context, in *v1.CreateInferenceKeyRequest, opts ...http.CallOption) (*v1.InferenceKeyCredentials, error) {
 	var out v1.InferenceKeyCredentials
 	pattern := "/api/v1/inference-keys"
@@ -178,6 +350,32 @@ func (c *InferenceKeyServiceHTTPClientImpl) CreateInferenceKey(ctx context.Conte
 	opts = append(opts, http.Operation(OperationInferenceKeyServiceCreateInferenceKey))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InferenceKeyServiceHTTPClientImpl) CreateInferencePolicy(ctx context.Context, in *v1.CreateInferencePolicyRequest, opts ...http.CallOption) (*v1.InferenceAccessPolicy, error) {
+	var out v1.InferenceAccessPolicy
+	pattern := "/api/v1/inference-policies"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInferenceKeyServiceCreateInferencePolicy))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InferenceKeyServiceHTTPClientImpl) DeleteInferencePolicy(ctx context.Context, in *v1.DeleteInferencePolicyRequest, opts ...http.CallOption) (*v1.DeleteInferencePolicyResponse, error) {
+	var out v1.DeleteInferencePolicyResponse
+	pattern := "/api/v1/inference-policies/{policy_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInferenceKeyServiceDeleteInferencePolicy))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -197,11 +395,37 @@ func (c *InferenceKeyServiceHTTPClientImpl) GetInferenceKey(ctx context.Context,
 	return &out, nil
 }
 
+func (c *InferenceKeyServiceHTTPClientImpl) GetInferencePolicy(ctx context.Context, in *v1.GetInferencePolicyRequest, opts ...http.CallOption) (*v1.InferenceAccessPolicy, error) {
+	var out v1.InferenceAccessPolicy
+	pattern := "/api/v1/inference-policies/{policy_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInferenceKeyServiceGetInferencePolicy))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *InferenceKeyServiceHTTPClientImpl) ListInferenceKeys(ctx context.Context, in *v1.ListInferenceKeysRequest, opts ...http.CallOption) (*v1.ListInferenceKeysResponse, error) {
 	var out v1.ListInferenceKeysResponse
 	pattern := "/api/v1/inference-keys"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationInferenceKeyServiceListInferenceKeys))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InferenceKeyServiceHTTPClientImpl) ListInferencePolicies(ctx context.Context, in *v1.ListInferencePoliciesRequest, opts ...http.CallOption) (*v1.ListInferencePoliciesResponse, error) {
+	var out v1.ListInferencePoliciesResponse
+	pattern := "/api/v1/inference-policies"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationInferenceKeyServiceListInferencePolicies))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
@@ -231,6 +455,19 @@ func (c *InferenceKeyServiceHTTPClientImpl) RotateInferenceKey(ctx context.Conte
 	opts = append(opts, http.Operation(OperationInferenceKeyServiceRotateInferenceKey))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *InferenceKeyServiceHTTPClientImpl) UpdateInferencePolicy(ctx context.Context, in *v1.UpdateInferencePolicyRequest, opts ...http.CallOption) (*v1.InferenceAccessPolicy, error) {
+	var out v1.InferenceAccessPolicy
+	pattern := "/api/v1/inference-policies/{policy_id}"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationInferenceKeyServiceUpdateInferencePolicy))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

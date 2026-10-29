@@ -4,6 +4,7 @@ import (
 	"context"
 	stderrors "errors"
 	"strconv"
+	"strings"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -17,6 +18,7 @@ import (
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/app/admin/service/internal/modeldevbudget"
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -106,15 +108,17 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	if s == nil || s.authorization == nil || s.tenants == nil || s.acceptances == nil {
 		return nil, modelDevCreateUnavailable()
 	}
+	preflight, cancelPreflight := context.WithTimeout(ctx, s.resolver.OperationTimeout())
+	defer cancelPreflight()
 	// A still-valid JWT or historical acceptance never substitutes for the
 	// current database grant, including on original-key replay.
-	grant, err := authorizeGpuBusiness(ctx, principal, compute.Usage_TRAINING, data.ModelDevCreateAction, func() error {
-		return s.authorization.AuthorizeCreate(ctx, principal.TenantID, principal.ID)
+	grant, err := authorizeGpuBusiness(preflight, principal, compute.Usage_TRAINING, data.ModelDevCreateAction, func() error {
+		return s.authorization.AuthorizeCreate(preflight, principal.TenantID, principal.ID)
 	})
 	if err != nil {
 		return nil, modelDevCreateFailure(err)
 	}
-	tenant, err := s.tenants.ResourceTenantID(ctx, principal.TenantID)
+	tenant, err := s.tenants.ResourceTenantID(preflight, principal.TenantID)
 	if err != nil {
 		return nil, modelDevCreateFailure(err)
 	}
@@ -145,9 +149,9 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	if normalized.Kind == "FINETUNING" {
 		var err error
 		if normalized.NewModelName == nil && normalized.TargetModelID == nil {
-			err = s.authorization.AuthorizeFinetuningArtifacts(ctx, principal.TenantID, principal.ID)
+			err = s.authorization.AuthorizeFinetuningArtifacts(preflight, principal.TenantID, principal.ID)
 		} else {
-			err = s.authorization.AuthorizeFinetuning(ctx, principal.TenantID, principal.ID, normalized.NewModelName != nil)
+			err = s.authorization.AuthorizeFinetuning(preflight, principal.TenantID, principal.ID, normalized.NewModelName != nil)
 		}
 		if err != nil {
 			return nil, modelDevCreateFailure(err)
@@ -159,8 +163,11 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	}
 	// Replay needs only current authorization and original persisted intent.
 	// It never observes current compute or implementation defaults.
-	accepted, err := s.acceptances.FindAccepted(ctx, scope, normalized)
+	accepted, err := s.acceptances.FindAccepted(preflight, scope, normalized)
 	if err == nil {
+		if err := preflight.Err(); err != nil {
+			return nil, modelDevCreateFailure(err)
+		}
 		return modelDevCreateReply(accepted, true)
 	}
 	if !stderrors.Is(err, data.ErrModelDevAcceptanceNotFound) {
@@ -178,7 +185,7 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 		return nil, modelDevCreateUnavailable()
 	}
 	candidate := data.ModelDevFrozenCandidate{Intent: normalized, OperationID: operationID.String(), ExecutionID: executionID.String(), AcceptedAt: time.Now().UTC().Truncate(time.Microsecond)}
-	selection, err := s.compute.ResolveComputePreset(ctx, tenant, actor, &compute.ResolveComputePresetRequest{TenantId: tenant, PresetId: normalized.ComputePresetID, Usage: compute.Usage_TRAINING})
+	selection, err := s.compute.ResolveComputePreset(preflight, tenant, actor, &compute.ResolveComputePresetRequest{TenantId: tenant, PresetId: normalized.ComputePresetID, Usage: compute.Usage_TRAINING})
 	if err != nil {
 		return nil, modelDevCreateResolutionFailure(err)
 	}
@@ -189,10 +196,17 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 		if s.gpu.Plans == nil || s.gpu.Eligibility == nil {
 			return nil, errors.ServiceUnavailable("MODELDEV_GPU_NOT_READY", "managed GPU admission is not yet available")
 		}
-		if err := authorizeNewGpuUse(ctx, grant, s.gpu.Eligibility); err != nil {
+		if err := authorizeNewGpuUse(preflight, grant, s.gpu.Eligibility); err != nil {
 			return nil, err
 		}
 	}
+	if err := preflight.Err(); err != nil {
+		return nil, modelDevCreateFailure(err)
+	}
+	if err := modeldevbudget.FinishPreflight(ctx); err != nil {
+		return nil, modelDevCreateFailure(err)
+	}
+	cancelPreflight()
 	_, intentHash, err := cpup01.CanonicalIntent(normalized)
 	if err != nil {
 		return nil, modelDevCreateInvalid()
@@ -213,7 +227,14 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	}
 	candidate.Snapshot = resolved.Snapshot
 	candidate.ResolvedGPU = resolved.ResolvedGPU
-	accepted, replayed, err := s.acceptances.AcceptFrozen(ctx, scope, candidate)
+	executionCtx, cancelExecution := context.WithDeadline(ctx, candidate.Snapshot.Timing.ExecutionDeadlineAt)
+	defer cancelExecution()
+	acceptCtx, cancelAccept := context.WithTimeout(executionCtx, s.resolver.OperationTimeout())
+	defer cancelAccept()
+	accepted, replayed, err := s.acceptances.AcceptFrozen(acceptCtx, scope, candidate)
+	if acceptCtx.Err() != nil {
+		return nil, modelDevCreateFailure(acceptCtx.Err())
+	}
 	if err != nil {
 		return nil, modelDevCreateFailure(err)
 	}
@@ -307,14 +328,55 @@ func modelDevCreateResolutionFailure(err error) error {
 	case failure.Code() == codes.InvalidArgument && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_INVALID_ARGUMENT:
 		return modelDevCreateInvalid()
 	case failure.Code() == codes.NotFound && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_RESOURCE_NOT_FOUND:
-		return errors.NotFound("RESOURCE_NOT_FOUND", "input version unavailable")
+		return errors.NotFound("RESOURCE_NOT_FOUND", "source version unavailable")
+	case failure.Code() == codes.PermissionDenied && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_FORBIDDEN:
+		return errors.Forbidden("FORBIDDEN", "source access denied")
+	case failure.Code() == codes.AlreadyExists && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_COMMAND_CONFLICT:
+		return errors.Conflict("COMMAND_CONFLICT", "immutable operation conflict")
+	case failure.Code() == codes.FailedPrecondition && modelDevResolutionBusinessReason(detail.Reason):
+		return modelDevPublicResolutionError(422, detail)
+	case failure.Code() == codes.ResourceExhausted && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_INPUT_VALIDATION_BUSY:
+		return modelDevPublicResolutionError(429, detail)
+	case failure.Code() == codes.Unavailable && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_FINETUNING_RUNTIME_UNAVAILABLE:
+		return modelDevPublicResolutionError(503, detail)
 	case failure.Code() == codes.FailedPrecondition && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_INPUT_NOT_READY:
 		return errors.New(412, "INPUT_NOT_READY", "input version is not ready")
 	case failure.Code() == codes.Unavailable && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_ENVIRONMENT_NOT_READY:
-		return errors.ServiceUnavailable("ENVIRONMENT_NOT_READY", "managed admission environment is not ready")
+		return modelDevPublicResolutionError(503, detail)
 	case failure.Code() == codes.Unavailable && detail.Reason == modeldevcontractv1.ErrorReason_ERROR_REASON_UPSTREAM_UNAVAILABLE:
-		return errors.ServiceUnavailable("UPSTREAM_UNAVAILABLE", "admission resolution unavailable")
+		return modelDevPublicResolutionError(503, detail)
 	default:
 		return modelDevCreateUnavailable()
+	}
+}
+
+func modelDevPublicResolutionError(code int, detail *modeldevcontractv1.ErrorDetail) error {
+	reason := strings.TrimPrefix(detail.Reason.String(), "ERROR_REASON_")
+	metadata := map[string]string{"upstream_request_id": detail.CorrelationId}
+	if detail.Kind != "" {
+		metadata["kind"] = detail.Kind
+	}
+	if detail.LimitName != "" {
+		metadata["limit_name"] = detail.LimitName
+	}
+	if detail.Actual != nil {
+		metadata["actual"] = strconv.FormatInt(*detail.Actual, 10)
+	}
+	if detail.Limit != nil {
+		metadata["limit"] = strconv.FormatInt(*detail.Limit, 10)
+	}
+	return errors.New(code, reason, reason).WithMetadata(metadata)
+}
+
+func modelDevResolutionBusinessReason(reason modeldevcontractv1.ErrorReason) bool {
+	switch reason {
+	case modeldevcontractv1.ErrorReason_ERROR_REASON_BASE_MODEL_INVALID, modeldevcontractv1.ErrorReason_ERROR_REASON_BASE_MODEL_UNSUPPORTED,
+		modeldevcontractv1.ErrorReason_ERROR_REASON_CONTEXT_LIMIT_EXCEEDED, modeldevcontractv1.ErrorReason_ERROR_REASON_CONTEXT_LIMIT_UNKNOWN,
+		modeldevcontractv1.ErrorReason_ERROR_REASON_FINETUNING_TEMPLATE_REQUIRED, modeldevcontractv1.ErrorReason_ERROR_REASON_FINETUNING_TEMPLATE_UNSUPPORTED,
+		modeldevcontractv1.ErrorReason_ERROR_REASON_CONTENT_LIMIT_EXCEEDED, modeldevcontractv1.ErrorReason_ERROR_REASON_STRUCTURE_LIMIT_EXCEEDED,
+		modeldevcontractv1.ErrorReason_ERROR_REASON_DATASET_RECORD_TOO_LARGE, modeldevcontractv1.ErrorReason_ERROR_REASON_DATASET_INVALID:
+		return true
+	default:
+		return false
 	}
 }

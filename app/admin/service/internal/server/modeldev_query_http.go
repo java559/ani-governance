@@ -81,7 +81,7 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 				in.MaxBytes, err = modelDevQueryPositiveBound(values[0], 65536)
 			case "logId":
 				in.LogId, err = modelDevQueryUUIDPointer(values[0])
-			case "podUid":
+			case "pod_uid":
 				in.PodUid, err = modelDevQueryUUIDPointer(values[0])
 			case "container":
 				in.Container, err = modelDevQueryContainerPointer(values[0])
@@ -93,6 +93,9 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 			if err != nil {
 				return err
 			}
+		}
+		if in.PodUid == nil {
+			return invalidModelDevQueryHTTP()
 		}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.GetExecutionLogs(c, v.(*modeldevv1.GetExecutionLogsRequest))

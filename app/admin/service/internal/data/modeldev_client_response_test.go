@@ -47,6 +47,9 @@ type modelDevResponseCase struct {
 func modelDevResponseFixture(t *testing.T) modelDevResponseCase {
 	t.Helper()
 	snapshot := conformance.SnapshotV1()
+	snapshot.Timing.AcceptedAt = time.Now().UTC().Truncate(time.Microsecond)
+	snapshot.Timing.ExecutionDeadlineAt = snapshot.Timing.AcceptedAt.Add(time.Duration(snapshot.Timing.ExecutionTimeoutSeconds) * time.Second)
+	snapshot.DeadlineAt = snapshot.Timing.ExecutionDeadlineAt
 	intent := conformance.IntentV1()
 	scope := ModelDevResolveScope{ResourceTenantID: uuid.NewString(), Actor: "governance:user:42"}
 	_, hash, err := cpup01.CanonicalIntent(intent)
@@ -400,5 +403,5 @@ func modelDevBoundaryTLS(t *testing.T, serverNames, clientNames []string) (Model
 	if !roots.AppendCertsFromPEM(caPEM) {
 		t.Fatal("MODELDEV_RESPONSE_PREFLIGHT: generated CA invalid")
 	}
-	return ModelDevClientConfig{CAFile: caFile, CertFile: certFile, KeyFile: keyFile, Timeout: time.Second}, &tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{server}, ClientCAs: roots, ClientAuth: tls.RequireAndVerifyClientCert}
+	return ModelDevClientConfig{CAFile: caFile, CertFile: certFile, KeyFile: keyFile, Timeout: time.Second, ModelResolutionTimeout: time.Second}, &tls.Config{MinVersion: tls.VersionTLS13, Certificates: []tls.Certificate{server}, ClientCAs: roots, ClientAuth: tls.RequireAndVerifyClientCert}
 }

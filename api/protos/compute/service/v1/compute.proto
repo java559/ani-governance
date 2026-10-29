@@ -19,8 +19,8 @@ message GpuSummary {
 
 message ListPresetsRequest {
  option (gnostic.openapi.v3.schema) = { required: ["usage"] };
- // Required: CONTAINER_INSTANCE, TRAINING (including fine-tuning), INFERENCE, or VIRTUAL_MACHINE.
- string usage = 7 [(google.api.field_behavior) = REQUIRED, (gnostic.openapi.v3.property) = { description: "Required business usage; permissions and plan modules are checked separately for each usage." enum: [{yaml: "CONTAINER_INSTANCE"}, {yaml: "TRAINING"}, {yaml: "INFERENCE"}, {yaml: "VIRTUAL_MACHINE"}] }];
+ // Required business usage. SANDBOX currently supports CPU presets only.
+ string usage = 7 [(google.api.field_behavior) = REQUIRED, (gnostic.openapi.v3.property) = { description: "Required business usage; permissions and plan modules are checked separately for each usage. SANDBOX defaults to CPU and rejects GPU filters." enum: [{yaml: "SANDBOX"}, {yaml: "CONTAINER_INSTANCE"}, {yaml: "TRAINING"}, {yaml: "INFERENCE"}, {yaml: "VIRTUAL_MACHINE"}] }];
  optional uint32 page = 1;
  optional uint32 page_size = 2 [json_name = "pageSize"];
  string name = 3; string code = 4;

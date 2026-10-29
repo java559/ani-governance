@@ -4,7 +4,10 @@ package data
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
@@ -12,6 +15,181 @@ import (
 	"github.com/stretchr/testify/require"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
 )
+
+func TestModelDevStopRejectsRetiredCreationCodec(t *testing.T) {
+	for _, queuedStop := range []bool{false, true} {
+		name := "new Stop"
+		if queuedStop {
+			name = "queued close delivery"
+		}
+		t.Run(name, func(t *testing.T) {
+			ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
+			accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
+			observer := newModelDevDeliveryObserver(t, ctx)
+			repo := NewModelDevAcceptanceRepo(client)
+			if queuedStop {
+				_, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+				require.NoError(t, err)
+			}
+			// Matching bytes and digests do not make a retired creation codec valid
+			// for a new Stop or a previously queued close delivery.
+			opaqueSnapshot := []byte(`{"retired_creation_codec":1}`)
+			digest := sha256.Sum256(opaqueSnapshot)
+			specHash := hex.EncodeToString(digest[:])
+			_, err := observer.ExecContext(ctx, `UPDATE sys_modeldev_acceptances
+		SET snapshot_canonical=$4, execution_spec_hash=$5
+		WHERE tenant_id=$1 AND resource_tenant_id=$2 AND operation_id=$3`,
+				scope.TenantID, scope.ResourceTenantID, accepted.OperationID, opaqueSnapshot, specHash)
+			require.NoError(t, err)
+			if queuedStop {
+				claim, err := repo.ClaimCloseDelivery(ctx, "reject-retired-close", time.Minute)
+				require.NoError(t, err)
+				require.Nil(t, claim, "MODELDEV_STOP_CURRENT_CODEC: a retired creation codec cannot become a close delivery")
+				row, err := client.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(scope.TenantID), modeldevacceptance.ExecutionIDEQ(accepted.ExecutionID)).Only(ctx)
+				require.NoError(t, err)
+				require.Equal(t, modeldevacceptance.CloseDispatchStateUNKNOWN, row.CloseDispatchState)
+				require.True(t, row.CloseRetryBlocked)
+				require.NotNil(t, row.CloseLastErrorCode)
+				require.Equal(t, "INVALID_COMMAND", *row.CloseLastErrorCode)
+				require.Zero(t, row.CloseAttemptCount)
+				return
+			}
+			create, err := repo.ClaimDelivery(ctx, "quarantine-retired-create", time.Minute)
+			require.NoError(t, err)
+			require.Nil(t, create, "an undecodable original must remain ineligible for creation")
+			before := readModelDevDeliveryRow(t, ctx, observer, accepted)
+			require.Equal(t, "UNKNOWN", before.State)
+			require.True(t, before.Blocked)
+			require.Equal(t, "INVALID_COMMAND", before.Failure.String)
+
+			intent, replayed, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+			require.Error(t, err, "MODELDEV_STOP_CURRENT_CODEC: Stop must reject a retired creation codec even with matching byte digests")
+			require.Nil(t, intent)
+			require.False(t, replayed)
+			require.Equal(t, before, readModelDevDeliveryRow(t, ctx, observer, accepted), "rejected Stop must preserve the creation bytes and quarantine")
+			row, err := client.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(scope.TenantID), modeldevacceptance.ExecutionIDEQ(accepted.ExecutionID)).Only(ctx)
+			require.NoError(t, err)
+			require.Zero(t, row.StopIntentGeneration)
+			require.Equal(t, modeldevacceptance.CloseDispatchStateIDLE, row.CloseDispatchState)
+		})
+	}
+}
+
+func TestModelDevStopRejectsCorruptAcceptedIdentity(t *testing.T) {
+	for _, test := range []struct {
+		name, assignment, value string
+	}{
+		{"snapshot digest", "execution_spec_hash=$4", strings.Repeat("0", 64)},
+		{"intent digest", "intent_hash=$4", strings.Repeat("0", 64)},
+		{"operation identity", "operation_id=$4", "not-an-operation-uuid"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
+			accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
+			observer := newModelDevDeliveryObserver(t, ctx)
+			_, err := observer.ExecContext(ctx, `UPDATE sys_modeldev_acceptances SET `+test.assignment+`
+				WHERE tenant_id=$1 AND resource_tenant_id=$2 AND execution_id=$3`,
+				scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, test.value)
+			require.NoError(t, err)
+			intent, replayed, err := NewModelDevAcceptanceRepo(client).AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+			require.Error(t, err, "independent close must not accept a corrupt original identity or digest")
+			require.Nil(t, intent)
+			require.False(t, replayed)
+			row, err := client.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(scope.TenantID), modeldevacceptance.ExecutionIDEQ(accepted.ExecutionID)).Only(ctx)
+			require.NoError(t, err)
+			require.Zero(t, row.StopIntentGeneration)
+			require.Equal(t, modeldevacceptance.CloseDispatchStateIDLE, row.CloseDispatchState)
+		})
+	}
+}
+
+func TestModelDevCloseDeliveryRejectsChangedStopIdentity(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		change func(*ModelDevCloseDeliveryClaim)
+	}{
+		{"other tenant", func(c *ModelDevCloseDeliveryClaim) { c.Intent.TenantID++ }},
+		{"other resource tenant", func(c *ModelDevCloseDeliveryClaim) { c.Intent.ResourceTenantID = uuid.NewString() }},
+		{"other operation", func(c *ModelDevCloseDeliveryClaim) { c.Intent.OperationID = uuid.NewString() }},
+		{"other execution", func(c *ModelDevCloseDeliveryClaim) { c.Intent.ExecutionID = uuid.NewString() }},
+		{"other spec hash", func(c *ModelDevCloseDeliveryClaim) { c.Intent.ExecutionSpecHash = strings.Repeat("0", 64) }},
+		{"other stop actor", func(c *ModelDevCloseDeliveryClaim) { c.Intent.RequestedActor = "governance:user:9" }},
+		{"other stop time", func(c *ModelDevCloseDeliveryClaim) { c.Intent.RequestedAt = c.Intent.RequestedAt.Add(time.Second) }},
+		{"other stop generation", func(c *ModelDevCloseDeliveryClaim) { c.Intent.Generation++ }},
+		{"other lease owner", func(c *ModelDevCloseDeliveryClaim) { c.LeaseOwner = "foreign-close-worker" }},
+		{"other lease generation", func(c *ModelDevCloseDeliveryClaim) { c.LeaseGeneration++ }},
+		{"other attempt", func(c *ModelDevCloseDeliveryClaim) { c.AttemptCount++ }},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
+			accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
+			repo := NewModelDevAcceptanceRepo(client)
+			intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+			require.NoError(t, err)
+			claim, err := repo.ClaimCloseDelivery(ctx, "original-close-worker", time.Minute)
+			require.NoError(t, err)
+			require.NotNil(t, claim)
+			changed := *claim
+			changedIntent := *claim.Intent
+			changed.Intent = &changedIntent
+			test.change(&changed)
+			written, err := repo.DeferCloseDelivery(ctx, &changed, ModelDevDeliveryFailure{Code: "OWNER_UNAVAILABLE"})
+			require.NoError(t, err)
+			require.False(t, written, "MODELDEV_CLOSE_COMPLETE_IDENTITY: a changed stop identity or lease cannot defer the original")
+			receipt := ModelDevCloseReceipt{OperationID: intent.OperationID, ExecutionID: intent.ExecutionID, ExecutionSpecHash: intent.ExecutionSpecHash, CloseGeneration: 1, CloseState: "CLOSING"}
+			written, err = repo.AckCloseDelivery(ctx, &changed, receipt)
+			require.NoError(t, err)
+			require.False(t, written, "a changed stop identity or lease cannot acknowledge the original")
+			for _, bad := range []ModelDevCloseReceipt{
+				{OperationID: uuid.NewString(), ExecutionID: receipt.ExecutionID, ExecutionSpecHash: receipt.ExecutionSpecHash, CloseGeneration: 1, CloseState: "CLOSING"},
+				{OperationID: receipt.OperationID, ExecutionID: receipt.ExecutionID, ExecutionSpecHash: strings.Repeat("0", 64), CloseGeneration: 1, CloseState: "CLOSING"},
+			} {
+				written, err = repo.AckCloseDelivery(ctx, claim, bad)
+				require.Error(t, err)
+				require.False(t, written, "a mismatched owner receipt cannot acknowledge the original")
+			}
+			written, err = repo.AckCloseDelivery(ctx, claim, receipt)
+			require.NoError(t, err)
+			require.True(t, written, "rejected foreign claims must leave the original lease usable")
+		})
+	}
+}
+
+func TestModelDevCloseDeliveryForClaimsOnlyOriginalStop(t *testing.T) {
+	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
+	first := acceptModelDevDelivery(t, ctx, client, scope, candidate)
+	repo := NewModelDevAcceptanceRepo(client)
+	_, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, first.ExecutionID, "governance:user:8")
+	require.NoError(t, err)
+	scope.IdempotencyKey = uuid.NewString()
+	candidate.OperationID, candidate.ExecutionID = uuid.NewString(), uuid.NewString()
+	target := acceptModelDevDelivery(t, ctx, client, scope, candidate)
+	intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, target.ExecutionID, "governance:user:8")
+	require.NoError(t, err)
+	foreign := *intent
+	foreign.ExecutionSpecHash = strings.Repeat("0", 64)
+	claim, err := repo.ClaimCloseDeliveryFor(ctx, foreign, "wrong-stop-identity", time.Minute)
+	require.NoError(t, err)
+	require.Nil(t, claim)
+	claim, err = repo.ClaimCloseDeliveryFor(ctx, *intent, "only-target-close", time.Minute)
+	require.NoError(t, err)
+	require.NotNil(t, claim)
+	require.Equal(t, intent, claim.Intent)
+	firstRow, err := client.Client().ModelDevAcceptance.Query().Where(modeldevacceptance.TenantIDEQ(scope.TenantID), modeldevacceptance.ExecutionIDEQ(first.ExecutionID)).Only(ctx)
+	require.NoError(t, err)
+	require.Equal(t, modeldevacceptance.CloseDispatchStateQUEUED, firstRow.CloseDispatchState)
+	require.Zero(t, firstRow.CloseAttemptCount, "single-execution maintenance must not claim an earlier unrelated Stop")
+	written, err := repo.AckCloseDelivery(ctx, claim, ModelDevCloseReceipt{OperationID: intent.OperationID, ExecutionID: intent.ExecutionID, ExecutionSpecHash: intent.ExecutionSpecHash, CloseGeneration: 1, CloseState: "CLOSING"})
+	require.NoError(t, err)
+	require.True(t, written)
+	claim, err = repo.ClaimCloseDeliveryFor(ctx, *intent, "target-already-acked", time.Minute)
+	require.NoError(t, err)
+	require.Nil(t, claim, "an acknowledged Stop cannot be resent by maintenance")
+	firstClaim, err := repo.ClaimCloseDelivery(ctx, "original-global-worker", time.Minute)
+	require.NoError(t, err)
+	require.NotNil(t, firstClaim)
+	require.Equal(t, first.ExecutionID, firstClaim.Intent.ExecutionID, "the unrelated original queue entry remains available")
+}
 
 func TestModelDevCloseDeliveryRecoversOriginalAndFencesExpiredWorker(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)

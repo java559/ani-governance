@@ -16,6 +16,7 @@ import (
 	computeview "go-wind-admin/api/gen/go/compute/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	vmview "go-wind-admin/api/gen/go/vm/service/v1"
+	"go-wind-admin/pkg/permcode"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -214,9 +215,7 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 		if len(values["usage"]) != 1 {
 			return invalid
 		}
-		switch values.Get("usage") {
-		case "CONTAINER_INSTANCE", "TRAINING", "INFERENCE", "VIRTUAL_MACHINE":
-		default:
+		if _, _, ok := permcode.ComputeCatalogGrant(values.Get("usage")); !ok {
 			return invalid
 		}
 	}

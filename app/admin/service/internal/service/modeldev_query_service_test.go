@@ -156,7 +156,7 @@ func TestModelDevPublicExecutionExposesManagedSettings(t *testing.T) {
 		ManagedSettings: &modeldevcontractv1.FinetuningManagedSettings{
 			Stage: "sft", FinetuningType: "lora", LoraTarget: "all", LoraRank: 8, LoraAlpha: 16,
 			CutoffLen: 128, PerDeviceTrainBatchSize: 1, GradientAccumulationSteps: 1, Seed: 42, DataSeed: 42,
-			Device: "cpu", FlashAttn: "disabled", ReportTo: "none", SaveStrategy: "no", Template: "qwen",
+			Device: "cpu", FlashAttn: "disabled", ReportTo: "none", SaveStrategy: "no",
 			TrainDtype: "float32", ExportDtype: "float32", VerifyDtype: "float32", LrSchedulerType: "linear",
 			WarmupRatio: "0", WeightDecay: "0", LoraDropout: "0", NumTrainEpochs: 3, Optim: "adamw_torch", LoggingSteps: 1,
 		},
@@ -184,7 +184,7 @@ func TestModelDevPublicExecutionExposesManagedSettings(t *testing.T) {
 	if got.Device != want.Device || got.FlashAttn != want.FlashAttn || got.ReportTo != want.ReportTo || got.SaveStrategy != want.SaveStrategy {
 		t.Fatalf("runtime fields=%+v", got)
 	}
-	if got.Template != want.Template || got.TrainDtype != want.TrainDtype || got.ExportDtype != want.ExportDtype ||
+	if got.TrainDtype != want.TrainDtype || got.ExportDtype != want.ExportDtype ||
 		got.VerifyDtype != want.VerifyDtype || got.LrSchedulerType != want.LrSchedulerType || got.Optim != want.Optim {
 		t.Fatalf("dtype fields=%+v", got)
 	}

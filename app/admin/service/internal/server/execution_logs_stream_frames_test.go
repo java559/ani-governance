@@ -84,7 +84,7 @@ func TestExecutionLogStreamFramesReadyDataThenEnd(t *testing.T) {
 		{Kind: modeldevcontractv1.FrameKind_FRAME_KIND_CLOSED, Reason: "LOG_ENDED", Offset: 18},
 	}}
 	web := executionLogServer(t, peer)
-	response, raw := readExecutionLogSSE(t, web, "?sinceBytes=0")
+	response, raw := readExecutionLogSSE(t, web, "?pod_uid="+executionLogID+"&sinceBytes=0")
 	if response.StatusCode != http.StatusOK || !strings.HasPrefix(response.Header.Get("Content-Type"), "text/event-stream") ||
 		response.Header.Get("Cache-Control") != "no-store" || response.Header.Get("X-Accel-Buffering") != "no" {
 		t.Fatalf("headers: %d %#v", response.StatusCode, response.Header)
@@ -102,7 +102,7 @@ func TestExecutionLogStreamFramesReadyDataThenEnd(t *testing.T) {
 		!strings.Contains(events[1], `"offset":18`) || !strings.Contains(events[2], "event: end") || !strings.Contains(events[2], "LOG_ENDED") {
 		t.Fatalf("frames: %s", raw)
 	}
-	if peer.seen.GetSinceBytes() != 0 {
+	if peer.seen.GetSinceBytes() != 0 || peer.seen.GetPodUid() != executionLogID {
 		t.Fatalf("resume offset not forwarded: %+v", peer.seen)
 	}
 }
@@ -116,7 +116,7 @@ func TestExecutionLogStreamResumeOffsetAndRejection(t *testing.T) {
 		{Kind: modeldevcontractv1.FrameKind_FRAME_KIND_CLOSED, Reason: "POD_GONE", Offset: 125},
 	}}
 	web := executionLogServer(t, peer)
-	_, raw := readExecutionLogSSE(t, web, "?sinceBytes=120")
+	_, raw := readExecutionLogSSE(t, web, "?pod_uid="+executionLogID+"&sinceBytes=120")
 	if peer.seen.GetSinceBytes() != 120 {
 		t.Fatalf("resume offset: %+v", peer.seen)
 	}
@@ -125,7 +125,7 @@ func TestExecutionLogStreamResumeOffsetAndRejection(t *testing.T) {
 	}
 
 	stale := &executionLogPeer{tenant: executionLogID, err: status.Error(codes.FailedPrecondition, "OFFSET_INVALID")}
-	response, body := readExecutionLogSSE(t, executionLogServer(t, stale), "?sinceBytes=4096")
+	response, body := readExecutionLogSSE(t, executionLogServer(t, stale), "?pod_uid="+executionLogID+"&sinceBytes=4096")
 	if response.StatusCode != http.StatusPreconditionFailed {
 		t.Fatalf("stale offset status=%d body=%s, want 412 before any SSE frame", response.StatusCode, body)
 	}
@@ -138,7 +138,7 @@ func TestExecutionLogStreamLateRejectionClosesWithAControlEvent(t *testing.T) {
 		{Kind: modeldevcontractv1.FrameKind_FRAME_KIND_READY},
 		{Kind: modeldevcontractv1.FrameKind_FRAME_KIND_REJECTED, Reason: "STEP_LOGS_UNAVAILABLE"},
 	}}
-	_, raw := readExecutionLogSSE(t, executionLogServer(t, peer), "")
+	_, raw := readExecutionLogSSE(t, executionLogServer(t, peer), "?pod_uid="+executionLogID)
 	if !strings.Contains(raw, "event: error") || !strings.Contains(raw, "STEP_LOGS_UNAVAILABLE") {
 		t.Fatalf("late rejection: %s", raw)
 	}
@@ -154,7 +154,7 @@ func TestExecutionLogStreamLifetimeEndsWithTimeLimit(t *testing.T) {
 	server.Route("/").GET(data.ModelDevExecutionLogStreamPath, h.handle)
 	web := httptest.NewServer(server)
 	t.Cleanup(web.Close)
-	_, raw := readExecutionLogSSE(t, web, "")
+	_, raw := readExecutionLogSSE(t, web, "?pod_uid="+executionLogID)
 	if !strings.Contains(raw, "TIME_LIMIT") {
 		t.Fatalf("lifetime close: %s", raw)
 	}

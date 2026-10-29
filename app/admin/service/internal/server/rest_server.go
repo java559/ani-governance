@@ -198,9 +198,7 @@ func NewRestServer(
 	inferenceService *service.InferenceService,
 	modelService *service.ModelService,
 	computeService *service.ComputePresetService,
-	overviewService *service.OverviewService,
-	platformComponentService *service.PlatformComponentService,
-	instanceServices ...*service.InstanceService,
+	services ...any,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
 
@@ -222,7 +220,7 @@ func NewRestServer(
 	if err != nil || modelConfig.Timeout > 24*time.Hour {
 		return nil, fmt.Errorf("invalid bounded model import HTTP budget")
 	}
-	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, gpuHTTPFilter, storageQueryHTTPFilter},
+	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout, modeldevConfig.ModelResolutionTimeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, gpuHTTPFilter, storageQueryHTTPFilter},
 		middlewares...,
 	)
 	if err != nil {
@@ -300,18 +298,29 @@ func NewRestServer(
 	if modelService != nil {
 		adminV1.RegisterModelServiceHTTPServer(srv, modelService)
 	}
-	if len(instanceServices) > 0 && instanceServices[0] != nil {
-		RegisterInstanceHTTPServer(srv, instanceServices[0])
+	for _, candidate := range services {
+		switch typed := candidate.(type) {
+		case *service.InstanceService:
+			if typed != nil {
+				RegisterInstanceHTTPServer(srv, typed)
+			}
+		case *service.OverviewService:
+			if typed != nil {
+				RegisterOverviewHTTP(srv, typed)
+			}
+		case *service.SandboxService:
+			if typed != nil {
+				RegisterSandboxHTTPServer(srv, typed)
+			}
+		case *service.PlatformComponentService:
+			RegisterPlatformComponentHTTP(srv, typed)
+			// Status and log streams use the same controlled component registry.
+			RegisterPlatformComponentLogHTTP(srv, typed)
+		}
 	}
 	if computeService != nil {
 		RegisterComputeHTTPServer(srv, computeService)
 	}
-	if overviewService != nil {
-		RegisterOverviewHTTP(srv, overviewService)
-	}
-	RegisterPlatformComponentHTTP(srv, platformComponentService)
-	// 组件日志流与状态查询共用同一份受控组件清单与同一个 service 实例。
-	RegisterPlatformComponentLogHTTP(srv, platformComponentService)
 
 	if cfg.GetServer().GetRest().GetEnableSwagger() {
 		swaggerUI.RegisterSwaggerUIServerWithOption(

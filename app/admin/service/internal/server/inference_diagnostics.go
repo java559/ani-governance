@@ -13,6 +13,7 @@ import (
 
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
+	runtimev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
 	view "go-wind-admin/api/gen/go/inference/service/v1"
 	"go-wind-admin/app/admin/service/internal/service"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -248,23 +249,15 @@ func (h *inferenceLogHTTP) stream(parent context.Context, w nethttp.ResponseWrit
 		h.mu.Unlock()
 	}()
 	type result struct {
-		line proto.Message
+		line *runtimev1.RuntimeLogLine
 		err  error
 	}
 	lines := make(chan result, 1)
 	go func() {
 		for {
 			line, e := session.Stream.Recv()
-			var projected proto.Message
-			if e == nil {
-				item, keep := service.ProjectInferenceLog(line, r.Level)
-				if !keep {
-					continue
-				}
-				projected = item
-			}
 			select {
-			case lines <- result{projected, e}:
+			case lines <- result{line, e}:
 			case <-ctx.Done():
 				return
 			}
@@ -308,10 +301,17 @@ func (h *inferenceLogHTTP) stream(parent context.Context, w nethttp.ResponseWrit
 		}
 		return controller.Flush()
 	}
+	writeLog := func(line *runtimev1.RuntimeLogLine) error {
+		projected, keep := service.ProjectInferenceLog(line, r.Level)
+		if !keep {
+			return nil
+		}
+		return write("log", projected)
+	}
 	if errors.Is(first.err, io.EOF) {
 		return write("done", nil)
 	}
-	if err = write("log", first.line); err != nil {
+	if err = writeLog(first.line); err != nil {
 		return nil
 	}
 	heartbeat := time.NewTicker(15 * time.Second)
@@ -333,7 +333,7 @@ func (h *inferenceLogHTTP) stream(parent context.Context, w nethttp.ResponseWrit
 				_ = write("error", nil)
 				return nil
 			}
-			if write("log", next.line) != nil {
+			if writeLog(next.line) != nil {
 				return nil
 			}
 		}

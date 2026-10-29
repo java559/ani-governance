@@ -16,8 +16,8 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/jinzhu/inflection v1.0.0
-	github.com/liangzai006/ani-inference-service/api v0.1.2-image-registry.2.0.20261028083400-ca48688ad918
-	github.com/liangzai006/ani-model-service/api v0.0.0-20261026094610-7c852d6048a9
+	github.com/liangzai006/ani-inference-service/api v0.1.2-image-registry.2.0.20261029033104-a8b505b9e2ea
+	github.com/liangzai006/ani-model-service/api v0.0.0-20261028165608-620bcb1503a6
 	github.com/lib/pq v1.12.3
 	github.com/mileusna/useragent v1.3.5
 	github.com/pquerna/otp v1.5.0
@@ -25,7 +25,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/xiaoqidun/entps v1.50.1
 	github.com/zhangzhe-ctrl/ani-accelerator-service v0.0.0-20261027163656-86ce81af852a
-	github.com/zhangzhe-ctrl/ani-modeldev-service v0.0.0-20261028095814-6b927c5ec917
+	github.com/zhangzhe-ctrl/ani-modeldev-service v0.0.0-20261029062749-c99c9f1081c7
 	github.com/zhangzhe-ctrl/ani-observability-service/api v0.1.3-0.20261028072444-5377d534eac6
 	github.com/zhangzhe-ctrl/ani-resource-service v0.0.0-20261029095316-79261907c18c
 	github.com/zhangzhe-ctrl/ani-resource-service/api/instance/terminal v0.0.0-20261013075021-0937f5aa9c6c

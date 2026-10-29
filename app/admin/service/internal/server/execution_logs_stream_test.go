@@ -16,17 +16,16 @@ import (
 const executionLogID = "11111111-2222-4333-8444-555555555555"
 
 func TestExecutionLogStreamRejectsUnboundedQuery(t *testing.T) {
-	for _, query := range []string{"sinceBytes=-1", "sinceBytes=01", "sinceBytes=" + strings.Repeat("9", 12), "podUid=bad", "container=Node", "previous=1", "logId=x", "since_bytes=1"} {
+	for _, query := range []string{"sinceBytes=-1", "sinceBytes=01", "sinceBytes=" + strings.Repeat("9", 12), "pod_uid=bad", "podUid=" + executionLogID, "container=Node", "previous=1", "logId=x", "since_bytes=1"} {
 		if _, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream?"+query, nil)); err == nil {
 			t.Errorf("accepted %s", query)
 		}
 	}
-	empty, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream", nil))
-	if err != nil || empty.PodUid != nil || empty.Container != nil || empty.Previous != nil || empty.SinceBytes != nil {
-		t.Fatalf("default presence: %+v %v", empty, err)
+	if _, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream", nil)); err == nil {
+		t.Fatal("missing original Pod UID accepted")
 	}
-	parsed, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream?sinceBytes=42&container=main&previous=true", nil))
-	if err != nil || parsed.GetSinceBytes() != 42 || parsed.GetContainer() != "main" || !parsed.GetPrevious() {
+	parsed, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream?pod_uid="+executionLogID+"&sinceBytes=42&container=main&previous=true", nil))
+	if err != nil || parsed.GetPodUid() != executionLogID || parsed.GetSinceBytes() != 42 || parsed.GetContainer() != "main" || !parsed.GetPrevious() {
 		t.Fatalf("options: %+v %v", parsed, err)
 	}
 }
@@ -84,7 +83,7 @@ func TestExecutionLogStreamRequiresAuthentication(t *testing.T) {
 	RegisterExecutionLogStreamHTTP(server, nil, DefaultInstanceLogLimits())
 	web := httptest.NewServer(server)
 	t.Cleanup(web.Close)
-	response, err := web.Client().Get(web.URL + "/api/v1/modeldev/executions/" + executionLogID + "/logs/stream")
+	response, err := web.Client().Get(web.URL + "/api/v1/modeldev/executions/" + executionLogID + "/logs/stream?pod_uid=" + executionLogID)
 	if err != nil {
 		t.Fatal(err)
 	}

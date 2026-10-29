@@ -123,6 +123,12 @@ func (c *ModelDevClient) ManagedOperation(ctx context.Context, scope ModelDevRes
 		out = response
 	}
 	if err != nil {
+		if importIdentity != "" {
+			if failure, ok := status.FromError(err); ok && len(failure.Proto().Details) != 0 {
+				md, _ := metadata.FromOutgoingContext(call)
+				return nil, modelDevResolutionError(err, md.Get("x-ani-request-id")[0])
+			}
+		}
 		return nil, modelDevManagementError(err)
 	}
 	if out == nil || modelDevUnknownFields(out.ProtoReflect()) {

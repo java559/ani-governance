@@ -19,14 +19,13 @@ func TestModelDevPublicExecutionExposesBaseModel(t *testing.T) {
 		AcceptedAt: timestamppb.New(time.Now()), DeadlineAt: timestamppb.New(time.Now()), ObservedAt: timestamppb.New(time.Now()),
 		BaseModel: &modeldevcontractv1.BaseModelIdentity{
 			ModelId: "66666666-6666-4666-8666-666666666666", VersionId: "77777777-7777-4777-8777-777777777777",
-			Family: "Qwen2.5-0.5B-Instruct", Format: "safetensors",
+			Format: "safetensors",
 		},
 	}
 	out := modelDevPublicExecution(in)
 	require.NotNil(t, out.BaseModel)
 	require.Equal(t, "66666666-6666-4666-8666-666666666666", out.BaseModel.ModelId)
 	require.Equal(t, "77777777-7777-4777-8777-777777777777", out.BaseModel.VersionId)
-	require.Equal(t, "Qwen2.5-0.5B-Instruct", out.BaseModel.Family)
 	require.Equal(t, "safetensors", out.BaseModel.Format)
 
 	// General training carries no base model, and the detail must not invent one.

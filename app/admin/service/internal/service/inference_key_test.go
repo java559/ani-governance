@@ -63,14 +63,14 @@ func (p *inferenceKeyOwnerProbe) RotateInferenceKeyTrusted(_ context.Context, te
 }
 
 func inferenceKeyProbe() *inferenceKeyOwnerProbe {
-	return &inferenceKeyOwnerProbe{key: &runtimev1.InferenceAccessKey{Id: inferenceKeyTestID, Name: "app", KeyPrefix: inferenceKeyTestSecret[:16], AllowedModelNames: []string{"model"}, CreatedAt: timestamppb.Now(), Version: 1}}
+	return &inferenceKeyOwnerProbe{key: &runtimev1.InferenceAccessKey{Id: inferenceKeyTestID, Name: "app", KeyPrefix: "iak_000000000000", PolicyId: "33333333-3333-4333-8333-333333333333", CreatedAt: timestamppb.Now(), Version: 1}}
 }
 
 func TestInferenceKeyTrustedManagementAndOneTimeSecret(t *testing.T) {
 	owner := inferenceKeyProbe()
 	s := NewInferenceServiceWithOwner(nil, owner, directInferenceTenantProbe{})
 	ctx := auth.NewPrincipalContext(context.Background(), &auth.Principal{Type: auth.SubjectUser, TenantID: 26, ID: 33})
-	in := &view.CreateInferenceKeyRequest{Data: &view.CreateInferenceKeyData{Name: "app", AllowedModelNames: []string{"model"}, IdempotencyKey: "create-1"}}
+	in := &view.CreateInferenceKeyRequest{Data: &view.CreateInferenceKeyData{Name: "app", PolicyId: "33333333-3333-4333-8333-333333333333", IdempotencyKey: "create-1"}}
 	created, err := s.CreateInferenceKey(ctx, in)
 	require.NoError(t, err)
 	require.NotEmpty(t, created.Secret)

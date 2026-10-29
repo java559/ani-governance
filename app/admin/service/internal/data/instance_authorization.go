@@ -25,6 +25,13 @@ const InstanceEventsPath = "/api/v1/instances/{instance_id}/events"
 const InstanceLogsPath = "/api/v1/instances/{instance_id}/logs"
 const InstanceMetricsQueryPath = "/api/v1/instances/{instance_id}/metrics/query"
 const InstanceMetricsLatestPath = "/api/v1/instances/{instance_id}/metrics/latest"
+const SandboxCreatePath = "/api/v1/sandbox"
+const SandboxListPath = "/api/v1/sandbox"
+const SandboxGetPath = "/api/v1/sandbox/{sandbox_id}"
+const SandboxOperationPath = "/api/v1/sandbox/operations/{operation_id}"
+const SandboxPausePath = "/api/v1/sandbox/{data.sandbox_id}:pause"
+const SandboxResumePath = "/api/v1/sandbox/{data.sandbox_id}:resume"
+const SandboxDeletePath = "/api/v1/sandbox/{data.sandbox_id}"
 
 // ObservabilityResourceTrendPath 是首页资源趋势路由。按 2026-10-27 定案挂
 // INSTANCE 模块（现有套餐 plan2/plan3 均含 INSTANCE、均无 DASHBOARD），
@@ -63,6 +70,14 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 	case InstanceGetPath, InstanceOperationPath, InstanceRuntimePath, InstanceEventsPath, InstanceLogsPath, InstanceMountablePVCsPath, InstanceScopeMountablePVCsPath, InstanceConfigurationPath, InstanceMetricsLatestPath:
 		allowed = method == "GET"
 	case ObservabilityResourceTrendPath, OverviewPath:
+		allowed = method == "GET"
+	case SandboxCreatePath:
+		allowed = method == "POST" || method == "GET"
+	case SandboxPausePath, SandboxResumePath:
+		allowed = method == "POST"
+	case SandboxDeletePath:
+		allowed = method == "DELETE"
+	case SandboxGetPath, SandboxOperationPath:
 		allowed = method == "GET"
 	}
 	if !allowed || r == nil || r.current == nil {

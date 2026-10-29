@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	kratosErrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
@@ -163,6 +164,7 @@ func gpuDelete(t *testing.T, in *QuotaOccupyInput) *QuotaDeleteInput {
 	require.NoError(t, err)
 	return &QuotaDeleteInput{TenantID: in.TenantID, ActorType: in.ActorType, ActorID: in.ActorID, OwnerService: in.OwnerService, Action: commandcontract.InstanceDeleteAction, IdempotencyKey: uuid.NewString(), RequestHash: "delete-" + in.ResourceID + "-v1", ResourceID: in.ResourceID, CanonicalRequest: string(canonical)}
 }
+
 func gpuProjectionPayload(in *QuotaOccupyInput, id string, rev int64, hash string) string {
 	b, _ := json.Marshal(map[string]any{"ref": map[string]string{"tenant_id": in.ResourceTenantID, "owner_service": in.OwnerService, "resource_id": in.ResourceID, "create_operation_id": id}, "revision": rev, "state": rev, "payload_digest": hash})
 	return string(b)
@@ -334,14 +336,16 @@ func TestQuotaGpuAtomicCancelAndSameKey(t *testing.T) {
 	require.Equal(t, v.OperationID, replay.OperationID)
 	del.IdempotencyKey = uuid.NewString()
 	second, e := r.CreateDeleteOperation(ctx, del)
-	require.NoError(t, e)
-	require.True(t, second.LocalCanceled)
-	require.NotEqual(t, v.OperationID, second.OperationID)
+	// A fresh DELETE intent cannot repeat an accepted local cancellation or refund.
+	require.Error(t, e)
+	require.Nil(t, second)
+	require.Equal(t, "INSTANCE_DELETING", kratosErrors.FromError(e).Reason)
 	dispatch, e := r.ClaimDispatchable(ctx, "worker", time.Minute, 10)
 	require.NoError(t, e)
 	require.Empty(t, dispatch)
 	balances, e := r.RecomputeInvariants(ctx, tid)
 	require.NoError(t, e)
+	require.NotEmpty(t, balances)
 	for _, row := range balances {
 		require.Zero(t, row.OccupiedUnits)
 		require.True(t, row.Balanced)

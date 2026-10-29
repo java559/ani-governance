@@ -21,11 +21,8 @@ message InferenceKey {
   string id = 1;
   string name = 2;
   string key_prefix = 3 [json_name = "key_prefix"];
-  repeated string allowed_service_ids = 4 [json_name = "allowed_service_ids"];
-  repeated string allowed_model_names = 5 [json_name = "allowed_model_names"];
-  int32 requests_per_second = 6 [json_name = "requests_per_second"];
-  int32 requests_per_minute = 7 [json_name = "requests_per_minute"];
-  int32 requests_per_hour = 8 [json_name = "requests_per_hour"];
+  reserved 4, 5, 6, 7, 8;
+  reserved "allowed_service_ids", "allowed_model_names", "requests_per_second", "requests_per_minute", "requests_per_hour";
   google.protobuf.Timestamp expires_at = 9 [json_name = "expires_at"];
   google.protobuf.Timestamp revoked_at = 10 [json_name = "revoked_at"];
   string created_by = 11 [json_name = "created_by"];
@@ -34,19 +31,44 @@ message InferenceKey {
   int64 version = 14;
   // Legacy hashes have no secret until successful use or explicit rotation.
   optional string secret = 15 [(redact.value).string = ""];
+  string policy_id = 16 [json_name = "policy_id"];
 }
 
 message CreateInferenceKeyData {
   string name = 1;
-  repeated string allowed_service_ids = 2 [json_name = "allowed_service_ids"];
+  reserved 2, 3, 4, 5, 6;
+  reserved "allowed_service_ids", "allowed_model_names", "requests_per_second", "requests_per_minute", "requests_per_hour";
+  google.protobuf.Timestamp expires_at = 7 [json_name = "expires_at"];
+  // Required on this HTTP surface. Replays never return the secret again.
+  string idempotency_key = 8 [json_name = "idempotency_key"];
+  string policy_id = 9 [json_name = "policy_id"];
+}
+
+message InferenceAccessPolicy {
+  string id = 1;
+  string name = 2;
   repeated string allowed_model_names = 3 [json_name = "allowed_model_names"];
   int32 requests_per_second = 4 [json_name = "requests_per_second"];
   int32 requests_per_minute = 5 [json_name = "requests_per_minute"];
   int32 requests_per_hour = 6 [json_name = "requests_per_hour"];
-  google.protobuf.Timestamp expires_at = 7 [json_name = "expires_at"];
-  // Required on this HTTP surface. Replays never return the secret again.
-  string idempotency_key = 8 [json_name = "idempotency_key"];
+  int64 version = 7;
 }
+message InferenceAccessPolicyData {
+  string name = 1;
+  repeated string allowed_model_names = 2 [json_name = "allowed_model_names"];
+  int32 requests_per_second = 3 [json_name = "requests_per_second"];
+  int32 requests_per_minute = 4 [json_name = "requests_per_minute"];
+  int32 requests_per_hour = 5 [json_name = "requests_per_hour"];
+}
+message CreateInferencePolicyRequest { InferenceAccessPolicyData data = 1; }
+message ListInferencePoliciesRequest { optional int32 page = 1; optional int32 page_size = 2 [json_name = "pageSize"]; }
+message ListInferencePoliciesResponse { repeated InferenceAccessPolicy items = 1; int64 total = 2; }
+message GetInferencePolicyRequest { string policy_id = 1 [json_name = "policy_id"]; }
+message UpdateInferencePolicyRequest { string policy_id = 1 [json_name = "policy_id"]; InferenceAccessPolicyData data = 2; }
+message DeleteInferencePolicyRequest { string policy_id = 1 [json_name = "policy_id"]; }
+message DeleteInferencePolicyResponse {}
+message BindInferenceKeyPolicyData { string policy_id = 1 [json_name = "policy_id"]; }
+message BindInferenceKeyPolicyRequest { string key_id = 1 [json_name = "key_id"]; BindInferenceKeyPolicyData data = 2; }
 message CreateInferenceKeyRequest { CreateInferenceKeyData data = 1; }
 message InferenceKeyCredentials {
   InferenceKey key = 1 [(redact.value).message = { apply: true }];

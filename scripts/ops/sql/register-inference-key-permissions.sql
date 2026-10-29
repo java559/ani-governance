@@ -9,7 +9,8 @@ BEGIN
   ('GET','/api/v1/inference-keys','inference:key:read'),
   ('GET','/api/v1/inference-keys/{key_id}','inference:key:read'),
   ('DELETE','/api/v1/inference-keys/{key_id}','inference:key:revoke'),
-  ('POST','/api/v1/inference-keys/{key_id}:rotate','inference:key:rotate')
+  ('POST','/api/v1/inference-keys/{key_id}:rotate','inference:key:rotate'),
+  ('POST','/api/v1/inference-keys/{key_id}:bind-policy','inference:key:bind-policy')
  ) AS routes(method,path,code) LOOP
   SELECT count(*),min(id) INTO route_count,aid FROM sys_apis
    WHERE path=r.path AND method=r.method AND module='InferenceKeyService'

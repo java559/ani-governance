@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,7 +27,13 @@ import (
 
 func runModelDevManagement(ctx context.Context, command string, args []string, stdout io.Writer) (result error) {
 	timeout := 2 * time.Minute
-	if command == "modeldev-reconcile" {
+	if command == "modeldev-import-csv" || command == "modeldev-import-finetuning-dataset" {
+		var err error
+		timeout, err = data.ModelDevImportTimeoutFromEnv()
+		if err != nil {
+			return err
+		}
+	} else if command == "modeldev-reconcile" {
 		timeout = 5 * time.Minute
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -153,7 +160,7 @@ func runModelDevManagement(ctx context.Context, command string, args []string, s
 	}
 	out, err := client.ManagedOperation(ctx, scope, message)
 	if err != nil {
-		return fmt.Errorf("modeldev management remote operation failed (%s)", status.Code(err))
+		return modelDevManagementFailure(err)
 	}
 	raw, err := (protojson.MarshalOptions{UseProtoNames: true}).Marshal(out)
 	if err != nil {
@@ -161,4 +168,23 @@ func runModelDevManagement(ctx context.Context, command string, args []string, s
 	}
 	_, err = stdout.Write(append(raw, '\n'))
 	return err
+}
+
+func modelDevManagementFailure(err error) error {
+	failure := status.Convert(err)
+	if len(failure.Details()) == 1 {
+		if detail, ok := failure.Details()[0].(*modeldevv1.ErrorDetail); ok && detail != nil {
+			// Only the real client creates these sanitized, finite details. No
+			// upstream message, storage locator or arbitrary metadata is printed.
+			text := strings.TrimPrefix(detail.Reason.String(), "ERROR_REASON_")
+			if detail.Actual != nil && detail.Limit != nil {
+				text += " kind=" + detail.Kind + " limit_name=" + detail.LimitName + " actual=" + strconv.FormatInt(*detail.Actual, 10) + " limit=" + strconv.FormatInt(*detail.Limit, 10)
+			}
+			if detail.CorrelationId != "" {
+				text += " request_id=" + detail.CorrelationId
+			}
+			return fmt.Errorf("modeldev management remote operation failed (%s): %s", failure.Code(), text)
+		}
+	}
+	return fmt.Errorf("modeldev management remote operation failed (%s)", failure.Code())
 }

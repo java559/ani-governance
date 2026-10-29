@@ -111,6 +111,24 @@ spec:
             - name: ANI_COMPONENT_LOGS_CONFIG
               value: {{ .Values.componentLogs.configPath | quote }}
             {{- end }}
+            {{- if .Values.quotaInternal.enabled }}
+            - name: ANI_QUOTA_ENABLED
+              value: "true"
+            - name: ANI_QUOTA_INTERNAL_ADDR
+              value: {{ printf ":%d" (int .Values.quotaInternal.port) | quote }}
+            - name: ANI_QUOTA_CA_FILE
+              value: /service-identity/quota/ca.crt
+            - name: ANI_QUOTA_CERT_FILE
+              value: /service-identity/quota/tls.crt
+            - name: ANI_QUOTA_KEY_FILE
+              value: /service-identity/quota/tls.key
+            - name: ANI_QUOTA_RESOURCE_DNS_SAN
+              value: {{ .Values.quotaInternal.resourceDNSSAN | quote }}
+            - name: ANI_QUOTA_MODELDEV_ENABLED
+              value: {{ .Values.quotaInternal.modeldevEnabled | quote }}
+            - name: ANI_QUOTA_INFERENCE_ENABLED
+              value: {{ .Values.quotaInternal.inferenceEnabled | quote }}
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.httpPort }}
@@ -141,6 +159,11 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
+            {{- if .Values.quotaInternal.enabled }}
+            - name: quota-identity
+              mountPath: /service-identity/quota
+              readOnly: true
+            {{- end }}
             - name: configs
               mountPath: /app/configs
               readOnly: true
@@ -173,6 +196,24 @@ spec:
               readOnly: true
             {{- end }}
       volumes:
+        {{- if .Values.quotaInternal.enabled }}
+        - name: quota-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret:
+                  name: {{ required "quotaInternal.serverSecret is required" .Values.quotaInternal.serverSecret }}
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - configMap:
+                  name: {{ required "quotaInternal.caConfigMap is required" .Values.quotaInternal.caConfigMap }}
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+        {{- end }}
         - name: configs
           projected:
             defaultMode: 0440

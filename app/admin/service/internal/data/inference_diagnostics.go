@@ -12,11 +12,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Runtime diagnostics can include an invocation probe. Ordinary owner RPCs
+// retain their shorter budget, while this call remains bounded by its caller.
+const inferenceRuntimeDiagnosticsTimeout = 15 * time.Second
+const inferenceRuntimeLogsTimeout = 15 * time.Second
+
 func (c *InferenceClient) RuntimeDiagnosticsTrusted(ctx context.Context, tenant, actor string, request *runtimev1.GetRuntimeDiagnosticsRequest) (*runtimev1.RuntimeDiagnostics, error) {
 	if c == nil || c.diagnostics == nil {
 		return nil, status.Error(codes.Unavailable, "INFERENCE_DIAGNOSTICS_UNAVAILABLE")
 	}
-	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	call, cancel, err := c.trustedContextWithTimeout(ctx, tenant, actor, inferenceRuntimeDiagnosticsTimeout)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid trusted inference identity")
 	}
@@ -27,7 +32,7 @@ func (c *InferenceClient) RuntimeLogsTrusted(ctx context.Context, tenant, actor 
 	if c == nil || c.diagnostics == nil {
 		return nil, status.Error(codes.Unavailable, "INFERENCE_DIAGNOSTICS_UNAVAILABLE")
 	}
-	call, cancel, err := c.trustedContext(ctx, tenant, actor)
+	call, cancel, err := c.trustedContextWithTimeout(ctx, tenant, actor, inferenceRuntimeLogsTimeout)
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid trusted inference identity")
 	}

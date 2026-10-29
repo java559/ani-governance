@@ -27,8 +27,9 @@ var File_admin_service_v1_i_modeldev_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_modeldev_proto_rawDesc = "" +
 	"\n" +
-	"!admin/service/v1/i_modeldev.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a#modeldev/service/v1/execution.proto2\xfc\x18\n" +
-	"\x0fModelDevService\x12\xa2\x01\n" +
+	"!admin/service/v1/i_modeldev.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a#modeldev/service/v1/execution.proto2\xf0\x1b\n" +
+	"\x0fModelDevService\x12\xf1\x02\n" +
+	"\x18CheckFinetuningReadiness\x124.modeldev.service.v1.CheckFinetuningReadinessRequest\x1a5.modeldev.service.v1.CheckFinetuningReadinessResponse\"\xe7\x01\xbaG\xad\x01\x1a\xaa\x01Source-only model eligibility under current model-read and training compute-catalog grants; no target write or GPU allocation. 200 assessment is not execution acceptance.\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/modeldev/finetuning/readiness/check\x12\xa2\x01\n" +
 	"\x13ListImplementations\x12/.modeldev.service.v1.ListImplementationsRequest\x1a0.modeldev.service.v1.ListImplementationsResponse\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/modeldev/implementations\x12\x8f\x02\n" +
 	"\x0fGetInputVersion\x12+.modeldev.service.v1.GetInputVersionRequest\x1a,.modeldev.service.v1.GetInputVersionResponse\"\xa0\x01\xbaGTBR\x12P\n" +
 	"\x03200\x12I\n" +
@@ -90,65 +91,69 @@ const file_admin_service_v1_i_modeldev_proto_rawDesc = "" +
 	"\x14com.admin.service.v1B\x0eIModeldevProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_modeldev_proto_goTypes = []any{
-	(*v1.ListImplementationsRequest)(nil),        // 0: modeldev.service.v1.ListImplementationsRequest
-	(*v1.GetInputVersionRequest)(nil),            // 1: modeldev.service.v1.GetInputVersionRequest
-	(*v1.ListInputVersionsRequest)(nil),          // 2: modeldev.service.v1.ListInputVersionsRequest
-	(*v1.ListExecutionsRequest)(nil),             // 3: modeldev.service.v1.ListExecutionsRequest
-	(*v1.GetExecutionLogsRequest)(nil),           // 4: modeldev.service.v1.GetExecutionLogsRequest
-	(*v1.ListExecutionPodsRequest)(nil),          // 5: modeldev.service.v1.ListExecutionPodsRequest
-	(*v1.ListExecutionEventsRequest)(nil),        // 6: modeldev.service.v1.ListExecutionEventsRequest
-	(*v1.QueryExecutionMetricsRequest)(nil),      // 7: modeldev.service.v1.QueryExecutionMetricsRequest
-	(*v1.StopExecutionRequest)(nil),              // 8: modeldev.service.v1.StopExecutionRequest
-	(*v1.ResumeModelRegistrationRequest)(nil),    // 9: modeldev.service.v1.ResumeModelRegistrationRequest
-	(*v1.GetExecutionRequest)(nil),               // 10: modeldev.service.v1.GetExecutionRequest
-	(*v1.ListExecutionArtifactsRequest)(nil),     // 11: modeldev.service.v1.ListExecutionArtifactsRequest
-	(*v1.AuthorizeArtifactDownloadRequest)(nil),  // 12: modeldev.service.v1.AuthorizeArtifactDownloadRequest
-	(*v1.CreateExecutionRequest)(nil),            // 13: modeldev.service.v1.CreateExecutionRequest
-	(*v1.ListImplementationsResponse)(nil),       // 14: modeldev.service.v1.ListImplementationsResponse
-	(*v1.GetInputVersionResponse)(nil),           // 15: modeldev.service.v1.GetInputVersionResponse
-	(*v1.ListInputVersionsResponse)(nil),         // 16: modeldev.service.v1.ListInputVersionsResponse
-	(*v1.ListExecutionsResponse)(nil),            // 17: modeldev.service.v1.ListExecutionsResponse
-	(*v1.GetExecutionLogsResponse)(nil),          // 18: modeldev.service.v1.GetExecutionLogsResponse
-	(*v1.ListExecutionPodsResponse)(nil),         // 19: modeldev.service.v1.ListExecutionPodsResponse
-	(*v1.ListExecutionEventsResponse)(nil),       // 20: modeldev.service.v1.ListExecutionEventsResponse
-	(*v1.QueryExecutionMetricsResponse)(nil),     // 21: modeldev.service.v1.QueryExecutionMetricsResponse
-	(*v1.StopExecutionResponse)(nil),             // 22: modeldev.service.v1.StopExecutionResponse
-	(*v1.GetExecutionResponse)(nil),              // 23: modeldev.service.v1.GetExecutionResponse
-	(*v1.ListExecutionArtifactsResponse)(nil),    // 24: modeldev.service.v1.ListExecutionArtifactsResponse
-	(*v1.AuthorizeArtifactDownloadResponse)(nil), // 25: modeldev.service.v1.AuthorizeArtifactDownloadResponse
-	(*v1.CreateExecutionResponse)(nil),           // 26: modeldev.service.v1.CreateExecutionResponse
+	(*v1.CheckFinetuningReadinessRequest)(nil),   // 0: modeldev.service.v1.CheckFinetuningReadinessRequest
+	(*v1.ListImplementationsRequest)(nil),        // 1: modeldev.service.v1.ListImplementationsRequest
+	(*v1.GetInputVersionRequest)(nil),            // 2: modeldev.service.v1.GetInputVersionRequest
+	(*v1.ListInputVersionsRequest)(nil),          // 3: modeldev.service.v1.ListInputVersionsRequest
+	(*v1.ListExecutionsRequest)(nil),             // 4: modeldev.service.v1.ListExecutionsRequest
+	(*v1.GetExecutionLogsRequest)(nil),           // 5: modeldev.service.v1.GetExecutionLogsRequest
+	(*v1.ListExecutionPodsRequest)(nil),          // 6: modeldev.service.v1.ListExecutionPodsRequest
+	(*v1.ListExecutionEventsRequest)(nil),        // 7: modeldev.service.v1.ListExecutionEventsRequest
+	(*v1.QueryExecutionMetricsRequest)(nil),      // 8: modeldev.service.v1.QueryExecutionMetricsRequest
+	(*v1.StopExecutionRequest)(nil),              // 9: modeldev.service.v1.StopExecutionRequest
+	(*v1.ResumeModelRegistrationRequest)(nil),    // 10: modeldev.service.v1.ResumeModelRegistrationRequest
+	(*v1.GetExecutionRequest)(nil),               // 11: modeldev.service.v1.GetExecutionRequest
+	(*v1.ListExecutionArtifactsRequest)(nil),     // 12: modeldev.service.v1.ListExecutionArtifactsRequest
+	(*v1.AuthorizeArtifactDownloadRequest)(nil),  // 13: modeldev.service.v1.AuthorizeArtifactDownloadRequest
+	(*v1.CreateExecutionRequest)(nil),            // 14: modeldev.service.v1.CreateExecutionRequest
+	(*v1.CheckFinetuningReadinessResponse)(nil),  // 15: modeldev.service.v1.CheckFinetuningReadinessResponse
+	(*v1.ListImplementationsResponse)(nil),       // 16: modeldev.service.v1.ListImplementationsResponse
+	(*v1.GetInputVersionResponse)(nil),           // 17: modeldev.service.v1.GetInputVersionResponse
+	(*v1.ListInputVersionsResponse)(nil),         // 18: modeldev.service.v1.ListInputVersionsResponse
+	(*v1.ListExecutionsResponse)(nil),            // 19: modeldev.service.v1.ListExecutionsResponse
+	(*v1.GetExecutionLogsResponse)(nil),          // 20: modeldev.service.v1.GetExecutionLogsResponse
+	(*v1.ListExecutionPodsResponse)(nil),         // 21: modeldev.service.v1.ListExecutionPodsResponse
+	(*v1.ListExecutionEventsResponse)(nil),       // 22: modeldev.service.v1.ListExecutionEventsResponse
+	(*v1.QueryExecutionMetricsResponse)(nil),     // 23: modeldev.service.v1.QueryExecutionMetricsResponse
+	(*v1.StopExecutionResponse)(nil),             // 24: modeldev.service.v1.StopExecutionResponse
+	(*v1.GetExecutionResponse)(nil),              // 25: modeldev.service.v1.GetExecutionResponse
+	(*v1.ListExecutionArtifactsResponse)(nil),    // 26: modeldev.service.v1.ListExecutionArtifactsResponse
+	(*v1.AuthorizeArtifactDownloadResponse)(nil), // 27: modeldev.service.v1.AuthorizeArtifactDownloadResponse
+	(*v1.CreateExecutionResponse)(nil),           // 28: modeldev.service.v1.CreateExecutionResponse
 }
 var file_admin_service_v1_i_modeldev_proto_depIdxs = []int32{
-	0,  // 0: admin.service.v1.ModelDevService.ListImplementations:input_type -> modeldev.service.v1.ListImplementationsRequest
-	1,  // 1: admin.service.v1.ModelDevService.GetInputVersion:input_type -> modeldev.service.v1.GetInputVersionRequest
-	2,  // 2: admin.service.v1.ModelDevService.ListInputVersions:input_type -> modeldev.service.v1.ListInputVersionsRequest
-	3,  // 3: admin.service.v1.ModelDevService.ListExecutions:input_type -> modeldev.service.v1.ListExecutionsRequest
-	4,  // 4: admin.service.v1.ModelDevService.GetExecutionLogs:input_type -> modeldev.service.v1.GetExecutionLogsRequest
-	5,  // 5: admin.service.v1.ModelDevService.ListExecutionPods:input_type -> modeldev.service.v1.ListExecutionPodsRequest
-	6,  // 6: admin.service.v1.ModelDevService.ListExecutionEvents:input_type -> modeldev.service.v1.ListExecutionEventsRequest
-	7,  // 7: admin.service.v1.ModelDevService.QueryExecutionMetrics:input_type -> modeldev.service.v1.QueryExecutionMetricsRequest
-	8,  // 8: admin.service.v1.ModelDevService.StopExecution:input_type -> modeldev.service.v1.StopExecutionRequest
-	9,  // 9: admin.service.v1.ModelDevService.ResumeModelRegistration:input_type -> modeldev.service.v1.ResumeModelRegistrationRequest
-	10, // 10: admin.service.v1.ModelDevService.GetExecution:input_type -> modeldev.service.v1.GetExecutionRequest
-	11, // 11: admin.service.v1.ModelDevService.ListExecutionArtifacts:input_type -> modeldev.service.v1.ListExecutionArtifactsRequest
-	12, // 12: admin.service.v1.ModelDevService.AuthorizeArtifactDownload:input_type -> modeldev.service.v1.AuthorizeArtifactDownloadRequest
-	13, // 13: admin.service.v1.ModelDevService.CreateExecution:input_type -> modeldev.service.v1.CreateExecutionRequest
-	14, // 14: admin.service.v1.ModelDevService.ListImplementations:output_type -> modeldev.service.v1.ListImplementationsResponse
-	15, // 15: admin.service.v1.ModelDevService.GetInputVersion:output_type -> modeldev.service.v1.GetInputVersionResponse
-	16, // 16: admin.service.v1.ModelDevService.ListInputVersions:output_type -> modeldev.service.v1.ListInputVersionsResponse
-	17, // 17: admin.service.v1.ModelDevService.ListExecutions:output_type -> modeldev.service.v1.ListExecutionsResponse
-	18, // 18: admin.service.v1.ModelDevService.GetExecutionLogs:output_type -> modeldev.service.v1.GetExecutionLogsResponse
-	19, // 19: admin.service.v1.ModelDevService.ListExecutionPods:output_type -> modeldev.service.v1.ListExecutionPodsResponse
-	20, // 20: admin.service.v1.ModelDevService.ListExecutionEvents:output_type -> modeldev.service.v1.ListExecutionEventsResponse
-	21, // 21: admin.service.v1.ModelDevService.QueryExecutionMetrics:output_type -> modeldev.service.v1.QueryExecutionMetricsResponse
-	22, // 22: admin.service.v1.ModelDevService.StopExecution:output_type -> modeldev.service.v1.StopExecutionResponse
-	23, // 23: admin.service.v1.ModelDevService.ResumeModelRegistration:output_type -> modeldev.service.v1.GetExecutionResponse
-	23, // 24: admin.service.v1.ModelDevService.GetExecution:output_type -> modeldev.service.v1.GetExecutionResponse
-	24, // 25: admin.service.v1.ModelDevService.ListExecutionArtifacts:output_type -> modeldev.service.v1.ListExecutionArtifactsResponse
-	25, // 26: admin.service.v1.ModelDevService.AuthorizeArtifactDownload:output_type -> modeldev.service.v1.AuthorizeArtifactDownloadResponse
-	26, // 27: admin.service.v1.ModelDevService.CreateExecution:output_type -> modeldev.service.v1.CreateExecutionResponse
-	14, // [14:28] is the sub-list for method output_type
-	0,  // [0:14] is the sub-list for method input_type
+	0,  // 0: admin.service.v1.ModelDevService.CheckFinetuningReadiness:input_type -> modeldev.service.v1.CheckFinetuningReadinessRequest
+	1,  // 1: admin.service.v1.ModelDevService.ListImplementations:input_type -> modeldev.service.v1.ListImplementationsRequest
+	2,  // 2: admin.service.v1.ModelDevService.GetInputVersion:input_type -> modeldev.service.v1.GetInputVersionRequest
+	3,  // 3: admin.service.v1.ModelDevService.ListInputVersions:input_type -> modeldev.service.v1.ListInputVersionsRequest
+	4,  // 4: admin.service.v1.ModelDevService.ListExecutions:input_type -> modeldev.service.v1.ListExecutionsRequest
+	5,  // 5: admin.service.v1.ModelDevService.GetExecutionLogs:input_type -> modeldev.service.v1.GetExecutionLogsRequest
+	6,  // 6: admin.service.v1.ModelDevService.ListExecutionPods:input_type -> modeldev.service.v1.ListExecutionPodsRequest
+	7,  // 7: admin.service.v1.ModelDevService.ListExecutionEvents:input_type -> modeldev.service.v1.ListExecutionEventsRequest
+	8,  // 8: admin.service.v1.ModelDevService.QueryExecutionMetrics:input_type -> modeldev.service.v1.QueryExecutionMetricsRequest
+	9,  // 9: admin.service.v1.ModelDevService.StopExecution:input_type -> modeldev.service.v1.StopExecutionRequest
+	10, // 10: admin.service.v1.ModelDevService.ResumeModelRegistration:input_type -> modeldev.service.v1.ResumeModelRegistrationRequest
+	11, // 11: admin.service.v1.ModelDevService.GetExecution:input_type -> modeldev.service.v1.GetExecutionRequest
+	12, // 12: admin.service.v1.ModelDevService.ListExecutionArtifacts:input_type -> modeldev.service.v1.ListExecutionArtifactsRequest
+	13, // 13: admin.service.v1.ModelDevService.AuthorizeArtifactDownload:input_type -> modeldev.service.v1.AuthorizeArtifactDownloadRequest
+	14, // 14: admin.service.v1.ModelDevService.CreateExecution:input_type -> modeldev.service.v1.CreateExecutionRequest
+	15, // 15: admin.service.v1.ModelDevService.CheckFinetuningReadiness:output_type -> modeldev.service.v1.CheckFinetuningReadinessResponse
+	16, // 16: admin.service.v1.ModelDevService.ListImplementations:output_type -> modeldev.service.v1.ListImplementationsResponse
+	17, // 17: admin.service.v1.ModelDevService.GetInputVersion:output_type -> modeldev.service.v1.GetInputVersionResponse
+	18, // 18: admin.service.v1.ModelDevService.ListInputVersions:output_type -> modeldev.service.v1.ListInputVersionsResponse
+	19, // 19: admin.service.v1.ModelDevService.ListExecutions:output_type -> modeldev.service.v1.ListExecutionsResponse
+	20, // 20: admin.service.v1.ModelDevService.GetExecutionLogs:output_type -> modeldev.service.v1.GetExecutionLogsResponse
+	21, // 21: admin.service.v1.ModelDevService.ListExecutionPods:output_type -> modeldev.service.v1.ListExecutionPodsResponse
+	22, // 22: admin.service.v1.ModelDevService.ListExecutionEvents:output_type -> modeldev.service.v1.ListExecutionEventsResponse
+	23, // 23: admin.service.v1.ModelDevService.QueryExecutionMetrics:output_type -> modeldev.service.v1.QueryExecutionMetricsResponse
+	24, // 24: admin.service.v1.ModelDevService.StopExecution:output_type -> modeldev.service.v1.StopExecutionResponse
+	25, // 25: admin.service.v1.ModelDevService.ResumeModelRegistration:output_type -> modeldev.service.v1.GetExecutionResponse
+	25, // 26: admin.service.v1.ModelDevService.GetExecution:output_type -> modeldev.service.v1.GetExecutionResponse
+	26, // 27: admin.service.v1.ModelDevService.ListExecutionArtifacts:output_type -> modeldev.service.v1.ListExecutionArtifactsResponse
+	27, // 28: admin.service.v1.ModelDevService.AuthorizeArtifactDownload:output_type -> modeldev.service.v1.AuthorizeArtifactDownloadResponse
+	28, // 29: admin.service.v1.ModelDevService.CreateExecution:output_type -> modeldev.service.v1.CreateExecutionResponse
+	15, // [15:30] is the sub-list for method output_type
+	0,  // [0:15] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

@@ -19,6 +19,7 @@ import (
 	contractpb "github.com/zhangzhe-ctrl/ani-modeldev-service/contract/cpup01/protobuf"
 	compute "github.com/zhangzhe-ctrl/ani-resource-service/api/compute/v1"
 	"go-wind-admin/app/admin/service/internal/commandcontract"
+	"go-wind-admin/pkg/middleware/requestid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
@@ -43,6 +44,8 @@ const (
 type ModelDevClientConfig struct {
 	Address, CAFile, CertFile, KeyFile string
 	Timeout                            time.Duration
+	ModelResolutionTimeout             time.Duration
+	ImportTimeout                      time.Duration
 }
 
 // ModelDevResolveScope is supplied after current Governance authorization and
@@ -60,24 +63,32 @@ type ModelDevResolution struct {
 }
 
 type ModelDevClient struct {
-	connection *grpc.ClientConn
-	client     modeldevv1.ModelDevAdmissionServiceClient
-	timeout    time.Duration
+	connection        *grpc.ClientConn
+	client            modeldevv1.ModelDevAdmissionServiceClient
+	timeout           time.Duration
+	resolutionTimeout time.Duration
+	importTimeout     time.Duration
 }
 
 func NewModelDevClient(config ModelDevClientConfig) (*ModelDevClient, func(), error) {
-	if config.Address == "" || strings.TrimSpace(config.Address) != config.Address || config.Timeout <= 0 {
+	if config.ModelResolutionTimeout == 0 {
+		config.ModelResolutionTimeout = 300 * time.Second
+	}
+	if config.ImportTimeout == 0 {
+		config.ImportTimeout = 1800 * time.Second
+	}
+	if config.Address == "" || strings.TrimSpace(config.Address) != config.Address || config.Timeout <= 0 || config.Timeout > 24*time.Hour || config.ModelResolutionTimeout <= 0 || config.ModelResolutionTimeout > time.Duration(math.MaxUint32)*time.Second || config.ImportTimeout <= 0 || config.ImportTimeout > time.Duration(math.MaxUint32)*time.Second {
 		return nil, nil, errors.New("invalid modeldev client configuration")
 	}
 	security, err := modelDevClientTLS(config)
 	if err != nil {
 		return nil, nil, err
 	}
-	connection, err := grpc.NewClient(config.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)))
+	connection, err := grpc.NewClient(config.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(cpup01.MaxControlRPCBytes), grpc.MaxCallSendMsgSize(cpup01.MaxControlRPCBytes)))
 	if err != nil {
 		return nil, nil, errors.New("invalid modeldev client configuration")
 	}
-	client := &ModelDevClient{connection: connection, client: modeldevv1.NewModelDevAdmissionServiceClient(connection), timeout: config.Timeout}
+	client := &ModelDevClient{connection: connection, client: modeldevv1.NewModelDevAdmissionServiceClient(connection), timeout: config.Timeout, resolutionTimeout: config.ModelResolutionTimeout, importTimeout: config.ImportTimeout}
 	return client, func() { _ = connection.Close() }, nil
 }
 
@@ -180,8 +191,16 @@ func (c *ModelDevClient) ResolvePreparedWithGPU(ctx context.Context, scope Model
 	if err != nil {
 		return ModelDevResolution{}, invalid
 	}
+	if intent.TimeoutSeconds != nil {
+		if *intent.TimeoutSeconds > uint64(math.MaxInt64/int64(time.Second)) {
+			return ModelDevResolution{}, invalid
+		}
+		bounded, cancelDeadline := context.WithDeadline(ctx, acceptedAt.Add(time.Duration(*intent.TimeoutSeconds)*time.Second))
+		defer cancelDeadline()
+		ctx = bounded
+	}
 	prepare := &modeldevv1.PrepareAdmissionRequest{Intent: wireIntent, IdentityRef: &modeldevv1.IdentityRef{TenantId: identity.TenantID, Actor: identity.Actor, ExecutionId: identity.ExecutionID, OperationId: identity.OperationID, IntentHash: identity.IntentHash}, AcceptedAt: timestamppb.New(acceptedAt), ComputeSelectionCanonical: selectionBytes, SelectionDigest: selection.SelectionDigest}
-	call, cancel, requestID := c.admissionCall(ctx, scope)
+	call, cancel, requestID := c.admissionCallBudget(ctx, scope, c.resolutionTimeout)
 	preparedReply, err := c.client.PrepareAdmission(call, prepare, grpc.WaitForReady(true))
 	callErr := call.Err()
 	cancel()
@@ -198,6 +217,11 @@ func (c *ModelDevClient) ResolvePreparedWithGPU(ctx context.Context, scope Model
 	returnedIntent, _, err := cpup01.CanonicalIntent(prepared.Intent)
 	if err != nil || prepared.Snapshot.GPU != nil || selection.MemoryMib > math.MaxInt64/(1024*1024) || prepared.Snapshot.Resources != (cpup01.CPUResources{Nodes: 1, ProcessesPerNode: 1, RequestMillicpu: selection.CpuMillis, LimitMillicpu: selection.CpuMillis, RequestMemoryBytes: selection.MemoryMib * 1024 * 1024, LimitMemoryBytes: selection.MemoryMib * 1024 * 1024}) || !bytes.Equal(intentBytes, returnedIntent) || prepared.Snapshot.IdentityRef != identity || !prepared.Snapshot.Timing.AcceptedAt.Equal(acceptedAt) || prepared.Snapshot.ComputeOrigin != expectedOrigin || (expectedRequest == nil) != (prepared.GPURequest == nil) || expectedRequest != nil && *prepared.GPURequest != *expectedRequest {
 		return ModelDevResolution{}, modelDevAdmissionUnavailable()
+	}
+	ctx, cancelExecution := context.WithDeadline(ctx, prepared.Snapshot.Timing.ExecutionDeadlineAt)
+	defer cancelExecution()
+	if err := ctx.Err(); err != nil {
+		return ModelDevResolution{}, status.FromContextError(err).Err()
 	}
 	finalize := &modeldevv1.FinalizeAdmissionRequest{CandidateCanonical: preparedReply.CandidateCanonical, CandidateHash: preparedReply.CandidateHash}
 	var resolvedGPU *acc.ResolvedGpuRequest
@@ -274,10 +298,39 @@ func (c *ModelDevClient) ResolvePreparedWithGPU(ctx context.Context, scope Model
 }
 
 func (c *ModelDevClient) admissionCall(ctx context.Context, scope ModelDevResolveScope) (context.Context, context.CancelFunc, string) {
-	call, cancel := context.WithTimeout(ctx, c.timeout)
+	return c.admissionCallBudget(ctx, scope, c.timeout)
+}
+
+func (c *ModelDevClient) admissionCallBudget(ctx context.Context, scope ModelDevResolveScope, budget time.Duration) (context.Context, context.CancelFunc, string) {
+	call, cancel := context.WithTimeout(ctx, budget)
 	id := uuid.NewString()
-	call = metadata.NewOutgoingContext(call, metadata.Pairs("x-ani-tenant-id", scope.ResourceTenantID, "x-ani-actor", scope.Actor, "x-ani-request-id", id))
+	delegation := metadata.Pairs("x-ani-tenant-id", scope.ResourceTenantID, "x-ani-actor", scope.Actor, "x-ani-request-id", id)
+	modelDevAttachParentRequest(ctx, delegation)
+	call = metadata.NewOutgoingContext(call, delegation)
 	return call, cancel, id
+}
+
+func modelDevAttachParentRequest(ctx context.Context, delegation metadata.MD) {
+	parent, ok := requestid.FromContext(ctx)
+	if !ok || len(parent) > 128 {
+		return
+	}
+	for _, c := range parent {
+		if c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '.' || c == '_' || c == '-' {
+			continue
+		}
+		return
+	}
+	delegation.Set("x-ani-parent-request-id", parent)
+}
+
+// OperationTimeout is the one configured short phase budget used by current
+// authorization, compute resolution and durable acceptance at the BFF.
+func (c *ModelDevClient) OperationTimeout() time.Duration {
+	if c == nil || c.timeout <= 0 {
+		return 3 * time.Second
+	}
+	return c.timeout
 }
 func (c *ModelDevClient) admissionFailure(ctx context.Context, callErr, err error, requestID string) error {
 	if ctx.Err() != nil {
@@ -341,6 +394,16 @@ func modelDevResolutionError(err error, requestID string) error {
 		message = "input version unavailable"
 	case failure.Code() == codes.FailedPrecondition && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_INPUT_NOT_READY:
 		message = "input version is not ready"
+	case failure.Code() == codes.FailedPrecondition && modelDevFinetuningBusinessReason(detail.Reason):
+		message = strings.TrimPrefix(detail.Reason.String(), "ERROR_REASON_")
+	case failure.Code() == codes.ResourceExhausted && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_INPUT_VALIDATION_BUSY:
+		message = "input validation busy"
+	case failure.Code() == codes.PermissionDenied && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_FORBIDDEN:
+		message = "source access denied"
+	case failure.Code() == codes.AlreadyExists && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_COMMAND_CONFLICT:
+		message = "immutable operation conflict"
+	case failure.Code() == codes.Unavailable && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_FINETUNING_RUNTIME_UNAVAILABLE:
+		message = "finetuning runtime unavailable"
 	case failure.Code() == codes.Unavailable && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_ENVIRONMENT_NOT_READY:
 		message = "managed admission environment is not ready"
 	case failure.Code() == codes.Unavailable && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_UPSTREAM_UNAVAILABLE:
@@ -348,12 +411,42 @@ func modelDevResolutionError(err error, requestID string) error {
 	default:
 		return modelDevAdmissionUnavailable()
 	}
-	// Remote message text and violations never become the public error surface.
-	rebuilt, detailErr := status.New(failure.Code(), message).WithDetails(&modeldevv1.ErrorDetail{
-		Reason: detail.Reason, SafeMessage: message, CorrelationId: requestID,
-	})
+	clean := &modeldevv1.ErrorDetail{Reason: detail.Reason, SafeMessage: message, CorrelationId: requestID}
+	if !modelDevCopyLimitDetail(clean, detail) {
+		return modelDevAdmissionUnavailable()
+	}
+	// Remote text is discarded. Only finite, typed limit facts survive.
+	rebuilt, detailErr := status.New(failure.Code(), message).WithDetails(clean)
 	if detailErr != nil {
 		return modelDevAdmissionUnavailable()
 	}
 	return rebuilt.Err()
+}
+
+func modelDevCopyLimitDetail(out, in *modeldevv1.ErrorDetail) bool {
+	limitReason := in.Reason == modeldevv1.ErrorReason_ERROR_REASON_CONTENT_LIMIT_EXCEEDED || in.Reason == modeldevv1.ErrorReason_ERROR_REASON_STRUCTURE_LIMIT_EXCEEDED || in.Reason == modeldevv1.ErrorReason_ERROR_REASON_DATASET_RECORD_TOO_LARGE
+	if !limitReason {
+		return in.Kind == "" && in.LimitName == "" && in.Actual == nil && in.Limit == nil
+	}
+	if in.Actual == nil || in.Limit == nil || *in.Limit <= 0 || *in.Actual <= *in.Limit {
+		return false
+	}
+	switch in.Kind {
+	case "dataset", "base_model", "output", "storage_key":
+	default:
+		return false
+	}
+	switch in.LimitName {
+	case "max_content_bytes", "tar_read_bound", "max_archive_overhead_bytes", "max_model_files", "max_output_files", "max_archive_entries", "max_relative_path_bytes", "max_storage_key_bytes", "max_manifest_bytes", "max_material_bytes", "max_model_config_bytes", "max_archive_metadata_bytes", "max_record_bytes", "max_json_depth", "max_control_rpc_bytes", "max_publication_candidate_bytes", "max_publication_ref_bytes",
+		"MaxModelFiles", "MaxOutputFiles", "MaxArchiveEntries", "MaxRelativePathBytes", "MaxStorageKeyBytes", "MaxManifestBytes", "MaxMaterialBytes", "MaxModelConfigBytes", "MaxArchiveMetadataBytes", "MaxRecordBytes", "MaxJSONDepth", "MaxControlRPCBytes", "MaxPublicationCandidateBytes", "MaxPublicationRefBytes":
+	default:
+		return false
+	}
+	if in.Reason == modeldevv1.ErrorReason_ERROR_REASON_CONTENT_LIMIT_EXCEEDED && (in.LimitName != "max_content_bytes" || in.Kind == "storage_key") || in.Reason == modeldevv1.ErrorReason_ERROR_REASON_DATASET_RECORD_TOO_LARGE && (in.Kind != "dataset" || in.LimitName != "MaxRecordBytes") {
+		return false
+	}
+	out.Kind, out.LimitName = in.Kind, in.LimitName
+	actual, limit := *in.Actual, *in.Limit
+	out.Actual, out.Limit = &actual, &limit
+	return true
 }

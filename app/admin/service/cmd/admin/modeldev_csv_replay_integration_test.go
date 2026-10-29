@@ -1,4 +1,4 @@
-//go:build modeldev_pg
+//go:build modeldev_management_pg
 
 package main
 
@@ -36,6 +36,10 @@ type modelDevCSVReplayPeer struct {
 }
 
 func (p *modelDevCSVReplayPeer) ImportCSV(ctx context.Context, in *modeldevv1.ImportCSVRequest) (*modeldevv1.ImportCSVResponse, error) {
+	deadline, ok := ctx.Deadline()
+	if !ok || time.Until(deadline) < 29*time.Minute || time.Until(deadline) > 30*time.Minute {
+		return nil, status.Error(codes.Internal, "independent import deadline missing")
+	}
 	md, _ := metadata.FromIncomingContext(ctx)
 	for key, want := range map[string]string{"x-ani-tenant-id": p.tenant, "x-ani-actor": p.actor, "x-ani-authorized-method": modeldevv1.ModelDevManagementService_ImportCSV_FullMethodName, "x-ani-data-scope": "tenant-all"} {
 		if values := md.Get(key); len(values) != 1 || values[0] != want {
@@ -61,7 +65,7 @@ func (p *modelDevCSVReplayPeer) ImportCSV(ctx context.Context, in *modeldevv1.Im
 
 func runModelDevCSVReplayVerticalCase(t *testing.T, ctx context.Context, directory, tokenFile, tenant, actor string) {
 	t.Helper()
-	config, security := modelDevEnableTLS(t)
+	config, security := modelDevBudgetTLS(t)
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
 	config.Address = listener.Addr().String()
@@ -73,7 +77,7 @@ func runModelDevCSVReplayVerticalCase(t *testing.T, ctx context.Context, directo
 	for key, value := range map[string]string{"ANI_MODELDEV_ADDR": config.Address, "ANI_MODELDEV_CA": config.CAFile, "ANI_MODELDEV_CERT": config.CertFile, "ANI_MODELDEV_KEY": config.KeyFile, "ANI_MODELDEV_TIMEOUT": "2s"} {
 		t.Setenv(key, value)
 	}
-	in := &modeldevv1.ImportCSVRequest{InputVersionId: uuid.NewString(), ReleaseId: uuid.NewString(), ReleaseDigest: strings.Repeat("a", 64), RequestedAt: timestamppb.New(time.Now().UTC().Truncate(time.Microsecond)), Object: &trainingv1.FixedObjectRef{StorageConnectionId: "test-owned", Bucket: "test-input", Key: "inputs/data.csv", Immutability: &trainingv1.FixedObjectRef_VersionId{VersionId: uuid.NewString()}, SizeBytes: 157036, Sha256: strings.Repeat("b", 64)}}
+	in := &modeldevv1.ImportCSVRequest{InputVersionId: uuid.NewString(), ImplementationId: "builtin.mlp", RequestedAt: timestamppb.New(time.Now().UTC().Truncate(time.Microsecond)), Object: &trainingv1.FixedObjectRef{StorageConnectionId: "test-owned", Bucket: "test-input", Key: "inputs/data.csv", Immutability: &trainingv1.FixedObjectRef_VersionId{VersionId: uuid.NewString()}, SizeBytes: 157036, Sha256: strings.Repeat("b", 64)}}
 	requestFile := filepath.Join(t.TempDir(), "csv.json")
 	write := func() {
 		raw, e := protojson.Marshal(in)

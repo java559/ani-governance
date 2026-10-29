@@ -1,0 +1,30 @@
+syntax = "proto3";
+package admin.service.v1;
+
+import "google/api/annotations.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "sandbox/service/v1/sandbox.proto";
+
+service SandboxService {
+  rpc CreateSandbox(sandbox.service.v1.CreateSandboxRequest) returns (sandbox.service.v1.SandboxAcceptance) {
+    option (google.api.http) = { post: "/api/v1/sandbox" body: "*" };
+  }
+  rpc ListSandboxes(sandbox.service.v1.ListSandboxesRequest) returns (sandbox.service.v1.ListSandboxesResponse) {
+    option (google.api.http) = { get: "/api/v1/sandbox" };
+  }
+  rpc GetSandbox(sandbox.service.v1.GetSandboxRequest) returns (sandbox.service.v1.Sandbox) {
+    option (google.api.http) = { get: "/api/v1/sandbox/{sandbox_id}" };
+  }
+  rpc GetSandboxOperation(sandbox.service.v1.GetSandboxOperationRequest) returns (sandbox.service.v1.SandboxOperation) {
+    option (google.api.http) = { get: "/api/v1/sandbox/operations/{operation_id}" };
+  }
+  rpc PauseSandbox(sandbox.service.v1.PauseSandboxRequest) returns (sandbox.service.v1.SandboxAcceptance) {
+    option (google.api.http) = { post: "/api/v1/sandbox/{data.sandbox_id}:pause" body: "*" };
+  }
+  rpc ResumeSandbox(sandbox.service.v1.ResumeSandboxRequest) returns (sandbox.service.v1.SandboxAcceptance) {
+    option (google.api.http) = { post: "/api/v1/sandbox/{data.sandbox_id}:resume" body: "*" };
+  }
+  rpc DeleteSandbox(sandbox.service.v1.DeleteSandboxRequest) returns (sandbox.service.v1.SandboxAcceptance) {
+    option (google.api.http) = { delete: "/api/v1/sandbox/{data.sandbox_id}" body: "*" };
+  }
+}

@@ -64,6 +64,8 @@ func TestModelDevListAndLogRejectUnboundedSelectors(t *testing.T) {
 		{"/api/v1/modeldev/executions?kind=FINETUNING&kind=GENERAL_TRAINING", ""},
 		{"/api/v1/modeldev/executions?unknown_state=SUCCEEDED", ""},
 		{"/api/v1/modeldev/executions", "{}"},
+		{"/api/v1/modeldev/executions/id/logs", ""},
+		{"/api/v1/modeldev/executions/id/logs?podUid=22222222-3333-4444-8555-666666666666", ""},
 		{"/api/v1/modeldev/executions/id/logs?tail_lines=1001", ""},
 		{"/api/v1/modeldev/executions/id/logs?max_bytes=65537", ""},
 		{"/api/v1/modeldev/executions/id/logs?tail_lines=0", ""},
@@ -73,7 +75,7 @@ func TestModelDevListAndLogRejectUnboundedSelectors(t *testing.T) {
 		{"/api/v1/modeldev/executions/id/logs?pod=other", ""},
 		{"/api/v1/modeldev/executions/id/logs?log_id=other", ""},
 		{"/api/v1/modeldev/executions/id/logs?follow=true", ""},
-		{"/api/v1/modeldev/executions/id/logs?podUid=not-a-uuid", ""},
+		{"/api/v1/modeldev/executions/id/logs?pod_uid=not-a-uuid", ""},
 		{"/api/v1/modeldev/executions/id/logs?container=Node", ""},
 		{"/api/v1/modeldev/executions/id/logs?container=", ""},
 		{"/api/v1/modeldev/executions/id/logs?previous=1", ""},
@@ -107,10 +109,10 @@ func TestModelDevListAndLogRejectUnboundedSelectors(t *testing.T) {
 func TestModelDevListAndLogRoutesEnterAuthentication(t *testing.T) {
 	testModelDevAuthenticatedRoutes(t, []string{
 		"/api/v1/modeldev/executions",
-		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs?pod_uid=22222222-3333-4444-8555-666666666666",
 		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/pods",
 		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/events",
-		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs/stream",
+		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/logs/stream?pod_uid=22222222-3333-4444-8555-666666666666",
 		"/api/v1/modeldev/executions/11111111-2222-4333-8444-555555555555/resource-metrics?pod_uid=66666666-7777-4888-8999-aaaaaaaaaaaa&container=node&start=2026-10-27T00:00:00Z&end=2026-10-27T01:00:00Z&step_seconds=60&metric_codes=cpu.usage_cores",
 		// The byte relay carries the same authentication and artifact
 		// authorization as the URL exchange.

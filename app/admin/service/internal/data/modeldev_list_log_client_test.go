@@ -27,6 +27,7 @@ type modelDevListLogPeer struct {
 	list        *modeldevv1.ListExecutionsResponse
 	logs        *modeldevv1.GetExecutionLogsResponse
 	executionID string
+	podUID      string
 	remote      error
 }
 
@@ -57,7 +58,7 @@ func (p *modelDevListLogPeer) GetExecutionLogs(ctx context.Context, in *modeldev
 		return nil, err
 	}
 	if in.ExecutionId != p.executionID || in.LogId != nil || in.TailLines != 1 || in.MaxBytes != 32 ||
-		in.PodUid != nil || in.Container != nil || in.Previous != nil {
+		in.GetPodUid() != p.podUID || in.Container != nil || in.Previous != nil {
 		return nil, status.Error(codes.Internal, "selector mismatch")
 	}
 	return p.logs, nil
@@ -73,7 +74,8 @@ func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing
 	execution.AcceptedAt = f.response.Snapshot.Timing.AcceptedAt
 	execution.DeadlineAt = f.response.Snapshot.Timing.ExecutionDeadlineAt
 	list := &modeldevv1.ListExecutionsResponse{Executions: []*modeldevv1.ExecutionView{execution}}
-	logs := &modeldevv1.GetExecutionLogsResponse{Source: &trainingv1.LogRef{LogId: uuid.NewString(), ResourceUid: uuid.NewString(), ContainerName: "node"}, Lines: []*modeldevv1.LogLine{{Timestamp: timestamppb.Now(), Text: "real stdout boundary sample"}}, ObservedAt: timestamppb.Now(), SourceKind: modeldevv1.LogSourceKind_LOG_SOURCE_KIND_TRAINER, ContainerName: "node"}
+	podUID := uuid.NewString()
+	logs := &modeldevv1.GetExecutionLogsResponse{Source: &trainingv1.LogRef{LogId: uuid.NewString(), ResourceUid: podUID, ContainerName: "node"}, Lines: []*modeldevv1.LogLine{{Timestamp: timestamppb.Now(), Text: "real stdout boundary sample"}}, ObservedAt: timestamppb.Now(), SourceKind: modeldevv1.LogSourceKind_LOG_SOURCE_KIND_TRAINER, ContainerName: "node"}
 	for _, test := range []struct {
 		name              string
 		change            func(*modelDevListLogPeer)
@@ -86,6 +88,7 @@ func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing
 		{"log bytes", func(p *modelDevListLogPeer) { p.logs.Lines[0].Text = strings.Repeat("x", 33) }, codes.OK, codes.Unavailable},
 		{"log lines", func(p *modelDevListLogPeer) { p.logs.Lines = append(p.logs.Lines, p.logs.Lines[0]) }, codes.OK, codes.Unavailable},
 		{"missing actual timestamp", func(p *modelDevListLogPeer) { p.logs.Lines[0].Timestamp = nil }, codes.OK, codes.Unavailable},
+		{"wrong original Pod UID", func(p *modelDevListLogPeer) { p.logs.Source.ResourceUid = uuid.NewString() }, codes.OK, codes.Unavailable},
 		{"wrong container", func(p *modelDevListLogPeer) { p.logs.Source.ContainerName = "other" }, codes.OK, codes.Unavailable},
 		{"hidden log field", func(p *modelDevListLogPeer) { p.logs.ProtoReflect().SetUnknown([]byte{0xa0, 0x06, 0x01}) }, codes.OK, codes.Unavailable},
 		{"unavailable remains error", func(p *modelDevListLogPeer) { p.remote = status.Error(codes.Unavailable, "private pod credential") }, codes.Unavailable, codes.Unavailable},
@@ -95,7 +98,7 @@ func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing
 			listener, err := net.Listen("tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 			config.Address = listener.Addr().String()
-			peer := &modelDevListLogPeer{scope: ModelDevResolveScope{ResourceTenantID: uuid.NewString(), Actor: "governance:user:73"}, list: proto.Clone(list).(*modeldevv1.ListExecutionsResponse), logs: proto.Clone(logs).(*modeldevv1.GetExecutionLogsResponse), executionID: id}
+			peer := &modelDevListLogPeer{scope: ModelDevResolveScope{ResourceTenantID: uuid.NewString(), Actor: "governance:user:73"}, list: proto.Clone(list).(*modeldevv1.ListExecutionsResponse), logs: proto.Clone(logs).(*modeldevv1.GetExecutionLogsResponse), executionID: id, podUID: podUID}
 			if test.change != nil {
 				test.change(peer)
 			}
@@ -122,7 +125,7 @@ func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing
 			if _, err := client.ListExecutions(ctx, peer.scope, 1, 101, ExecutionFilter{}); status.Code(err) != codes.Unavailable {
 				t.Fatal("out-of-range page size was forwarded")
 			}
-			got, err := client.GetExecutionLogs(ctx, peer.scope, id, 1, 32, LogSelection{})
+			got, err := client.GetExecutionLogs(ctx, peer.scope, id, 1, 32, LogSelection{PodUID: podUID})
 			require.Equal(t, test.logCode, status.Code(err))
 			if err != nil {
 				require.Nil(t, got)
@@ -130,11 +133,14 @@ func TestModelDevListLogClientDelegatesCurrentScopeAndBoundsResponses(t *testing
 			} else {
 				require.True(t, proto.Equal(peer.logs, got))
 			}
-			// A caller-supplied selector is validated before it reaches the owner.
+			// Missing or malformed original Pod identity is rejected before any downstream call.
+			if _, err := client.GetExecutionLogs(ctx, peer.scope, id, 1, 32, LogSelection{}); status.Code(err) != codes.Unavailable {
+				t.Fatal("missing original pod UID was forwarded")
+			}
 			if _, err := client.GetExecutionLogs(ctx, peer.scope, id, 1, 32, LogSelection{PodUID: "not-a-uuid"}); status.Code(err) != codes.Unavailable {
 				t.Fatal("malformed pod UID was forwarded")
 			}
-			if _, err := client.GetExecutionLogs(ctx, peer.scope, id, 1, 32, LogSelection{Container: "Node"}); status.Code(err) != codes.Unavailable {
+			if _, err := client.GetExecutionLogs(ctx, peer.scope, id, 1, 32, LogSelection{PodUID: podUID, Container: "Node"}); status.Code(err) != codes.Unavailable {
 				t.Fatal("malformed container name was forwarded")
 			}
 		})

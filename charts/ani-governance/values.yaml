@@ -164,8 +164,18 @@ certificate:
   secretName: governance-client-tls
   dnsNames:
     - ani-governance
-  # 10 years. A 72h duration renewed every 48h rotated this client certificate
-  # out from under the running process, which loads the key pair once at
-  # startup and never reloads it, breaking every downstream mTLS call.
-  duration: 87600h
-  renewBefore: 720h
+  # Bind the workload to service-mtls/reload-cronjob.yaml for renewal restarts.
+  duration: 2160h
+  renewBefore: 360h
+
+quotaInternal:
+  enabled: false
+  port: 9002
+  caConfigMap: ani-internal-service-ca
+  serverSecret: ani-governance-server-tls
+  resourceDNSSAN: ani-resource-service
+  modeldevEnabled: false
+  # Fixed mapping: ani-inference-service -> existing owner ani-inference.
+  inferenceEnabled: false
+  certificate:
+    create: true

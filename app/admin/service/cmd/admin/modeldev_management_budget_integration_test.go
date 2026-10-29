@@ -212,7 +212,18 @@ func TestModelDevReconcileCommandFiniteTimeBudget(t *testing.T) {
 	require.NoError(t, os.WriteFile(filepath.Join(configDirectory, "bootstrap.json"), configuration, 0600))
 	tokenFile := filepath.Join(private, "token")
 	require.NoError(t, os.WriteFile(tokenFile, []byte(token), 0600))
-	runModelDevManagementBudgetCase(t, configDirectory, tokenFile, resourceTenant, "governance:user:"+strconv.FormatUint(uint64(operator.ID), 10))
+	actor := "governance:user:" + strconv.FormatUint(uint64(operator.ID), 10)
+	runModelDevManagementBudgetCase(t, configDirectory, tokenFile, resourceTenant, actor)
+	t.Run("CSV import retains current authentication and durable replay identity", func(t *testing.T) {
+		point, err := writer.Client().Permission.Create().SetName("current import management").SetCode(data.ModelDevManageInputPermissionCode).SetStatus(permission.StatusOn).Save(sys)
+		require.NoError(t, err)
+		cleanup(func(c context.Context) error { return writer.Client().Permission.DeleteOneID(point.ID).Exec(c) })
+		grant, err := writer.Client().RolePermission.Create().SetTenantID(owner.ID).SetRoleID(currentRole.ID).SetPermissionID(point.ID).SetStatus(rolepermission.StatusOn).SetEffect(rolepermission.EffectAllow).Save(sys)
+		require.NoError(t, err)
+		cleanup(func(c context.Context) error { return writer.Client().RolePermission.DeleteOneID(grant.ID).Exec(c) })
+		t.Setenv("ANI_MODELDEV_IMPORT_TIMEOUT_SECONDS", "1800")
+		runModelDevCSVReplayVerticalCase(t, ctx, configDirectory, tokenFile, resourceTenant, actor)
+	})
 }
 
 func modelDevBudgetTLS(t *testing.T) (data.ModelDevClientConfig, *tls.Config) {

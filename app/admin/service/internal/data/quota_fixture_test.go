@@ -55,6 +55,9 @@ func cleanLedger(t *testing.T, c *entCrud.EntClient[*ent.Client]) {
 	}
 	ctx := context.Background()
 	for _, stmt := range []string{
+		quotaPGSQL("sandbox_guarded_deletes_cleanup.sql"),
+		quotaPGSQL("sandbox_parent_intents_cleanup.sql"),
+		quotaPGSQL("sandbox_parent_checks_cleanup.sql"),
 		quotaPGSQL("historical_01.sql"),
 		quotaPGSQL("historical_02.sql"),
 		quotaPGSQL("historical_03.sql"),

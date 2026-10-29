@@ -3,7 +3,6 @@ package admin.service.v1;
 
 import "google/api/annotations.proto";
 import "inference/service/v1/owner.proto";
-import "inference/service/v1/service_policy.proto";
 import "inference/view/v1/view.proto";
 
 // Requires trusted tenant-user Principal, active tenant and the separately
@@ -40,13 +39,5 @@ service InferenceService {
   }
   rpc ListInferenceOperations(inference.service.v1.ListInferenceOperationsRequest) returns (inference.service.v1.ListInferenceOperationsResponse) {
     option (google.api.http) = {get: "/api/v1/inference/services/{resource_id}/operations"};
-  }
-  // Requires inference:policy:read and an active INFERENCE subscription.
-  rpc GetServicePolicy(inference.service.v1.GetServicePolicyRequest) returns (inference.service.v1.GetServicePolicyResponse) {
-    option (google.api.http) = {get: "/api/v1/inference/services/{resource_id}/policy"};
-  }
-  // Requires inference:policy:update. Full replacement; empty allowlist denies all.
-  rpc UpdateServicePolicy(inference.service.v1.UpdateServicePolicyRequest) returns (inference.service.v1.UpdateServicePolicyResponse) {
-    option (google.api.http) = {put: "/api/v1/inference/services/{resource_id}/policy" body: "*"};
   }
 }

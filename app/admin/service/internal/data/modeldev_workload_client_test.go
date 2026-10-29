@@ -177,8 +177,8 @@ func TestLogSelectionValidation(t *testing.T) {
 	valid := LogSelection{PodUID: uuid.NewString(), Container: "node", Previous: true}
 	require.True(t, modelDevValidLogSelection(valid))
 	require.False(t, modelDevValidLogSelection(LogSelection{PodUID: "not-a-uuid"}))
-	require.False(t, modelDevValidLogSelection(LogSelection{Container: "Node"}))
-	require.False(t, modelDevValidLogSelection(LogSelection{Container: strings.Repeat("a", 64)}))
+	require.False(t, modelDevValidLogSelection(LogSelection{PodUID: valid.PodUID, Container: "Node"}))
+	require.False(t, modelDevValidLogSelection(LogSelection{PodUID: valid.PodUID, Container: strings.Repeat("a", 64)}))
 }
 
 // Only a step container may differ from the worker default; a worker response
@@ -190,8 +190,9 @@ func TestLogSourceBinding(t *testing.T) {
 		Source:     &trainingv1.LogRef{LogId: logID, ResourceUid: podUID, ContainerName: "node"},
 		SourceKind: modeldevv1.LogSourceKind_LOG_SOURCE_KIND_TRAINER, ContainerName: "node",
 	}
-	require.True(t, modelDevValidLogSource(worker, LogSelection{}))
-	require.False(t, modelDevValidLogSource(worker, LogSelection{Container: "main"}))
+	require.True(t, modelDevValidLogSource(worker, LogSelection{PodUID: podUID}))
+	require.False(t, modelDevValidLogSource(worker, LogSelection{}))
+	require.False(t, modelDevValidLogSource(worker, LogSelection{PodUID: podUID, Container: "main"}))
 
 	step := &modeldevv1.GetExecutionLogsResponse{
 		Source:     &trainingv1.LogRef{LogId: logID, ResourceUid: podUID, ContainerName: "main"},

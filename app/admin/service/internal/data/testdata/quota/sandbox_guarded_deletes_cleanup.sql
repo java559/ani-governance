@@ -1,0 +1,1 @@
+DELETE FROM sys_sandbox_guarded_instance_deletes

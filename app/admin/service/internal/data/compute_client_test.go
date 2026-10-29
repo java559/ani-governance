@@ -23,6 +23,7 @@ type computeRPCObservation struct {
 	method, connection string
 	metadata           metadata.MD
 	remaining          time.Duration
+	usage              compute.Usage
 }
 
 // Only Resource's RPC boundary is substituted. Both generated clients, the
@@ -85,7 +86,11 @@ func TestComputeClientSharedConnectionIdentityAndSelection(t *testing.T) {
 		md, _ := metadata.FromIncomingContext(ctx)
 		remote, _ := peer.FromContext(ctx)
 		deadline, _ := ctx.Deadline()
-		seen <- computeRPCObservation{method: info.FullMethod, connection: remote.Addr.String(), metadata: md, remaining: time.Until(deadline)}
+		observation := computeRPCObservation{method: info.FullMethod, connection: remote.Addr.String(), metadata: md, remaining: time.Until(deadline)}
+		if r, ok := request.(*compute.ListPresetsRequest); ok {
+			observation.usage = r.Usage
+		}
+		seen <- observation
 		return handler(ctx, request)
 	}))
 	boundary := &computeRPCBoundary{}
@@ -114,7 +119,15 @@ func TestComputeClientSharedConnectionIdentityAndSelection(t *testing.T) {
 	require.Equal(t, []string{actor}, observation.metadata.Get("x-ani-actor"))
 	require.Empty(t, observation.metadata.Get("authorization"))
 	require.Empty(t, observation.metadata.Get("x-ani-scope"))
-	for _, usage := range []compute.Usage{compute.Usage_CONTAINER_INSTANCE, compute.Usage_TRAINING, compute.Usage_INFERENCE} {
+	_, err = catalog.ListPresets(ctx, tenant, actor, &compute.ListPresetsRequest{TenantId: tenant, Usage: compute.Usage_SANDBOX, ComputeType: "cpu"})
+	require.NoError(t, err)
+	observation = <-seen
+	require.Equal(t, compute.Usage_SANDBOX, observation.usage)
+	require.Equal(t, first.connection, observation.connection)
+	require.Equal(t, []string{tenant}, observation.metadata.Get("x-ani-tenant-id"))
+	require.Equal(t, []string{actor}, observation.metadata.Get("x-ani-actor"))
+	require.Empty(t, observation.metadata.Get("authorization"))
+	for _, usage := range []compute.Usage{compute.Usage_CONTAINER_INSTANCE, compute.Usage_TRAINING, compute.Usage_INFERENCE, compute.Usage_SANDBOX} {
 		selection, err := catalog.ResolveComputePreset(ctx, tenant, actor, &compute.ResolveComputePresetRequest{TenantId: tenant, PresetId: preset, Usage: usage})
 		require.NoError(t, err)
 		require.NoError(t, compute.ValidateSelection(selection))

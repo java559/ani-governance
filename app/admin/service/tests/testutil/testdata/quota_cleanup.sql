@@ -1,3 +1,6 @@
+DELETE FROM sys_sandbox_guarded_instance_deletes;
+DELETE FROM sys_sandbox_create_intents;
+DELETE FROM sys_sandbox_parent_delete_checks;
 DELETE FROM sys_gpu_delete_acceptances;
 DELETE FROM sys_gpu_usage_sync;
 DELETE FROM sys_quota_release_receipts;

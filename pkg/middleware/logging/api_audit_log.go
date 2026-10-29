@@ -51,7 +51,7 @@ func (a *ApiAuditLogMiddleware) Handle(ctx context.Context, htr *http.Transport,
 	referer, _ := url.QueryUnescape(htr.RequestHeader().Get(HeaderKeyReferer))
 	requestUri, _ := url.QueryUnescape(htr.Request().RequestURI)
 	var bodyBytes []byte
-	if htr.Operation() == adminV1.OperationAuthenticationServiceAcceptInvitation || strings.HasPrefix(htr.Request().URL.Path, "/api/v1/auth/api-keys") || strings.HasPrefix(htr.Request().URL.Path, "/api/v1/inference-keys") || auth.IsNetworkOperation(htr.Operation()) || auth.IsImagePath(htr.Request().URL.Path) || (strings.HasPrefix(htr.Operation(), "/admin.service.v1.InstanceService/") || strings.HasPrefix(htr.Operation(), "/admin.service.v1.ComputePresetService/") || strings.HasPrefix(htr.Operation(), "/admin.service.v1.VMService/")) {
+	if htr.Operation() == adminV1.OperationAuthenticationServiceAcceptInvitation || strings.HasPrefix(htr.Request().URL.Path, "/api/v1/auth/api-keys") || strings.HasPrefix(htr.Request().URL.Path, "/api/v1/inference-keys") || strings.HasPrefix(htr.Request().URL.Path, "/api/v1/inference-policies") || auth.IsNetworkOperation(htr.Operation()) || auth.IsImagePath(htr.Request().URL.Path) || (strings.HasPrefix(htr.Operation(), "/admin.service.v1.InstanceService/") || strings.HasPrefix(htr.Operation(), "/admin.service.v1.ComputePresetService/") || strings.HasPrefix(htr.Operation(), "/admin.service.v1.VMService/")) {
 		referer, requestUri = "", htr.Request().URL.Path
 		bodyBytes = []byte("[redacted]")
 	} else {

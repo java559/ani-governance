@@ -140,7 +140,7 @@ func (s *ModelDevService) GetExecutionLogs(ctx context.Context, in *modeldevv1.G
 		return nil, err
 	}
 	if in == nil || !modelDevQueryUUID(in.ExecutionId) || in.TailLines > 1000 || in.MaxBytes > 65536 ||
-		(in.LogId != nil && !modelDevQueryUUID(in.GetLogId())) || (in.PodUid != nil && !modelDevQueryUUID(in.GetPodUid())) || !modelDevQueryContainer(in.Container) {
+		(in.LogId != nil && !modelDevQueryUUID(in.GetLogId())) || !modelDevQueryUUID(in.GetPodUid()) || !modelDevQueryContainer(in.Container) {
 		return nil, modelDevQueryInvalid()
 	}
 	selection := data.LogSelection{LogID: in.GetLogId(), PodUID: in.GetPodUid(), Container: in.GetContainer(), Previous: in.GetPrevious()}
@@ -149,7 +149,7 @@ func (s *ModelDevService) GetExecutionLogs(ctx context.Context, in *modeldevv1.G
 		return nil, modelDevQueryFailure(err)
 	}
 	reply := &modeldevv1.GetExecutionLogsResponse{
-		LogId: out.Source.LogId, Truncated: out.Truncated, ObservedAt: out.ObservedAt.AsTime().UTC().Format(time.RFC3339Nano),
+		LogId: out.Source.LogId, PodUid: out.Source.ResourceUid, Truncated: out.Truncated, ObservedAt: out.ObservedAt.AsTime().UTC().Format(time.RFC3339Nano),
 		SourceKind: strings.TrimPrefix(out.SourceKind.String(), "LOG_SOURCE_KIND_"), ContainerName: out.ContainerName, Previous: out.Previous, Available: out.Available,
 	}
 	for _, line := range out.Lines {
@@ -285,7 +285,7 @@ func modelDevPublicExecution(execution *modeldevcontractv1.ExecutionView) *model
 	out := &modeldevv1.ExecutionView{
 		OperationId: execution.Identity.OperationId, ExecutionId: execution.Identity.ExecutionId, Name: execution.Name,
 		Kind: strings.TrimPrefix(execution.Kind.String(), "EXECUTION_KIND_"), ImplementationId: execution.ImplementationId, ComputePresetId: execution.ComputePresetId,
-		InputVersionId: execution.InputVersionId, ImageVersionId: execution.ImageVersionId,
+		InputVersionId: execution.InputVersionId, ImageId: execution.ImageId, ImageVersion: execution.ImageVersion, ImageScope: execution.ImageScope,
 		ComputeState:  strings.TrimPrefix(execution.States.ComputeState.String(), "COMPUTE_STATE_"),
 		DeliveryState: strings.TrimPrefix(execution.States.DeliveryState.String(), "DELIVERY_STATE_"),
 		CloseState:    strings.TrimPrefix(execution.States.CloseState.String(), "CLOSE_STATE_"),
@@ -330,7 +330,7 @@ func modelDevPublicExecution(execution *modeldevcontractv1.ExecutionView) *model
 	}
 	if base := execution.BaseModel; base != nil {
 		out.BaseModel = &modeldevv1.ExecutionBaseModelView{
-			ModelId: base.ModelId, VersionId: base.VersionId, Family: base.Family, Format: base.Format,
+			ModelId: base.ModelId, VersionId: base.VersionId, Format: base.Format,
 		}
 	}
 	if h := execution.History; h != nil {
@@ -374,7 +374,7 @@ func modelDevPublicManagedSettings(in *modeldevcontractv1.FinetuningManagedSetti
 		LoraRank: in.LoraRank, LoraAlpha: in.LoraAlpha, CutoffLen: in.CutoffLen,
 		PerDeviceTrainBatchSize: in.PerDeviceTrainBatchSize, GradientAccumulationSteps: in.GradientAccumulationSteps,
 		Seed: in.Seed, DataSeed: in.DataSeed, Device: in.Device, Fp16: in.Fp16, Bf16: in.Bf16,
-		FlashAttn: in.FlashAttn, ReportTo: in.ReportTo, SaveStrategy: in.SaveStrategy, Template: in.Template,
+		FlashAttn: in.FlashAttn, ReportTo: in.ReportTo, SaveStrategy: in.SaveStrategy,
 		TrainDtype: in.TrainDtype, ExportDtype: in.ExportDtype, VerifyDtype: in.VerifyDtype,
 		LrSchedulerType: in.LrSchedulerType, WarmupRatio: in.WarmupRatio, WeightDecay: in.WeightDecay,
 		LoraDropout: in.LoraDropout, NumTrainEpochs: in.NumTrainEpochs, Optim: in.Optim, LoggingSteps: in.LoggingSteps,

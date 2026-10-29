@@ -30,11 +30,11 @@ func TestModelDevCreateOpenAPIContract(t *testing.T) {
 	require.Equal(t, "object", request["type"])
 	require.ElementsMatch(t, []any{"name", "kind", "implementation_id", "compute_preset_id", "dataset_version_id", "parameters", "idempotency_key"}, request["required"])
 	fields := object(request["properties"])
-	require.Len(t, fields, 11, "only the canonical implementation and compute intent fields are public")
+	require.Len(t, fields, 12, "only the canonical implementation and compute intent fields are public")
 	for _, forbidden := range []string{"data", "tenant_id", "actor", "namespace", "command", "snapshot", "gpu", "preset_id", "image_version_id", "general_parameters", "source_execution_id", "finetuning"} {
 		require.NotContains(t, fields, forbidden)
 	}
-	for _, name := range []string{"name", "kind", "implementation_id", "compute_preset_id", "dataset_version_id", "idempotency_key", "base_model_version_id", "target_model_id", "new_model_name"} {
+	for _, name := range []string{"name", "kind", "implementation_id", "compute_preset_id", "dataset_version_id", "idempotency_key", "base_model_version_id", "target_model_id", "new_model_name", "finetuning_template"} {
 		require.Equal(t, "string", object(fields[name])["type"], name)
 	}
 	timeout := object(fields["timeout_seconds"])

@@ -6,11 +6,14 @@ DO $$
 DECLARE r record; aid bigint; pid bigint; route_count bigint;
 BEGIN
  FOR r IN SELECT * FROM (VALUES
-  ('GET','/api/v1/inference/services/{resource_id}/policy','inference:policy:read'),
-  ('PUT','/api/v1/inference/services/{resource_id}/policy','inference:policy:update')
+  ('POST','/api/v1/inference-policies','inference:policy:create'),
+  ('GET','/api/v1/inference-policies','inference:policy:read'),
+  ('GET','/api/v1/inference-policies/{policy_id}','inference:policy:read'),
+  ('PUT','/api/v1/inference-policies/{policy_id}','inference:policy:update'),
+  ('DELETE','/api/v1/inference-policies/{policy_id}','inference:policy:delete')
  ) AS routes(method,path,code) LOOP
   SELECT count(*),min(id) INTO route_count,aid FROM sys_apis
-   WHERE path=r.path AND method=r.method AND module='InferenceService'
+   WHERE path=r.path AND method=r.method AND module='InferenceKeyService'
      AND business_module='INFERENCE' AND scope='ADMIN' AND status='ON' AND deleted_at IS NULL;
   IF route_count<>1 THEN RAISE EXCEPTION 'One registered active Inference route is required for % %',r.method,r.path; END IF;
   INSERT INTO sys_permissions(name,code,status,created_at) VALUES(r.code,r.code,'ON',now()) ON CONFLICT(code) DO NOTHING;

@@ -319,6 +319,7 @@ func (s *InstanceService) DeleteInstance(ctx context.Context, r *view.ChangeInst
 	}
 	return &view.Acceptance{OperationId: accepted.DeleteOperationId, ResourceId: accepted.ResourceId, Replayed: replayed, Result: accepted.Result}, nil
 }
+
 func (s *InstanceService) canOperate(ctx context.Context, id string) error {
 	p, e := gpuPrincipal(ctx)
 	if e != nil {

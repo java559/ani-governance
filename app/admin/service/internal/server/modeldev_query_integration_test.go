@@ -248,7 +248,7 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 		routes = append(routes, apiRoute{data.ModelDevStopExecutionPath, "POST"})
 	}
 	if listLogs {
-		routes = append(routes, apiRoute{data.ModelDevListExecutionsPath, "GET"}, apiRoute{data.ModelDevGetExecutionLogsPath, "GET"})
+		routes = append(routes, apiRoute{data.ModelDevListExecutionsPath, "GET"}, apiRoute{data.ModelDevGetExecutionLogsPath, "GET"}, apiRoute{data.ModelDevListExecutionPodsPath, "GET"})
 	}
 	var apiIDs []uint32
 	queryAPI := map[string]uint32{}
@@ -465,13 +465,25 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 	downloadPath := "/api/v1/modeldev/artifacts/" + provider.Artifact.ID + "/content"
 	logsPath := detailPath + "/logs"
 	if listLogs {
+		podsPath := detailPath + "/pods?layer=trainer&includeRecycled=true"
+		code, body := get(podsPath, token)
+		require.Equal(t, http.StatusOK, code)
+		var pods modeldevv1.ListExecutionPodsResponse
+		require.NoError(t, protojson.Unmarshal(body, &pods))
+		require.Len(t, pods.Pods, 1)
+		require.Equal(t, "TRAINER", pods.Pods[0].Layer)
+		podUID := pods.Pods[0].PodUid
+		parsedUID, err := uuid.Parse(podUID)
+		require.NoError(t, err)
+		require.Equal(t, parsedUID.String(), podUID)
+		logsPath += "?pod_uid=" + podUID
 		for _, path := range []string{data.ModelDevListExecutionsPath, logsPath} {
 			code, _ := get(path, "")
 			require.Equal(t, http.StatusUnauthorized, code)
 			code, _ = get(path, deniedToken)
 			require.Equal(t, http.StatusForbidden, code)
 		}
-		code, body := get(data.ModelDevListExecutionsPath+"?pageSize=1", token)
+		code, body = get(data.ModelDevListExecutionsPath+"?pageSize=1", token)
 		require.Equal(t, http.StatusOK, code, "CPU09_BFF_LIST_NOT_IMPLEMENTED")
 		var executions modeldevv1.ListExecutionsResponse
 		require.NoError(t, protojson.Unmarshal(body, &executions))
@@ -512,10 +524,12 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 		require.True(t, foundLoss, "CPU09_REAL_TRAINING_OUTPUT_NOT_OBSERVED")
 		require.LessOrEqual(t, bytes, 16384)
 		require.NotContains(t, string(body), "resource_uid")
-		require.NotContains(t, string(body), "container_name")
+		require.Equal(t, podUID, logs.PodUid)
+		require.Equal(t, "node", logs.ContainerName)
+		require.True(t, logs.Available)
 		// Save the actual BFF response for user-visible evidence, not private selectors.
 		require.NoError(t, os.WriteFile(filepath.Join(filepath.Dir(os.Getenv("ANI_MODELDEV_QUERY_OUTPUT_DIR")), "bff-training-logs.json"), body, 0600))
-		code, body = get(logsPath+"?tail_lines=1&max_bytes=512", token)
+		code, body = get(logsPath+"&tail_lines=1&max_bytes=512", token)
 		require.Equal(t, http.StatusOK, code)
 		logs.Reset()
 		require.NoError(t, protojson.Unmarshal(body, &logs))

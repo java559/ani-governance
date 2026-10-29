@@ -6,6 +6,8 @@ const ComputeCatalogPath = "/api/v1/compute-presets"
 // permission. A shared HTTP path is never sufficient to authorize another usage.
 func ComputeCatalogGrant(usage string) (module, code string, ok bool) {
 	switch usage {
+	case "SANDBOX":
+		return "INSTANCE", "sandbox:preset:read", true
 	case "CONTAINER_INSTANCE":
 		return "INSTANCE", "instance:preset:read", true
 	case "TRAINING":

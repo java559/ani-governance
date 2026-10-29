@@ -1,5 +1,7 @@
 # 推理调用 Key 管理
 
+前端页面迁移、接口示例及推理调用流程见[推理 AK 与策略前端对接](../frontend-inference-ak-policy.md)。
+
 Governance 提供以下 HTTP 管理入口，使用租户用户 Bearer JWT、明确的
 `inference:key:*` 权限和有效的 `INFERENCE` 套餐模块。平台租户 0、平台 AK/SK
 机器主体和推理 Key 都不能管理这些凭证。接口与 `/api/v1/auth/api-keys` 独立，
@@ -13,37 +15,40 @@ Key 由 Inference 签发并保存在 `inference_access_keys`，Governance 不存
 | `GET /api/v1/inference-keys/{key_id}` | `inference:key:read` | 直接返回 Key 信息和完整 `secret` |
 | `DELETE /api/v1/inference-keys/{key_id}` | `inference:key:revoke` | 不带请求体；撤销后直接返回元数据，保留历史 |
 | `POST /api/v1/inference-keys/{key_id}:rotate` | `inference:key:rotate` | `{data:{idempotency_key}}` → `{key,secret,replayed}` |
+| `POST /api/v1/inference-keys/{key_id}:bind-policy` | `inference:key:bind-policy` | `{data:{policy_id}}` → Key 元数据 |
 
 成功状态均为 200。`key_id` 是规范的小写 UUID，不是平台 AK 的数字 ID。
-元数据包含 `id/name/key_prefix/allowed_service_ids/allowed_model_names`、
-`requests_per_second/requests_per_minute/requests_per_hour`、`expires_at/revoked_at`、
-`created_by/created_at/last_used_at/version`；列表各项和详情另含 `secret`，不返回哈希或密文。
-`version`、列表 `total` 在 JSON 中为十进制字符串；时间为 RFC3339。
+元数据包含 `id/name/key_prefix/policy_id`、`expires_at/revoked_at`、
+`created_by/created_at/last_used_at/version`；列表和详情另含 `secret`。`version`
+和 `total` 在 JSON 中为十进制字符串。
 
-创建请求示例：
+创建请求示例：`{"data":{"name":"应用推理调用","policy_id":"<同租户策略 UUID>","idempotency_key":"key-001"}}`。
+`name` 非空且最多 256 字节；必须提供同租户的 `policy_id`，可选 `expires_at`。
+模型及限额属于策略，旧 Key 范围和限额字段不再接受。重新绑定同样要求同租户；
+绑定响应不返回 secret。
 
-```json
-{
-  "data": {
-    "name": "应用推理调用",
-    "allowed_model_names": ["qwen3-0.6b"],
-    "requests_per_minute": 60,
-    "idempotency_key": "app-inference-key-001"
-  }
-}
-```
+## 策略接口
 
-`name` 为非空且最多 256 字节；至少指定一项 `allowed_service_ids`（规范 UUID）
-或 `allowed_model_names`（非空、每项最多 256 字节）。同时指定两组范围时均须满足。
-限流值为非负 int32；0 表示没有该维度的 Key 级上限，仍受服务访问策略与网关限制。
-可选 `expires_at` 由 Inference 检查有效期。范围只限制 Key 本身，不授予跨租户服务
-访问权；最终调用还须满足 Inference 的服务访问策略和当前资源归属检查。
+| 方法和路径 | 权限 | 请求与结果 |
+|---|---|---|
+| `POST /api/v1/inference-policies` | `inference:policy:create` | `{data:{name,allowed_model_names,requests_per_second,requests_per_minute,requests_per_hour}}` → 策略 |
+| `GET /api/v1/inference-policies` | `inference:policy:read` | `page/pageSize` → `{items,total}` |
+| `GET /api/v1/inference-policies/{policy_id}` | `inference:policy:read` | 策略详情 |
+| `PUT /api/v1/inference-policies/{policy_id}` | `inference:policy:update` | `{data:{...}}` 完整替换 |
+| `DELETE /api/v1/inference-policies/{policy_id}` | `inference:policy:delete` | 未被绑定时删除，返回 `{}` |
+
+模型列表按推理请求 `model` 精确匹配；空列表拒绝全部模型。限额为非负 int32，
+0 表示该窗口不限。同一策略的多把 AK 分别计算额度；更改策略不清空已有计数。
+策略、AK 和模型发布服务目前必须同租户。已绑定策略不可删除，返回 409。
+写接口拒绝重复和未知字段、query、公网身份 header 和路径 ID 冲突；列表分页
+`page/pageSize` 各为 1..100，默认 1/20。删除和绑定行为由 Inference 审计。
+旧数据不自动迁移：升级后旧 AK 未绑定策略时无法调用，需显式重新绑定。
 
 创建与轮换必须带非空、无首尾空白、最多 128 字节的 `idempotency_key`。
 创建幂等作用域沿用 owner 的「租户 + 创建幂等键」，轮换沿用「租户 + Key + 当前
 轮换幂等键」。重放返回原元数据和 `replayed=true`，不再交付明文 secret。
 创建同键异意图返回 409 `INFERENCE_KEY_CONFLICT`，Gov 对 owner 返回的持久元数据
-比较名称、范围、额度与到期时间；不增加本地幂等账本。不要把一个幂等键复用于不同
+比较名称、策略 ID 与到期时间；不增加本地幂等账本。不要把一个幂等键复用于不同
 请求。首次响应丢失时，可从列表取得原 Key ID，再从详情读取当前 secret。
 
 同一租户的相同创建幂等键并发投递时，Inference 仅对该唯一键冲突执行
@@ -78,7 +83,7 @@ Inference 显式迁移 `000025_inference_access_key_secrets.sql` 增加可空密
 重启时重新生成主密钥；主密钥轮换不在本批范围。
 
 迁移前的 Key 仅有不可逆哈希，不会被自动轮换。旧记录尚未补存时不含 `secret`；
-该 Key 下一次成功鉴权、通过范围/服务策略/限流检查后，用本次已验证的原值补存
+该 Key 下一次成功鉴权、通过策略/限流检查后，用本次已验证的原值补存
 密文，之后列表和详情即可读到完整原 AK。补存按租户、ID、版本和哈希条件更新，
 不覆盖并发轮换/撤销，也不改变版本或限流配置。无法再成功使用的历史凭证无法
 还原；可用的新凭证通过显式轮换产生。列表/详情均只读本次快照，不因查询签发新值。
@@ -89,16 +94,30 @@ Inference 显式迁移 `000025_inference_access_key_secrets.sql` 增加可空密
 返回 404；依赖错误保留在内部 cause，公网不回显下游原始报文、密钥或地址。
 
 内部调用使用已登记的 `ani-governance` → Inference mTLS 连接，精确接收方 DNS SAN
-取自 `ANI_INFERENCE_SERVER_NAME`。五个 RPC 属于
+取自 `ANI_INFERENCE_SERVER_NAME`。Key 与策略 RPC 属于
 `/inference.v1.InferenceAccessKeyService/`，依次为 `CreateInferenceAccessKey`、
 `ListInferenceAccessKeys`、`GetInferenceAccessKey`、`RevokeInferenceAccessKey`、
-`RotateInferenceAccessKey`；都是用户委托。Gov 从已认证 Principal 取得用户和租户，
+`RotateInferenceAccessKey`；另有策略 CRUD 和绑定 RPC，均为用户委托。Gov 从已认证 Principal 取得用户和租户，
 通过持久映射转换租户 UUID，重新构造 `x-ani-tenant-id/x-ani-actor/x-ani-request-id`，
 不透传公网认证或身份 metadata。每次 RPC 最长 3 秒，继承请求取消，不自动重试。
 Gov 不调用网关专用的 `CheckInferenceAccess`，不新开下游 listener。
 
 部署时先按部署规范执行 API 目录 dry-run 和显式同步，再运行
-`scripts/ops/sql/register-inference-key-permissions.sql` 注册权限关系，按目标角色
+`scripts/ops/sql/register-inference-key-permissions.sql` 和
+`scripts/ops/sql/register-inference-policy-permissions.sql` 注册权限关系，按目标角色
 和租户套餐显式授权，并刷新策略。脚本不自动给角色授权，也不自动启用套餐。
 不需要 Governance 表结构迁移；Inference 必须已启用自己的 Key 持久化迁移和 RPC。
 源码及外部协议替身测试不代表目标环境已完成部署或真实推理验收。
+
+跨仓验证可使用以下命令显式运行：
+
+```sh
+go test -tags=policybridge ./app/admin/service/internal/server -run '^TestInferencePolicyCrossBackend$' -count=1
+```
+
+运行前设置
+`ANI_POLICY_BRIDGE_ENABLE=1`、`ANI_POLICY_BRIDGE_DEDICATED_DB=1`、
+`ANI_POLICY_BRIDGE_DSN`（已经执行完整 Inference migration 的独占测试库）和
+`ANI_POLICY_BRIDGE_SOURCE`（Inference 源码目录）。测试使用真实 Governance HTTP
+认证和权限、真实 mTLS、Inference 策略/AK 持久化与鉴权；模型发布状态作为外部
+运行环境的测试事实注入，不启动 Higress 或模型引擎。不得把该测试当作集群验收。

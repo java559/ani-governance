@@ -1,0 +1,1 @@
+DELETE FROM sys_sandbox_create_intents

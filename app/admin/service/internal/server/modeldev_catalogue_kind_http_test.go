@@ -17,13 +17,13 @@ func TestModelDevCatalogueRejectsUnsupportedKind(t *testing.T) {
 	web := httptest.NewServer(server)
 	t.Cleanup(web.Close)
 	for _, path := range []string{
-		"/api/v1/modeldev/implementations?kind=finetuning",
-		"/api/v1/modeldev/implementations?kind=",
-		"/api/v1/modeldev/implementations?kind=UNSPECIFIED",
-		"/api/v1/modeldev/implementations?kind=EXECUTION_KIND_FINETUNING",
-		"/api/v1/modeldev/implementations?kind=FINETUNING&kind=GENERAL_TRAINING",
-		"/api/v1/modeldev/implementations?kind=FINETUNING&state=READY",
-		"/api/v1/modeldev/implementations?implementation_id=builtin.mlp",
+		"/api/v1/modeldev/implementations?device_mode=cpu&kind=finetuning",
+		"/api/v1/modeldev/implementations?device_mode=cpu&kind=",
+		"/api/v1/modeldev/implementations?device_mode=cpu&kind=UNSPECIFIED",
+		"/api/v1/modeldev/implementations?device_mode=cpu&kind=EXECUTION_KIND_FINETUNING",
+		"/api/v1/modeldev/implementations?device_mode=cpu&kind=FINETUNING&kind=GENERAL_TRAINING",
+		"/api/v1/modeldev/implementations?device_mode=cpu&kind=FINETUNING&state=READY",
+		"/api/v1/modeldev/implementations?device_mode=cpu&implementation_id=builtin.mlp",
 		"/api/v1/modeldev/input-versions?kind=FINETUNING",
 		"/api/v1/modeldev/input-versions?state=ready",
 		"/api/v1/modeldev/input-versions?state=READY&kind=FINETUNING",

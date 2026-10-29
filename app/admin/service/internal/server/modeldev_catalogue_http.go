@@ -16,11 +16,14 @@ func registerModelDevCatalogueHTTP(server *khttp.Server, modeldev *service.Model
 	route.GET(data.ModelDevListImplementationsPath, func(ctx khttp.Context) error {
 		modelDevQueryHeaders(ctx)
 		khttp.SetOperation(ctx, adminv1.OperationModelDevServiceListImplementations)
-		selectors, err := modelDevCatalogueSelectors(ctx.Request(), map[string]bool{"kind": true})
+		selectors, err := modelDevCatalogueSelectors(ctx.Request(), map[string]bool{"kind": true, "device_mode": true})
 		if err != nil {
 			return err
 		}
-		in := &modeldevv1.ListImplementationsRequest{Page: selectors.page, PageSize: selectors.pageSize, Kind: selectors.kind}
+		if selectors.deviceMode == nil {
+			return invalidModelDevQueryHTTP()
+		}
+		in := &modeldevv1.ListImplementationsRequest{Page: selectors.page, PageSize: selectors.pageSize, Kind: selectors.kind, DeviceMode: selectors.deviceMode}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.ListImplementations(c, v.(*modeldevv1.ListImplementationsRequest))
 		})
@@ -105,6 +108,12 @@ func modelDevCatalogueSelectors(request *http.Request, allowed map[string]bool) 
 			default:
 				return selector, invalidModelDevQueryHTTP()
 			}
+		case "device_mode":
+			if !allowed["device_mode"] || (values[0] != "cpu" && values[0] != "gpu") {
+				return selector, invalidModelDevQueryHTTP()
+			}
+			value := values[0]
+			selector.deviceMode = &value
 		case "format":
 			if !allowed["format"] {
 				return selector, invalidModelDevQueryHTTP()
@@ -129,9 +138,10 @@ func modelDevCatalogueSelectors(request *http.Request, allowed map[string]bool) 
 // modelDevCatalogueSelector carries the optional list filters. A nil field
 // means the caller did not ask for that filter.
 type modelDevCatalogueSelector struct {
-	page     *uint32
-	pageSize *uint32
-	state    *string
-	kind     *string
-	format   *string
+	page       *uint32
+	pageSize   *uint32
+	state      *string
+	kind       *string
+	format     *string
+	deviceMode *string
 }
