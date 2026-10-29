@@ -18,6 +18,7 @@ BEGIN
  ('POST','/api/v1/virtual-machines/{data.vm_id}/restart','vm:power'),
  ('POST','/api/v1/virtual-machines/{data.vm_id}/force-stop','vm:force-stop'),
  ('POST','/api/v1/virtual-machines/{data.vm_id}/console-sessions','vm:console'),
+ ('GET','/api/v1/virtual-machines/{vm_id}/logs','vm:read'),
  ('GET','/api/v1/virtual-machines/{vm_id}/disks','vm:read'),
  ('POST','/api/v1/virtual-machines/{data.vm_id}/disks','vm:disk:write'),
  ('POST','/api/v1/virtual-machines/{data.vm_id}/disks/{data.disk_id}/attach','vm:disk:write'),

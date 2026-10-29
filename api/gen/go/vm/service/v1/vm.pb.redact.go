@@ -613,3 +613,35 @@ func (x *VMConsoleSession) Redact() {
 
 	// Safe field: ExpiresAt
 }
+
+// Ensure VMLogsRequest implements the Redactor interface at compile time.
+var _ redact.Redactor = (*VMLogsRequest)(nil)
+
+// Redact method implementation for VMLogsRequest
+func (x *VMLogsRequest) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: VmId
+
+	// Safe field: TailLines
+
+	// Safe field: Follow
+}
+
+// Ensure VMLogFrame implements the Redactor interface at compile time.
+var _ redact.Redactor = (*VMLogFrame)(nil)
+
+// Redact method implementation for VMLogFrame
+func (x *VMLogFrame) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Kind
+
+	// Safe field: Data
+
+	// Safe field: Reason
+}

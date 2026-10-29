@@ -12300,6 +12300,33 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ListDisksResponse'
+    /api/v1/virtual-machines/{vm_id}/logs:
+        get:
+            tags:
+                - VMService
+            operationId: VMService_StreamVMLogs
+            parameters:
+                - name: vm_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: tailLines
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: follow
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMLogFrame'
     /api/v1/virtual-machines/{vm_id}/operations/{operation_id}:
         get:
             tags:
@@ -24108,6 +24135,23 @@ components:
                     type: array
                     items:
                         type: string
+        VMLogFrame:
+            type: object
+            properties:
+                kind:
+                    enum:
+                        - KIND_UNSPECIFIED
+                        - READY
+                        - DATA
+                        - END
+                        - ERROR
+                    type: string
+                    format: enum
+                data:
+                    type: string
+                    format: bytes
+                reason:
+                    type: string
         VMMedia:
             type: object
             properties:

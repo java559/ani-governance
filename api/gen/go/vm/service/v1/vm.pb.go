@@ -22,6 +22,61 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type VMLogFrame_Kind int32
+
+const (
+	VMLogFrame_KIND_UNSPECIFIED VMLogFrame_Kind = 0
+	VMLogFrame_READY            VMLogFrame_Kind = 1
+	VMLogFrame_DATA             VMLogFrame_Kind = 2
+	VMLogFrame_END              VMLogFrame_Kind = 3
+	VMLogFrame_ERROR            VMLogFrame_Kind = 4
+)
+
+// Enum value maps for VMLogFrame_Kind.
+var (
+	VMLogFrame_Kind_name = map[int32]string{
+		0: "KIND_UNSPECIFIED",
+		1: "READY",
+		2: "DATA",
+		3: "END",
+		4: "ERROR",
+	}
+	VMLogFrame_Kind_value = map[string]int32{
+		"KIND_UNSPECIFIED": 0,
+		"READY":            1,
+		"DATA":             2,
+		"END":              3,
+		"ERROR":            4,
+	}
+)
+
+func (x VMLogFrame_Kind) Enum() *VMLogFrame_Kind {
+	p := new(VMLogFrame_Kind)
+	*p = x
+	return p
+}
+
+func (x VMLogFrame_Kind) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VMLogFrame_Kind) Descriptor() protoreflect.EnumDescriptor {
+	return file_vm_service_v1_vm_proto_enumTypes[0].Descriptor()
+}
+
+func (VMLogFrame_Kind) Type() protoreflect.EnumType {
+	return &file_vm_service_v1_vm_proto_enumTypes[0]
+}
+
+func (x VMLogFrame_Kind) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VMLogFrame_Kind.Descriptor instead.
+func (VMLogFrame_Kind) EnumDescriptor() ([]byte, []int) {
+	return file_vm_service_v1_vm_proto_rawDescGZIP(), []int{32, 0}
+}
+
 type VMNetworkSelection struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	VpcId         string                 `protobuf:"bytes,1,opt,name=vpc_id,json=vpcId,proto3" json:"vpc_id,omitempty"`
@@ -2267,6 +2322,126 @@ func (x *VMConsoleSession) GetExpiresAt() string {
 	return ""
 }
 
+type VMLogsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VmId          string                 `protobuf:"bytes,1,opt,name=vm_id,proto3" json:"vm_id,omitempty"`
+	TailLines     *uint32                `protobuf:"varint,2,opt,name=tail_lines,json=tailLines,proto3,oneof" json:"tail_lines,omitempty"`
+	Follow        *bool                  `protobuf:"varint,3,opt,name=follow,proto3,oneof" json:"follow,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VMLogsRequest) Reset() {
+	*x = VMLogsRequest{}
+	mi := &file_vm_service_v1_vm_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VMLogsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VMLogsRequest) ProtoMessage() {}
+
+func (x *VMLogsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_vm_service_v1_vm_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VMLogsRequest.ProtoReflect.Descriptor instead.
+func (*VMLogsRequest) Descriptor() ([]byte, []int) {
+	return file_vm_service_v1_vm_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *VMLogsRequest) GetVmId() string {
+	if x != nil {
+		return x.VmId
+	}
+	return ""
+}
+
+func (x *VMLogsRequest) GetTailLines() uint32 {
+	if x != nil && x.TailLines != nil {
+		return *x.TailLines
+	}
+	return 0
+}
+
+func (x *VMLogsRequest) GetFollow() bool {
+	if x != nil && x.Follow != nil {
+		return *x.Follow
+	}
+	return false
+}
+
+type VMLogFrame struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Kind          VMLogFrame_Kind        `protobuf:"varint,1,opt,name=kind,proto3,enum=vm.service.v1.VMLogFrame_Kind" json:"kind,omitempty"`
+	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VMLogFrame) Reset() {
+	*x = VMLogFrame{}
+	mi := &file_vm_service_v1_vm_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VMLogFrame) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VMLogFrame) ProtoMessage() {}
+
+func (x *VMLogFrame) ProtoReflect() protoreflect.Message {
+	mi := &file_vm_service_v1_vm_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VMLogFrame.ProtoReflect.Descriptor instead.
+func (*VMLogFrame) Descriptor() ([]byte, []int) {
+	return file_vm_service_v1_vm_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *VMLogFrame) GetKind() VMLogFrame_Kind {
+	if x != nil {
+		return x.Kind
+	}
+	return VMLogFrame_KIND_UNSPECIFIED
+}
+
+func (x *VMLogFrame) GetData() []byte {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+func (x *VMLogFrame) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 var File_vm_service_v1_vm_proto protoreflect.FileDescriptor
 
 const file_vm_service_v1_vm_proto_rawDesc = "" +
@@ -2475,7 +2650,25 @@ const file_vm_service_v1_vm_proto_rawDesc = "" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12\x15\n" +
 	"\x06ws_url\x18\x02 \x01(\tR\x05wsUrl\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\tR\texpiresAtB\xa4\x01\n" +
+	"expires_at\x18\x03 \x01(\tR\texpiresAt\"\x80\x01\n" +
+	"\rVMLogsRequest\x12\x14\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x05vm_id\x12\"\n" +
+	"\n" +
+	"tail_lines\x18\x02 \x01(\rH\x00R\ttailLines\x88\x01\x01\x12\x1b\n" +
+	"\x06follow\x18\x03 \x01(\bH\x01R\x06follow\x88\x01\x01B\r\n" +
+	"\v_tail_linesB\t\n" +
+	"\a_follow\"\xb3\x01\n" +
+	"\n" +
+	"VMLogFrame\x122\n" +
+	"\x04kind\x18\x01 \x01(\x0e2\x1e.vm.service.v1.VMLogFrame.KindR\x04kind\x12\x12\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"E\n" +
+	"\x04Kind\x12\x14\n" +
+	"\x10KIND_UNSPECIFIED\x10\x00\x12\t\n" +
+	"\x05READY\x10\x01\x12\b\n" +
+	"\x04DATA\x10\x02\x12\a\n" +
+	"\x03END\x10\x03\x12\t\n" +
+	"\x05ERROR\x10\x04B\xa4\x01\n" +
 	"\x11com.vm.service.v1B\aVmProtoP\x01Z0go-wind-admin/api/gen/go/vm/service/v1;servicev1\xa2\x02\x03VSX\xaa\x02\rVm.Service.V1\xca\x02\rVm\\Service\\V1\xe2\x02\x19Vm\\Service\\V1\\GPBMetadata\xea\x02\x0fVm::Service::V1b\x06proto3"
 
 var (
@@ -2490,62 +2683,67 @@ func file_vm_service_v1_vm_proto_rawDescGZIP() []byte {
 	return file_vm_service_v1_vm_proto_rawDescData
 }
 
-var file_vm_service_v1_vm_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_vm_service_v1_vm_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_vm_service_v1_vm_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_vm_service_v1_vm_proto_goTypes = []any{
-	(*VMNetworkSelection)(nil),        // 0: vm.service.v1.VMNetworkSelection
-	(*VMDNSSelection)(nil),            // 1: vm.service.v1.VMDNSSelection
-	(*VMFrozenDNS)(nil),               // 2: vm.service.v1.VMFrozenDNS
-	(*GetDNSDefaultsRequest)(nil),     // 3: vm.service.v1.GetDNSDefaultsRequest
-	(*DNSDefaults)(nil),               // 4: vm.service.v1.DNSDefaults
-	(*InitialDataDisk)(nil),           // 5: vm.service.v1.InitialDataDisk
-	(*CreateVMData)(nil),              // 6: vm.service.v1.CreateVMData
-	(*CreateGuestInitialization)(nil), // 7: vm.service.v1.CreateGuestInitialization
-	(*CreateVMRequest)(nil),           // 8: vm.service.v1.CreateVMRequest
-	(*ChangeVMData)(nil),              // 9: vm.service.v1.ChangeVMData
-	(*ChangeVMRequest)(nil),           // 10: vm.service.v1.ChangeVMRequest
-	(*GetVMRequest)(nil),              // 11: vm.service.v1.GetVMRequest
-	(*ListVMsRequest)(nil),            // 12: vm.service.v1.ListVMsRequest
-	(*GetOperationRequest)(nil),       // 13: vm.service.v1.GetOperationRequest
-	(*GetSnapshotRequest)(nil),        // 14: vm.service.v1.GetSnapshotRequest
-	(*ListMediaRequest)(nil),          // 15: vm.service.v1.ListMediaRequest
-	(*VMAcceptance)(nil),              // 16: vm.service.v1.VMAcceptance
-	(*VMOperation)(nil),               // 17: vm.service.v1.VMOperation
-	(*VMCurrentAddress)(nil),          // 18: vm.service.v1.VMCurrentAddress
-	(*VirtualMachine)(nil),            // 19: vm.service.v1.VirtualMachine
-	(*ListVMsResponse)(nil),           // 20: vm.service.v1.ListVMsResponse
-	(*VMDisk)(nil),                    // 21: vm.service.v1.VMDisk
-	(*ListDisksResponse)(nil),         // 22: vm.service.v1.ListDisksResponse
-	(*VMMediaState)(nil),              // 23: vm.service.v1.VMMediaState
-	(*VMMedia)(nil),                   // 24: vm.service.v1.VMMedia
-	(*ListMediaResponse)(nil),         // 25: vm.service.v1.ListMediaResponse
-	(*VMSnapshot)(nil),                // 26: vm.service.v1.VMSnapshot
-	(*ListSnapshotsResponse)(nil),     // 27: vm.service.v1.ListSnapshotsResponse
-	(*VMRestoreDiskImpact)(nil),       // 28: vm.service.v1.VMRestoreDiskImpact
-	(*VMRestorePreview)(nil),          // 29: vm.service.v1.VMRestorePreview
-	(*VMConsoleSession)(nil),          // 30: vm.service.v1.VMConsoleSession
+	(VMLogFrame_Kind)(0),              // 0: vm.service.v1.VMLogFrame.Kind
+	(*VMNetworkSelection)(nil),        // 1: vm.service.v1.VMNetworkSelection
+	(*VMDNSSelection)(nil),            // 2: vm.service.v1.VMDNSSelection
+	(*VMFrozenDNS)(nil),               // 3: vm.service.v1.VMFrozenDNS
+	(*GetDNSDefaultsRequest)(nil),     // 4: vm.service.v1.GetDNSDefaultsRequest
+	(*DNSDefaults)(nil),               // 5: vm.service.v1.DNSDefaults
+	(*InitialDataDisk)(nil),           // 6: vm.service.v1.InitialDataDisk
+	(*CreateVMData)(nil),              // 7: vm.service.v1.CreateVMData
+	(*CreateGuestInitialization)(nil), // 8: vm.service.v1.CreateGuestInitialization
+	(*CreateVMRequest)(nil),           // 9: vm.service.v1.CreateVMRequest
+	(*ChangeVMData)(nil),              // 10: vm.service.v1.ChangeVMData
+	(*ChangeVMRequest)(nil),           // 11: vm.service.v1.ChangeVMRequest
+	(*GetVMRequest)(nil),              // 12: vm.service.v1.GetVMRequest
+	(*ListVMsRequest)(nil),            // 13: vm.service.v1.ListVMsRequest
+	(*GetOperationRequest)(nil),       // 14: vm.service.v1.GetOperationRequest
+	(*GetSnapshotRequest)(nil),        // 15: vm.service.v1.GetSnapshotRequest
+	(*ListMediaRequest)(nil),          // 16: vm.service.v1.ListMediaRequest
+	(*VMAcceptance)(nil),              // 17: vm.service.v1.VMAcceptance
+	(*VMOperation)(nil),               // 18: vm.service.v1.VMOperation
+	(*VMCurrentAddress)(nil),          // 19: vm.service.v1.VMCurrentAddress
+	(*VirtualMachine)(nil),            // 20: vm.service.v1.VirtualMachine
+	(*ListVMsResponse)(nil),           // 21: vm.service.v1.ListVMsResponse
+	(*VMDisk)(nil),                    // 22: vm.service.v1.VMDisk
+	(*ListDisksResponse)(nil),         // 23: vm.service.v1.ListDisksResponse
+	(*VMMediaState)(nil),              // 24: vm.service.v1.VMMediaState
+	(*VMMedia)(nil),                   // 25: vm.service.v1.VMMedia
+	(*ListMediaResponse)(nil),         // 26: vm.service.v1.ListMediaResponse
+	(*VMSnapshot)(nil),                // 27: vm.service.v1.VMSnapshot
+	(*ListSnapshotsResponse)(nil),     // 28: vm.service.v1.ListSnapshotsResponse
+	(*VMRestoreDiskImpact)(nil),       // 29: vm.service.v1.VMRestoreDiskImpact
+	(*VMRestorePreview)(nil),          // 30: vm.service.v1.VMRestorePreview
+	(*VMConsoleSession)(nil),          // 31: vm.service.v1.VMConsoleSession
+	(*VMLogsRequest)(nil),             // 32: vm.service.v1.VMLogsRequest
+	(*VMLogFrame)(nil),                // 33: vm.service.v1.VMLogFrame
 }
 var file_vm_service_v1_vm_proto_depIdxs = []int32{
-	5,  // 0: vm.service.v1.CreateVMData.data_disks:type_name -> vm.service.v1.InitialDataDisk
-	0,  // 1: vm.service.v1.CreateVMData.network:type_name -> vm.service.v1.VMNetworkSelection
-	7,  // 2: vm.service.v1.CreateVMData.guest_initialization:type_name -> vm.service.v1.CreateGuestInitialization
-	1,  // 3: vm.service.v1.CreateVMData.dns:type_name -> vm.service.v1.VMDNSSelection
-	6,  // 4: vm.service.v1.CreateVMRequest.data:type_name -> vm.service.v1.CreateVMData
-	9,  // 5: vm.service.v1.ChangeVMRequest.data:type_name -> vm.service.v1.ChangeVMData
-	18, // 6: vm.service.v1.VirtualMachine.addresses:type_name -> vm.service.v1.VMCurrentAddress
-	21, // 7: vm.service.v1.VirtualMachine.disks:type_name -> vm.service.v1.VMDisk
-	23, // 8: vm.service.v1.VirtualMachine.media:type_name -> vm.service.v1.VMMediaState
-	2,  // 9: vm.service.v1.VirtualMachine.dns:type_name -> vm.service.v1.VMFrozenDNS
-	19, // 10: vm.service.v1.ListVMsResponse.items:type_name -> vm.service.v1.VirtualMachine
-	21, // 11: vm.service.v1.ListDisksResponse.items:type_name -> vm.service.v1.VMDisk
-	24, // 12: vm.service.v1.ListMediaResponse.items:type_name -> vm.service.v1.VMMedia
-	21, // 13: vm.service.v1.VMSnapshot.disks:type_name -> vm.service.v1.VMDisk
-	26, // 14: vm.service.v1.ListSnapshotsResponse.items:type_name -> vm.service.v1.VMSnapshot
-	28, // 15: vm.service.v1.VMRestorePreview.disks:type_name -> vm.service.v1.VMRestoreDiskImpact
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	6,  // 0: vm.service.v1.CreateVMData.data_disks:type_name -> vm.service.v1.InitialDataDisk
+	1,  // 1: vm.service.v1.CreateVMData.network:type_name -> vm.service.v1.VMNetworkSelection
+	8,  // 2: vm.service.v1.CreateVMData.guest_initialization:type_name -> vm.service.v1.CreateGuestInitialization
+	2,  // 3: vm.service.v1.CreateVMData.dns:type_name -> vm.service.v1.VMDNSSelection
+	7,  // 4: vm.service.v1.CreateVMRequest.data:type_name -> vm.service.v1.CreateVMData
+	10, // 5: vm.service.v1.ChangeVMRequest.data:type_name -> vm.service.v1.ChangeVMData
+	19, // 6: vm.service.v1.VirtualMachine.addresses:type_name -> vm.service.v1.VMCurrentAddress
+	22, // 7: vm.service.v1.VirtualMachine.disks:type_name -> vm.service.v1.VMDisk
+	24, // 8: vm.service.v1.VirtualMachine.media:type_name -> vm.service.v1.VMMediaState
+	3,  // 9: vm.service.v1.VirtualMachine.dns:type_name -> vm.service.v1.VMFrozenDNS
+	20, // 10: vm.service.v1.ListVMsResponse.items:type_name -> vm.service.v1.VirtualMachine
+	22, // 11: vm.service.v1.ListDisksResponse.items:type_name -> vm.service.v1.VMDisk
+	25, // 12: vm.service.v1.ListMediaResponse.items:type_name -> vm.service.v1.VMMedia
+	22, // 13: vm.service.v1.VMSnapshot.disks:type_name -> vm.service.v1.VMDisk
+	27, // 14: vm.service.v1.ListSnapshotsResponse.items:type_name -> vm.service.v1.VMSnapshot
+	29, // 15: vm.service.v1.VMRestorePreview.disks:type_name -> vm.service.v1.VMRestoreDiskImpact
+	0,  // 16: vm.service.v1.VMLogFrame.kind:type_name -> vm.service.v1.VMLogFrame.Kind
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_vm_service_v1_vm_proto_init() }
@@ -2555,18 +2753,20 @@ func file_vm_service_v1_vm_proto_init() {
 	}
 	file_vm_service_v1_vm_proto_msgTypes[6].OneofWrappers = []any{}
 	file_vm_service_v1_vm_proto_msgTypes[12].OneofWrappers = []any{}
+	file_vm_service_v1_vm_proto_msgTypes[31].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_vm_service_v1_vm_proto_rawDesc), len(file_vm_service_v1_vm_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   31,
+			NumEnums:      1,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_vm_service_v1_vm_proto_goTypes,
 		DependencyIndexes: file_vm_service_v1_vm_proto_depIdxs,
+		EnumInfos:         file_vm_service_v1_vm_proto_enumTypes,
 		MessageInfos:      file_vm_service_v1_vm_proto_msgTypes,
 	}.Build()
 	File_vm_service_v1_vm_proto = out.File

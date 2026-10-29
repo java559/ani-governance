@@ -26,7 +26,7 @@ func NewResourceClientsFromEnv() (*InstanceClient, *ComputeClient, func(), error
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return &InstanceClient{client: instance.NewInstanceServiceClient(connection), vm: &VMClient{client: vm.NewVMServiceClient(connection)}},
+	return &InstanceClient{client: instance.NewInstanceServiceClient(connection), vm: &VMClient{client: vm.NewVMServiceClient(connection), conn: connection}},
 		&ComputeClient{client: compute.NewComputePresetServiceClient(connection)},
 		func() { _ = connection.Close() }, nil
 }

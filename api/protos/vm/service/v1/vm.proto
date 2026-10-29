@@ -67,3 +67,8 @@ message ListSnapshotsResponse { repeated VMSnapshot items=1; }
 message VMRestoreDiskImpact { string disk_id=1; string action=2; string reason=3; }
 message VMRestorePreview { int64 version=1; string snapshot_id=2; string snapshot_uid=3; repeated VMRestoreDiskImpact disks=4; string preview_digest=5; }
 message VMConsoleSession { string session_id=1; string ws_url=2; string expires_at=3; }
+message VMLogsRequest { string vm_id=1 [json_name="vm_id"]; optional uint32 tail_lines=2; optional bool follow=3; }
+message VMLogFrame {
+ enum Kind { KIND_UNSPECIFIED=0; READY=1; DATA=2; END=3; ERROR=4; }
+ Kind kind=1; bytes data=2; string reason=3;
+}
