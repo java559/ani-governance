@@ -30,110 +30,62 @@ var File_admin_service_v1_i_storage_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_storage_proto_rawDesc = "" +
 	"\n" +
-	" admin/service/v1/i_storage.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a storage/service/v1/storage.proto2\x9f\x1c\n" +
-	"\x0eStorageService\x12\x81\x03\n" +
-	"\x12ListStorageClasses\x12-.storage.service.v1.ListStorageClassesRequest\x1a..storage.service.v1.ListStorageClassesResponse\"\x8b\x02\xbaG\xe8\x01\x12\x12ListStorageClasses\x1a\x84\x01Requires active tenant, STORAGE module and storage:volume:create. page/pageSize with items/total. See docs/contracts/storage-api.md.Z\x10\n" +
+	" admin/service/v1/i_storage.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a storage/service/v1/storage.proto2\xfd\x1f\n" +
+	"\x0eStorageService\x12\xc6\x02\n" +
+	"\x12ListStorageClasses\x12-.storage.service.v1.ListStorageClassesRequest\x1a..storage.service.v1.ListStorageClassesResponse\"\xd0\x01\xbaG\xad\x01\x12\x12ListStorageClasses\x1a\x84\x01Requires active tenant, STORAGE module and storage:volume:create. page/pageSize with items/total. See docs/contracts/storage-api.md.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/classes\x12\xec\x02\n" +
-	"\fCreateVolume\x12'.storage.service.v1.CreateVolumeRequest\x1a(.storage.service.v1.CreateVolumeResponse\"\x88\x02\xbaG\xda\x01\x12\fCreateVolume\x1a}Requires storage:volume:create. create_token is the idempotency key for one create intent. See docs/contracts/storage-api.md.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/classes\x12\xb1\x02\n" +
+	"\fCreateVolume\x12'.storage.service.v1.CreateVolumeRequest\x1a(.storage.service.v1.CreateVolumeResponse\"\xcd\x01\xbaG\x9f\x01\x12\fCreateVolume\x1a}Requires storage:volume:create. create_token is the idempotency key for one create intent. See docs/contracts/storage-api.md.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02$:\x01*b\x06volume\"\x17/api/v1/storage/volumes\x12\x9d\x02\n" +
-	"\vListVolumes\x12&.storage.service.v1.ListVolumesRequest\x1a'.storage.service.v1.ListVolumesResponse\"\xbc\x01\xbaG\x99\x01\x12\vListVolumes\x1a=Requires storage:volume:list. page/pageSize with items/total.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02$:\x01*b\x06volume\"\x17/api/v1/storage/volumes\x12\xe1\x01\n" +
+	"\vListVolumes\x12&.storage.service.v1.ListVolumesRequest\x1a'.storage.service.v1.ListVolumesResponse\"\x80\x01\xbaG^\x12\vListVolumes\x1a=Requires storage:volume:list. page/pageSize with items/total.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/volumes\x12\xb6\x02\n" +
-	"\tGetVolume\x12$.storage.service.v1.GetVolumeRequest\x1a%.storage.service.v1.GetVolumeResponse\"\xdb\x01\xbaG\xa5\x01\x12\tGetVolume\x1aKRequires storage:volume:get. Cross-tenant and unmanaged volumes are hidden.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/volumes\x12\xfa\x01\n" +
+	"\tGetVolume\x12$.storage.service.v1.GetVolumeRequest\x1a%.storage.service.v1.GetVolumeResponse\"\x9f\x01\xbaGj\x12\tGetVolume\x1aKRequires storage:volume:get. Cross-tenant and unmanaged volumes are hidden.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02,b\x06volume\x12\"/api/v1/storage/volumes/{pvc_name}\x12\xdf\x02\n" +
-	"\fUpdateVolume\x12'.storage.service.v1.UpdateVolumeRequest\x1a(.storage.service.v1.UpdateVolumeResponse\"\xfb\x01\xbaG\xb6\x01\x12\fUpdateVolume\x1aYRequires storage:volume:update. Only capacity_gb is supported. expected_uid is mandatory.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02,b\x06volume\x12\"/api/v1/storage/volumes/{pvc_name}\x12\xa3\x02\n" +
+	"\fUpdateVolume\x12'.storage.service.v1.UpdateVolumeRequest\x1a(.storage.service.v1.UpdateVolumeResponse\"\xbf\x01\xbaG{\x12\fUpdateVolume\x1aYRequires storage:volume:update. Only capacity_gb is supported. expected_uid is mandatory.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02;:\x01*b\x06volume\"./api/v1/storage/volumes/{data.pvc_name}:update\x12\xf3\x02\n" +
-	"\fDeleteVolume\x12'.storage.service.v1.DeleteVolumeRequest\x1a(.storage.service.v1.DeleteVolumeResponse\"\x8f\x02\xbaG\xd2\x01\x12\fDeleteVolume\x1auRequires storage:volume:delete. expected_uid binds the delete to the selected object; known consumers block deletion.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02;:\x01*b\x06volume\"./api/v1/storage/volumes/{data.pvc_name}:update\x12\xb8\x02\n" +
+	"\fDeleteVolume\x12'.storage.service.v1.DeleteVolumeRequest\x1a(.storage.service.v1.DeleteVolumeResponse\"\xd4\x01\xbaG\x97\x01\x12\fDeleteVolume\x1auRequires storage:volume:delete. expected_uid binds the delete to the selected object; known consumers block deletion.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x023:\x01*\"./api/v1/storage/volumes/{data.pvc_name}:delete\x12\xc0\x02\n" +
-	"\vListBuckets\x12&.storage.service.v1.ListBucketsRequest\x1a'.storage.service.v1.ListBucketsResponse\"\xdf\x01\xbaG\xbc\x01\x12\vListBuckets\x1a`Requires storage:bucket:list. Only buckets configured for the authenticated tenant are returned.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x023:\x01*\"./api/v1/storage/volumes/{data.pvc_name}:delete\x12\x9c\x02\n" +
+	"\vListBuckets\x12&.storage.service.v1.ListBucketsRequest\x1a'.storage.service.v1.ListBucketsResponse\"\xbb\x01\xbaG\x98\x01\x12\vListBuckets\x1awRequires storage:bucket:list. Returns configured and dynamically created buckets belonging to the authenticated tenant.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/buckets\x12\xb3\x03\n" +
-	"\vListObjects\x12&.storage.service.v1.ListObjectsRequest\x1a'.storage.service.v1.ListObjectsResponse\"\xd2\x02\xbaG\x9b\x02\x12\vListObjects\x1a\xbe\x01Requires storage:object:list. Domain cursor exception: limit 1..100 (omitted means 100), opaque cursor bound to bucket and prefix; page/pageSize/offset/token are rejected with 400; no total.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/buckets\x12\xc8\x02\n" +
+	"\fCreateBucket\x12'.storage.service.v1.CreateBucketRequest\x1a(.storage.service.v1.CreateBucketResponse\"\xe4\x01\xbaG\xb6\x01\x12\fCreateBucket\x1a\x93\x01Requires storage:bucket:create. Logical name is S3-compatible lowercase ASCII; physical name is derived by the server. Repeat create is idempotent.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02-\x12+/api/v1/storage/buckets/{bucket_id}/objects\x12\xde\x02\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02$:\x01*b\x06bucket\"\x17/api/v1/storage/buckets\x12\xf8\x02\n" +
+	"\vListObjects\x12&.storage.service.v1.ListObjectsRequest\x1a'.storage.service.v1.ListObjectsResponse\"\x97\x02\xbaG\xe0\x01\x12\vListObjects\x1a\xbe\x01Requires storage:object:list. Domain cursor exception: limit 1..100 (omitted means 100), opaque cursor bound to bucket and prefix; page/pageSize/offset/token are rejected with 400; no total.Z\x10\n" +
+	"\x0e\n" +
 	"\n" +
-	"HeadObject\x12%.storage.service.v1.HeadObjectRequest\x1a&.storage.service.v1.HeadObjectResponse\"\x80\x02\xbaG\xb4\x01\x12\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02-\x12+/api/v1/storage/buckets/{bucket_id}/objects\x12\xa2\x02\n" +
+	"\n" +
+	"HeadObject\x12%.storage.service.v1.HeadObjectRequest\x1a&.storage.service.v1.HeadObjectResponse\"\xc4\x01\xbaGy\x12\n" +
 	"HeadObject\x1aYRequires storage:object:get. key is passed verbatim; no client-side escaping is required.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02B:\x01*b\x06object\"5/api/v1/storage/buckets/{data.bucket_id}/objects:head\x12\x8e\x03\n" +
-	"\x0eGetDownloadURL\x12).storage.service.v1.GetDownloadURLRequest\x1a*.storage.service.v1.GetDownloadURLResponse\"\xa4\x02\xbaG\xd8\x01\x12\x0eGetDownloadURL\x1ayRequires storage:object:download. Returns a short-lived GET URL for the fixed object; the URL may be reused until expiry.Z\x10\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02B:\x01*b\x06object\"5/api/v1/storage/buckets/{data.bucket_id}/objects:head\x12\xd3\x02\n" +
+	"\x0eGetDownloadURL\x12).storage.service.v1.GetDownloadURLRequest\x1a*.storage.service.v1.GetDownloadURLResponse\"\xe9\x01\xbaG\x9d\x01\x12\x0eGetDownloadURL\x1ayRequires storage:object:download. Returns a short-lived GET URL for the fixed object; the URL may be reused until expiry.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00Z9\n" +
-	"\x11\n" +
-	"\rAccessKeyAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureAuth\x12\x00\n" +
-	"\x11\n" +
-	"\rSignatureTime\x12\x00\x82\xd3\xe4\x93\x02B:\x01*\"=/api/v1/storage/buckets/{data.bucket_id}/objects:download-urlB\xba\x01\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02B:\x01*\"=/api/v1/storage/buckets/{data.bucket_id}/objects:download-url\x12\xfa\x02\n" +
+	"\fGetUploadURL\x12'.storage.service.v1.GetUploadURLRequest\x1a(.storage.service.v1.GetUploadURLResponse\"\x96\x02\xbaG\xcc\x01\x12\fGetUploadURL\x1a\xa9\x01Requires storage:object:upload. Returns a short-lived presigned PUT URL bound to one key; the client sends the file directly to object storage with the returned headers.Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02@:\x01*\";/api/v1/storage/buckets/{data.bucket_id}/objects:upload-url\x12\xce\x02\n" +
+	"\fDeleteObject\x12'.storage.service.v1.DeleteObjectRequest\x1a(.storage.service.v1.DeleteObjectResponse\"\xea\x01\xbaG\xa4\x01\x12\fDeleteObject\x1a\x81\x01Requires storage:object:delete. Deletes exactly one object key; repeat delete returns GONE. Directory prefixes are not recursive.Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/storage/buckets/{data.bucket_id}/objects:deleteB\xba\x01\n" +
 	"\x14com.admin.service.v1B\rIStorageProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_storage_proto_goTypes = []any{
@@ -144,19 +96,25 @@ var file_admin_service_v1_i_storage_proto_goTypes = []any{
 	(*v1.UpdateVolumeRequest)(nil),        // 4: storage.service.v1.UpdateVolumeRequest
 	(*v1.DeleteVolumeRequest)(nil),        // 5: storage.service.v1.DeleteVolumeRequest
 	(*v1.ListBucketsRequest)(nil),         // 6: storage.service.v1.ListBucketsRequest
-	(*v1.ListObjectsRequest)(nil),         // 7: storage.service.v1.ListObjectsRequest
-	(*v1.HeadObjectRequest)(nil),          // 8: storage.service.v1.HeadObjectRequest
-	(*v1.GetDownloadURLRequest)(nil),      // 9: storage.service.v1.GetDownloadURLRequest
-	(*v1.ListStorageClassesResponse)(nil), // 10: storage.service.v1.ListStorageClassesResponse
-	(*v1.CreateVolumeResponse)(nil),       // 11: storage.service.v1.CreateVolumeResponse
-	(*v1.ListVolumesResponse)(nil),        // 12: storage.service.v1.ListVolumesResponse
-	(*v1.GetVolumeResponse)(nil),          // 13: storage.service.v1.GetVolumeResponse
-	(*v1.UpdateVolumeResponse)(nil),       // 14: storage.service.v1.UpdateVolumeResponse
-	(*v1.DeleteVolumeResponse)(nil),       // 15: storage.service.v1.DeleteVolumeResponse
-	(*v1.ListBucketsResponse)(nil),        // 16: storage.service.v1.ListBucketsResponse
-	(*v1.ListObjectsResponse)(nil),        // 17: storage.service.v1.ListObjectsResponse
-	(*v1.HeadObjectResponse)(nil),         // 18: storage.service.v1.HeadObjectResponse
-	(*v1.GetDownloadURLResponse)(nil),     // 19: storage.service.v1.GetDownloadURLResponse
+	(*v1.CreateBucketRequest)(nil),        // 7: storage.service.v1.CreateBucketRequest
+	(*v1.ListObjectsRequest)(nil),         // 8: storage.service.v1.ListObjectsRequest
+	(*v1.HeadObjectRequest)(nil),          // 9: storage.service.v1.HeadObjectRequest
+	(*v1.GetDownloadURLRequest)(nil),      // 10: storage.service.v1.GetDownloadURLRequest
+	(*v1.GetUploadURLRequest)(nil),        // 11: storage.service.v1.GetUploadURLRequest
+	(*v1.DeleteObjectRequest)(nil),        // 12: storage.service.v1.DeleteObjectRequest
+	(*v1.ListStorageClassesResponse)(nil), // 13: storage.service.v1.ListStorageClassesResponse
+	(*v1.CreateVolumeResponse)(nil),       // 14: storage.service.v1.CreateVolumeResponse
+	(*v1.ListVolumesResponse)(nil),        // 15: storage.service.v1.ListVolumesResponse
+	(*v1.GetVolumeResponse)(nil),          // 16: storage.service.v1.GetVolumeResponse
+	(*v1.UpdateVolumeResponse)(nil),       // 17: storage.service.v1.UpdateVolumeResponse
+	(*v1.DeleteVolumeResponse)(nil),       // 18: storage.service.v1.DeleteVolumeResponse
+	(*v1.ListBucketsResponse)(nil),        // 19: storage.service.v1.ListBucketsResponse
+	(*v1.CreateBucketResponse)(nil),       // 20: storage.service.v1.CreateBucketResponse
+	(*v1.ListObjectsResponse)(nil),        // 21: storage.service.v1.ListObjectsResponse
+	(*v1.HeadObjectResponse)(nil),         // 22: storage.service.v1.HeadObjectResponse
+	(*v1.GetDownloadURLResponse)(nil),     // 23: storage.service.v1.GetDownloadURLResponse
+	(*v1.GetUploadURLResponse)(nil),       // 24: storage.service.v1.GetUploadURLResponse
+	(*v1.DeleteObjectResponse)(nil),       // 25: storage.service.v1.DeleteObjectResponse
 }
 var file_admin_service_v1_i_storage_proto_depIdxs = []int32{
 	0,  // 0: admin.service.v1.StorageService.ListStorageClasses:input_type -> storage.service.v1.ListStorageClassesRequest
@@ -166,21 +124,27 @@ var file_admin_service_v1_i_storage_proto_depIdxs = []int32{
 	4,  // 4: admin.service.v1.StorageService.UpdateVolume:input_type -> storage.service.v1.UpdateVolumeRequest
 	5,  // 5: admin.service.v1.StorageService.DeleteVolume:input_type -> storage.service.v1.DeleteVolumeRequest
 	6,  // 6: admin.service.v1.StorageService.ListBuckets:input_type -> storage.service.v1.ListBucketsRequest
-	7,  // 7: admin.service.v1.StorageService.ListObjects:input_type -> storage.service.v1.ListObjectsRequest
-	8,  // 8: admin.service.v1.StorageService.HeadObject:input_type -> storage.service.v1.HeadObjectRequest
-	9,  // 9: admin.service.v1.StorageService.GetDownloadURL:input_type -> storage.service.v1.GetDownloadURLRequest
-	10, // 10: admin.service.v1.StorageService.ListStorageClasses:output_type -> storage.service.v1.ListStorageClassesResponse
-	11, // 11: admin.service.v1.StorageService.CreateVolume:output_type -> storage.service.v1.CreateVolumeResponse
-	12, // 12: admin.service.v1.StorageService.ListVolumes:output_type -> storage.service.v1.ListVolumesResponse
-	13, // 13: admin.service.v1.StorageService.GetVolume:output_type -> storage.service.v1.GetVolumeResponse
-	14, // 14: admin.service.v1.StorageService.UpdateVolume:output_type -> storage.service.v1.UpdateVolumeResponse
-	15, // 15: admin.service.v1.StorageService.DeleteVolume:output_type -> storage.service.v1.DeleteVolumeResponse
-	16, // 16: admin.service.v1.StorageService.ListBuckets:output_type -> storage.service.v1.ListBucketsResponse
-	17, // 17: admin.service.v1.StorageService.ListObjects:output_type -> storage.service.v1.ListObjectsResponse
-	18, // 18: admin.service.v1.StorageService.HeadObject:output_type -> storage.service.v1.HeadObjectResponse
-	19, // 19: admin.service.v1.StorageService.GetDownloadURL:output_type -> storage.service.v1.GetDownloadURLResponse
-	10, // [10:20] is the sub-list for method output_type
-	0,  // [0:10] is the sub-list for method input_type
+	7,  // 7: admin.service.v1.StorageService.CreateBucket:input_type -> storage.service.v1.CreateBucketRequest
+	8,  // 8: admin.service.v1.StorageService.ListObjects:input_type -> storage.service.v1.ListObjectsRequest
+	9,  // 9: admin.service.v1.StorageService.HeadObject:input_type -> storage.service.v1.HeadObjectRequest
+	10, // 10: admin.service.v1.StorageService.GetDownloadURL:input_type -> storage.service.v1.GetDownloadURLRequest
+	11, // 11: admin.service.v1.StorageService.GetUploadURL:input_type -> storage.service.v1.GetUploadURLRequest
+	12, // 12: admin.service.v1.StorageService.DeleteObject:input_type -> storage.service.v1.DeleteObjectRequest
+	13, // 13: admin.service.v1.StorageService.ListStorageClasses:output_type -> storage.service.v1.ListStorageClassesResponse
+	14, // 14: admin.service.v1.StorageService.CreateVolume:output_type -> storage.service.v1.CreateVolumeResponse
+	15, // 15: admin.service.v1.StorageService.ListVolumes:output_type -> storage.service.v1.ListVolumesResponse
+	16, // 16: admin.service.v1.StorageService.GetVolume:output_type -> storage.service.v1.GetVolumeResponse
+	17, // 17: admin.service.v1.StorageService.UpdateVolume:output_type -> storage.service.v1.UpdateVolumeResponse
+	18, // 18: admin.service.v1.StorageService.DeleteVolume:output_type -> storage.service.v1.DeleteVolumeResponse
+	19, // 19: admin.service.v1.StorageService.ListBuckets:output_type -> storage.service.v1.ListBucketsResponse
+	20, // 20: admin.service.v1.StorageService.CreateBucket:output_type -> storage.service.v1.CreateBucketResponse
+	21, // 21: admin.service.v1.StorageService.ListObjects:output_type -> storage.service.v1.ListObjectsResponse
+	22, // 22: admin.service.v1.StorageService.HeadObject:output_type -> storage.service.v1.HeadObjectResponse
+	23, // 23: admin.service.v1.StorageService.GetDownloadURL:output_type -> storage.service.v1.GetDownloadURLResponse
+	24, // 24: admin.service.v1.StorageService.GetUploadURL:output_type -> storage.service.v1.GetUploadURLResponse
+	25, // 25: admin.service.v1.StorageService.DeleteObject:output_type -> storage.service.v1.DeleteObjectResponse
+	13, // [13:26] is the sub-list for method output_type
+	0,  // [0:13] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

@@ -13,8 +13,7 @@ service StorageService {
     option (google.api.http) = { get: "/api/v1/storage/classes" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "ListStorageClasses"
       description: "Requires active tenant, STORAGE module and storage:volume:create. page/pageSize with items/total. See docs/contracts/storage-api.md."
@@ -24,8 +23,7 @@ service StorageService {
     option (google.api.http) = { post: "/api/v1/storage/volumes" body: "*" response_body: "volume" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "CreateVolume"
       description: "Requires storage:volume:create. create_token is the idempotency key for one create intent. See docs/contracts/storage-api.md."
@@ -35,8 +33,7 @@ service StorageService {
     option (google.api.http) = { get: "/api/v1/storage/volumes" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "ListVolumes"
       description: "Requires storage:volume:list. page/pageSize with items/total."
@@ -46,8 +43,7 @@ service StorageService {
     option (google.api.http) = { get: "/api/v1/storage/volumes/{pvc_name}" response_body: "volume" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "GetVolume"
       description: "Requires storage:volume:get. Cross-tenant and unmanaged volumes are hidden."
@@ -57,8 +53,7 @@ service StorageService {
     option (google.api.http) = { post: "/api/v1/storage/volumes/{data.pvc_name}:update" body: "*" response_body: "volume" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "UpdateVolume"
       description: "Requires storage:volume:update. Only capacity_gb is supported. expected_uid is mandatory."
@@ -68,8 +63,7 @@ service StorageService {
     option (google.api.http) = { post: "/api/v1/storage/volumes/{data.pvc_name}:delete" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "DeleteVolume"
       description: "Requires storage:volume:delete. expected_uid binds the delete to the selected object; known consumers block deletion."
@@ -79,19 +73,27 @@ service StorageService {
     option (google.api.http) = { get: "/api/v1/storage/buckets" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "ListBuckets"
-      description: "Requires storage:bucket:list. Only buckets configured for the authenticated tenant are returned."
+      description: "Requires storage:bucket:list. Returns configured and dynamically created buckets belonging to the authenticated tenant."
+    };
+  }
+  rpc CreateBucket(storage.service.v1.CreateBucketRequest) returns (storage.service.v1.CreateBucketResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/buckets" body: "*" response_body: "bucket" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
+      ]
+      summary: "CreateBucket"
+      description: "Requires storage:bucket:create. Logical name is S3-compatible lowercase ASCII; physical name is derived by the server. Repeat create is idempotent."
     };
   }
   rpc ListObjects(storage.service.v1.ListObjectsRequest) returns (storage.service.v1.ListObjectsResponse) {
     option (google.api.http) = { get: "/api/v1/storage/buckets/{bucket_id}/objects" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "ListObjects"
       description: "Requires storage:object:list. Domain cursor exception: limit 1..100 (omitted means 100), opaque cursor bound to bucket and prefix; page/pageSize/offset/token are rejected with 400; no total."
@@ -101,8 +103,7 @@ service StorageService {
     option (google.api.http) = { post: "/api/v1/storage/buckets/{data.bucket_id}/objects:head" body: "*" response_body: "object" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "HeadObject"
       description: "Requires storage:object:get. key is passed verbatim; no client-side escaping is required."
@@ -112,11 +113,30 @@ service StorageService {
     option (google.api.http) = { post: "/api/v1/storage/buckets/{data.bucket_id}/objects:download-url" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [
-        { additional_properties: [{ name: "BearerAuth" value: {} }] },
-        { additional_properties: [{ name: "AccessKeyAuth" value: {} }, { name: "SignatureAuth" value: {} }, { name: "SignatureTime" value: {} }] }
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
       ]
       summary: "GetDownloadURL"
       description: "Requires storage:object:download. Returns a short-lived GET URL for the fixed object; the URL may be reused until expiry."
+    };
+  }
+  rpc GetUploadURL(storage.service.v1.GetUploadURLRequest) returns (storage.service.v1.GetUploadURLResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/buckets/{data.bucket_id}/objects:upload-url" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
+      ]
+      summary: "GetUploadURL"
+      description: "Requires storage:object:upload. Returns a short-lived presigned PUT URL bound to one key; the client sends the file directly to object storage with the returned headers."
+    };
+  }
+  rpc DeleteObject(storage.service.v1.DeleteObjectRequest) returns (storage.service.v1.DeleteObjectResponse) {
+    option (google.api.http) = { post: "/api/v1/storage/buckets/{data.bucket_id}/objects:delete" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
+      ]
+      summary: "DeleteObject"
+      description: "Requires storage:object:delete. Deletes exactly one object key; repeat delete returns GONE. Directory prefixes are not recursive."
     };
   }
 }

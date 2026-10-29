@@ -204,3 +204,36 @@ func (c *StorageClient) GetDownloadURL(ctx context.Context, tenant, actor string
 		return c.client.GetDownloadURL(ctx, req)
 	})
 }
+
+func (c *StorageClient) CreateBucket(ctx context.Context, tenant, actor string, r *storagev1.CreateBucketRequest) (*storagev1.CreateBucketResponse, error) {
+	if r == nil {
+		return nil, storageRequestRequired()
+	}
+	req := proto.Clone(r).(*storagev1.CreateBucketRequest)
+	req.TenantId = tenant
+	return trustedStorageCall(c, ctx, tenant, actor, func(ctx context.Context) (*storagev1.CreateBucketResponse, error) {
+		return c.client.CreateBucket(ctx, req)
+	})
+}
+
+func (c *StorageClient) GetUploadURL(ctx context.Context, tenant, actor string, r *storagev1.GetUploadURLRequest) (*storagev1.GetUploadURLResponse, error) {
+	if r == nil {
+		return nil, storageRequestRequired()
+	}
+	req := proto.Clone(r).(*storagev1.GetUploadURLRequest)
+	req.TenantId = tenant
+	return trustedStorageCall(c, ctx, tenant, actor, func(ctx context.Context) (*storagev1.GetUploadURLResponse, error) {
+		return c.client.GetUploadURL(ctx, req)
+	})
+}
+
+func (c *StorageClient) DeleteObject(ctx context.Context, tenant, actor string, r *storagev1.DeleteObjectRequest) (*storagev1.DeleteObjectResponse, error) {
+	if r == nil {
+		return nil, storageRequestRequired()
+	}
+	req := proto.Clone(r).(*storagev1.DeleteObjectRequest)
+	req.TenantId = tenant
+	return trustedStorageCall(c, ctx, tenant, actor, func(ctx context.Context) (*storagev1.DeleteObjectResponse, error) {
+		return c.client.DeleteObject(ctx, req)
+	})
+}

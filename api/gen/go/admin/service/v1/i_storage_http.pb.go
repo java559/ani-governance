@@ -20,9 +20,12 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationStorageServiceCreateBucket = "/admin.service.v1.StorageService/CreateBucket"
 const OperationStorageServiceCreateVolume = "/admin.service.v1.StorageService/CreateVolume"
+const OperationStorageServiceDeleteObject = "/admin.service.v1.StorageService/DeleteObject"
 const OperationStorageServiceDeleteVolume = "/admin.service.v1.StorageService/DeleteVolume"
 const OperationStorageServiceGetDownloadURL = "/admin.service.v1.StorageService/GetDownloadURL"
+const OperationStorageServiceGetUploadURL = "/admin.service.v1.StorageService/GetUploadURL"
 const OperationStorageServiceGetVolume = "/admin.service.v1.StorageService/GetVolume"
 const OperationStorageServiceHeadObject = "/admin.service.v1.StorageService/HeadObject"
 const OperationStorageServiceListBuckets = "/admin.service.v1.StorageService/ListBuckets"
@@ -32,9 +35,12 @@ const OperationStorageServiceListVolumes = "/admin.service.v1.StorageService/Lis
 const OperationStorageServiceUpdateVolume = "/admin.service.v1.StorageService/UpdateVolume"
 
 type StorageServiceHTTPServer interface {
+	CreateBucket(context.Context, *v1.CreateBucketRequest) (*v1.CreateBucketResponse, error)
 	CreateVolume(context.Context, *v1.CreateVolumeRequest) (*v1.CreateVolumeResponse, error)
+	DeleteObject(context.Context, *v1.DeleteObjectRequest) (*v1.DeleteObjectResponse, error)
 	DeleteVolume(context.Context, *v1.DeleteVolumeRequest) (*v1.DeleteVolumeResponse, error)
 	GetDownloadURL(context.Context, *v1.GetDownloadURLRequest) (*v1.GetDownloadURLResponse, error)
+	GetUploadURL(context.Context, *v1.GetUploadURLRequest) (*v1.GetUploadURLResponse, error)
 	GetVolume(context.Context, *v1.GetVolumeRequest) (*v1.GetVolumeResponse, error)
 	HeadObject(context.Context, *v1.HeadObjectRequest) (*v1.HeadObjectResponse, error)
 	ListBuckets(context.Context, *v1.ListBucketsRequest) (*v1.ListBucketsResponse, error)
@@ -53,9 +59,12 @@ func RegisterStorageServiceHTTPServer(s *http.Server, srv StorageServiceHTTPServ
 	r.POST("/api/v1/storage/volumes/{data.pvc_name}:update", _StorageService_UpdateVolume0_HTTP_Handler(srv))
 	r.POST("/api/v1/storage/volumes/{data.pvc_name}:delete", _StorageService_DeleteVolume0_HTTP_Handler(srv))
 	r.GET("/api/v1/storage/buckets", _StorageService_ListBuckets0_HTTP_Handler(srv))
+	r.POST("/api/v1/storage/buckets", _StorageService_CreateBucket0_HTTP_Handler(srv))
 	r.GET("/api/v1/storage/buckets/{bucket_id}/objects", _StorageService_ListObjects0_HTTP_Handler(srv))
 	r.POST("/api/v1/storage/buckets/{data.bucket_id}/objects:head", _StorageService_HeadObject0_HTTP_Handler(srv))
 	r.POST("/api/v1/storage/buckets/{data.bucket_id}/objects:download-url", _StorageService_GetDownloadURL0_HTTP_Handler(srv))
+	r.POST("/api/v1/storage/buckets/{data.bucket_id}/objects:upload-url", _StorageService_GetUploadURL1_HTTP_Handler(srv))
+	r.POST("/api/v1/storage/buckets/{data.bucket_id}/objects:delete", _StorageService_DeleteObject0_HTTP_Handler(srv))
 }
 
 func _StorageService_ListStorageClasses0_HTTP_Handler(srv StorageServiceHTTPServer) func(ctx http.Context) error {
@@ -209,6 +218,28 @@ func _StorageService_ListBuckets0_HTTP_Handler(srv StorageServiceHTTPServer) fun
 	}
 }
 
+func _StorageService_CreateBucket0_HTTP_Handler(srv StorageServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CreateBucketRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStorageServiceCreateBucket)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateBucket(ctx, req.(*v1.CreateBucketRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.CreateBucketResponse)
+		return ctx.Result(200, reply.Bucket)
+	}
+}
+
 func _StorageService_ListObjects0_HTTP_Handler(srv StorageServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in v1.ListObjectsRequest
@@ -281,10 +312,63 @@ func _StorageService_GetDownloadURL0_HTTP_Handler(srv StorageServiceHTTPServer) 
 	}
 }
 
+func _StorageService_GetUploadURL1_HTTP_Handler(srv StorageServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetUploadURLRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStorageServiceGetUploadURL)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetUploadURL(ctx, req.(*v1.GetUploadURLRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetUploadURLResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _StorageService_DeleteObject0_HTTP_Handler(srv StorageServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteObjectRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStorageServiceDeleteObject)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteObject(ctx, req.(*v1.DeleteObjectRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.DeleteObjectResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 type StorageServiceHTTPClient interface {
+	CreateBucket(ctx context.Context, req *v1.CreateBucketRequest, opts ...http.CallOption) (rsp *v1.CreateBucketResponse, err error)
 	CreateVolume(ctx context.Context, req *v1.CreateVolumeRequest, opts ...http.CallOption) (rsp *v1.CreateVolumeResponse, err error)
+	DeleteObject(ctx context.Context, req *v1.DeleteObjectRequest, opts ...http.CallOption) (rsp *v1.DeleteObjectResponse, err error)
 	DeleteVolume(ctx context.Context, req *v1.DeleteVolumeRequest, opts ...http.CallOption) (rsp *v1.DeleteVolumeResponse, err error)
 	GetDownloadURL(ctx context.Context, req *v1.GetDownloadURLRequest, opts ...http.CallOption) (rsp *v1.GetDownloadURLResponse, err error)
+	GetUploadURL(ctx context.Context, req *v1.GetUploadURLRequest, opts ...http.CallOption) (rsp *v1.GetUploadURLResponse, err error)
 	GetVolume(ctx context.Context, req *v1.GetVolumeRequest, opts ...http.CallOption) (rsp *v1.GetVolumeResponse, err error)
 	HeadObject(ctx context.Context, req *v1.HeadObjectRequest, opts ...http.CallOption) (rsp *v1.HeadObjectResponse, err error)
 	ListBuckets(ctx context.Context, req *v1.ListBucketsRequest, opts ...http.CallOption) (rsp *v1.ListBucketsResponse, err error)
@@ -302,6 +386,19 @@ func NewStorageServiceHTTPClient(client *http.Client) StorageServiceHTTPClient {
 	return &StorageServiceHTTPClientImpl{client}
 }
 
+func (c *StorageServiceHTTPClientImpl) CreateBucket(ctx context.Context, in *v1.CreateBucketRequest, opts ...http.CallOption) (*v1.CreateBucketResponse, error) {
+	var out v1.CreateBucketResponse
+	pattern := "/api/v1/storage/buckets"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationStorageServiceCreateBucket))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out.Bucket, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *StorageServiceHTTPClientImpl) CreateVolume(ctx context.Context, in *v1.CreateVolumeRequest, opts ...http.CallOption) (*v1.CreateVolumeResponse, error) {
 	var out v1.CreateVolumeResponse
 	pattern := "/api/v1/storage/volumes"
@@ -309,6 +406,19 @@ func (c *StorageServiceHTTPClientImpl) CreateVolume(ctx context.Context, in *v1.
 	opts = append(opts, http.Operation(OperationStorageServiceCreateVolume))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out.Volume, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *StorageServiceHTTPClientImpl) DeleteObject(ctx context.Context, in *v1.DeleteObjectRequest, opts ...http.CallOption) (*v1.DeleteObjectResponse, error) {
+	var out v1.DeleteObjectResponse
+	pattern := "/api/v1/storage/buckets/{data.bucket_id}/objects:delete"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationStorageServiceDeleteObject))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -333,6 +443,19 @@ func (c *StorageServiceHTTPClientImpl) GetDownloadURL(ctx context.Context, in *v
 	pattern := "/api/v1/storage/buckets/{data.bucket_id}/objects:download-url"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationStorageServiceGetDownloadURL))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *StorageServiceHTTPClientImpl) GetUploadURL(ctx context.Context, in *v1.GetUploadURLRequest, opts ...http.CallOption) (*v1.GetUploadURLResponse, error) {
+	var out v1.GetUploadURLResponse
+	pattern := "/api/v1/storage/buckets/{data.bucket_id}/objects:upload-url"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationStorageServiceGetUploadURL))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

@@ -30,9 +30,12 @@ const (
 	StorageService_UpdateVolume_FullMethodName       = "/admin.service.v1.StorageService/UpdateVolume"
 	StorageService_DeleteVolume_FullMethodName       = "/admin.service.v1.StorageService/DeleteVolume"
 	StorageService_ListBuckets_FullMethodName        = "/admin.service.v1.StorageService/ListBuckets"
+	StorageService_CreateBucket_FullMethodName       = "/admin.service.v1.StorageService/CreateBucket"
 	StorageService_ListObjects_FullMethodName        = "/admin.service.v1.StorageService/ListObjects"
 	StorageService_HeadObject_FullMethodName         = "/admin.service.v1.StorageService/HeadObject"
 	StorageService_GetDownloadURL_FullMethodName     = "/admin.service.v1.StorageService/GetDownloadURL"
+	StorageService_GetUploadURL_FullMethodName       = "/admin.service.v1.StorageService/GetUploadURL"
+	StorageService_DeleteObject_FullMethodName       = "/admin.service.v1.StorageService/DeleteObject"
 )
 
 // StorageServiceClient is the client API for StorageService service.
@@ -46,9 +49,12 @@ type StorageServiceClient interface {
 	UpdateVolume(ctx context.Context, in *v1.UpdateVolumeRequest, opts ...grpc.CallOption) (*v1.UpdateVolumeResponse, error)
 	DeleteVolume(ctx context.Context, in *v1.DeleteVolumeRequest, opts ...grpc.CallOption) (*v1.DeleteVolumeResponse, error)
 	ListBuckets(ctx context.Context, in *v1.ListBucketsRequest, opts ...grpc.CallOption) (*v1.ListBucketsResponse, error)
+	CreateBucket(ctx context.Context, in *v1.CreateBucketRequest, opts ...grpc.CallOption) (*v1.CreateBucketResponse, error)
 	ListObjects(ctx context.Context, in *v1.ListObjectsRequest, opts ...grpc.CallOption) (*v1.ListObjectsResponse, error)
 	HeadObject(ctx context.Context, in *v1.HeadObjectRequest, opts ...grpc.CallOption) (*v1.HeadObjectResponse, error)
 	GetDownloadURL(ctx context.Context, in *v1.GetDownloadURLRequest, opts ...grpc.CallOption) (*v1.GetDownloadURLResponse, error)
+	GetUploadURL(ctx context.Context, in *v1.GetUploadURLRequest, opts ...grpc.CallOption) (*v1.GetUploadURLResponse, error)
+	DeleteObject(ctx context.Context, in *v1.DeleteObjectRequest, opts ...grpc.CallOption) (*v1.DeleteObjectResponse, error)
 }
 
 type storageServiceClient struct {
@@ -129,6 +135,16 @@ func (c *storageServiceClient) ListBuckets(ctx context.Context, in *v1.ListBucke
 	return out, nil
 }
 
+func (c *storageServiceClient) CreateBucket(ctx context.Context, in *v1.CreateBucketRequest, opts ...grpc.CallOption) (*v1.CreateBucketResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.CreateBucketResponse)
+	err := c.cc.Invoke(ctx, StorageService_CreateBucket_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *storageServiceClient) ListObjects(ctx context.Context, in *v1.ListObjectsRequest, opts ...grpc.CallOption) (*v1.ListObjectsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.ListObjectsResponse)
@@ -159,6 +175,26 @@ func (c *storageServiceClient) GetDownloadURL(ctx context.Context, in *v1.GetDow
 	return out, nil
 }
 
+func (c *storageServiceClient) GetUploadURL(ctx context.Context, in *v1.GetUploadURLRequest, opts ...grpc.CallOption) (*v1.GetUploadURLResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetUploadURLResponse)
+	err := c.cc.Invoke(ctx, StorageService_GetUploadURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storageServiceClient) DeleteObject(ctx context.Context, in *v1.DeleteObjectRequest, opts ...grpc.CallOption) (*v1.DeleteObjectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.DeleteObjectResponse)
+	err := c.cc.Invoke(ctx, StorageService_DeleteObject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StorageServiceServer is the server API for StorageService service.
 // All implementations must embed UnimplementedStorageServiceServer
 // for forward compatibility.
@@ -170,9 +206,12 @@ type StorageServiceServer interface {
 	UpdateVolume(context.Context, *v1.UpdateVolumeRequest) (*v1.UpdateVolumeResponse, error)
 	DeleteVolume(context.Context, *v1.DeleteVolumeRequest) (*v1.DeleteVolumeResponse, error)
 	ListBuckets(context.Context, *v1.ListBucketsRequest) (*v1.ListBucketsResponse, error)
+	CreateBucket(context.Context, *v1.CreateBucketRequest) (*v1.CreateBucketResponse, error)
 	ListObjects(context.Context, *v1.ListObjectsRequest) (*v1.ListObjectsResponse, error)
 	HeadObject(context.Context, *v1.HeadObjectRequest) (*v1.HeadObjectResponse, error)
 	GetDownloadURL(context.Context, *v1.GetDownloadURLRequest) (*v1.GetDownloadURLResponse, error)
+	GetUploadURL(context.Context, *v1.GetUploadURLRequest) (*v1.GetUploadURLResponse, error)
+	DeleteObject(context.Context, *v1.DeleteObjectRequest) (*v1.DeleteObjectResponse, error)
 	mustEmbedUnimplementedStorageServiceServer()
 }
 
@@ -204,6 +243,9 @@ func (UnimplementedStorageServiceServer) DeleteVolume(context.Context, *v1.Delet
 func (UnimplementedStorageServiceServer) ListBuckets(context.Context, *v1.ListBucketsRequest) (*v1.ListBucketsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListBuckets not implemented")
 }
+func (UnimplementedStorageServiceServer) CreateBucket(context.Context, *v1.CreateBucketRequest) (*v1.CreateBucketResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateBucket not implemented")
+}
 func (UnimplementedStorageServiceServer) ListObjects(context.Context, *v1.ListObjectsRequest) (*v1.ListObjectsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListObjects not implemented")
 }
@@ -212,6 +254,12 @@ func (UnimplementedStorageServiceServer) HeadObject(context.Context, *v1.HeadObj
 }
 func (UnimplementedStorageServiceServer) GetDownloadURL(context.Context, *v1.GetDownloadURLRequest) (*v1.GetDownloadURLResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDownloadURL not implemented")
+}
+func (UnimplementedStorageServiceServer) GetUploadURL(context.Context, *v1.GetUploadURLRequest) (*v1.GetUploadURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUploadURL not implemented")
+}
+func (UnimplementedStorageServiceServer) DeleteObject(context.Context, *v1.DeleteObjectRequest) (*v1.DeleteObjectResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteObject not implemented")
 }
 func (UnimplementedStorageServiceServer) mustEmbedUnimplementedStorageServiceServer() {}
 func (UnimplementedStorageServiceServer) testEmbeddedByValue()                        {}
@@ -360,6 +408,24 @@ func _StorageService_ListBuckets_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StorageService_CreateBucket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateBucketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServiceServer).CreateBucket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StorageService_CreateBucket_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServiceServer).CreateBucket(ctx, req.(*v1.CreateBucketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _StorageService_ListObjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v1.ListObjectsRequest)
 	if err := dec(in); err != nil {
@@ -414,6 +480,42 @@ func _StorageService_GetDownloadURL_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StorageService_GetUploadURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetUploadURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServiceServer).GetUploadURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StorageService_GetUploadURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServiceServer).GetUploadURL(ctx, req.(*v1.GetUploadURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StorageService_DeleteObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteObjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServiceServer).DeleteObject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StorageService_DeleteObject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServiceServer).DeleteObject(ctx, req.(*v1.DeleteObjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StorageService_ServiceDesc is the grpc.ServiceDesc for StorageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -450,6 +552,10 @@ var StorageService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _StorageService_ListBuckets_Handler,
 		},
 		{
+			MethodName: "CreateBucket",
+			Handler:    _StorageService_CreateBucket_Handler,
+		},
+		{
 			MethodName: "ListObjects",
 			Handler:    _StorageService_ListObjects_Handler,
 		},
@@ -460,6 +566,14 @@ var StorageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDownloadURL",
 			Handler:    _StorageService_GetDownloadURL_Handler,
+		},
+		{
+			MethodName: "GetUploadURL",
+			Handler:    _StorageService_GetUploadURL_Handler,
+		},
+		{
+			MethodName: "DeleteObject",
+			Handler:    _StorageService_DeleteObject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
