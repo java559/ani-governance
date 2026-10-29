@@ -25,9 +25,21 @@ func (s *ModelDevService) OpenExecutionLogStream(ctx context.Context, in *modeld
 		return nil, err
 	}
 	if in == nil || !modelDevQueryUUID(in.ExecutionId) ||
-		!modelDevQueryUUID(in.GetPodUid()) || !modelDevQueryContainer(in.Container) ||
+		(in.PodUid != nil && !modelDevQueryUUID(in.GetPodUid())) || !modelDevQueryContainer(in.Container) ||
 		(in.SinceBytes != nil && (*in.SinceBytes < 0 || *in.SinceBytes > 1<<30)) {
 		return nil, errors.BadRequest("INVALID_MODELDEV_QUERY", "invalid modeldev query")
+	}
+	// A live stream needs an existing Pod; the implicit choice may only use a
+	// live TRAINER row, never a recycled one.
+	if in.PodUid == nil {
+		if in.Container != nil {
+			return nil, errors.BadRequest("INVALID_MODELDEV_QUERY", "invalid modeldev query")
+		}
+		podUID, _, err := s.modelDevDefaultLogPod(ctx, scope, in.ExecutionId, false)
+		if err != nil {
+			return nil, err
+		}
+		in.PodUid = &podUID
 	}
 	selection := data.LogSelection{PodUID: in.GetPodUid(), Container: in.GetContainer(), Previous: in.GetPrevious()}
 	stream, err := s.resolver.OpenExecutionLogStream(ctx, scope, in.ExecutionId, selection, in.GetSinceBytes())

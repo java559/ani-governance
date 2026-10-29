@@ -199,3 +199,32 @@ func TestModelDevPublicExecutionExposesManagedSettings(t *testing.T) {
 		t.Fatalf("unexpected managed settings=%+v", plain.ManagedSettings)
 	}
 }
+
+// The implicit worker fallback must not drift with the owner's list order: only
+// a TRAINER row can stand in for the old single-worker read, an archived source
+// wins over a live attempt, and the later attempt wins on a tie.
+func TestModelDevPickLogPodKeepsWorkerFallbackDeterministic(t *testing.T) {
+	pod := func(uid string, layer modeldevcontractv1.PodLayer, availability modeldevcontractv1.PodAvailability, archived bool) *modeldevcontractv1.PodView {
+		return &modeldevcontractv1.PodView{PodUid: uid, Layer: layer, Availability: availability, LogAvailable: archived}
+	}
+	first := pod("11111111-2222-4333-8444-555555555551", modeldevcontractv1.PodLayer_POD_LAYER_TRAINER, modeldevcontractv1.PodAvailability_POD_AVAILABILITY_LIVE, false)
+	second := pod("11111111-2222-4333-8444-555555555552", modeldevcontractv1.PodLayer_POD_LAYER_TRAINER, modeldevcontractv1.PodAvailability_POD_AVAILABILITY_LIVE, false)
+	archived := pod("11111111-2222-4333-8444-555555555553", modeldevcontractv1.PodLayer_POD_LAYER_TRAINER, modeldevcontractv1.PodAvailability_POD_AVAILABILITY_RECYCLED, true)
+	step := pod("11111111-2222-4333-8444-555555555554", modeldevcontractv1.PodLayer_POD_LAYER_PIPELINE, modeldevcontractv1.PodAvailability_POD_AVAILABILITY_LIVE, true)
+
+	if got := modelDevPickLogPod([]*modeldevcontractv1.PodView{step, first, second}, true); got != second {
+		t.Fatalf("later live attempt = %+v, want %+v", got, second)
+	}
+	if got := modelDevPickLogPod([]*modeldevcontractv1.PodView{step, second, archived}, true); got != archived {
+		t.Fatalf("archived source = %+v, want %+v", got, archived)
+	}
+	if got := modelDevPickLogPod([]*modeldevcontractv1.PodView{step, archived, first}, false); got != first {
+		t.Fatalf("live-only source = %+v, want %+v", got, first)
+	}
+	if got := modelDevPickLogPod([]*modeldevcontractv1.PodView{step, archived}, false); got != nil {
+		t.Fatalf("recycled Pod leaked into a live read: %+v", got)
+	}
+	if got := modelDevPickLogPod([]*modeldevcontractv1.PodView{step}, true); got != nil {
+		t.Fatalf("non-worker Pod accepted: %+v", got)
+	}
+}

@@ -140,8 +140,25 @@ func (s *ModelDevService) GetExecutionLogs(ctx context.Context, in *modeldevv1.G
 		return nil, err
 	}
 	if in == nil || !modelDevQueryUUID(in.ExecutionId) || in.TailLines > 1000 || in.MaxBytes > 65536 ||
-		(in.LogId != nil && !modelDevQueryUUID(in.GetLogId())) || !modelDevQueryUUID(in.GetPodUid()) || !modelDevQueryContainer(in.Container) {
+		(in.LogId != nil && !modelDevQueryUUID(in.GetLogId())) || (in.PodUid != nil && !modelDevQueryUUID(in.GetPodUid())) || !modelDevQueryContainer(in.Container) {
 		return nil, modelDevQueryInvalid()
+	}
+	// The owner requires an explicit Pod. A caller that names none keeps the
+	// documented single-worker fallback: resolve the TRAINER Pod here, preferring
+	// the archived source, and pin its log id so the owner cannot answer with a
+	// different attempt.
+	if in.PodUid == nil {
+		if in.Container != nil {
+			return nil, errors.New(412, "ARTIFACT_NOT_PUBLISHED", "artifact unavailable")
+		}
+		podUID, logID, err := s.modelDevDefaultLogPod(ctx, scope, in.ExecutionId, true)
+		if err != nil {
+			return nil, err
+		}
+		in.PodUid = &podUID
+		if in.LogId == nil && logID != "" {
+			in.LogId = &logID
+		}
 	}
 	selection := data.LogSelection{LogID: in.GetLogId(), PodUID: in.GetPodUid(), Container: in.GetContainer(), Previous: in.GetPrevious()}
 	out, err := s.resolver.GetExecutionLogs(ctx, scope, in.ExecutionId, in.TailLines, in.MaxBytes, selection)
@@ -156,6 +173,44 @@ func (s *ModelDevService) GetExecutionLogs(ctx context.Context, in *modeldevv1.G
 		reply.Lines = append(reply.Lines, &modeldevv1.ExecutionLogLine{Timestamp: line.Timestamp.AsTime().UTC().Format(time.RFC3339Nano), Text: line.Text})
 	}
 	return reply, nil
+}
+
+// modelDevDefaultLogPod resolves the single worker Pod the legacy tail read
+// used when the caller names none. An archived source wins over a live Pod, and
+// a later attempt wins over its predecessor.
+func (s *ModelDevService) modelDevDefaultLogPod(ctx context.Context, scope data.ModelDevResolveScope, executionID string, includeRecycled bool) (string, string, error) {
+	out, err := s.resolver.ListExecutionPods(ctx, scope, executionID, data.WorkloadLayerAll, includeRecycled)
+	if err != nil {
+		return "", "", modelDevQueryFailure(err)
+	}
+	pod := modelDevPickLogPod(out.Pods, includeRecycled)
+	if pod == nil {
+		return "", "", errors.NotFound("RESOURCE_NOT_FOUND", "resource unavailable")
+	}
+	logID := ""
+	if modelDevQueryUUID(pod.LogId) {
+		logID = pod.LogId
+	}
+	return pod.PodUid, logID, nil
+}
+
+// modelDevPickLogPod keeps the choice deterministic: only a TRAINER Pod can
+// stand in for the old implicit worker read, and recycled rows are ignored when
+// the caller needs a live source.
+func modelDevPickLogPod(pods []*modeldevcontractv1.PodView, includeRecycled bool) *modeldevcontractv1.PodView {
+	var best *modeldevcontractv1.PodView
+	for _, pod := range pods {
+		if pod == nil || pod.Layer != modeldevcontractv1.PodLayer_POD_LAYER_TRAINER || !modelDevQueryUUID(pod.PodUid) {
+			continue
+		}
+		if !includeRecycled && pod.Availability == modeldevcontractv1.PodAvailability_POD_AVAILABILITY_RECYCLED {
+			continue
+		}
+		if best == nil || pod.LogAvailable || !best.LogAvailable {
+			best = pod
+		}
+	}
+	return best
 }
 
 // modelDevQueryContainer accepts an absent container and otherwise only the

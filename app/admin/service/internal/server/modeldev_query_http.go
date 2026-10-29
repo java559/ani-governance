@@ -73,6 +73,13 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 		if err != nil {
 			return err
 		}
+		// podUid is the documented spelling; pod_uid is the current slice's
+		// canonical one. Both name the same selector and must not be combined.
+		_, hasSnakePod := query["pod_uid"]
+		_, hasCamelPod := query["podUid"]
+		if hasSnakePod && hasCamelPod {
+			return invalidModelDevQueryHTTP()
+		}
 		for name, values := range query {
 			switch name {
 			case "tail_lines":
@@ -81,7 +88,7 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 				in.MaxBytes, err = modelDevQueryPositiveBound(values[0], 65536)
 			case "logId":
 				in.LogId, err = modelDevQueryUUIDPointer(values[0])
-			case "pod_uid":
+			case "pod_uid", "podUid":
 				in.PodUid, err = modelDevQueryUUIDPointer(values[0])
 			case "container":
 				in.Container, err = modelDevQueryContainerPointer(values[0])
@@ -93,9 +100,6 @@ func registerModelDevQueryHTTP(server *khttp.Server, modeldev *service.ModelDevS
 			if err != nil {
 				return err
 			}
-		}
-		if in.PodUid == nil {
-			return invalidModelDevQueryHTTP()
 		}
 		handler := ctx.Middleware(func(c context.Context, v interface{}) (interface{}, error) {
 			return modeldev.GetExecutionLogs(c, v.(*modeldevv1.GetExecutionLogsRequest))

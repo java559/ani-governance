@@ -16,15 +16,22 @@ import (
 const executionLogID = "11111111-2222-4333-8444-555555555555"
 
 func TestExecutionLogStreamRejectsUnboundedQuery(t *testing.T) {
-	for _, query := range []string{"sinceBytes=-1", "sinceBytes=01", "sinceBytes=" + strings.Repeat("9", 12), "pod_uid=bad", "podUid=" + executionLogID, "container=Node", "previous=1", "logId=x", "since_bytes=1"} {
+	for _, query := range []string{"sinceBytes=-1", "sinceBytes=01", "sinceBytes=" + strings.Repeat("9", 12), "pod_uid=bad", "container=Node", "previous=1", "logId=x", "since_bytes=1", "pod_uid=" + executionLogID + "&podUid=" + executionLogID} {
 		if _, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream?"+query, nil)); err == nil {
 			t.Errorf("accepted %s", query)
 		}
 	}
-	if _, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream", nil)); err == nil {
-		t.Fatal("missing original Pod UID accepted")
+	// The implicit Pod fallback and the documented camel-case alias are resolved
+	// after authentication, not rejected as unknown selectors.
+	parsed, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream", nil))
+	if err != nil || parsed.GetPodUid() != "" {
+		t.Fatalf("implicit pod: %+v %v", parsed, err)
 	}
-	parsed, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream?pod_uid="+executionLogID+"&sinceBytes=42&container=main&previous=true", nil))
+	aliased, err := decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream?podUid="+executionLogID, nil))
+	if err != nil || aliased.GetPodUid() != executionLogID {
+		t.Fatalf("podUid alias: %+v %v", aliased, err)
+	}
+	parsed, err = decodeExecutionLogStreamQuery(httptest.NewRequest(http.MethodGet, "/logs/stream?pod_uid="+executionLogID+"&sinceBytes=42&container=main&previous=true", nil))
 	if err != nil || parsed.GetPodUid() != executionLogID || parsed.GetSinceBytes() != 42 || parsed.GetContainer() != "main" || !parsed.GetPrevious() {
 		t.Fatalf("options: %+v %v", parsed, err)
 	}

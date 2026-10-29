@@ -61,13 +61,20 @@ func decodeExecutionLogStreamQuery(r *http.Request) (*modeldevcontractv1.GetExec
 		return nil, invalid
 	}
 	out := new(modeldevcontractv1.GetExecutionLogStreamRequest)
+	// podUid is the documented spelling; pod_uid is the current slice's
+	// canonical one. Both name the same selector and must not be combined.
+	if _, snake := values["pod_uid"]; snake {
+		if _, camel := values["podUid"]; camel {
+			return nil, invalid
+		}
+	}
 	for key, list := range values {
 		if len(list) != 1 {
 			return nil, invalid
 		}
 		value := list[0]
 		switch key {
-		case "pod_uid":
+		case "pod_uid", "podUid":
 			if !modelDevQueryCanonicalUUID(value) {
 				return nil, invalid
 			}
@@ -97,9 +104,6 @@ func decodeExecutionLogStreamQuery(r *http.Request) (*modeldevcontractv1.GetExec
 		default:
 			return nil, invalid
 		}
-	}
-	if out.PodUid == nil {
-		return nil, invalid
 	}
 	return out, nil
 }

@@ -62,11 +62,11 @@ Governance BFF 对外接口合同。覆盖任务详情相关的四类读取能�
 | --- | --- | --- |
 | `/pods` | `layer`、`includeRecycled` | 驼峰 |
 | `/events` | `scope` | 单词 |
-| `/logs` | `tail_lines`、`max_bytes`、`logId`、`podUid`、`container`、`previous` | snake + 驼峰混用 |
-| `/logs/stream` | `podUid`、`container`、`previous`、`sinceBytes` | 驼峰 |
+| `/logs` | `tail_lines`、`max_bytes`、`logId`、`pod_uid`/`podUid`、`container`、`previous` | snake + 驼峰混用 |
+| `/logs/stream` | `pod_uid`/`podUid`、`container`、`previous`、`sinceBytes` | 驼峰为主 |
 | `/resource-metrics` | `pod_uid`、`container`、`start`、`end`、`step_seconds`、`metric_codes` | 全 snake |
 
-同一个概念在不同接口写法不同：`/logs` 与 `/logs/stream` 上是 `podUid`，`/resource-metrics` 上是 `pod_uid`；`/logs/stream` 上是 `sinceBytes`，写成 `since_bytes` 会被拒。
+Pod 定位参数在 `/logs` 与 `/logs/stream` 上同时接受 `pod_uid`（推荐）和 `podUid`（兼容别名），两者不能同时出现；`/resource-metrics` 只认 `pod_uid`；`/logs/stream` 上是 `sinceBytes`，写成 `since_bytes` 会被拒。
 
 对所有接口统一适用：
 
@@ -296,16 +296,16 @@ GET /api/v1/modeldev/executions/{execution_id}/logs?tail_lines=200&max_bytes=163
 | --- | --- | --- |
 | `tail_lines` | 否 | 1–1000，缺省 200 |
 | `max_bytes` | 否 | 1–65536，缺省 16384 |
-| `podUid` | 否 | 规范 UUID，取自 `/pods` 的 `pod_uid`。可单独给，此时 `container` 按来源取缺省 |
-| `container` | 否 | 小写 Kubernetes 容器名，须是该 Pod 的 `containers[].name` 之一。worker 为 `node`；`PIPELINE` 层的 Pod 通常有 `wait` 与 `main` 两个容器，**两者都可读**（实测均 200）。**不能单独给**，必须配 `podUid` |
+| `pod_uid` | 否 | 规范 UUID，取自 `/pods` 的 `pod_uid`。不给时服务端解析该执行的 TRAINER Pod（优先归档、取最后一次尝试），见下方兼容路径；兼容别名 `podUid`，两者不可同时给 |
+| `container` | 否 | 小写 Kubernetes 容器名，须是该 Pod 的 `containers[].name` 之一。worker 为 `node`；`PIPELINE` 层的 Pod 通常有 `wait` 与 `main` 两个容器，**两者都可读**（实测均 200）。**不能单独给**，必须配 `pod_uid` |
 | `logId` | 否 | 规范 UUID，取自 `/pods` 的 `log_id`；给了就必须与该 Pod 匹配，否则 `404` |
 | `previous` | 否 | `true` 读**上一次**终止实例的日志；没有上次实例时 `404` |
 
 选择规则：
 
-| `podUid` | `container` | 结果 |
+| `pod_uid` | `container` | 结果 |
 | --- | --- | --- |
-| 不给 | 不给 | 兼容路径：返回该执行训练 worker 的 `node` 容器日志，并优先使用归档 tail |
+| 不给 | 不给 | 兼容路径：服务端解析该执行的 TRAINER Pod（归档日志优先），读取其 `node` 容器日志 |
 | 给 | 不给 | 读取该 Pod 的缺省容器（worker = `node`，step = `main`）；实测 **200** |
 | 给 | 给 | 读取该 Pod 的该容器 |
 | 不给 | 给 | **`412 ARTIFACT_NOT_PUBLISHED`**（实测） |
@@ -358,12 +358,12 @@ GET /api/v1/modeldev/executions/{execution_id}/logs?tail_lines=200&max_bytes=163
 ### 5.2 日志流 `GET .../logs/stream`（SSE）
 
 ```
-GET /api/v1/modeldev/executions/{execution_id}/logs/stream?podUid=…&container=main&previous=false&sinceBytes=115
+GET /api/v1/modeldev/executions/{execution_id}/logs/stream?pod_uid=…&container=main&previous=false&sinceBytes=115
 ```
 
 | 参数 | 必填 | 说明 |
 | --- | --- | --- |
-| `podUid` | 否 | 规范 UUID |
+| `pod_uid` | 否 | 规范 UUID；兼容别名 `podUid`，两者不可同时给。省略时服务端解析该执行**存活**的 TRAINER Pod |
 | `container` | 否 | 小写 Kubernetes 容器名，语义同 `/logs`（见 §5.1）；省略时按来源取缺省 |
 | `previous` | 否 | `true` / `false` |
 | `sinceBytes` | 否 | 续传偏移。整数 `0`–`2^30`，必须是规范十进制（`01`、`+1`、负数、超界均 `400`）。`0` 等价于不传 |
@@ -582,8 +582,8 @@ GET /api/v1/modeldev/executions/{execution_id}/resource-metrics
 
 | 接口 | 依赖 |
 | --- | --- |
-| `/logs` | `podUid` 取自 `/pods` 的 `pod_uid`；`container` 取自该 Pod 的 `containers[].name`（worker 通常 `node`，step 通常 `wait` / `main`）；`logId` 取自该 Pod 的 `log_id` |
-| `/logs/stream` | 同 `/logs`；`sinceBytes` 取自上一次流中最后一个 `event: log` 的 `offset` |
+| `/logs` | `pod_uid`（或别名 `podUid`）取自 `/pods` 的 `pod_uid`；省略时服务端解析 TRAINER Pod。`container` 取自该 Pod 的 `containers[].name`（worker 通常 `node`，step 通常 `wait` / `main`）；`logId` 取自该 Pod 的 `log_id` |
+| `/logs/stream` | 同 `/logs`，但缺省只解析**存活**的 TRAINER Pod；`sinceBytes` 取自上一次流中最后一个 `event: log` 的 `offset` |
 | `/resource-metrics` | `pod_uid` 取自 `/pods` 的 `pod_uid`；`container` 由 `layer` 决定且被服务端钉死（`TRAINER`=`node`，`PIPELINE`=`main`） |
 | `/pods`、`/events` | 只依赖路径上的 `execution_id` |
 

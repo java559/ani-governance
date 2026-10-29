@@ -138,11 +138,16 @@
 ## 4. 实现目录
 
 ```
-GET /api/v1/modeldev/implementations?page=1&pageSize=20
-GET /api/v1/modeldev/implementations?kind=FINETUNING
+GET /api/v1/modeldev/implementations?device_mode=gpu&page=1&pageSize=20
+GET /api/v1/modeldev/implementations?device_mode=gpu&kind=FINETUNING
+GET /api/v1/modeldev/implementations?device_mode=cpu&kind=GENERAL_TRAINING
 ```
 
-只接受 `page` / `pageSize` / `kind`。真实响应（节选）：
+`device_mode` **必填**，取当前算力规格的 `cpu` / `gpu`（小写、只能一个；缺失、空值、非法值、重复值都返回 `400 INVALID_MODELDEV_QUERY`，**没有默认值**）。另接受 `page` / `pageSize` / `kind`。
+
+> 该必填项由 open-limits 合同在 2026-10-29（Governance `1d2142d9`，owner `2c946f6`）引入。它决定返回哪一套训练材料：`kind=FINETUNING` 时 `cpu` 对应 `ani-modeldev-training-cpu` 镜像、`gpu` 对应 `ani-modeldev-training-gpu` 镜像，`runtime_capabilities` 随模式不同；不能由后端猜。
+
+真实响应（`device_mode=gpu`，节选）：
 
 ```json
 {
@@ -153,7 +158,7 @@ GET /api/v1/modeldev/implementations?kind=FINETUNING
       "implementation_id": "builtin.mlp",
       "version": "1",
       "parameter_contract_version": "ani.mlp.parameters.v2.1",
-      "supported_device_modes": ["cpu", "gpu"],
+      "supported_device_modes": ["gpu"],
       "available": true,
       "execution_timeout_default_seconds": "10800",
       "execution_timeout_max_seconds": "14400",
@@ -184,6 +189,7 @@ GET /api/v1/modeldev/implementations?kind=FINETUNING
 要点：
 
 - 响应是**扁平列表，不按 `kind` 分组**，也没有 `kind` 分组字段。要按类型取子集用 `kind` 查询参数。
+- `supported_device_modes` 只含本次 `device_mode` 那一个值（单模式视图）；`FINETUNING` 还会返回该模式的 `runtime_capabilities` / `runtime_capabilities_sha256`，切换 `device_mode` 时这两项会变，前端须整体替换、不要跨模式复用。
 - 当前只有两条，且 `kind` 与 `implementation_id` 是**固定一对一**：
 
   | `kind` | 唯一对应的 `implementation_id` | `name` |
@@ -196,7 +202,7 @@ GET /api/v1/modeldev/implementations?kind=FINETUNING
 - 可选 `kind` 取值为 `GENERAL_TRAINING` / `FINETUNING`，与响应 `kind` 同词汇。筛选在分页前执行，`total` 为筛选后条数，无匹配返回 `items: []`／`total: "0"`。
 - `kind` 表达任务类型而不是实现标识；同一 `kind` 后续可能对应多个 `implementation_id`，前端须按返回项渲染，不能把 `kind` 当 `implementation_id` 的别名。
 - `kind` 在本接口与任务列表（第 8 节）都接受，语义相同、都只认大写枚举值：小写、`UNSPECIFIED`、空值、重复 `kind`、与 `state` 混用，以及 `implementation_id` 等未声明参数都返回 `400 INVALID_MODELDEV_QUERY`（2026-10-26 实测口径）。
-- 分页对本接口生效，**页边界随筛选后的 `total` 收缩**：
+- 分页对本接口生效，**页边界随筛选后的 `total` 收缩**（以下均在同一 `device_mode` 下）：
   - 不带 `kind`：`total` 为 `"2"`，`pageSize=1` 时 `page=1` 返回 `GENERAL_TRAINING`、`page=2` 返回 `FINETUNING`、`page>=3` 返回空数组。
   - 带 `kind=FINETUNING`：`total` 为 `"1"`，`page=1` 返回 `builtin.sft_lora`，`page>=2` 即为空数组。
   - 带 `kind=GENERAL_TRAINING`：`total` 为 `"1"`，`page=1` 返回 `builtin.mlp`，`page>=2` 即为空数组。
@@ -979,7 +985,7 @@ POST :stop → 202
 
 | 接口 | 实测 | 说明 |
 | --- | --- | --- |
-| `GET /api/v1/modeldev/implementations` | **200** | 2 条（`builtin.mlp` / `builtin.sft_lora`），规则完整 |
+| `GET /api/v1/modeldev/implementations?device_mode=cpu` | **200** | 2 条（`builtin.mlp` / `builtin.sft_lora`，单模式视图），规则完整 |
 | `GET /api/v1/modeldev/input-versions` | **200** | 2 条 READY（CSV 1379×16、JSON 64 行） |
 | `GET /api/v1/modeldev/input-versions/{id}` | **200** | 详情正常 |
 | `GET /api/v1/compute-presets?usage=TRAINING` | **200** | 9 条：4 条 CPU 全部可选 + 2 条共享 GPU 可选，共 6 条可提交；3 条整卡 GPU 不可选（见 5.1） |
@@ -1099,7 +1105,7 @@ TOK=$(curl -s -X POST "$B/api/v1/auth/password/login" \
 ### 18.2 目录与输入（200）
 
 ```bash
-curl -s -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?page=1&pageSize=20"
+curl -s -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=gpu&page=1&pageSize=20"
 curl -s -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/input-versions?page=1&pageSize=20&state=READY"
 curl -s -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/input-versions/04790fcc-dcd6-46e1-869e-84da77a975a8"
 curl -s -H "Authorization: Bearer $TOK" "$B/api/v1/compute-presets?usage=TRAINING&page=1&pageSize=100"
@@ -1215,11 +1221,15 @@ curl -s -w '\n%{http_code}\n' -X POST "$B/api/v1/modeldev/executions/{execution_
 ### 18.8 参数负例自检（都应为 400）
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?page=0"
-curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?pageSize=101"
-curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?name=MLP"
-curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?kind=finetuning"
-curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?kind=UNSPECIFIED"
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=cpu&page=0"
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=cpu&pageSize=101"
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=cpu&name=MLP"
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=cpu&kind=finetuning"
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=cpu&kind=UNSPECIFIED"
+# device_mode 缺失 / 非法 / 重复也必须 400（无默认值）
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?kind=FINETUNING"
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=GPU"
+curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?device_mode=cpu&device_mode=gpu"
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/implementations?"
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/input-versions?state=ready"
 curl -s -o /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $TOK" "$B/api/v1/modeldev/input-versions?format=csv"
