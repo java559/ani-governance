@@ -232,11 +232,12 @@ func TestCountsAndKeys(t *testing.T) {
 	if want := 227; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
-	if want := 204 + len(platformComponentReads) + len(platformComponentLogStreams) + len(storageWrites); CapabilityCount() != want {
+	// dev 已删除 3 条设备退役路由，基数相应下调；storageWrites 为本次新增。
+	if want := 201 + len(platformComponentReads) + len(platformComponentLogStreams) + len(storageWrites); CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if want := 390 + len(storageWrites); len(keys) != want {
+	if want := 387 + len(storageWrites); len(keys) != want {
 		t.Errorf("AllKeys() = %d, want %d", len(keys), want)
 	}
 	keySet := make(map[string]bool, len(keys))
