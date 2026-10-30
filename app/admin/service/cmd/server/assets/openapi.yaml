@@ -14456,6 +14456,14 @@ components:
                     format: uint64
                 finetuning_template:
                     type: string
+                training_image_id:
+                    type: string
+                    description: |-
+                        Catalogue training image selection. General training accepts the pair or
+                         neither (trusted material default); finetuning rejects both. The values are
+                         forwarded unchanged to the shared strict intent parser.
+                training_image_scope:
+                    type: string
             description: |-
                 The one active public execution intent. Identity comes from authentication.
                  The custom HTTP adapter preserves optional fields and rejects duplicate keys.
@@ -16405,6 +16413,13 @@ components:
                 image_version:
                     type: string
                 image_scope:
+                    type: string
+                training_image_digest:
+                    type: string
+                    description: |-
+                        通用训练所运行镜像的冻结摘要与 Resource 权威 registry 主机。
+                         微调保持材料固定的镜像身份，这两个字段为空。
+                training_image_registry_authority:
                     type: string
                 compute_state:
                     type: string
