@@ -234,6 +234,10 @@ func (x *ListVMsRequest) Redact() {
 	// Safe field: Page
 
 	// Safe field: PageSize
+
+	// Safe field: State
+
+	// Safe field: Keyword
 }
 
 // Ensure GetOperationRequest implements the Redactor interface at compile time.
@@ -384,6 +388,8 @@ func (x *VirtualMachine) Redact() {
 	// Safe field: MediaKey
 
 	// Safe field: Dns
+
+	// Safe field: CreatedAt
 }
 
 // Ensure ListVMsResponse implements the Redactor interface at compile time.

@@ -11853,6 +11853,15 @@ paths:
                   schema:
                     type: integer
                     format: uint32
+                - name: state
+                  in: query
+                  description: 'Display-state group: pending/provisioning/starting/stopping/running/stopped/failed/deleting/deleted.'
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -24812,6 +24821,8 @@ components:
                     type: string
                 dns:
                     $ref: '#/components/schemas/VMFrozenDNS'
+                createdAt:
+                    type: string
         VirtualSwitch:
             type: object
             properties:

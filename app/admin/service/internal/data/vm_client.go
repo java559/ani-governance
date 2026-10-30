@@ -63,9 +63,9 @@ func (c *VMClient) Get(ctx context.Context, t, a, id string) (*vm.VirtualMachine
 		return c.client.GetVM(ctx, &vm.GetVMRequest{TenantId: t, VmId: id})
 	})
 }
-func (c *VMClient) List(ctx context.Context, t, a string, page, size uint32) (*vm.ListVMsResponse, error) {
+func (c *VMClient) List(ctx context.Context, t, a string, page, size uint32, state, keyword string) (*vm.ListVMsResponse, error) {
 	return vmCall(c, ctx, t, a, func(ctx context.Context) (*vm.ListVMsResponse, error) {
-		return c.client.ListVMs(ctx, &vm.ListVMsRequest{TenantId: t, Page: page, PageSize: size})
+		return c.client.ListVMs(ctx, &vm.ListVMsRequest{TenantId: t, Page: page, PageSize: size, State: state, Keyword: keyword})
 	})
 }
 func (c *VMClient) Operation(ctx context.Context, t, a, id, operation string) (*vm.Operation, error) {

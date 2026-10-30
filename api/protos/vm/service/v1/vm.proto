@@ -26,7 +26,11 @@ message ChangeVMData {
 }
 message ChangeVMRequest { ChangeVMData data=1; }
 message GetVMRequest { string vm_id=1 [json_name="vm_id"]; }
-message ListVMsRequest { optional uint32 page=1; optional uint32 page_size=2 [json_name="pageSize"]; }
+message ListVMsRequest {
+ optional uint32 page=1; optional uint32 page_size=2 [json_name="pageSize"];
+ // Display-state group: pending/provisioning/starting/stopping/running/stopped/failed/deleting/deleted.
+ optional string state=3; optional string keyword=4;
+}
 message GetOperationRequest { string vm_id=1 [json_name="vm_id"]; string operation_id=2 [json_name="operation_id"]; }
 message GetSnapshotRequest { string vm_id=1 [json_name="vm_id"]; string snapshot_id=2 [json_name="snapshot_id"]; }
 message ListMediaRequest {}
@@ -41,6 +45,7 @@ message VirtualMachine {
  string preset_id=16; int64 cpu_millis=17; int64 memory_mib=18;
  int64 system_disk_size_gb=19; string source_kind=20; string media_key=21;
  VMFrozenDNS dns=22;
+ string created_at=23 [json_name="createdAt"];
 }
 message ListVMsResponse { repeated VirtualMachine items=1; int64 total=2; }
 message VMDisk {

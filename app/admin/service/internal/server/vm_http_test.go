@@ -33,6 +33,46 @@ func TestVMHTTPErrorPreservesVMContractReasons(t *testing.T) {
 	}
 }
 
+func TestVMListQueryAcceptsOnlyDeclaredFilters(t *testing.T) {
+	accept := []string{
+		``,
+		`page=1&pageSize=20`,
+		`state=all`,
+		`state=deleted`,
+		`state=running&keyword=3be21c33`,
+		`keyword=`,
+		`keyword=` + strings.Repeat("a", 80),
+		`page=2&pageSize=10&state=stopping&keyword=vm-linux`,
+	}
+	for _, query := range accept {
+		request := httptest.NewRequest("GET", "/api/v1/virtual-machines?"+query, nil)
+		message := new(view.ListVMsRequest)
+		require.NoError(t, decodeInstanceQuery(request, message), query)
+	}
+	reject := []string{
+		`observedState=running`,
+		`state=Running`,
+		`state=bogus`,
+		`state=running&state=stopped`,
+		`page=0`,
+		`pageSize=101`,
+		`keyword=` + strings.Repeat("a", 81),
+		`tenant_id=foreign`,
+	}
+	for _, query := range reject {
+		request := httptest.NewRequest("GET", "/api/v1/virtual-machines?"+query, nil)
+		require.Error(t, decodeInstanceQuery(request, new(view.ListVMsRequest)), query)
+	}
+
+	request := httptest.NewRequest("GET", "/api/v1/virtual-machines?page=1&pageSize=20&state=running&keyword=3BE21C33", nil)
+	message := new(view.ListVMsRequest)
+	require.NoError(t, decodeInstanceQuery(request, message))
+	require.Equal(t, "running", message.GetState())
+	require.Equal(t, "3BE21C33", message.GetKeyword())
+	require.Equal(t, uint32(1), message.GetPage())
+	require.Equal(t, uint32(20), message.GetPageSize())
+}
+
 func TestVMHTTPDNSSelectionAndTrustedFields(t *testing.T) {
 	for _, selection := range []string{
 		``,

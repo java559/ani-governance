@@ -831,9 +831,12 @@ func (x *GetVMRequest) GetVmId() string {
 }
 
 type ListVMsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	PageSize      *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Page     *uint32                `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize *uint32                `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	// Display-state group: pending/provisioning/starting/stopping/running/stopped/failed/deleting/deleted.
+	State         *string `protobuf:"bytes,3,opt,name=state,proto3,oneof" json:"state,omitempty"`
+	Keyword       *string `protobuf:"bytes,4,opt,name=keyword,proto3,oneof" json:"keyword,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -880,6 +883,20 @@ func (x *ListVMsRequest) GetPageSize() uint32 {
 		return *x.PageSize
 	}
 	return 0
+}
+
+func (x *ListVMsRequest) GetState() string {
+	if x != nil && x.State != nil {
+		return *x.State
+	}
+	return ""
+}
+
+func (x *ListVMsRequest) GetKeyword() string {
+	if x != nil && x.Keyword != nil {
+		return *x.Keyword
+	}
+	return ""
 }
 
 type GetOperationRequest struct {
@@ -1266,6 +1283,7 @@ type VirtualMachine struct {
 	SourceKind       string                 `protobuf:"bytes,20,opt,name=source_kind,json=sourceKind,proto3" json:"source_kind,omitempty"`
 	MediaKey         string                 `protobuf:"bytes,21,opt,name=media_key,json=mediaKey,proto3" json:"media_key,omitempty"`
 	Dns              *VMFrozenDNS           `protobuf:"bytes,22,opt,name=dns,proto3" json:"dns,omitempty"`
+	CreatedAt        string                 `protobuf:"bytes,23,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1452,6 +1470,13 @@ func (x *VirtualMachine) GetDns() *VMFrozenDNS {
 		return x.Dns
 	}
 	return nil
+}
+
+func (x *VirtualMachine) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
 }
 
 type ListVMsResponse struct {
@@ -2505,13 +2530,18 @@ const file_vm_service_v1_vm_proto_rawDesc = "" +
 	"\x0fChangeVMRequest\x12/\n" +
 	"\x04data\x18\x01 \x01(\v2\x1b.vm.service.v1.ChangeVMDataR\x04data\"$\n" +
 	"\fGetVMRequest\x12\x14\n" +
-	"\x05vm_id\x18\x01 \x01(\tR\x05vm_id\"b\n" +
+	"\x05vm_id\x18\x01 \x01(\tR\x05vm_id\"\xb2\x01\n" +
 	"\x0eListVMsRequest\x12\x17\n" +
 	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
-	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x19\n" +
+	"\x05state\x18\x03 \x01(\tH\x02R\x05state\x88\x01\x01\x12\x1d\n" +
+	"\akeyword\x18\x04 \x01(\tH\x03R\akeyword\x88\x01\x01B\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
-	"_page_size\"O\n" +
+	"_page_sizeB\b\n" +
+	"\x06_stateB\n" +
+	"\n" +
+	"\b_keyword\"O\n" +
 	"\x13GetOperationRequest\x12\x14\n" +
 	"\x05vm_id\x18\x01 \x01(\tR\x05vm_id\x12\"\n" +
 	"\foperation_id\x18\x02 \x01(\tR\foperation_id\"L\n" +
@@ -2538,7 +2568,7 @@ const file_vm_service_v1_vm_proto_rawDesc = "" +
 	"\bnic_name\x18\x01 \x01(\tR\anicName\x12\x18\n" +
 	"\aaddress\x18\x02 \x01(\tR\aaddress\x12\x1f\n" +
 	"\vobserved_at\x18\x03 \x01(\tR\n" +
-	"observedAt\"\x8b\x06\n" +
+	"observedAt\"\xaa\x06\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -2568,7 +2598,9 @@ const file_vm_service_v1_vm_proto_rawDesc = "" +
 	"\vsource_kind\x18\x14 \x01(\tR\n" +
 	"sourceKind\x12\x1b\n" +
 	"\tmedia_key\x18\x15 \x01(\tR\bmediaKey\x12,\n" +
-	"\x03dns\x18\x16 \x01(\v2\x1a.vm.service.v1.VMFrozenDNSR\x03dns\"\\\n" +
+	"\x03dns\x18\x16 \x01(\v2\x1a.vm.service.v1.VMFrozenDNSR\x03dns\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x17 \x01(\tR\tcreatedAt\"\\\n" +
 	"\x0fListVMsResponse\x123\n" +
 	"\x05items\x18\x01 \x03(\v2\x1d.vm.service.v1.VirtualMachineR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"\xdd\x02\n" +

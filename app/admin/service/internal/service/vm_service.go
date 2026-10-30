@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 type VMSessionClient interface {
@@ -57,6 +58,35 @@ func (s *VMService) scope(ctx context.Context, action string) (string, string, e
 	return tenant, "governance:user:" + strconv.FormatUint(uint64(p.ID), 10), err
 }
 func vmInvalid() error { return kratoserrors.BadRequest("VM_INVALID_REQUEST", "invalid VM request") }
+
+// vmListStates is the closed set of display-state groups accepted by the list
+// contract. "all" and the empty value mean every state except deleted tombstones.
+var vmListStates = map[string]bool{
+	"pending": true, "provisioning": true, "starting": true, "stopping": true,
+	"running": true, "stopped": true, "failed": true, "deleting": true, "deleted": true,
+}
+
+// vmListFilter normalizes the list filters and rejects values outside the
+// public contract before they reach the resource owner.
+func vmListFilter(state, keyword *string) (string, string, error) {
+	s, k := "", ""
+	if state != nil {
+		s = strings.TrimSpace(*state)
+	}
+	if s == "all" {
+		s = ""
+	}
+	if s != "" && !vmListStates[s] {
+		return "", "", vmInvalid()
+	}
+	if keyword != nil {
+		k = strings.TrimSpace(*keyword)
+	}
+	if utf8.RuneCountInString(k) > 80 {
+		return "", "", vmInvalid()
+	}
+	return s, k, nil
+}
 func vmNotFound(err error) bool {
 	return status.Code(err) == codes.NotFound || kratoserrors.Code(err) == 404
 }
@@ -221,7 +251,11 @@ func (s *VMService) ListVMs(ctx context.Context, r *view.ListVMsRequest) (*view.
 	if err != nil {
 		return nil, err
 	}
-	result, err := s.binding.client.List(ctx, tenant, actor, page, size)
+	state, keyword, err := vmListFilter(r.State, r.Keyword)
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.binding.client.List(ctx, tenant, actor, page, size, state, keyword)
 	if err != nil {
 		return nil, err
 	}
