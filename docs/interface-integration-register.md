@@ -1673,11 +1673,13 @@ Resource 通过新迁移 0013 增加可空 text 列，保留历史迁移与原 c
 <a id="gov-platform-network-01"></a>
 ## GOV-PLATFORM-NETWORK-01：平台网络 BFF
 
+2026-10-30 移除 NodeFacts 网卡发现、独立设备登记/查询及旧登记退出共 5 个公共方法，其专属 DTO、平台客户端、权限映射和目录种子同步删除。平台接口现为 35 个；管理员手工提交网卡名，经 Resource 受理后交给 KCN 接管。正常交换机、二层网络、公网池与默认出口入口保持原合同；历史验证记录不代表这些已移除入口仍可调用。当前合同见[平台网络接入](contracts/platform-network.md)。源码清理、生成/测试和目标部署分别确认，本登记不预先声明通过。
+
 2026-10-27 追加平台默认 VPC 当前出口查询，复用 `network:platform:default-egress:get`；平台 EIP 清单纳入无租户的系统出口地址并保留所属生命周期释放约束。契约见[当前平台默认出口](contracts/platform-network.md#当前平台默认出口)。
 
 2026-10-27 在本编号追加平台 EIP 全租户列表、详情和受保护释放三个接口；使用 `page/pageSize`、组合筛选、真实租户映射和独立动作权限，合同见 [平台 EIP 管理](contracts/platform-network.md#平台-eip-管理)。生命周期与活动绑定保护仍由 Resource 拥有。
 
-2026-10-21 KCN 网络平台化在该编号下追加虚拟交换机四动作、独立 unbound DTO 和 `page/pageSize`，二层网络 v2 一次提交集群/交换机/网卡，并加入旧设备登记受限退役的两个独立平台动作、默认 VPC 出口的三个独立平台动作；旧 `device_id` 第 3 字段保留并与 v2 互斥。请求与授权的唯一合同仍见[平台网络接入](contracts/platform-network.md)，新增权限只通过[交换机权限增量](../sql/data/20261021_virtual_switch_permissions.sql)及[退役权限增量](../sql/data/20261021_device_retirement_permissions.sql)及[默认出口权限增量](../sql/data/20261021_default_egress_permissions.sql)建立关联，不自动授予角色。Provider 已正式发布为 `267c2d29c6119f03a4ea9c90303a2a9ac7af9a0a`，Gov 固定模块 `v0.0.0-20261021072547-267c2d29c611`；标准 Go 与 sum.golang.org 已验证 Origin.Hash、module sum 及 go.mod sum，见[正式 API 发布回执](https://github.com/zhangzhe-ctrl/ani-resource-service/blob/5c458c2102e4093ba23be24db001171f0d1b13ac/docs/execution/records/KCN-NETWORK-PLATFORM-20261021/formal-api-publication.json)。本次执行与验收证据统一由 Resource 的[执行状态](https://github.com/zhangzhe-ctrl/ani-resource-service/blob/codex/kcn-network-platform-20261021/docs/execution/status.md)索引；源码与受控测试不表示目标部署、真实接管或公网验收。
+2026-10-21 KCN 网络平台化在该编号下追加虚拟交换机四动作、独立 unbound DTO 和 `page/pageSize`，二层网络 v2 一次提交集群/交换机/网卡，并加入旧设备登记受限退役的两个独立平台动作、默认 VPC 出口的三个独立平台动作；旧 `device_id` 第 3 字段保留并与 v2 互斥。请求与授权的唯一合同仍见[平台网络接入](contracts/platform-network.md)，新增权限只通过[交换机权限增量](../sql/data/20261021_virtual_switch_permissions.sql)及[默认出口权限增量](../sql/data/20261021_default_egress_permissions.sql)建立关联，不自动授予角色。Provider 已正式发布为 `267c2d29c6119f03a4ea9c90303a2a9ac7af9a0a`，Gov 固定模块 `v0.0.0-20261021072547-267c2d29c611`；标准 Go 与 sum.golang.org 已验证 Origin.Hash、module sum 及 go.mod sum，见[正式 API 发布回执](https://github.com/zhangzhe-ctrl/ani-resource-service/blob/5c458c2102e4093ba23be24db001171f0d1b13ac/docs/execution/records/KCN-NETWORK-PLATFORM-20261021/formal-api-publication.json)。本次执行与验收证据统一由 Resource 的[执行状态](https://github.com/zhangzhe-ctrl/ani-resource-service/blob/codex/kcn-network-platform-20261021/docs/execution/status.md)索引；源码与受控测试不表示目标部署、真实接管或公网验收。
 
 2026-10-12 用户要求接入 Public/Intranet 地址池、VLAN 网络与配套接口，并参考 VPC 核对分页、响应。本批新增 27 个平台用户 JWT 接口；同轮按用户要求将 HTTP 前缀统一为 `/api/v1/admin/networks`。入口、权限、请求、内部委托及分页的唯一合同见 [平台网络接入](contracts/platform-network.md)；完整路由清单引用平台策略和 Proto，不在登记复制。角色与生产目录授权不自动改变，部署/真实数据面验收独立记录。
 

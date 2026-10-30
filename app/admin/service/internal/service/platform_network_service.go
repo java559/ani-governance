@@ -17,14 +17,9 @@ type NetworkPlatformClient interface {
 	GetVirtualSwitch(context.Context, string, *networkv1.GetVirtualSwitchRequest) (*networkv1.GetVirtualSwitchResponse, error)
 	ListVirtualSwitches(context.Context, string, *networkv1.ListVirtualSwitchesRequest) (*networkv1.ListVirtualSwitchesResponse, error)
 	DeleteVirtualSwitch(context.Context, string, *networkv1.DeleteVirtualSwitchRequest) (*networkv1.DeleteVirtualSwitchResponse, error)
-	RetireNetworkDevice(context.Context, string, *networkv1.RetireNetworkDeviceRequest) (*networkv1.RetireNetworkDeviceResponse, error)
-	GetNetworkDeviceRetirement(context.Context, string, *networkv1.GetNetworkDeviceRetirementRequest) (*networkv1.GetNetworkDeviceRetirementResponse, error)
 	CreateDefaultVPCEgress(context.Context, string, *networkv1.CreateDefaultVPCEgressRequest) (*networkv1.CreateDefaultVPCEgressResponse, error)
 	GetDefaultVPCEgress(context.Context, string, *networkv1.GetDefaultVPCEgressRequest) (*networkv1.GetDefaultVPCEgressResponse, error)
 	DeleteDefaultVPCEgress(context.Context, string, *networkv1.DeleteDefaultVPCEgressRequest) (*networkv1.DeleteDefaultVPCEgressResponse, error)
-	ListNodeInterfaces(context.Context, string, *networkv1.ListNodeInterfacesRequest) (*networkv1.ListNodeInterfacesResponse, error)
-	AdoptNetworkDevice(context.Context, string, *networkv1.AdoptNetworkDeviceRequest) (*networkv1.AdoptNetworkDeviceResponse, error)
-	GetNetworkDevice(context.Context, string, *networkv1.GetNetworkDeviceRequest) (*networkv1.GetNetworkDeviceResponse, error)
 	CreateVlanNetwork(context.Context, string, *networkv1.CreateVlanNetworkRequest) (*networkv1.CreateVlanNetworkResponse, error)
 	GetVlanNetwork(context.Context, string, *networkv1.GetVlanNetworkRequest) (*networkv1.GetVlanNetworkResponse, error)
 	ListVlanNetworks(context.Context, string, *networkv1.ListVlanNetworksRequest) (*networkv1.ListVlanNetworksResponse, error)
@@ -79,17 +74,13 @@ func (s *PlatformNetworkService) actor(ctx context.Context, operation string) (s
 	return p.Actor()
 }
 
-var platformResourceID = regexp.MustCompile(`^(device|vlan|egw|pool)_[0-9a-f]{32}$`)
+var platformResourceID = regexp.MustCompile(`^(vlan|egw|pool)_[0-9a-f]{32}$`)
 
 func validPlatformResource(v *networkv1.PlatformResource, id, kind string) bool {
 	if v == nil {
 		return false
 	}
 	switch kind {
-	case "device":
-		if v.GetDevice() == nil || !strings.HasPrefix(v.Id, "device_") {
-			return false
-		}
 	case "vlan":
 		if v.GetVlan() == nil || !strings.HasPrefix(v.Id, "vlan_") {
 			return false
@@ -153,52 +144,10 @@ func wirePlatformResource(v *networkv1.PlatformResource) *catalogv1.PlatformReso
 		ObservedAt:       v.GetObservedAt(),
 		ObservationStale: v.GetObservationStale(),
 		LastOperationId:  v.GetLastOperationId(),
-		Device:           wireNetworkDevice(v.GetDevice()),
 		Vlan:             wireVlanNetwork(v.GetVlan()),
 		Gateway:          wireEgressGateway(v.GetGateway()),
 		Pool:             wirePublicAddressPool(v.GetPool()),
 		IntranetPool:     wireIntranetAddressPool(v.GetIntranetPool()),
-	}
-	return out
-}
-
-func wireNodeInterface(v *networkv1.NodeInterface) *catalogv1.NodeInterface {
-	if v == nil {
-		return nil
-	}
-	out := &catalogv1.NodeInterface{
-		NodeName:           v.GetNodeName(),
-		NodeUid:            v.GetNodeUid(),
-		Name:               v.GetName(),
-		Kind:               v.GetKind(),
-		Mac:                v.GetMac(),
-		Mtu:                v.GetMtu(),
-		LinkUp:             v.GetLinkUp(),
-		Carrier:            v.GetCarrier(),
-		Addresses:          v.GetAddresses(),
-		Master:             v.GetMaster(),
-		OvsManaged:         v.GetOvsManaged(),
-		KcManaged:          v.GetKcManaged(),
-		DefaultRoute:       v.GetDefaultRoute(),
-		Management:         v.GetManagement(),
-		Selectable:         v.GetSelectable(),
-		UnavailableReasons: v.GetUnavailableReasons(),
-		ObservedAt:         v.GetObservedAt(),
-		VlanNetworkIds:     v.GetVlanNetworkIds(),
-	}
-	return out
-}
-
-func wireNetworkDevice(v *networkv1.NetworkDevice) *catalogv1.NetworkDevice {
-	if v == nil {
-		return nil
-	}
-	out := &catalogv1.NetworkDevice{
-		DeviceName:           v.GetDeviceName(),
-		InventoryFingerprint: v.GetInventoryFingerprint(),
-	}
-	for _, item := range v.GetNodes() {
-		out.Nodes = append(out.Nodes, wireNodeInterface(item))
 	}
 	return out
 }
@@ -382,82 +331,6 @@ func wirePlatformOperation(v *networkv1.PlatformOperation) *catalogv1.PlatformOp
 		NextAttemptAt: v.GetNextAttemptAt(),
 	}
 	return out
-}
-
-func (s *PlatformNetworkService) ListNodeInterfaces(ctx context.Context, req *catalogv1.ListNodeInterfacesRequest) (*catalogv1.ListNodeInterfacesResponse, error) {
-	actor, err := s.actor(ctx, "ListNodeInterfaces")
-	if err != nil {
-		return nil, err
-	}
-	if req == nil {
-		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "request required")
-	}
-	reply, err := s.client.ListNodeInterfaces(ctx, actor, &networkv1.ListNodeInterfacesRequest{NodeName: req.GetNodeName(), ClusterId: req.GetClusterId(), VirtualSwitchId: req.GetVirtualSwitchId()})
-	if err != nil {
-		return nil, mapNetworkError(err)
-	}
-	if reply == nil {
-		return nil, invalidNetworkReply()
-	}
-	if reply.Total < 0 || reply.Total < int64(len(reply.Items)) {
-		return nil, invalidNetworkReply()
-	}
-	out := &catalogv1.ListNodeInterfacesResponse{Total: reply.Total, InventoryFingerprint: reply.GetInventoryFingerprint()}
-	for _, v := range reply.Items {
-		if v == nil {
-			return nil, invalidNetworkReply()
-		}
-		out.Items = append(out.Items, wireNodeInterface(v))
-	}
-	return out, nil
-}
-
-func (s *PlatformNetworkService) AdoptNetworkDevice(ctx context.Context, req *catalogv1.AdoptNetworkDeviceRequest) (*catalogv1.AdoptNetworkDeviceResponse, error) {
-	actor, err := s.actor(ctx, "AdoptNetworkDevice")
-	if err != nil {
-		return nil, err
-	}
-	if req == nil {
-		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "request required")
-	}
-	if req.Data == nil {
-		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "data required")
-	}
-	reply, err := s.client.AdoptNetworkDevice(ctx, actor, &networkv1.AdoptNetworkDeviceRequest{Name: req.Data.GetName(), DeviceName: req.Data.GetDeviceName(), InventoryFingerprint: req.Data.GetInventoryFingerprint(), IdempotencyKey: req.Data.GetIdempotencyKey()})
-	if err != nil {
-		return nil, mapNetworkError(err)
-	}
-	if reply == nil {
-		return nil, invalidNetworkReply()
-	}
-	if !validPlatformResource(reply.Resource, "", "device") {
-		return nil, invalidNetworkReply()
-	}
-	return &catalogv1.AdoptNetworkDeviceResponse{Resource: wirePlatformResource(reply.Resource)}, nil
-}
-
-func (s *PlatformNetworkService) GetNetworkDevice(ctx context.Context, req *catalogv1.GetNetworkDeviceRequest) (*catalogv1.GetNetworkDeviceResponse, error) {
-	actor, err := s.actor(ctx, "GetNetworkDevice")
-	if err != nil {
-		return nil, err
-	}
-	if req == nil {
-		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "request required")
-	}
-	if !auth.ValidPlatformNetworkID("device_id", req.GetDeviceId()) {
-		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_ID", "invalid resource ID")
-	}
-	reply, err := s.client.GetNetworkDevice(ctx, actor, &networkv1.GetNetworkDeviceRequest{DeviceId: req.GetDeviceId()})
-	if err != nil {
-		return nil, mapNetworkError(err)
-	}
-	if reply == nil {
-		return nil, invalidNetworkReply()
-	}
-	if !validPlatformResource(reply.Resource, req.GetDeviceId(), "device") {
-		return nil, invalidNetworkReply()
-	}
-	return &catalogv1.GetNetworkDeviceResponse{Resource: wirePlatformResource(reply.Resource)}, nil
 }
 
 func (s *PlatformNetworkService) CreateVlanNetwork(ctx context.Context, req *catalogv1.CreateVlanNetworkRequest) (*catalogv1.CreateVlanNetworkResponse, error) {

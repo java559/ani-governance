@@ -62,29 +62,6 @@ func TestVirtualSwitchIdentity(t *testing.T) {
 	}
 }
 
-func TestDeviceRetirementIdentity(t *testing.T) {
-	claims := &authv1.UserTokenPayload{UserId: 9, Roles: []string{"platform:network-reader"}, Permissions: []string{"network:platform:device-retirement:get"}}
-	s := NewPlatformNetworkService(nil)
-	if _, err := s.actor(auth.NewContext(context.Background(), claims), "GetNetworkDeviceRetirement"); errors.FromError(err).Code != 503 {
-		t.Fatalf("authorized retirement read did not reach dependency: %v", err)
-	}
-	for _, tc := range []struct {
-		name      string
-		principal *auth.Principal
-		operation string
-	}{
-		{"tenant", &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 1, Claims: claims, Roles: claims.Roles}, "GetNetworkDeviceRetirement"},
-		{"api_key", &auth.Principal{Type: auth.SubjectAPIKey, ID: 9, Claims: claims, Roles: claims.Roles}, "GetNetworkDeviceRetirement"},
-		{"read_not_retire", &auth.Principal{Type: auth.SubjectUser, ID: 9, Claims: claims, Roles: claims.Roles}, "RetireNetworkDevice"},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if _, err := s.actor(auth.NewPrincipalContext(context.Background(), tc.principal), tc.operation); errors.FromError(err).Code != 403 {
-				t.Fatalf("device retirement subject or action boundary bypassed: %v", err)
-			}
-		})
-	}
-}
-
 func TestDefaultVPCEgressIdentity(t *testing.T) {
 	claims := &authv1.UserTokenPayload{UserId: 9, Roles: []string{"platform:network-reader"}, Permissions: []string{"network:platform:default-egress:get"}}
 	s := NewPlatformNetworkService(nil)

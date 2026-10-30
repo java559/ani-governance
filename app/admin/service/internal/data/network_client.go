@@ -24,7 +24,6 @@ type NetworkClientConfig struct {
 type NetworkClient struct {
 	platformEIPs  networkv1.PlatformEIPServiceClient
 	platform      networkv1.PlatformNetworkServiceClient
-	retirements   networkv1.PlatformDeviceRetirementServiceClient
 	defaultEgress networkv1.PlatformDefaultEgressServiceClient
 	client        networkv1.NetworkServiceClient
 	egress        networkv1.TenantEgressServiceClient
@@ -46,7 +45,7 @@ func NewNetworkClient(c NetworkClientConfig) (*NetworkClient, func(), error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	return &NetworkClient{platformEIPs: networkv1.NewPlatformEIPServiceClient(conn), platform: networkv1.NewPlatformNetworkServiceClient(conn), retirements: networkv1.NewPlatformDeviceRetirementServiceClient(conn), defaultEgress: networkv1.NewPlatformDefaultEgressServiceClient(conn), client: networkv1.NewNetworkServiceClient(conn), egress: networkv1.NewTenantEgressServiceClient(conn), loadBalancers: networkv1.NewTenantLoadBalancerServiceClient(conn), timeout: c.Timeout}, func() { _ = conn.Close() }, nil
+	return &NetworkClient{platformEIPs: networkv1.NewPlatformEIPServiceClient(conn), platform: networkv1.NewPlatformNetworkServiceClient(conn), defaultEgress: networkv1.NewPlatformDefaultEgressServiceClient(conn), client: networkv1.NewNetworkServiceClient(conn), egress: networkv1.NewTenantEgressServiceClient(conn), loadBalancers: networkv1.NewTenantLoadBalancerServiceClient(conn), timeout: c.Timeout}, func() { _ = conn.Close() }, nil
 }
 
 func NetworkConfigFromEnv() (NetworkClientConfig, error) {
