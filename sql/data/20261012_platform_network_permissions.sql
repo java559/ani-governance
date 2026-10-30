@@ -5,9 +5,6 @@ DO $$
 DECLARE r record; selected_api_id bigint; selected_permission_id bigint; route_count bigint;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
-    ('GET','/api/v1/admin/networks/node-interfaces','network:platform:device:list'),
-    ('POST','/api/v1/admin/networks/devices','network:platform:device:adopt'),
-    ('GET','/api/v1/admin/networks/devices/{device_id}','network:platform:device:get'),
     ('POST','/api/v1/admin/networks/vlan-networks','network:platform:vlan-network:create'),
     ('GET','/api/v1/admin/networks/vlan-networks/{vlan_network_id}','network:platform:vlan-network:get'),
     ('GET','/api/v1/admin/networks/vlan-networks','network:platform:vlan-network:list'),

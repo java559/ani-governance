@@ -33,7 +33,7 @@ func TestPublicImageSurface(t *testing.T) {
 	}
 	for i := 0; i < services.Get(0).Methods().Len(); i++ {
 		name := services.Get(0).Methods().Get(i).Name()
-		if name == "GetTenantPullMaterial" || name == "ResolveImageForWorkload" {
+		if name == "GetTenantPullMaterial" || name == "ResolveImageForWorkload" || name == "EnsureTenantPullSecret" {
 			t.Fatal("runtime surface exposed")
 		}
 	}

@@ -15,7 +15,7 @@ func wireVirtualSwitchNode(v *networkv1.VirtualSwitchNode) *catalogv1.VirtualSwi
 	if v == nil {
 		return nil
 	}
-	return &catalogv1.VirtualSwitchNode{NodeName: v.NodeName, NodeUid: v.NodeUid, Mac: v.Mac, Priority: v.Priority, State: v.State, Reason: v.Reason}
+	return &catalogv1.VirtualSwitchNode{NodeName: v.NodeName, NodeUid: v.NodeUid, Priority: v.Priority, State: v.State, Reason: v.Reason}
 }
 
 func wireVirtualSwitch(v *networkv1.VirtualSwitch) *catalogv1.VirtualSwitch {
@@ -164,7 +164,7 @@ func validVirtualSwitch(v *catalogv1.VirtualSwitch, id string) bool {
 	}
 	seen := make(map[string]bool, len(v.Nodes))
 	for _, node := range v.Nodes {
-		if node == nil || node.NodeName == "" || node.NodeUid == "" || node.Mac == "" || node.Priority != 100 || node.State == "" || seen[node.NodeUid] {
+		if node == nil || node.NodeName == "" || node.NodeUid == "" || node.Priority != 100 || node.State == "" || seen[node.NodeUid] {
 			return false
 		}
 		seen[node.NodeUid] = true

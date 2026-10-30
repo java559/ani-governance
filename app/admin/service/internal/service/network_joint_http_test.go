@@ -159,7 +159,7 @@ func TestNetworkJointHTTP(t *testing.T) {
 			require.NoError(t, err)
 		}
 	}
-	for _, seed := range []string{"20261012_platform_network_permissions.sql", "20261021_virtual_switch_permissions.sql", "20261021_device_retirement_permissions.sql", "20261021_default_egress_permissions.sql"} {
+	for _, seed := range []string{"20261012_platform_network_permissions.sql", "20261021_virtual_switch_permissions.sql", "20261021_default_egress_permissions.sql", "20261027_platform_eip_permissions.sql"} {
 		platformSeed, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "sql", "data", seed))
 		require.NoError(t, err)
 		for i := 0; i < 2; i++ {
@@ -172,12 +172,17 @@ func TestNetworkJointHTTP(t *testing.T) {
 	deniedPlatformRole, err := client.Role.Create().SetTenantID(0).SetCode("platform:network-denied").SetName("platform-network-denied").SetType(role.TypeSystem).SetStatus(role.StatusOn).Save(sys)
 	require.NoError(t, err)
 	platformPermissions := []string{}
+	grantedPlatformPermissions := map[string]bool{}
 	for _, op := range auth.PlatformNetworkOperations {
 		perm, err := client.Permission.Query().Where(permission.CodeEQ(op.Permission)).Only(sys)
-		require.NoError(t, err)
+		require.NoError(t, err, "platform permission seed missing: %s", op.Permission)
+		if grantedPlatformPermissions[op.Permission] {
+			continue
+		}
 		_, err = client.RolePermission.Create().SetTenantID(0).SetRoleID(platformRole.ID).SetPermissionID(perm.ID).SetEffect(rolepermission.EffectAllow).SetStatus(rolepermission.StatusOn).Save(sys)
 		require.NoError(t, err)
 		platformPermissions = append(platformPermissions, op.Permission)
+		grantedPlatformPermissions[op.Permission] = true
 	}
 	require.NoError(t, policy.ResetPolicies(ctx))
 	token := func(r *ent.Role, uid uint32, permissions ...string) string {
@@ -483,7 +488,7 @@ func TestNetworkJointHTTP(t *testing.T) {
  (SELECT count(*) FROM network_operations)+(SELECT count(*) FROM network_platform_operations)+
  (SELECT count(*) FROM network_virtual_switches)+(SELECT count(*) FROM network_virtual_switch_operations)+(SELECT count(*) FROM network_virtual_switch_idempotency)+(SELECT count(*) FROM network_virtual_switch_reconciliations)+
  (SELECT count(*) FROM network_virtual_switch_history WHERE event IN('created','vlan_accepted','delete_accepted'))+
- (SELECT count(*) FROM network_legacy_device_retirements)+(SELECT count(*) FROM network_legacy_device_retirement_idempotency)+(SELECT count(*) FROM network_legacy_device_retirement_history WHERE event='registration_closed')+
+ (SELECT count(*) FROM network_device_adoptions)+
  (SELECT count(*) FROM network_default_vpc_egresses)+(SELECT count(*) FROM network_default_vpc_egress_operations)+(SELECT count(*) FROM network_default_vpc_egress_idempotency)+(SELECT count(*) FROM network_default_vpc_egress_history WHERE event IN('create_accepted','delete_accepted'))`).Scan(&count))
 		return count
 	}
@@ -797,15 +802,12 @@ func TestNetworkJointHTTP(t *testing.T) {
 			// Casbin relation. Valid IDs avoid mistaking input rejection for denial.
 			missingClaims := identity{bearer: token(platformRole, 11)}
 			const switchID = "vsw_11111111111111111111111111111111"
-			const deviceID = "device_11111111111111111111111111111111"
 			const egressID = "dve_11111111111111111111111111111111"
 			for _, action := range []struct{ operation, method, path, body string }{
 				{"CreateVirtualSwitch", "POST", "/virtual-switches", `{"data":{"name":"denied-switch","idempotency_key":"denied-switch"}}`},
 				{"GetVirtualSwitch", "GET", "/virtual-switches/" + switchID, ""},
 				{"ListVirtualSwitches", "GET", "/virtual-switches?page=1&pageSize=2", ""},
 				{"DeleteVirtualSwitch", "DELETE", "/virtual-switches/" + switchID, ""},
-				{"RetireNetworkDevice", "POST", "/devices/" + deviceID + "/retirement", `{"data":{"expected_version":"1","idempotency_key":"denied-retirement"}}`},
-				{"GetNetworkDeviceRetirement", "GET", "/devices/" + deviceID + "/retirement", ""},
 				{"CreateDefaultVPCEgress", "POST", "/default-vpc-egresses", `{"data":{"name":"denied-egress","pool_id":"pool_11111111111111111111111111111111","idempotency_key":"denied-egress"}}`},
 				{"GetDefaultVPCEgress", "GET", "/default-vpc-egresses/" + egressID, ""},
 				{"DeleteDefaultVPCEgress", "DELETE", "/default-vpc-egresses/" + egressID, ""},
@@ -913,16 +915,6 @@ func TestNetworkJointHTTP(t *testing.T) {
 				request(t, caller, "DELETE", platformBase+"/virtual-switches/"+id, "", nil, 200)
 				poll(t, caller, platformBase+"/virtual-switches/"+id, state("deleted"))
 			}
-			inventory := get(t, caller, platformBase+"/node-interfaces?cluster_id="+peer.ClusterID+"&virtual_switch_id="+sid)
-			found := 0
-			for _, raw := range inventory["items"].([]any) {
-				v := raw.(map[string]any)
-				if v["name"] == deviceName {
-					require.Equal(t, true, v["selectable"])
-					found++
-				}
-			}
-			require.Positive(t, found)
 			wiring := func(ready bool) {
 				raw, err := json.Marshal(map[string]any{"ready": ready})
 				require.NoError(t, err)
@@ -947,7 +939,7 @@ func TestNetworkJointHTTP(t *testing.T) {
 			for _, raw := range nodes {
 				node := raw.(map[string]any)
 				require.NotEmpty(t, node["node_uid"])
-				require.NotEmpty(t, node["mac"])
+				require.NotContains(t, node, "mac")
 				require.Equal(t, float64(100), node["priority"])
 				require.Equal(t, "applied", node["state"])
 			}
@@ -1017,70 +1009,19 @@ func TestNetworkJointHTTP(t *testing.T) {
 			require.Equal(t, created, request(t, caller, "POST", platformBase+"/virtual-switches", body, nil, 200))
 			require.Equal(t, "deleted", get(t, caller, platformBase+"/virtual-switches/"+sid)["state"])
 		})
-		t.Run("device_retirement_lifecycle", func(t *testing.T) {
-			require.Regexp(t, `^device_[0-9a-f]{32}$`, peer.LegacyDeviceID, "the Resource fixture supplies one real legacy registration")
-			devicePath := platformBase + "/devices/" + peer.LegacyDeviceID
-			retirementPath := devicePath + "/retirement"
-			configBefore := providerObject(t, "/api/v1/namespaces/kcn-system/configmaps/kcn-config", 200)
-			configUID := configBefore["metadata"].(map[string]any)["uid"]
-			body := ""
-			retiredDone := false
-			t.Cleanup(func() {
-				if !retiredDone && body != "" {
-					request(t, caller, "POST", retirementPath, body, nil, 200)
-					pollWithin(t, 90*time.Second, caller, retirementPath, state("retired"))
-				}
-			})
-			var accepted map[string]any
-			for attempt := 0; attempt < 3; attempt++ {
-				device := get(t, caller, devicePath)
-				body = jsonBody(map[string]any{"expected_version": device["version"], "idempotency_key": "gov-legacy-retirement"})
-				status, out := send(t, caller, "POST", retirementPath, body, nil)
-				if status == 412 && out["reason"] == "RESOURCE_BUSY" {
-					continue
-				}
-				require.Equal(t, 200, status, "retirement admission response=%v", out)
-				accepted = out
-				break
+		t.Run("retired_device_routes", func(t *testing.T) {
+			before := beforeSideEffects(t)
+			const device = "/devices/device_11111111111111111111111111111111"
+			for _, route := range []struct{ method, path string }{
+				{"GET", "/node-interfaces"},
+				{"POST", "/devices"},
+				{"GET", device},
+				{"POST", device + "/retirement"},
+				{"GET", device + "/retirement"},
+			} {
+				request(t, caller, route.method, platformBase+route.path, "", nil, 400)
 			}
-			require.NotNil(t, accepted, "fresh retirement version must be admitted")
-			require.Equal(t, peer.LegacyDeviceID, accepted["device_id"])
-			require.NotEmpty(t, accepted["operation_id"])
-			require.Equal(t, accepted, request(t, caller, "POST", retirementPath, body, nil, 200))
-			var actor, savedOperation, directCaller string
-			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT r.operation_id::text,h.actor_ref,h.caller_ref FROM network_legacy_device_retirements r JOIN network_legacy_device_retirement_history h ON h.resource_id=r.resource_id AND h.operation_id=r.operation_id WHERE r.resource_id=$1 AND h.event='registration_closed'`, peer.LegacyDeviceID).Scan(&savedOperation, &actor, &directCaller))
-			require.Equal(t, accepted["operation_id"], savedOperation)
-			require.Equal(t, "governance:user:9", actor)
-			require.Equal(t, "ani-governance", directCaller)
-			// The durable executor-drain guard is 15s. Poll the real result rather
-			// than changing its timestamp or forcing the registration state.
-			retired := pollWithin(t, 90*time.Second, caller, retirementPath, state("retired"))
-			require.NotEqual(t, true, retired["pending_unknown"])
-			require.NotEmpty(t, retired["completed_at"])
-			require.Equal(t, configUID, retired["config_uid"])
-			expected, err := strconv.ParseInt(retired["expected_version"].(string), 10, 64)
-			require.NoError(t, err)
-			fence, err := strconv.ParseInt(retired["fence_version"].(string), 10, 64)
-			require.NoError(t, err)
-			require.Greater(t, fence, expected)
-			var closed, retained, noLease, epochFenced bool
-			var resourceState, pendingAction string
-			var resourceVersion, fenceVersion int64
-			// Watch wakeups may advance next_run_at. Resource's real PostgreSQL
-			// TestLegacyDeviceRetirementFencesUnknownAdoptionAndReplays verifies
-			// Claim/old-Finish/dispatch rejection after those wakeups; inspect the
-			// durable lease and generation fence here instead of its schedule.
-			require.NoError(t, peer.DB.QueryRowContext(ctx, `SELECT d.registration_closed,d.retired,r.state,r.pending_action,(x.lease_owner IS NULL AND x.lease_until IS NULL),(x.lease_epoch=j.executor_epoch),r.version,j.fence_version FROM network_device_adoptions d JOIN network_platform_resources r USING(resource_id) JOIN network_platform_reconciliations x USING(resource_id) JOIN network_legacy_device_retirements j USING(resource_id) WHERE d.resource_id=$1`, peer.LegacyDeviceID).Scan(&closed, &retained, &resourceState, &pendingAction, &noLease, &epochFenced, &resourceVersion, &fenceVersion))
-			require.True(t, closed)
-			require.True(t, retained)
-			require.True(t, noLease)
-			require.True(t, epochFenced)
-			require.Equal(t, "deleted", resourceState)
-			require.Empty(t, pendingAction)
-			require.Greater(t, resourceVersion, fenceVersion)
-			require.Equal(t, accepted, request(t, caller, "POST", retirementPath, body, nil, 200), "retirement replay preserves its acceptance receipt")
-			require.Equal(t, configUID, providerObject(t, "/api/v1/namespaces/kcn-system/configmaps/kcn-config", 200)["metadata"].(map[string]any)["uid"])
-			retiredDone = true
+			require.Equal(t, before, beforeSideEffects(t), "retired routes must not admit resources or operations")
 		})
 		t.Run("default_vpc_egress_lifecycle", func(t *testing.T) {
 			require.Equal(t, "test-cluster", peer.ClusterID)
@@ -1299,7 +1240,7 @@ func TestNetworkJointHTTP(t *testing.T) {
 				})
 			}
 		})
-		for _, path := range []string{"public-address-pools", "intranet-address-pools", "vlan-networks", "node-interfaces", "capabilities"} {
+		for _, path := range []string{"public-address-pools", "intranet-address-pools", "vlan-networks", "capabilities"} {
 			t.Run(path, func(t *testing.T) { get(t, caller, platformBase+"/"+path) })
 		}
 	})

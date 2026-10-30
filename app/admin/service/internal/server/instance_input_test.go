@@ -184,11 +184,12 @@ func TestInstanceQueryPagePresenceAndFilters(t *testing.T) {
 		})
 	}
 	instances := new(view.ListInstancesRequest)
-	require.NoError(t, decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instances?instance_kind=container&compute_type=cpu&observedState=running&name=%20work%25_%20", nil), instances))
+	require.NoError(t, decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instances?instance_kind=container&compute_type=cpu&observedState=running&name=%20work%25_%20&id=%20E3DD3EC3-293C%20", nil), instances))
 	require.Equal(t, "container", instances.InstanceKind)
 	require.Equal(t, "cpu", instances.ComputeType)
 	require.Equal(t, "running", instances.ObservedState)
 	require.Equal(t, "work%_", instances.Name)
+	require.Equal(t, "E3DD3EC3-293C", instances.Id)
 	presets := new(computeview.ListPresetsRequest)
 	require.NoError(t, decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/compute-presets?usage=CONTAINER_INSTANCE&compute_type=gpu&gpu_mode=SHARED_FIXED&code=gpu-small", nil), presets))
 	require.Equal(t, "gpu", presets.ComputeType)
@@ -214,7 +215,7 @@ func TestInstanceQueryRejectsNonCanonicalPaging(t *testing.T) {
 			}
 		})
 	}
-	for _, query := range []string{"instance_kind=gpu", "compute_type=CPU", "observedState=unknown", "enabled=true", "gpu_mode=WHOLE_EXCLUSIVE", "name=" + strings.Repeat("界", 81)} {
+	for _, query := range []string{"instance_kind=gpu", "compute_type=CPU", "observedState=unknown", "enabled=true", "gpu_mode=WHOLE_EXCLUSIVE", "name=" + strings.Repeat("界", 81), "id=" + strings.Repeat("a", 37)} {
 		err := decodeInstanceQuery(httptest.NewRequest("GET", "/api/v1/instances?"+query, nil), new(view.ListInstancesRequest))
 		require.Error(t, err, query)
 	}

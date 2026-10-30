@@ -10,6 +10,7 @@ import (
 	"time"
 
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
+	klog "github.com/go-kratos/kratos/v2/log"
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	terminal "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/terminal/v1"
 	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
@@ -21,6 +22,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/middleware/requestid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -385,7 +387,7 @@ func (s *InstanceService) ListInstances(ctx context.Context, r *view.ListInstanc
 	if e != nil {
 		return nil, e
 	}
-	items, e := s.binding.client.List(ctx, tenant, actor, &res.ListInstancesRequest{TenantId: tenant, Page: page, PageSize: size, InstanceKind: r.InstanceKind, ComputeType: r.ComputeType, ObservedState: r.ObservedState, Name: r.Name})
+	items, e := s.binding.client.List(ctx, tenant, actor, &res.ListInstancesRequest{TenantId: tenant, Page: page, PageSize: size, InstanceKind: r.InstanceKind, ComputeType: r.ComputeType, ObservedState: r.ObservedState, Name: r.Name, Id: r.Id})
 	if e != nil {
 		return nil, e
 	}
@@ -467,8 +469,10 @@ func (s *InstanceService) ExecInstance(ctx context.Context, r *view.ExecInstance
 	if s.sessions == nil {
 		return nil, kratoserrors.ServiceUnavailable("INSTANCE_SESSION_UNAVAILABLE", "instance terminal unavailable")
 	}
+	requestID, _ := requestid.FromContext(ctx)
 	t, e := s.binding.client.Target(ctx, tenant, actor, d.InstanceId, d.ExpectedVersion)
 	if e != nil {
+		klog.Errorw("event", "instance_exec_upstream_failed", "stage", "resource.target", "grpc_code", status.Code(e).String(), "request_id", requestID)
 		return nil, e
 	}
 	if t == nil || t.TenantId != tenant || t.InstanceId != d.InstanceId || t.Version != d.ExpectedVersion || t.PodUid == "" || t.NotebookUid == "" || t.Shell == "" || t.ContainerName != "workspace" {
@@ -476,6 +480,7 @@ func (s *InstanceService) ExecInstance(ctx context.Context, r *view.ExecInstance
 	}
 	current, e := s.binding.client.Get(ctx, tenant, actor, d.InstanceId)
 	if e != nil {
+		klog.Errorw("event", "instance_exec_upstream_failed", "stage", "resource.get", "grpc_code", status.Code(e).String(), "request_id", requestID)
 		return nil, e
 	}
 	if current == nil || current.Id != d.InstanceId || current.Version != d.ExpectedVersion {
@@ -490,8 +495,10 @@ func (s *InstanceService) ExecInstance(ctx context.Context, r *view.ExecInstance
 	} else if current.ComputeType != "gpu" {
 		return nil, kratoserrors.Conflict("INSTANCE_TERMINAL_NOT_READY", "invalid instance type")
 	}
-	reply, e := s.sessions.CreateSession(ctx, &sessionpb.CreateSessionRequest{RequestId: uuid.NewString(), IdempotencyKey: d.IdempotencyKey, Principal: &sessionpb.Principal{TenantId: tenant, SubjectId: actor}, Target: &sessionpb.Target{InstanceId: d.InstanceId, WorkloadName: t.NotebookName, WorkloadKind: kind, InstanceBinding: &sessionpb.InstanceBinding{Version: t.Version, ClusterId: t.ClusterId, Namespace: t.Namespace, NotebookName: t.NotebookName, NotebookUid: t.NotebookUid, PodName: t.PodName, PodUid: t.PodUid, ContainerName: t.ContainerName, Shell: t.Shell}}, Mode: &sessionpb.CreateSessionRequest_Exec{Exec: &sessionpb.ExecOptions{Container: t.ContainerName, Command: []string{t.Shell}, Tty: true, Rows: d.Rows, Cols: d.Cols}}})
+	sessionRequestID := uuid.NewString()
+	reply, e := s.sessions.CreateSession(ctx, &sessionpb.CreateSessionRequest{RequestId: sessionRequestID, IdempotencyKey: d.IdempotencyKey, Principal: &sessionpb.Principal{TenantId: tenant, SubjectId: actor}, Target: &sessionpb.Target{InstanceId: d.InstanceId, WorkloadName: t.NotebookName, WorkloadKind: kind, InstanceBinding: &sessionpb.InstanceBinding{Version: t.Version, ClusterId: t.ClusterId, Namespace: t.Namespace, NotebookName: t.NotebookName, NotebookUid: t.NotebookUid, PodName: t.PodName, PodUid: t.PodUid, ContainerName: t.ContainerName, Shell: t.Shell}}, Mode: &sessionpb.CreateSessionRequest_Exec{Exec: &sessionpb.ExecOptions{Container: t.ContainerName, Command: []string{t.Shell}, Tty: true, Rows: d.Rows, Cols: d.Cols}}})
 	if e != nil {
+		klog.Errorw("event", "instance_exec_upstream_failed", "stage", "session_gateway.create_session", "grpc_code", status.Code(e).String(), "request_id", requestID, "session_request_id", sessionRequestID)
 		return nil, e
 	}
 	if reply == nil || reply.SessionId == "" || reply.ConnectUrl == "" || reply.ExpiresAt == nil {

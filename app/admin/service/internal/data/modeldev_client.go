@@ -408,6 +408,10 @@ func modelDevResolutionError(err error, requestID string) error {
 		message = "managed admission environment is not ready"
 	case failure.Code() == codes.Unavailable && detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_UPSTREAM_UNAVAILABLE:
 		message = "admission resolution unavailable"
+	case failure.Code() == codes.FailedPrecondition && (detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_IMPLEMENTATION_UNAVAILABLE || detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_UNSUPPORTED_DEVICE):
+		// A definitive catalogue answer: the selection or the device is wrong,
+		// not the upstream. Keep the typed reason for the public mapping.
+		message = "catalogue image unusable"
 	default:
 		return modelDevAdmissionUnavailable()
 	}

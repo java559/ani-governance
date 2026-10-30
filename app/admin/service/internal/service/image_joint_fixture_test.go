@@ -86,8 +86,10 @@ func (p *imageJointPeer) GetImage(_ context.Context, r *imagev1.GetImageRequest)
 	return &imagev1.GetImageResponse{Image: p.registration(r.TenantId, r.Scope, r.ImageId)}, nil
 }
 func (p *imageJointPeer) ListImages(_ context.Context, r *imagev1.ListImagesRequest) (*imagev1.ListImagesResponse, error) {
-	if r.GetSearch()=="empty-total" { return &imagev1.ListImagesResponse{},nil }
- return &imagev1.ListImagesResponse{Total:37, Items: []*imagev1.ImageRegistration{p.registration(r.TenantId, r.Scope, "")}}, nil
+	if r.GetSearch() == "empty-total" {
+		return &imagev1.ListImagesResponse{}, nil
+	}
+	return &imagev1.ListImagesResponse{Total: 37, Items: []*imagev1.ImageRegistration{p.registration(r.TenantId, r.Scope, "")}}, nil
 }
 func (p *imageJointPeer) UpdateImage(_ context.Context, r *imagev1.UpdateImageRequest) (*imagev1.UpdateImageResponse, error) {
 	return &imagev1.UpdateImageResponse{Image: p.registration(r.TenantId, 1, r.ImageId)}, nil

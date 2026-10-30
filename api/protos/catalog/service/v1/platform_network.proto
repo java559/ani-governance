@@ -17,7 +17,8 @@ message PlatformResource {
   google.protobuf.Timestamp observed_at = 11 [json_name = "observed_at"];
   bool observation_stale = 12 [json_name = "observation_stale"];
   string last_operation_id = 13 [json_name = "last_operation_id"];
-  NetworkDevice device = 14 [json_name = "device"];
+  reserved 14;
+  reserved "device";
   VlanNetwork vlan = 15 [json_name = "vlan"];
   EgressGateway gateway = 16 [json_name = "gateway"];
   PublicAddressPool pool = 17 [json_name = "pool"];
@@ -46,7 +47,8 @@ message VirtualSwitch {
 message VirtualSwitchNode {
   string node_name = 1 [json_name = "node_name"];
   string node_uid = 2 [json_name = "node_uid"];
-  string mac = 3 [json_name = "mac"];
+  reserved 3;
+  reserved "mac";
   int32 priority = 4 [json_name = "priority"];
   string state = 5 [json_name = "state"];
   string reason = 6 [json_name = "reason"];
@@ -83,33 +85,6 @@ message DeleteVirtualSwitchRequest {
 }
 message DeleteVirtualSwitchResponse {
   VirtualSwitch resource = 1 [json_name = "resource"];
-}
-
-message NodeInterface {
-  string node_name = 1 [json_name = "node_name"];
-  string node_uid = 2 [json_name = "node_uid"];
-  string name = 3 [json_name = "name"];
-  string kind = 4 [json_name = "kind"];
-  string mac = 5 [json_name = "mac"];
-  int32 mtu = 6 [json_name = "mtu"];
-  bool link_up = 7 [json_name = "link_up"];
-  bool carrier = 8 [json_name = "carrier"];
-  repeated string addresses = 9 [json_name = "addresses"];
-  string master = 10 [json_name = "master"];
-  bool ovs_managed = 11 [json_name = "ovs_managed"];
-  bool kc_managed = 12 [json_name = "kc_managed"];
-  bool default_route = 13 [json_name = "default_route"];
-  bool management = 14 [json_name = "management"];
-  bool selectable = 15 [json_name = "selectable"];
-  repeated string unavailable_reasons = 16 [json_name = "unavailable_reasons"];
-  google.protobuf.Timestamp observed_at = 17 [json_name = "observed_at"];
-  repeated string vlan_network_ids = 18 [json_name = "vlan_network_ids"];
-}
-
-message NetworkDevice {
-  string device_name = 1 [json_name = "device_name"];
-  string inventory_fingerprint = 2 [json_name = "inventory_fingerprint"];
-  repeated NodeInterface nodes = 3 [json_name = "nodes"];
 }
 
 message VlanNetwork {
@@ -204,37 +179,6 @@ message PlatformOperation {
   google.protobuf.Timestamp updated_at = 8 [json_name = "updated_at"];
   google.protobuf.Timestamp completed_at = 9 [json_name = "completed_at"];
   google.protobuf.Timestamp next_attempt_at = 10 [json_name = "next_attempt_at"];
-}
-
-message ListNodeInterfacesRequest {
-  string node_name = 1 [json_name = "node_name"];
-  string cluster_id = 2 [json_name = "cluster_id"];
-  string virtual_switch_id = 3 [json_name = "virtual_switch_id"];
-}
-message ListNodeInterfacesResponse {
-  repeated NodeInterface items = 1 [json_name = "items"];
-  string inventory_fingerprint = 2 [json_name = "inventory_fingerprint"];
-  int64 total = 3 [json_name = "total"];
-}
-
-message AdoptNetworkDeviceData {
-  string name = 1 [json_name = "name"];
-  string device_name = 2 [json_name = "device_name"];
-  string inventory_fingerprint = 3 [json_name = "inventory_fingerprint"];
-  string idempotency_key = 4 [json_name = "idempotency_key"];
-}
-message AdoptNetworkDeviceRequest {
-  AdoptNetworkDeviceData data = 1 [json_name = "data"];
-}
-message AdoptNetworkDeviceResponse {
-  PlatformResource resource = 1 [json_name = "resource"];
-}
-
-message GetNetworkDeviceRequest {
-  string device_id = 1 [json_name = "device_id"];
-}
-message GetNetworkDeviceResponse {
-  PlatformResource resource = 1 [json_name = "resource"];
 }
 
 message CreateVlanNetworkData {
@@ -495,39 +439,6 @@ message GetPlatformOperationRequest {
 }
 message GetPlatformOperationResponse {
   PlatformOperation operation = 1 [json_name = "operation"];
-}
-
-// A restricted legacy registration closure has a durable fence and keeps history.
-message DeviceRetirement {
-  string device_id = 1 [json_name = "device_id"];
-  string operation_id = 2 [json_name = "operation_id"];
-  string state = 3 [json_name = "state"];
-  string reason = 4 [json_name = "reason"];
-  int64 version = 5 [json_name = "version"];
-  int64 expected_version = 6 [json_name = "expected_version"];
-  string config_uid = 7 [json_name = "config_uid"];
-  int64 fence_version = 8 [json_name = "fence_version"];
-  bool pending_unknown = 9 [json_name = "pending_unknown"];
-  google.protobuf.Timestamp created_at = 10 [json_name = "created_at"];
-  google.protobuf.Timestamp updated_at = 11 [json_name = "updated_at"];
-  google.protobuf.Timestamp completed_at = 12 [json_name = "completed_at"];
-}
-message RetireNetworkDeviceData {
-  int64 expected_version = 1 [json_name = "expected_version"];
-  string idempotency_key = 2 [json_name = "idempotency_key"];
-}
-message RetireNetworkDeviceRequest {
-  string device_id = 1 [json_name = "device_id"];
-  RetireNetworkDeviceData data = 2 [json_name = "data"];
-}
-message RetireNetworkDeviceResponse {
-  DeviceRetirement retirement = 1 [json_name = "retirement"];
-}
-message GetNetworkDeviceRetirementRequest {
-  string device_id = 1 [json_name = "device_id"];
-}
-message GetNetworkDeviceRetirementResponse {
-  DeviceRetirement retirement = 1 [json_name = "retirement"];
 }
 
 // The system VPC identity is output-only and fixed by Resource configuration.

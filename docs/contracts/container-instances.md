@@ -116,7 +116,7 @@ CPU/GPU DELETE 均持久关闭新意图闸门。只有当前 dispatcher lease、
 | 方法与路径 | 输入与结果 |
 |---|---|
 | GET `/api/v1/compute-presets?usage=CONTAINER_INSTANCE` | page/pageSize，name/code/compute_type/gpu_mode；`{items,total,gpu_catalog_status,gpu_catalog_reason}` |
-| GET `/api/v1/instances` | page/pageSize，name/instance_kind/compute_type/observedState；`{items,total}` |
+| GET `/api/v1/instances` | page/pageSize，name/id/instance_kind/compute_type/observedState；`{items,total}`；不传 observedState 时不返回 deleted |
 | GET `/api/v1/instances/{instance_id}` | 冻结静态详情，与列表使用同一安全投影 |
 | GET `/api/v1/instance-operations/{operation_id}` | 受理响应的 operationId；返回 id/instanceId/action/intentVersion/state/reason |
 | POST `/api/v1/instances/{instance_id}:start`、`:stop` | `{data:{idempotencyKey,expectedVersion}}`，202 + 受理响应 |
@@ -138,6 +138,8 @@ CPU/GPU DELETE 均持久关闭新意图闸门。只有当前 dispatcher lease、
 不先调用公共 ResolveComputePreset，不改变已冻结的实例 v2 字节与摘要。
 
 分页独立默认 page=1/pageSize=20，pageSize 1..100；未知、重复、零和非规范正整数参数拒绝。授权、可见性和过滤先于最终计数及分页。HTTP 的 int64/uint64 按 ProtoJSON 为十进制字符串。
+
+列表的 `name` 为区分大小写子串（去首尾空白，最长 80）；`id` 为不区分大小写子串（去首尾空白，最长 36 字节，空值等同未传），用于按实例 ID 片段检索。`observedState` 不传时排除 `deleted` 墓碑，显式传 `observedState=deleted` 才能查看已删除实例；两者与其它过滤取交集。
 
 创建示例中的镜像、规格与 PriorityClass 必须替换为真实可见资源；不需要调度意图时省略整个 scheduling。幂等键为 UUID，每个新动作使用新键，网络重试沿用同一键和原始正文。expectedVersion 使用最近静态详情的字符串版本。operation 的 QUEUED/执行中/完成或失败与 Pod 运行状态分别观察。
 

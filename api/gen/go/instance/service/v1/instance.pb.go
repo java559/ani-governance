@@ -2242,6 +2242,7 @@ type ListInstancesRequest struct {
 	ComputeType   string                 `protobuf:"bytes,6,opt,name=compute_type,proto3" json:"compute_type,omitempty"`
 	ObservedState string                 `protobuf:"bytes,7,opt,name=observed_state,json=observedState,proto3" json:"observed_state,omitempty"`
 	Name          string                 `protobuf:"bytes,8,opt,name=name,proto3" json:"name,omitempty"`
+	Id            string                 `protobuf:"bytes,9,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2314,6 +2315,13 @@ func (x *ListInstancesRequest) GetObservedState() string {
 func (x *ListInstancesRequest) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *ListInstancesRequest) GetId() string {
+	if x != nil {
+		return x.Id
 	}
 	return ""
 }
@@ -4377,14 +4385,15 @@ const file_instance_service_v1_instance_proto_rawDesc = "" +
 	"\x18DetachInstancePVCRequest\x12>\n" +
 	"\x04data\x18\x01 \x01(\v2*.instance.service.v1.DetachInstancePVCDataR\x04data\"6\n" +
 	"\x12GetInstanceRequest\x12 \n" +
-	"\vinstance_id\x18\x01 \x01(\tR\vinstance_id\"\x83\x02\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\vinstance_id\"\x93\x02\n" +
 	"\x14ListInstancesRequest\x12\x17\n" +
 	"\x04page\x18\x03 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
 	"\tpage_size\x18\x04 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12$\n" +
 	"\rinstance_kind\x18\x05 \x01(\tR\rinstance_kind\x12\"\n" +
 	"\fcompute_type\x18\x06 \x01(\tR\fcompute_type\x12%\n" +
 	"\x0eobserved_state\x18\a \x01(\tR\robservedState\x12\x12\n" +
-	"\x04name\x18\b \x01(\tR\x04nameB\a\n" +
+	"\x04name\x18\b \x01(\tR\x04name\x12\x0e\n" +
+	"\x02id\x18\t \x01(\tR\x02idB\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
 	"_page_sizeJ\x04\b\x01\x10\x02J\x04\b\x02\x10\x03R\bafter_id\"9\n" +

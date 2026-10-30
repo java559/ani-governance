@@ -101,7 +101,7 @@ func TestImageSignedBodyAndCanonicalQuery(t *testing.T) {
 			t.Fatal("permission mapping missing")
 		}
 	}
-	if allowsAPIKey("/image.v1.ImageRuntimeService/GetTenantPullMaterial") || allowsAPIKey("/admin.service.v1.ImageService/IssuePublisherCredentialExtra") {
+	if allowsAPIKey("/image.v1.ImageRuntimeService/GetTenantPullMaterial") || allowsAPIKey("/image.v1.ImageRuntimeService/EnsureTenantPullSecret") || allowsAPIKey("/admin.service.v1.ImageService/IssuePublisherCredentialExtra") {
 		t.Fatal("internal or wildcard key permission")
 	}
 }

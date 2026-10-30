@@ -3599,99 +3599,6 @@ paths:
                                 $ref: '#/components/schemas/DeleteDefaultVPCEgressResponse'
             security:
                 - BearerAuth: []
-    /api/v1/admin/networks/devices:
-        post:
-            tags:
-                - PlatformNetworkService
-            summary: AdoptNetworkDevice
-            description: Requires platform user JWT and network:platform:device:adopt. Write acceptance is asynchronous; inspect resource state and last_operation_id. Tenant identities and API keys are denied.
-            operationId: PlatformNetworkService_AdoptNetworkDevice
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/AdoptNetworkDeviceRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/AdoptNetworkDeviceResponse'
-            security:
-                - BearerAuth: []
-    /api/v1/admin/networks/devices/{device_id}:
-        get:
-            tags:
-                - PlatformNetworkService
-            summary: GetNetworkDevice
-            description: Requires platform user JWT and network:platform:device:get. Tenant identities and API keys are denied.
-            operationId: PlatformNetworkService_GetNetworkDevice
-            parameters:
-                - name: device_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/GetNetworkDeviceResponse'
-            security:
-                - BearerAuth: []
-    /api/v1/admin/networks/devices/{device_id}/retirement:
-        get:
-            tags:
-                - PlatformNetworkService
-            summary: GetNetworkDeviceRetirement
-            description: Requires platform user JWT and network:platform:device-retirement:get. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied.
-            operationId: PlatformNetworkService_GetNetworkDeviceRetirement
-            parameters:
-                - name: device_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/GetNetworkDeviceRetirementResponse'
-            security:
-                - BearerAuth: []
-        post:
-            tags:
-                - PlatformNetworkService
-            summary: RetireNetworkDevice
-            description: Requires platform user JWT and network:platform:device-retirement:create. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied.
-            operationId: PlatformNetworkService_RetireNetworkDevice
-            parameters:
-                - name: device_id
-                  in: path
-                  required: true
-                  schema:
-                    type: string
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/RetireNetworkDeviceRequest'
-                required: true
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/RetireNetworkDeviceResponse'
-            security:
-                - BearerAuth: []
     /api/v1/admin/networks/egress-gateways:
         get:
             tags:
@@ -4065,35 +3972,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/RecordIntranetPoolVerificationResponse'
-            security:
-                - BearerAuth: []
-    /api/v1/admin/networks/node-interfaces:
-        get:
-            tags:
-                - PlatformNetworkService
-            summary: ListNodeInterfaces
-            description: Requires platform user JWT and network:platform:device:list. Tenant identities and API keys are denied.
-            operationId: PlatformNetworkService_ListNodeInterfaces
-            parameters:
-                - name: node_name
-                  in: query
-                  schema:
-                    type: string
-                - name: cluster_id
-                  in: query
-                  schema:
-                    type: string
-                - name: virtual_switch_id
-                  in: query
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ListNodeInterfacesResponse'
             security:
                 - BearerAuth: []
     /api/v1/admin/networks/operations/{operation_id}:
@@ -9130,6 +9008,10 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: id
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -13774,27 +13656,6 @@ components:
             properties:
                 data:
                     $ref: '#/components/schemas/AdoptAcceleratorSupplyData'
-        AdoptNetworkDeviceData:
-            type: object
-            properties:
-                name:
-                    type: string
-                device_name:
-                    type: string
-                inventory_fingerprint:
-                    type: string
-                idempotency_key:
-                    type: string
-        AdoptNetworkDeviceRequest:
-            type: object
-            properties:
-                data:
-                    $ref: '#/components/schemas/AdoptNetworkDeviceData'
-        AdoptNetworkDeviceResponse:
-            type: object
-            properties:
-                resource:
-                    $ref: '#/components/schemas/PlatformResource'
         Any:
             type: object
             properties:
@@ -14656,6 +14517,14 @@ components:
                     type: integer
                     format: uint64
                 finetuning_template:
+                    type: string
+                training_image_id:
+                    type: string
+                    description: |-
+                        Catalogue training image selection. General training accepts the pair or
+                         neither (trusted material default); finetuning rejects both. The values are
+                         forwarded unchanged to the shared strict intent parser.
+                training_image_scope:
                     type: string
             description: |-
                 The one active public execution intent. Identity comes from authentication.
@@ -15804,37 +15673,6 @@ components:
                     type: string
                     description: 内核版本
             description: 设备信息
-        DeviceRetirement:
-            type: object
-            properties:
-                device_id:
-                    type: string
-                operation_id:
-                    type: string
-                state:
-                    type: string
-                reason:
-                    type: string
-                version:
-                    type: string
-                expected_version:
-                    type: string
-                config_uid:
-                    type: string
-                fence_version:
-                    type: string
-                pending_unknown:
-                    type: boolean
-                created_at:
-                    type: string
-                    format: date-time
-                updated_at:
-                    type: string
-                    format: date-time
-                completed_at:
-                    type: string
-                    format: date-time
-            description: A restricted legacy registration closure has a durable fence and keeps history.
         DictEntry:
             type: object
             properties:
@@ -16658,6 +16496,13 @@ components:
                     type: string
                 image_scope:
                     type: string
+                training_image_digest:
+                    type: string
+                    description: |-
+                        通用训练所运行镜像的冻结摘要与 Resource 权威 registry 主机。
+                         微调保持材料固定的镜像身份，这两个字段为空。
+                training_image_registry_authority:
+                    type: string
                 compute_state:
                     type: string
                 delivery_state:
@@ -17078,16 +16923,6 @@ components:
                     $ref: '#/components/schemas/Model'
                 version:
                     $ref: '#/components/schemas/ModelVersion'
-        GetNetworkDeviceResponse:
-            type: object
-            properties:
-                resource:
-                    $ref: '#/components/schemas/PlatformResource'
-        GetNetworkDeviceRetirementResponse:
-            type: object
-            properties:
-                retirement:
-                    $ref: '#/components/schemas/DeviceRetirement'
         GetOperationResponse:
             type: object
             properties:
@@ -19083,17 +18918,6 @@ components:
                         $ref: '#/components/schemas/MountablePVC'
                 total:
                     type: string
-        ListNodeInterfacesResponse:
-            type: object
-            properties:
-                items:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/NodeInterface'
-                inventory_fingerprint:
-                    type: string
-                total:
-                    type: string
         ListNotificationChannelResponse:
             type: object
             properties:
@@ -20591,17 +20415,6 @@ components:
                         - $ref: '#/components/schemas/StringArray'
                     description: Mapped value
             description: Automatically-generated message used to represent maps of StringArray as ordered (name,value) pairs.
-        NetworkDevice:
-            type: object
-            properties:
-                device_name:
-                    type: string
-                inventory_fingerprint:
-                    type: string
-                nodes:
-                    type: array
-                    items:
-                        $ref: '#/components/schemas/NodeInterface'
         NetworkSelection:
             type: object
             properties:
@@ -20609,53 +20422,6 @@ components:
                     type: string
                 subnet_id:
                     type: string
-        NodeInterface:
-            type: object
-            properties:
-                node_name:
-                    type: string
-                node_uid:
-                    type: string
-                name:
-                    type: string
-                kind:
-                    type: string
-                mac:
-                    type: string
-                mtu:
-                    type: integer
-                    format: int32
-                link_up:
-                    type: boolean
-                carrier:
-                    type: boolean
-                addresses:
-                    type: array
-                    items:
-                        type: string
-                master:
-                    type: string
-                ovs_managed:
-                    type: boolean
-                kc_managed:
-                    type: boolean
-                default_route:
-                    type: boolean
-                management:
-                    type: boolean
-                selectable:
-                    type: boolean
-                unavailable_reasons:
-                    type: array
-                    items:
-                        type: string
-                observed_at:
-                    type: string
-                    format: date-time
-                vlan_network_ids:
-                    type: array
-                    items:
-                        type: string
         NotificationChannel:
             type: object
             properties:
@@ -21832,8 +21598,6 @@ components:
                     type: boolean
                 last_operation_id:
                     type: string
-                device:
-                    $ref: '#/components/schemas/NetworkDevice'
                 vlan:
                     $ref: '#/components/schemas/VlanNetwork'
                 gateway:
@@ -22690,25 +22454,6 @@ components:
             properties:
                 data:
                     $ref: '#/components/schemas/SandboxActionData'
-        RetireNetworkDeviceData:
-            type: object
-            properties:
-                expected_version:
-                    type: string
-                idempotency_key:
-                    type: string
-        RetireNetworkDeviceRequest:
-            type: object
-            properties:
-                device_id:
-                    type: string
-                data:
-                    $ref: '#/components/schemas/RetireNetworkDeviceData'
-        RetireNetworkDeviceResponse:
-            type: object
-            properties:
-                retirement:
-                    $ref: '#/components/schemas/DeviceRetirement'
         RetryAcceleratorInitializationOperationData:
             type: object
             properties:
@@ -25193,8 +24938,6 @@ components:
                 node_name:
                     type: string
                 node_uid:
-                    type: string
-                mac:
                     type: string
                 priority:
                     type: integer
