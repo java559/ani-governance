@@ -17,15 +17,10 @@ var PlatformNetworkOperations = map[string]NetworkOperationPolicy{
 	"/admin.service.v1.PlatformNetworkService/GetDefaultVPCEgress":              {"GET", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:get", true},
 	"/admin.service.v1.PlatformNetworkService/GetCurrentDefaultVPCEgress":       {"GET", "/api/v1/admin/networks/default-vpc-egress", "network:platform:default-egress:get", true},
 	"/admin.service.v1.PlatformNetworkService/DeleteDefaultVPCEgress":           {"DELETE", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:delete", false},
-	"/admin.service.v1.PlatformNetworkService/RetireNetworkDevice":              {"POST", "/api/v1/admin/networks/devices/{device_id}/retirement", "network:platform:device-retirement:create", false},
-	"/admin.service.v1.PlatformNetworkService/GetNetworkDeviceRetirement":       {"GET", "/api/v1/admin/networks/devices/{device_id}/retirement", "network:platform:device-retirement:get", true},
 	"/admin.service.v1.PlatformNetworkService/CreateVirtualSwitch":              {"POST", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:create", false},
 	"/admin.service.v1.PlatformNetworkService/GetVirtualSwitch":                 {"GET", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:get", true},
 	"/admin.service.v1.PlatformNetworkService/ListVirtualSwitches":              {"GET", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:list", true},
 	"/admin.service.v1.PlatformNetworkService/DeleteVirtualSwitch":              {"DELETE", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:delete", false},
-	"/admin.service.v1.PlatformNetworkService/ListNodeInterfaces":               {"GET", "/api/v1/admin/networks/node-interfaces", "network:platform:device:list", true},
-	"/admin.service.v1.PlatformNetworkService/AdoptNetworkDevice":               {"POST", "/api/v1/admin/networks/devices", "network:platform:device:adopt", false},
-	"/admin.service.v1.PlatformNetworkService/GetNetworkDevice":                 {"GET", "/api/v1/admin/networks/devices/{device_id}", "network:platform:device:get", true},
 	"/admin.service.v1.PlatformNetworkService/CreateVlanNetwork":                {"POST", "/api/v1/admin/networks/vlan-networks", "network:platform:vlan-network:create", false},
 	"/admin.service.v1.PlatformNetworkService/GetVlanNetwork":                   {"GET", "/api/v1/admin/networks/vlan-networks/{vlan_network_id}", "network:platform:vlan-network:get", true},
 	"/admin.service.v1.PlatformNetworkService/ListVlanNetworks":                 {"GET", "/api/v1/admin/networks/vlan-networks", "network:platform:vlan-network:list", true},
@@ -88,10 +83,6 @@ func platformNetworkMessage(operation string) proto.Message {
 		return &view.GetCurrentDefaultVPCEgressRequest{}
 	case "DeleteDefaultVPCEgress":
 		return &view.DeleteDefaultVPCEgressRequest{}
-	case "RetireNetworkDevice":
-		return &view.RetireNetworkDeviceRequest{}
-	case "GetNetworkDeviceRetirement":
-		return &view.GetNetworkDeviceRetirementRequest{}
 	case "CreateVirtualSwitch":
 		return &view.CreateVirtualSwitchRequest{}
 	case "GetVirtualSwitch":
@@ -100,12 +91,6 @@ func platformNetworkMessage(operation string) proto.Message {
 		return &view.ListVirtualSwitchesRequest{}
 	case "DeleteVirtualSwitch":
 		return &view.DeleteVirtualSwitchRequest{}
-	case "ListNodeInterfaces":
-		return &view.ListNodeInterfacesRequest{}
-	case "AdoptNetworkDevice":
-		return &view.AdoptNetworkDeviceRequest{}
-	case "GetNetworkDevice":
-		return &view.GetNetworkDeviceRequest{}
 	case "CreateVlanNetwork":
 		return &view.CreateVlanNetworkRequest{}
 	case "GetVlanNetwork":
@@ -191,10 +176,6 @@ func platformNetworkQueryFields(operation string) map[string]bool {
 		}
 	case "ListVirtualSwitches":
 		for _, f := range []string{"name", "state", "page", "pageSize"} {
-			fields[f] = true
-		}
-	case "ListNodeInterfaces":
-		for _, f := range []string{"node_name", "cluster_id", "virtual_switch_id"} {
 			fields[f] = true
 		}
 	case "ListVlanNetworks", "ListEgressGateways", "ListPublicAddressPools", "ListIntranetAddressPools":

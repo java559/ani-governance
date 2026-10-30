@@ -31,24 +31,6 @@ func platformCall[T any](c *NetworkClient, ctx context.Context, actor string, ca
 	return call(ctx)
 }
 
-func (c *NetworkClient) ListNodeInterfaces(ctx context.Context, actor string, req *networkv1.ListNodeInterfacesRequest) (*networkv1.ListNodeInterfacesResponse, error) {
-	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.ListNodeInterfacesResponse, error) {
-		return c.platform.ListNodeInterfaces(ctx, req)
-	})
-}
-
-func (c *NetworkClient) AdoptNetworkDevice(ctx context.Context, actor string, req *networkv1.AdoptNetworkDeviceRequest) (*networkv1.AdoptNetworkDeviceResponse, error) {
-	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.AdoptNetworkDeviceResponse, error) {
-		return c.platform.AdoptNetworkDevice(ctx, req)
-	})
-}
-
-func (c *NetworkClient) GetNetworkDevice(ctx context.Context, actor string, req *networkv1.GetNetworkDeviceRequest) (*networkv1.GetNetworkDeviceResponse, error) {
-	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.GetNetworkDeviceResponse, error) {
-		return c.platform.GetNetworkDevice(ctx, req)
-	})
-}
-
 func (c *NetworkClient) CreateVlanNetwork(ctx context.Context, actor string, req *networkv1.CreateVlanNetworkRequest) (*networkv1.CreateVlanNetworkResponse, error) {
 	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.CreateVlanNetworkResponse, error) {
 		return c.platform.CreateVlanNetwork(ctx, req)

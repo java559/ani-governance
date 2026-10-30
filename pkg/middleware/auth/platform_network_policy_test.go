@@ -1,6 +1,7 @@
 package auth
 
 import (
+	adminv1 "go-wind-admin/api/gen/go/admin/service/v1"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -30,11 +31,6 @@ func TestPlatformNetworkHTTPContract(t *testing.T) {
 		{"default_egress_no_tenant", "POST", base + "/default-vpc-egresses", `{"data":{"name":"run-default-egress","pool_id":"pool_0123456789abcdef0123456789abcdef","tenant_id":"arbitrary"}}`, 400},
 		{"default_egress_no_arbitrary_vpc", "POST", base + "/default-vpc-egresses", `{"data":{"name":"run-default-egress","pool_id":"pool_0123456789abcdef0123456789abcdef","default_vpc_uid":"arbitrary"}}`, 400},
 		{"default_egress_wrong_id", "GET", base + "/default-vpc-egresses/vpc_0123456789abcdef0123456789abcdef", "", 400},
-		{"retirement_command", "POST", base + "/devices/device_0123456789abcdef0123456789abcdef/retirement", `{"data":{"expected_version":"2","idempotency_key":"close-device"}}`, 204},
-		{"retirement_get", "GET", base + "/devices/device_0123456789abcdef0123456789abcdef/retirement", "", 204},
-		{"retirement_wrong_kind", "POST", base + "/devices/vsw_0123456789abcdef0123456789abcdef/retirement", `{"data":{"expected_version":"2","idempotency_key":"close-device"}}`, 400},
-		{"retirement_body_conflict", "POST", base + "/devices/device_0123456789abcdef0123456789abcdef/retirement", `{"device_id":"device_1123456789abcdef0123456789abcdef","data":{"expected_version":"2","idempotency_key":"close-device"}}`, 400},
-		{"retirement_tenant_spoof", "POST", base + "/devices/device_0123456789abcdef0123456789abcdef/retirement", `{"data":{"expected_version":"2","idempotency_key":"close-device","tenant_id":"forged"}}`, 400},
 		{"switch_name_only", "POST", base + "/virtual-switches", `{"data":{"name":"test-switch","idempotency_key":"create-switch"}}`, 204},
 		{"switch_unbound_get", "GET", base + "/virtual-switches/vsw_0123456789abcdef0123456789abcdef", "", 204},
 		{"switch_delete", "DELETE", base + "/virtual-switches/vsw_0123456789abcdef0123456789abcdef", "", 204},
@@ -53,17 +49,13 @@ func TestPlatformNetworkHTTPContract(t *testing.T) {
 		{"vlan_v2", "POST", base + "/vlan-networks", `{"data":{"name":"vlan","cluster_id":"cluster","virtual_switch_id":"vsw_0123456789abcdef0123456789abcdef","device_name":"ens35","vlan_id":0,"idempotency_key":"vlan-v2"}}`, 204},
 		{"vlan_mixed_version", "POST", base + "/vlan-networks", `{"data":{"name":"vlan","device_id":"device_0123456789abcdef0123456789abcdef","cluster_id":"cluster","virtual_switch_id":"vsw_0123456789abcdef0123456789abcdef","device_name":"ens35"}}`, 400},
 		{"vlan_partial_v2", "POST", base + "/vlan-networks", `{"data":{"name":"vlan","cluster_id":"cluster","device_name":"ens35"}}`, 400},
-		{"inventory_binding", "GET", base + "/node-interfaces?cluster_id=cluster&virtual_switch_id=vsw_0123456789abcdef0123456789abcdef", "", 204},
-		{"inventory_wrong_switch", "GET", base + "/node-interfaces?virtual_switch_id=vlan_0123456789abcdef0123456789abcdef", "", 400},
 		{"default_limit", "GET", base + "/intranet-address-pools", "", 204},
-		{"inventory", "GET", base + "/node-interfaces?node_name=node-a", "", 204},
 		{"create_data", "POST", base + "/egress-gateways", `{"data":{"name":"gw","idempotency_key":"create"}}`, 204},
 		{"legacy_window", "GET", base + "/vlan-networks?page=1", "", 400},
 		{"zero", "GET", base + "/vlan-networks?limit=0", "", 400},
 		{"overflow", "GET", base + "/vlan-networks?limit=101", "", 400},
 		{"noncanonical", "GET", base + "/vlan-networks?limit=01", "", 400},
 		{"duplicate", "GET", base + "/vlan-networks?limit=1&limit=2", "", 400},
-		{"inventory_window", "GET", base + "/node-interfaces?limit=1", "", 400},
 		{"unknown_filter", "GET", base + "/public-address-pools?tenant_id=0", "", 400},
 		{"identity_in_body", "POST", base + "/egress-gateways", `{"data":{"name":"gw","actor":"governance:user:1"}}`, 400},
 		{"bad_reference", "POST", base + "/vlan-networks", `{"data":{"name":"vlan","device_id":"vpc_0123456789abcdef0123456789abcdef"}}`, 400},
@@ -98,6 +90,41 @@ func TestPlatformNetworkHTTPContract(t *testing.T) {
 			NetworkHTTPFilter(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { t.Fatal("spoofed identity reached decoding") })).ServeHTTP(w, r)
 			if w.Code != 400 {
 				t.Fatalf("status=%d", w.Code)
+			}
+		})
+	}
+}
+
+func TestRetiredPlatformNetworkRoutesAreRejected(t *testing.T) {
+	const base = "/api/v1/admin/networks"
+	const device = "/devices/device_0123456789abcdef0123456789abcdef"
+	for _, route := range []struct{ operation, method, path string }{
+		{"ListNodeInterfaces", "GET", "/node-interfaces"},
+		{"AdoptNetworkDevice", "POST", "/devices"},
+		{"GetNetworkDevice", "GET", device},
+		{"RetireNetworkDevice", "POST", device + "/retirement"},
+		{"GetNetworkDeviceRetirement", "GET", device + "/retirement"},
+	} {
+		t.Run(route.operation, func(t *testing.T) {
+			for _, method := range adminv1.PlatformNetworkService_ServiceDesc.Methods {
+				if method.MethodName == route.operation {
+					t.Fatal("retired RPC remains generated")
+				}
+			}
+			operation := "/admin.service.v1.PlatformNetworkService/" + route.operation
+			if IsPlatformNetworkOperation(operation) || platformNetworkMessage(operation) != nil {
+				t.Fatal("retired operation remains registered")
+			}
+			r := httptest.NewRequest(route.method, base+route.path, nil)
+			if operation, _, _, _ := networkHTTPRoute(r); operation != "" {
+				t.Fatal("retired route remains registered")
+			}
+			w := httptest.NewRecorder()
+			NetworkHTTPFilter(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+				t.Fatal("retired route reached decoding")
+			})).ServeHTTP(w, r)
+			if w.Code != http.StatusBadRequest {
+				t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
 			}
 		})
 	}

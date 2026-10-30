@@ -36,14 +36,6 @@ service PlatformNetworkService {
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "DeleteDefaultVPCEgress" description: "Requires platform user JWT and network:platform:default-egress:delete. The configured system VPC is fixed; requests cannot supply tenant or VPC identity. Acceptance and pending_unknown are not traffic readiness." };
   }
 
-  rpc RetireNetworkDevice(catalog.service.v1.RetireNetworkDeviceRequest) returns (catalog.service.v1.RetireNetworkDeviceResponse) {
-    option (google.api.http) = { post: "/api/v1/admin/networks/devices/{device_id}/retirement" body: "*" response_body: "retirement" };
-    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "RetireNetworkDevice" description: "Requires platform user JWT and network:platform:device-retirement:create. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied." };
-  }
-  rpc GetNetworkDeviceRetirement(catalog.service.v1.GetNetworkDeviceRetirementRequest) returns (catalog.service.v1.GetNetworkDeviceRetirementResponse) {
-    option (google.api.http) = { get: "/api/v1/admin/networks/devices/{device_id}/retirement" response_body: "retirement" };
-    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetNetworkDeviceRetirement" description: "Requires platform user JWT and network:platform:device-retirement:get. Restricted legacy registration closure preserves history and fencing; blocked or unknown outcomes are not completion. Tenant identities and API keys are denied." };
-  }
 
   rpc CreateVirtualSwitch(catalog.service.v1.CreateVirtualSwitchRequest) returns (catalog.service.v1.CreateVirtualSwitchResponse) {
     option (google.api.http) = { post: "/api/v1/admin/networks/virtual-switches" body: "*" response_body: "resource" };
@@ -62,18 +54,6 @@ service PlatformNetworkService {
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "DeleteVirtualSwitch" description: "Requires platform user JWT and network:platform:virtual-switch:delete. Tenant identities and API keys are denied." };
   }
 
-  rpc ListNodeInterfaces(catalog.service.v1.ListNodeInterfacesRequest) returns (catalog.service.v1.ListNodeInterfacesResponse) {
-    option (google.api.http) = { get: "/api/v1/admin/networks/node-interfaces" };
-    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "ListNodeInterfaces" description: "Requires platform user JWT and network:platform:device:list. Tenant identities and API keys are denied." };
-  }
-  rpc AdoptNetworkDevice(catalog.service.v1.AdoptNetworkDeviceRequest) returns (catalog.service.v1.AdoptNetworkDeviceResponse) {
-    option (google.api.http) = { post: "/api/v1/admin/networks/devices" body: "*" response_body: "resource" };
-    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "AdoptNetworkDevice" description: "Requires platform user JWT and network:platform:device:adopt. Write acceptance is asynchronous; inspect resource state and last_operation_id. Tenant identities and API keys are denied." };
-  }
-  rpc GetNetworkDevice(catalog.service.v1.GetNetworkDeviceRequest) returns (catalog.service.v1.GetNetworkDeviceResponse) {
-    option (google.api.http) = { get: "/api/v1/admin/networks/devices/{device_id}" response_body: "resource" };
-    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetNetworkDevice" description: "Requires platform user JWT and network:platform:device:get. Tenant identities and API keys are denied." };
-  }
   rpc CreateVlanNetwork(catalog.service.v1.CreateVlanNetworkRequest) returns (catalog.service.v1.CreateVlanNetworkResponse) {
     option (google.api.http) = { post: "/api/v1/admin/networks/vlan-networks" body: "*" response_body: "resource" };
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "CreateVlanNetwork" description: "Requires platform user JWT and network:platform:vlan-network:create. Write acceptance is asynchronous; inspect resource state and last_operation_id. Tenant identities and API keys are denied." };

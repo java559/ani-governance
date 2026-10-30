@@ -35,24 +35,6 @@ func (c *NetworkClient) DeleteVirtualSwitch(ctx context.Context, actor string, r
 	})
 }
 
-func (c *NetworkClient) RetireNetworkDevice(ctx context.Context, actor string, req *networkv1.RetireNetworkDeviceRequest) (*networkv1.RetireNetworkDeviceResponse, error) {
-	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.RetireNetworkDeviceResponse, error) {
-		if c.retirements == nil {
-			return nil, status.Error(codes.Unavailable, "network client unavailable")
-		}
-		return c.retirements.RetireNetworkDevice(ctx, req)
-	})
-}
-
-func (c *NetworkClient) GetNetworkDeviceRetirement(ctx context.Context, actor string, req *networkv1.GetNetworkDeviceRetirementRequest) (*networkv1.GetNetworkDeviceRetirementResponse, error) {
-	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.GetNetworkDeviceRetirementResponse, error) {
-		if c.retirements == nil {
-			return nil, status.Error(codes.Unavailable, "network client unavailable")
-		}
-		return c.retirements.GetNetworkDeviceRetirement(ctx, req)
-	})
-}
-
 func (c *NetworkClient) CreateDefaultVPCEgress(ctx context.Context, actor string, req *networkv1.CreateDefaultVPCEgressRequest) (*networkv1.CreateDefaultVPCEgressResponse, error) {
 	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.CreateDefaultVPCEgressResponse, error) {
 		if c.defaultEgress == nil {
