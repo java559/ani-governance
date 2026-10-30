@@ -237,3 +237,14 @@ func (c *StorageClient) DeleteObject(ctx context.Context, tenant, actor string, 
 		return c.client.DeleteObject(ctx, req)
 	})
 }
+
+func (c *StorageClient) GetBucketStats(ctx context.Context, tenant, actor string, r *storagev1.GetBucketStatsRequest) (*storagev1.GetBucketStatsResponse, error) {
+	if r == nil {
+		return nil, storageRequestRequired()
+	}
+	req := proto.Clone(r).(*storagev1.GetBucketStatsRequest)
+	req.TenantId = tenant
+	return trustedStorageCall(c, ctx, tenant, actor, func(ctx context.Context) (*storagev1.GetBucketStatsResponse, error) {
+		return c.client.GetBucketStats(ctx, req)
+	})
+}

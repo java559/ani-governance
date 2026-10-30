@@ -79,6 +79,16 @@ service StorageService {
       description: "Requires storage:bucket:list. Returns configured and dynamically created buckets belonging to the authenticated tenant."
     };
   }
+  rpc GetBucketStats(storage.service.v1.GetBucketStatsRequest) returns (storage.service.v1.GetBucketStatsResponse) {
+    option (google.api.http) = { get: "/api/v1/storage/buckets/{bucket_id}/stats" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [
+        { additional_properties: [{ name: "BearerAuth" value: {} }] }
+      ]
+      summary: "GetBucketStats"
+      description: "Requires storage:bucket:list. On-demand object count and total size for one bucket; scanning is capped and truncated=true means the numbers are lower bounds."
+    };
+  }
   rpc CreateBucket(storage.service.v1.CreateBucketRequest) returns (storage.service.v1.CreateBucketResponse) {
     option (google.api.http) = { post: "/api/v1/storage/buckets" body: "*" response_body: "bucket" };
     option (gnostic.openapi.v3.operation) = {

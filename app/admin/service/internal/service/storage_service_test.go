@@ -109,6 +109,10 @@ func TestStorageWriteHandlersValidateData(t *testing.T) {
 			_, err := svc.GetUploadURL(context.Background(), &storagepb.GetUploadURLRequest{Data: &storagepb.GetUploadURLData{BucketId: "files", Key: "a.txt"}})
 			return err
 		}},
+		{"stats empty bucket", func() error {
+			_, err := svc.GetBucketStats(context.Background(), &storagepb.GetBucketStatsRequest{})
+			return err
+		}},
 		{"delete empty key", func() error {
 			_, err := svc.DeleteObject(context.Background(), &storagepb.DeleteObjectRequest{Data: &storagepb.DeleteObjectData{BucketId: "files"}})
 			return err
@@ -138,6 +142,7 @@ func TestStorageRoutesRegistered(t *testing.T) {
 		adminV1.OperationStorageServiceCreateBucket,
 		adminV1.OperationStorageServiceGetUploadURL,
 		adminV1.OperationStorageServiceDeleteObject,
+		adminV1.OperationStorageServiceGetBucketStats,
 	}
 	seen := map[string]bool{}
 	for _, operation := range operations {

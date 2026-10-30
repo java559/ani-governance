@@ -145,6 +145,10 @@ message DeleteVolumeResponse {
 message Bucket {
   string id = 1;
   string name = 2;
+  google.protobuf.Timestamp created_at = 3 [json_name = "created_at"];
+  string region = 4;
+  string storage_class = 5 [json_name = "storage_class"];
+  string acl = 6;
 }
 
 message ListBucketsRequest {
@@ -265,4 +269,16 @@ message DeleteObjectRequest {
 message DeleteObjectResponse {
   // DELETED：本次删除了存在的对象；GONE：对象本来就不存在。
   string state = 1;
+}
+
+message GetBucketStatsRequest {
+  string bucket_id = 1 [json_name = "bucket_id"];
+}
+
+message GetBucketStatsResponse {
+  int64 object_count = 1 [json_name = "object_count"];
+  int64 total_size = 2 [json_name = "total_size"];
+  // 达到扫描上限时为 true，数值是下限。
+  bool truncated = 3;
+  int64 scanned = 4;
 }

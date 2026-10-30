@@ -30,6 +30,7 @@ const (
 	StorageService_UpdateVolume_FullMethodName       = "/admin.service.v1.StorageService/UpdateVolume"
 	StorageService_DeleteVolume_FullMethodName       = "/admin.service.v1.StorageService/DeleteVolume"
 	StorageService_ListBuckets_FullMethodName        = "/admin.service.v1.StorageService/ListBuckets"
+	StorageService_GetBucketStats_FullMethodName     = "/admin.service.v1.StorageService/GetBucketStats"
 	StorageService_CreateBucket_FullMethodName       = "/admin.service.v1.StorageService/CreateBucket"
 	StorageService_ListObjects_FullMethodName        = "/admin.service.v1.StorageService/ListObjects"
 	StorageService_HeadObject_FullMethodName         = "/admin.service.v1.StorageService/HeadObject"
@@ -49,6 +50,7 @@ type StorageServiceClient interface {
 	UpdateVolume(ctx context.Context, in *v1.UpdateVolumeRequest, opts ...grpc.CallOption) (*v1.UpdateVolumeResponse, error)
 	DeleteVolume(ctx context.Context, in *v1.DeleteVolumeRequest, opts ...grpc.CallOption) (*v1.DeleteVolumeResponse, error)
 	ListBuckets(ctx context.Context, in *v1.ListBucketsRequest, opts ...grpc.CallOption) (*v1.ListBucketsResponse, error)
+	GetBucketStats(ctx context.Context, in *v1.GetBucketStatsRequest, opts ...grpc.CallOption) (*v1.GetBucketStatsResponse, error)
 	CreateBucket(ctx context.Context, in *v1.CreateBucketRequest, opts ...grpc.CallOption) (*v1.CreateBucketResponse, error)
 	ListObjects(ctx context.Context, in *v1.ListObjectsRequest, opts ...grpc.CallOption) (*v1.ListObjectsResponse, error)
 	HeadObject(ctx context.Context, in *v1.HeadObjectRequest, opts ...grpc.CallOption) (*v1.HeadObjectResponse, error)
@@ -135,6 +137,16 @@ func (c *storageServiceClient) ListBuckets(ctx context.Context, in *v1.ListBucke
 	return out, nil
 }
 
+func (c *storageServiceClient) GetBucketStats(ctx context.Context, in *v1.GetBucketStatsRequest, opts ...grpc.CallOption) (*v1.GetBucketStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetBucketStatsResponse)
+	err := c.cc.Invoke(ctx, StorageService_GetBucketStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *storageServiceClient) CreateBucket(ctx context.Context, in *v1.CreateBucketRequest, opts ...grpc.CallOption) (*v1.CreateBucketResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.CreateBucketResponse)
@@ -206,6 +218,7 @@ type StorageServiceServer interface {
 	UpdateVolume(context.Context, *v1.UpdateVolumeRequest) (*v1.UpdateVolumeResponse, error)
 	DeleteVolume(context.Context, *v1.DeleteVolumeRequest) (*v1.DeleteVolumeResponse, error)
 	ListBuckets(context.Context, *v1.ListBucketsRequest) (*v1.ListBucketsResponse, error)
+	GetBucketStats(context.Context, *v1.GetBucketStatsRequest) (*v1.GetBucketStatsResponse, error)
 	CreateBucket(context.Context, *v1.CreateBucketRequest) (*v1.CreateBucketResponse, error)
 	ListObjects(context.Context, *v1.ListObjectsRequest) (*v1.ListObjectsResponse, error)
 	HeadObject(context.Context, *v1.HeadObjectRequest) (*v1.HeadObjectResponse, error)
@@ -242,6 +255,9 @@ func (UnimplementedStorageServiceServer) DeleteVolume(context.Context, *v1.Delet
 }
 func (UnimplementedStorageServiceServer) ListBuckets(context.Context, *v1.ListBucketsRequest) (*v1.ListBucketsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListBuckets not implemented")
+}
+func (UnimplementedStorageServiceServer) GetBucketStats(context.Context, *v1.GetBucketStatsRequest) (*v1.GetBucketStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBucketStats not implemented")
 }
 func (UnimplementedStorageServiceServer) CreateBucket(context.Context, *v1.CreateBucketRequest) (*v1.CreateBucketResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateBucket not implemented")
@@ -408,6 +424,24 @@ func _StorageService_ListBuckets_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StorageService_GetBucketStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetBucketStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServiceServer).GetBucketStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StorageService_GetBucketStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServiceServer).GetBucketStats(ctx, req.(*v1.GetBucketStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _StorageService_CreateBucket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v1.CreateBucketRequest)
 	if err := dec(in); err != nil {
@@ -550,6 +584,10 @@ var StorageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListBuckets",
 			Handler:    _StorageService_ListBuckets_Handler,
+		},
+		{
+			MethodName: "GetBucketStats",
+			Handler:    _StorageService_GetBucketStats_Handler,
 		},
 		{
 			MethodName: "CreateBucket",

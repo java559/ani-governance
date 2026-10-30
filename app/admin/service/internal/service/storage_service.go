@@ -346,7 +346,7 @@ func (s *StorageService) ListBuckets(ctx context.Context, r *storagepb.ListBucke
 		if int64(index) < offset || int64(index) >= offset+int64(limit) {
 			continue
 		}
-		out.Items = append(out.Items, &storagepb.Bucket{Id: item.GetId(), Name: item.GetName()})
+		out.Items = append(out.Items, wireStorageBucket(item))
 	}
 	return out, nil
 }
@@ -435,9 +435,35 @@ func (s *StorageService) CreateBucket(ctx context.Context, r *storagepb.CreateBu
 	if err != nil {
 		return nil, mapStorageError(err)
 	}
-	return &storagepb.CreateBucketResponse{Bucket: &storagepb.Bucket{
-		Id: reply.GetBucket().GetId(), Name: reply.GetBucket().GetName(),
-	}}, nil
+	return &storagepb.CreateBucketResponse{Bucket: wireStorageBucket(reply.GetBucket())}, nil
+}
+
+func wireStorageBucket(bucket *resourcestorage.Bucket) *storagepb.Bucket {
+	if bucket == nil {
+		return nil
+	}
+	return &storagepb.Bucket{
+		Id: bucket.GetId(), Name: bucket.GetName(), CreatedAt: bucket.GetCreatedAt(),
+		Region: bucket.GetRegion(), StorageClass: bucket.GetStorageClass(), Acl: bucket.GetAcl(),
+	}
+}
+
+func (s *StorageService) GetBucketStats(ctx context.Context, r *storagepb.GetBucketStatsRequest) (*storagepb.GetBucketStatsResponse, error) {
+	if r == nil || r.GetBucketId() == "" {
+		return nil, storageBadRequest()
+	}
+	tenant, actor, err := s.trustedStorageOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := s.client.GetBucketStats(ctx, tenant, actor, &resourcestorage.GetBucketStatsRequest{BucketId: r.GetBucketId()})
+	if err != nil {
+		return nil, mapStorageError(err)
+	}
+	return &storagepb.GetBucketStatsResponse{
+		ObjectCount: reply.GetObjectCount(), TotalSize: reply.GetTotalSize(),
+		Truncated: reply.GetTruncated(), Scanned: reply.GetScanned(),
+	}, nil
 }
 
 func (s *StorageService) GetUploadURL(ctx context.Context, r *storagepb.GetUploadURLRequest) (*storagepb.GetUploadURLResponse, error) {

@@ -11582,6 +11582,28 @@ paths:
                                 $ref: '#/components/schemas/ListObjectsResponse'
             security:
                 - BearerAuth: []
+    /api/v1/storage/buckets/{bucket_id}/stats:
+        get:
+            tags:
+                - StorageService
+            summary: GetBucketStats
+            description: Requires storage:bucket:list. On-demand object count and total size for one bucket; scanning is capped and truncated=true means the numbers are lower bounds.
+            operationId: StorageService_GetBucketStats
+            parameters:
+                - name: bucket_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBucketStatsResponse'
+            security:
+                - BearerAuth: []
     /api/v1/storage/buckets/{data.bucket_id}/objects:delete:
         post:
             tags:
@@ -13972,6 +13994,15 @@ components:
                 id:
                     type: string
                 name:
+                    type: string
+                created_at:
+                    type: string
+                    format: date-time
+                region:
+                    type: string
+                storage_class:
+                    type: string
+                acl:
                     type: string
         Callback:
             type: object
@@ -16763,6 +16794,18 @@ components:
                 imageBase64:
                     type: string
                     description: 验证码图片的Base64编码字符串，客户端可以解码并显示给用户
+        GetBucketStatsResponse:
+            type: object
+            properties:
+                object_count:
+                    type: string
+                total_size:
+                    type: string
+                truncated:
+                    type: boolean
+                    description: 达到扫描上限时为 true，数值是下限。
+                scanned:
+                    type: string
         GetDefaultVPCEgressResponse:
             type: object
             properties:

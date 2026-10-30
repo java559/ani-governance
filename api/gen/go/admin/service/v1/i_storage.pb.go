@@ -30,7 +30,7 @@ var File_admin_service_v1_i_storage_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_storage_proto_rawDesc = "" +
 	"\n" +
-	" admin/service/v1/i_storage.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a storage/service/v1/storage.proto2\xfd\x1f\n" +
+	" admin/service/v1/i_storage.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a storage/service/v1/storage.proto2\xe1\"\n" +
 	"\x0eStorageService\x12\xc6\x02\n" +
 	"\x12ListStorageClasses\x12-.storage.service.v1.ListStorageClassesRequest\x1a..storage.service.v1.ListStorageClassesResponse\"\xd0\x01\xbaG\xad\x01\x12\x12ListStorageClasses\x1a\x84\x01Requires active tenant, STORAGE module and storage:volume:create. page/pageSize with items/total. See docs/contracts/storage-api.md.Z\x10\n" +
 	"\x0e\n" +
@@ -59,7 +59,11 @@ const file_admin_service_v1_i_storage_proto_rawDesc = "" +
 	"\vListBuckets\x12&.storage.service.v1.ListBucketsRequest\x1a'.storage.service.v1.ListBucketsResponse\"\xbb\x01\xbaG\x98\x01\x12\vListBuckets\x1awRequires storage:bucket:list. Returns configured and dynamically created buckets belonging to the authenticated tenant.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/buckets\x12\xc8\x02\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/storage/buckets\x12\xe1\x02\n" +
+	"\x0eGetBucketStats\x12).storage.service.v1.GetBucketStatsRequest\x1a*.storage.service.v1.GetBucketStatsResponse\"\xf7\x01\xbaG\xc2\x01\x12\x0eGetBucketStats\x1a\x9d\x01Requires storage:bucket:list. On-demand object count and total size for one bucket; scanning is capped and truncated=true means the numbers are lower bounds.Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02+\x12)/api/v1/storage/buckets/{bucket_id}/stats\x12\xc8\x02\n" +
 	"\fCreateBucket\x12'.storage.service.v1.CreateBucketRequest\x1a(.storage.service.v1.CreateBucketResponse\"\xe4\x01\xbaG\xb6\x01\x12\fCreateBucket\x1a\x93\x01Requires storage:bucket:create. Logical name is S3-compatible lowercase ASCII; physical name is derived by the server. Repeat create is idempotent.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
@@ -96,25 +100,27 @@ var file_admin_service_v1_i_storage_proto_goTypes = []any{
 	(*v1.UpdateVolumeRequest)(nil),        // 4: storage.service.v1.UpdateVolumeRequest
 	(*v1.DeleteVolumeRequest)(nil),        // 5: storage.service.v1.DeleteVolumeRequest
 	(*v1.ListBucketsRequest)(nil),         // 6: storage.service.v1.ListBucketsRequest
-	(*v1.CreateBucketRequest)(nil),        // 7: storage.service.v1.CreateBucketRequest
-	(*v1.ListObjectsRequest)(nil),         // 8: storage.service.v1.ListObjectsRequest
-	(*v1.HeadObjectRequest)(nil),          // 9: storage.service.v1.HeadObjectRequest
-	(*v1.GetDownloadURLRequest)(nil),      // 10: storage.service.v1.GetDownloadURLRequest
-	(*v1.GetUploadURLRequest)(nil),        // 11: storage.service.v1.GetUploadURLRequest
-	(*v1.DeleteObjectRequest)(nil),        // 12: storage.service.v1.DeleteObjectRequest
-	(*v1.ListStorageClassesResponse)(nil), // 13: storage.service.v1.ListStorageClassesResponse
-	(*v1.CreateVolumeResponse)(nil),       // 14: storage.service.v1.CreateVolumeResponse
-	(*v1.ListVolumesResponse)(nil),        // 15: storage.service.v1.ListVolumesResponse
-	(*v1.GetVolumeResponse)(nil),          // 16: storage.service.v1.GetVolumeResponse
-	(*v1.UpdateVolumeResponse)(nil),       // 17: storage.service.v1.UpdateVolumeResponse
-	(*v1.DeleteVolumeResponse)(nil),       // 18: storage.service.v1.DeleteVolumeResponse
-	(*v1.ListBucketsResponse)(nil),        // 19: storage.service.v1.ListBucketsResponse
-	(*v1.CreateBucketResponse)(nil),       // 20: storage.service.v1.CreateBucketResponse
-	(*v1.ListObjectsResponse)(nil),        // 21: storage.service.v1.ListObjectsResponse
-	(*v1.HeadObjectResponse)(nil),         // 22: storage.service.v1.HeadObjectResponse
-	(*v1.GetDownloadURLResponse)(nil),     // 23: storage.service.v1.GetDownloadURLResponse
-	(*v1.GetUploadURLResponse)(nil),       // 24: storage.service.v1.GetUploadURLResponse
-	(*v1.DeleteObjectResponse)(nil),       // 25: storage.service.v1.DeleteObjectResponse
+	(*v1.GetBucketStatsRequest)(nil),      // 7: storage.service.v1.GetBucketStatsRequest
+	(*v1.CreateBucketRequest)(nil),        // 8: storage.service.v1.CreateBucketRequest
+	(*v1.ListObjectsRequest)(nil),         // 9: storage.service.v1.ListObjectsRequest
+	(*v1.HeadObjectRequest)(nil),          // 10: storage.service.v1.HeadObjectRequest
+	(*v1.GetDownloadURLRequest)(nil),      // 11: storage.service.v1.GetDownloadURLRequest
+	(*v1.GetUploadURLRequest)(nil),        // 12: storage.service.v1.GetUploadURLRequest
+	(*v1.DeleteObjectRequest)(nil),        // 13: storage.service.v1.DeleteObjectRequest
+	(*v1.ListStorageClassesResponse)(nil), // 14: storage.service.v1.ListStorageClassesResponse
+	(*v1.CreateVolumeResponse)(nil),       // 15: storage.service.v1.CreateVolumeResponse
+	(*v1.ListVolumesResponse)(nil),        // 16: storage.service.v1.ListVolumesResponse
+	(*v1.GetVolumeResponse)(nil),          // 17: storage.service.v1.GetVolumeResponse
+	(*v1.UpdateVolumeResponse)(nil),       // 18: storage.service.v1.UpdateVolumeResponse
+	(*v1.DeleteVolumeResponse)(nil),       // 19: storage.service.v1.DeleteVolumeResponse
+	(*v1.ListBucketsResponse)(nil),        // 20: storage.service.v1.ListBucketsResponse
+	(*v1.GetBucketStatsResponse)(nil),     // 21: storage.service.v1.GetBucketStatsResponse
+	(*v1.CreateBucketResponse)(nil),       // 22: storage.service.v1.CreateBucketResponse
+	(*v1.ListObjectsResponse)(nil),        // 23: storage.service.v1.ListObjectsResponse
+	(*v1.HeadObjectResponse)(nil),         // 24: storage.service.v1.HeadObjectResponse
+	(*v1.GetDownloadURLResponse)(nil),     // 25: storage.service.v1.GetDownloadURLResponse
+	(*v1.GetUploadURLResponse)(nil),       // 26: storage.service.v1.GetUploadURLResponse
+	(*v1.DeleteObjectResponse)(nil),       // 27: storage.service.v1.DeleteObjectResponse
 }
 var file_admin_service_v1_i_storage_proto_depIdxs = []int32{
 	0,  // 0: admin.service.v1.StorageService.ListStorageClasses:input_type -> storage.service.v1.ListStorageClassesRequest
@@ -124,27 +130,29 @@ var file_admin_service_v1_i_storage_proto_depIdxs = []int32{
 	4,  // 4: admin.service.v1.StorageService.UpdateVolume:input_type -> storage.service.v1.UpdateVolumeRequest
 	5,  // 5: admin.service.v1.StorageService.DeleteVolume:input_type -> storage.service.v1.DeleteVolumeRequest
 	6,  // 6: admin.service.v1.StorageService.ListBuckets:input_type -> storage.service.v1.ListBucketsRequest
-	7,  // 7: admin.service.v1.StorageService.CreateBucket:input_type -> storage.service.v1.CreateBucketRequest
-	8,  // 8: admin.service.v1.StorageService.ListObjects:input_type -> storage.service.v1.ListObjectsRequest
-	9,  // 9: admin.service.v1.StorageService.HeadObject:input_type -> storage.service.v1.HeadObjectRequest
-	10, // 10: admin.service.v1.StorageService.GetDownloadURL:input_type -> storage.service.v1.GetDownloadURLRequest
-	11, // 11: admin.service.v1.StorageService.GetUploadURL:input_type -> storage.service.v1.GetUploadURLRequest
-	12, // 12: admin.service.v1.StorageService.DeleteObject:input_type -> storage.service.v1.DeleteObjectRequest
-	13, // 13: admin.service.v1.StorageService.ListStorageClasses:output_type -> storage.service.v1.ListStorageClassesResponse
-	14, // 14: admin.service.v1.StorageService.CreateVolume:output_type -> storage.service.v1.CreateVolumeResponse
-	15, // 15: admin.service.v1.StorageService.ListVolumes:output_type -> storage.service.v1.ListVolumesResponse
-	16, // 16: admin.service.v1.StorageService.GetVolume:output_type -> storage.service.v1.GetVolumeResponse
-	17, // 17: admin.service.v1.StorageService.UpdateVolume:output_type -> storage.service.v1.UpdateVolumeResponse
-	18, // 18: admin.service.v1.StorageService.DeleteVolume:output_type -> storage.service.v1.DeleteVolumeResponse
-	19, // 19: admin.service.v1.StorageService.ListBuckets:output_type -> storage.service.v1.ListBucketsResponse
-	20, // 20: admin.service.v1.StorageService.CreateBucket:output_type -> storage.service.v1.CreateBucketResponse
-	21, // 21: admin.service.v1.StorageService.ListObjects:output_type -> storage.service.v1.ListObjectsResponse
-	22, // 22: admin.service.v1.StorageService.HeadObject:output_type -> storage.service.v1.HeadObjectResponse
-	23, // 23: admin.service.v1.StorageService.GetDownloadURL:output_type -> storage.service.v1.GetDownloadURLResponse
-	24, // 24: admin.service.v1.StorageService.GetUploadURL:output_type -> storage.service.v1.GetUploadURLResponse
-	25, // 25: admin.service.v1.StorageService.DeleteObject:output_type -> storage.service.v1.DeleteObjectResponse
-	13, // [13:26] is the sub-list for method output_type
-	0,  // [0:13] is the sub-list for method input_type
+	7,  // 7: admin.service.v1.StorageService.GetBucketStats:input_type -> storage.service.v1.GetBucketStatsRequest
+	8,  // 8: admin.service.v1.StorageService.CreateBucket:input_type -> storage.service.v1.CreateBucketRequest
+	9,  // 9: admin.service.v1.StorageService.ListObjects:input_type -> storage.service.v1.ListObjectsRequest
+	10, // 10: admin.service.v1.StorageService.HeadObject:input_type -> storage.service.v1.HeadObjectRequest
+	11, // 11: admin.service.v1.StorageService.GetDownloadURL:input_type -> storage.service.v1.GetDownloadURLRequest
+	12, // 12: admin.service.v1.StorageService.GetUploadURL:input_type -> storage.service.v1.GetUploadURLRequest
+	13, // 13: admin.service.v1.StorageService.DeleteObject:input_type -> storage.service.v1.DeleteObjectRequest
+	14, // 14: admin.service.v1.StorageService.ListStorageClasses:output_type -> storage.service.v1.ListStorageClassesResponse
+	15, // 15: admin.service.v1.StorageService.CreateVolume:output_type -> storage.service.v1.CreateVolumeResponse
+	16, // 16: admin.service.v1.StorageService.ListVolumes:output_type -> storage.service.v1.ListVolumesResponse
+	17, // 17: admin.service.v1.StorageService.GetVolume:output_type -> storage.service.v1.GetVolumeResponse
+	18, // 18: admin.service.v1.StorageService.UpdateVolume:output_type -> storage.service.v1.UpdateVolumeResponse
+	19, // 19: admin.service.v1.StorageService.DeleteVolume:output_type -> storage.service.v1.DeleteVolumeResponse
+	20, // 20: admin.service.v1.StorageService.ListBuckets:output_type -> storage.service.v1.ListBucketsResponse
+	21, // 21: admin.service.v1.StorageService.GetBucketStats:output_type -> storage.service.v1.GetBucketStatsResponse
+	22, // 22: admin.service.v1.StorageService.CreateBucket:output_type -> storage.service.v1.CreateBucketResponse
+	23, // 23: admin.service.v1.StorageService.ListObjects:output_type -> storage.service.v1.ListObjectsResponse
+	24, // 24: admin.service.v1.StorageService.HeadObject:output_type -> storage.service.v1.HeadObjectResponse
+	25, // 25: admin.service.v1.StorageService.GetDownloadURL:output_type -> storage.service.v1.GetDownloadURLResponse
+	26, // 26: admin.service.v1.StorageService.GetUploadURL:output_type -> storage.service.v1.GetUploadURLResponse
+	27, // 27: admin.service.v1.StorageService.DeleteObject:output_type -> storage.service.v1.DeleteObjectResponse
+	14, // [14:28] is the sub-list for method output_type
+	0,  // [0:14] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

@@ -1341,6 +1341,10 @@ type Bucket struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,proto3" json:"created_at,omitempty"`
+	Region        string                 `protobuf:"bytes,4,opt,name=region,proto3" json:"region,omitempty"`
+	StorageClass  string                 `protobuf:"bytes,5,opt,name=storage_class,proto3" json:"storage_class,omitempty"`
+	Acl           string                 `protobuf:"bytes,6,opt,name=acl,proto3" json:"acl,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1385,6 +1389,34 @@ func (x *Bucket) GetId() string {
 func (x *Bucket) GetName() string {
 	if x != nil {
 		return x.Name
+	}
+	return ""
+}
+
+func (x *Bucket) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Bucket) GetRegion() string {
+	if x != nil {
+		return x.Region
+	}
+	return ""
+}
+
+func (x *Bucket) GetStorageClass() string {
+	if x != nil {
+		return x.StorageClass
+	}
+	return ""
+}
+
+func (x *Bucket) GetAcl() string {
+	if x != nil {
+		return x.Acl
 	}
 	return ""
 }
@@ -2580,6 +2612,119 @@ func (x *DeleteObjectResponse) GetState() string {
 	return ""
 }
 
+type GetBucketStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BucketId      string                 `protobuf:"bytes,1,opt,name=bucket_id,proto3" json:"bucket_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBucketStatsRequest) Reset() {
+	*x = GetBucketStatsRequest{}
+	mi := &file_storage_service_v1_storage_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBucketStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBucketStatsRequest) ProtoMessage() {}
+
+func (x *GetBucketStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_service_v1_storage_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBucketStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetBucketStatsRequest) Descriptor() ([]byte, []int) {
+	return file_storage_service_v1_storage_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *GetBucketStatsRequest) GetBucketId() string {
+	if x != nil {
+		return x.BucketId
+	}
+	return ""
+}
+
+type GetBucketStatsResponse struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	ObjectCount int64                  `protobuf:"varint,1,opt,name=object_count,proto3" json:"object_count,omitempty"`
+	TotalSize   int64                  `protobuf:"varint,2,opt,name=total_size,proto3" json:"total_size,omitempty"`
+	// 达到扫描上限时为 true，数值是下限。
+	Truncated     bool  `protobuf:"varint,3,opt,name=truncated,proto3" json:"truncated,omitempty"`
+	Scanned       int64 `protobuf:"varint,4,opt,name=scanned,proto3" json:"scanned,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetBucketStatsResponse) Reset() {
+	*x = GetBucketStatsResponse{}
+	mi := &file_storage_service_v1_storage_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetBucketStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetBucketStatsResponse) ProtoMessage() {}
+
+func (x *GetBucketStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_service_v1_storage_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetBucketStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetBucketStatsResponse) Descriptor() ([]byte, []int) {
+	return file_storage_service_v1_storage_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *GetBucketStatsResponse) GetObjectCount() int64 {
+	if x != nil {
+		return x.ObjectCount
+	}
+	return 0
+}
+
+func (x *GetBucketStatsResponse) GetTotalSize() int64 {
+	if x != nil {
+		return x.TotalSize
+	}
+	return 0
+}
+
+func (x *GetBucketStatsResponse) GetTruncated() bool {
+	if x != nil {
+		return x.Truncated
+	}
+	return false
+}
+
+func (x *GetBucketStatsResponse) GetScanned() int64 {
+	if x != nil {
+		return x.Scanned
+	}
+	return 0
+}
+
 var File_storage_service_v1_storage_proto protoreflect.FileDescriptor
 
 const file_storage_service_v1_storage_proto_rawDesc = "" +
@@ -2688,10 +2833,16 @@ const file_storage_service_v1_storage_proto_rawDesc = "" +
 	"\x04data\x18\x01 \x01(\v2$.storage.service.v1.DeleteVolumeDataR\x04data\"`\n" +
 	"\x14DeleteVolumeResponse\x12\x14\n" +
 	"\x05state\x18\x01 \x01(\tR\x05state\x122\n" +
-	"\x06volume\x18\x02 \x01(\v2\x1a.storage.service.v1.VolumeR\x06volume\",\n" +
+	"\x06volume\x18\x02 \x01(\v2\x1a.storage.service.v1.VolumeR\x06volume\"\xb8\x01\n" +
 	"\x06Bucket\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xa4\x01\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12:\n" +
+	"\n" +
+	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"created_at\x12\x16\n" +
+	"\x06region\x18\x04 \x01(\tR\x06region\x12$\n" +
+	"\rstorage_class\x18\x05 \x01(\tR\rstorage_class\x12\x10\n" +
+	"\x03acl\x18\x06 \x01(\tR\x03acl\"\xa4\x01\n" +
 	"\x12ListBucketsRequest\x12\x17\n" +
 	"\x04page\x18\x01 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
 	"\tpage_size\x18\x02 \x01(\rH\x01R\bpageSize\x88\x01\x01\x12\x17\n" +
@@ -2787,7 +2938,16 @@ const file_storage_service_v1_storage_proto_rawDesc = "" +
 	"\x13DeleteObjectRequest\x128\n" +
 	"\x04data\x18\x01 \x01(\v2$.storage.service.v1.DeleteObjectDataR\x04data\",\n" +
 	"\x14DeleteObjectResponse\x12\x14\n" +
-	"\x05state\x18\x01 \x01(\tR\x05stateB\xc7\x01\n" +
+	"\x05state\x18\x01 \x01(\tR\x05state\"5\n" +
+	"\x15GetBucketStatsRequest\x12\x1c\n" +
+	"\tbucket_id\x18\x01 \x01(\tR\tbucket_id\"\x94\x01\n" +
+	"\x16GetBucketStatsResponse\x12\"\n" +
+	"\fobject_count\x18\x01 \x01(\x03R\fobject_count\x12\x1e\n" +
+	"\n" +
+	"total_size\x18\x02 \x01(\x03R\n" +
+	"total_size\x12\x1c\n" +
+	"\ttruncated\x18\x03 \x01(\bR\ttruncated\x12\x18\n" +
+	"\ascanned\x18\x04 \x01(\x03R\ascannedB\xc7\x01\n" +
 	"\x16com.storage.service.v1B\fStorageProtoP\x01Z5go-wind-admin/api/gen/go/storage/service/v1;storagepb\xa2\x02\x03SSX\xaa\x02\x12Storage.Service.V1\xca\x02\x12Storage\\Service\\V1\xe2\x02\x1eStorage\\Service\\V1\\GPBMetadata\xea\x02\x14Storage::Service::V1b\x06proto3"
 
 var (
@@ -2802,7 +2962,7 @@ func file_storage_service_v1_storage_proto_rawDescGZIP() []byte {
 	return file_storage_service_v1_storage_proto_rawDescData
 }
 
-var file_storage_service_v1_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 44)
+var file_storage_service_v1_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_storage_service_v1_storage_proto_goTypes = []any{
 	(*StorageClass)(nil),               // 0: storage.service.v1.StorageClass
 	(*VolumeCondition)(nil),            // 1: storage.service.v1.VolumeCondition
@@ -2847,13 +3007,15 @@ var file_storage_service_v1_storage_proto_goTypes = []any{
 	(*DeleteObjectData)(nil),           // 40: storage.service.v1.DeleteObjectData
 	(*DeleteObjectRequest)(nil),        // 41: storage.service.v1.DeleteObjectRequest
 	(*DeleteObjectResponse)(nil),       // 42: storage.service.v1.DeleteObjectResponse
-	nil,                                // 43: storage.service.v1.GetUploadURLResponse.HeadersEntry
-	(*timestamppb.Timestamp)(nil),      // 44: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),      // 45: google.protobuf.FieldMask
+	(*GetBucketStatsRequest)(nil),      // 43: storage.service.v1.GetBucketStatsRequest
+	(*GetBucketStatsResponse)(nil),     // 44: storage.service.v1.GetBucketStatsResponse
+	nil,                                // 45: storage.service.v1.GetUploadURLResponse.HeadersEntry
+	(*timestamppb.Timestamp)(nil),      // 46: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),      // 47: google.protobuf.FieldMask
 }
 var file_storage_service_v1_storage_proto_depIdxs = []int32{
-	44, // 0: storage.service.v1.VolumeCondition.last_transition_time:type_name -> google.protobuf.Timestamp
-	44, // 1: storage.service.v1.VolumeEvent.last_timestamp:type_name -> google.protobuf.Timestamp
+	46, // 0: storage.service.v1.VolumeCondition.last_transition_time:type_name -> google.protobuf.Timestamp
+	46, // 1: storage.service.v1.VolumeEvent.last_timestamp:type_name -> google.protobuf.Timestamp
 	4,  // 2: storage.service.v1.VolumeDetail.volume:type_name -> storage.service.v1.Volume
 	1,  // 3: storage.service.v1.VolumeDetail.conditions:type_name -> storage.service.v1.VolumeCondition
 	2,  // 4: storage.service.v1.VolumeDetail.events:type_name -> storage.service.v1.VolumeEvent
@@ -2864,29 +3026,30 @@ var file_storage_service_v1_storage_proto_depIdxs = []int32{
 	4,  // 9: storage.service.v1.ListVolumesResponse.items:type_name -> storage.service.v1.Volume
 	5,  // 10: storage.service.v1.GetVolumeResponse.volume:type_name -> storage.service.v1.VolumeDetail
 	15, // 11: storage.service.v1.UpdateVolumeRequest.data:type_name -> storage.service.v1.UpdateVolumeData
-	45, // 12: storage.service.v1.UpdateVolumeRequest.update_mask:type_name -> google.protobuf.FieldMask
+	47, // 12: storage.service.v1.UpdateVolumeRequest.update_mask:type_name -> google.protobuf.FieldMask
 	4,  // 13: storage.service.v1.UpdateVolumeResponse.volume:type_name -> storage.service.v1.Volume
 	18, // 14: storage.service.v1.DeleteVolumeRequest.data:type_name -> storage.service.v1.DeleteVolumeData
 	4,  // 15: storage.service.v1.DeleteVolumeResponse.volume:type_name -> storage.service.v1.Volume
-	21, // 16: storage.service.v1.ListBucketsResponse.items:type_name -> storage.service.v1.Bucket
-	44, // 17: storage.service.v1.ObjectItem.last_modified:type_name -> google.protobuf.Timestamp
-	24, // 18: storage.service.v1.ListObjectsResponse.items:type_name -> storage.service.v1.ObjectItem
-	27, // 19: storage.service.v1.HeadObjectRequest.data:type_name -> storage.service.v1.HeadObjectData
-	44, // 20: storage.service.v1.ObjectMeta.last_modified:type_name -> google.protobuf.Timestamp
-	29, // 21: storage.service.v1.HeadObjectResponse.object:type_name -> storage.service.v1.ObjectMeta
-	31, // 22: storage.service.v1.GetDownloadURLRequest.data:type_name -> storage.service.v1.GetDownloadURLData
-	44, // 23: storage.service.v1.GetDownloadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
-	34, // 24: storage.service.v1.CreateBucketRequest.data:type_name -> storage.service.v1.CreateBucketData
-	21, // 25: storage.service.v1.CreateBucketResponse.bucket:type_name -> storage.service.v1.Bucket
-	37, // 26: storage.service.v1.GetUploadURLRequest.data:type_name -> storage.service.v1.GetUploadURLData
-	43, // 27: storage.service.v1.GetUploadURLResponse.headers:type_name -> storage.service.v1.GetUploadURLResponse.HeadersEntry
-	44, // 28: storage.service.v1.GetUploadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
-	40, // 29: storage.service.v1.DeleteObjectRequest.data:type_name -> storage.service.v1.DeleteObjectData
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	46, // 16: storage.service.v1.Bucket.created_at:type_name -> google.protobuf.Timestamp
+	21, // 17: storage.service.v1.ListBucketsResponse.items:type_name -> storage.service.v1.Bucket
+	46, // 18: storage.service.v1.ObjectItem.last_modified:type_name -> google.protobuf.Timestamp
+	24, // 19: storage.service.v1.ListObjectsResponse.items:type_name -> storage.service.v1.ObjectItem
+	27, // 20: storage.service.v1.HeadObjectRequest.data:type_name -> storage.service.v1.HeadObjectData
+	46, // 21: storage.service.v1.ObjectMeta.last_modified:type_name -> google.protobuf.Timestamp
+	29, // 22: storage.service.v1.HeadObjectResponse.object:type_name -> storage.service.v1.ObjectMeta
+	31, // 23: storage.service.v1.GetDownloadURLRequest.data:type_name -> storage.service.v1.GetDownloadURLData
+	46, // 24: storage.service.v1.GetDownloadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
+	34, // 25: storage.service.v1.CreateBucketRequest.data:type_name -> storage.service.v1.CreateBucketData
+	21, // 26: storage.service.v1.CreateBucketResponse.bucket:type_name -> storage.service.v1.Bucket
+	37, // 27: storage.service.v1.GetUploadURLRequest.data:type_name -> storage.service.v1.GetUploadURLData
+	45, // 28: storage.service.v1.GetUploadURLResponse.headers:type_name -> storage.service.v1.GetUploadURLResponse.HeadersEntry
+	46, // 29: storage.service.v1.GetUploadURLResponse.expires_at:type_name -> google.protobuf.Timestamp
+	40, // 30: storage.service.v1.DeleteObjectRequest.data:type_name -> storage.service.v1.DeleteObjectData
+	31, // [31:31] is the sub-list for method output_type
+	31, // [31:31] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_storage_service_v1_storage_proto_init() }
@@ -2905,7 +3068,7 @@ func file_storage_service_v1_storage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_service_v1_storage_proto_rawDesc), len(file_storage_service_v1_storage_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   44,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
