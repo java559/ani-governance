@@ -1933,6 +1933,7 @@ Gov 重载策略。该脚本只补角色授予，不改权限、关联、套餐�
 | STORAGE-11 | `POST /api/v1/storage/buckets` | `storage:bucket:create` |
 | STORAGE-12 | `POST /api/v1/storage/buckets/{data.bucket_id}/objects:upload-url` | `storage:object:upload` |
 | STORAGE-13 | `POST /api/v1/storage/buckets/{data.bucket_id}/objects:delete` | `storage:object:delete` |
+| STORAGE-14 | `GET /api/v1/storage/buckets/{bucket_id}/stats` | `storage:bucket:list` |
 
 沿用 Bearer、STORAGE 模块、租户上下文、data 包装及严格查询参数校验。
 建桶 data.name 为 1–32 字符小写 ASCII/数字/连字符，首尾字母数字、禁止连续连字符；同名重放，返回桶对象本身。
@@ -1943,6 +1944,8 @@ size 为声明值（默认上限 2 GiB），不是实际字节硬配额；预签
 删除 data 含 bucket_id/key/可选 expected_etag；校验桶存在，单 key 删除返回 DELETED/GONE；不递归，非永久删除版本历史。
 expected_etag 既做 HEAD 比较又下传 If-Match，竞态不匹配返回 OBJECT_IDENTITY_CHANGED。
 依赖后端条件写支持、浏览器可达 TLS 入口和 CORS；SDK 存在字段不代表现场支持，实测单独记录。
+
+桶列表/建桶响应补 `created_at`、`region`、`storage_class`、`acl`；对象数与总大小不放进列表（S3 无聚合 API），改为 STORAGE-14 按需统计，单桶扫描上限 5000 个对象，`truncated=true` 表示返回的是下限。统计路由复用 `storage:bucket:list`，API 关联由 `sql/data/20261030_storage_bucket_stats_permission.sql` 建立。
 
 权限目录为 `sql/data/20261029_storage_write_permissions.sql`；角色授予使用 `scripts/ops/sql/grant-storage-write-permissions.sql`（显式 tenant_ids，默认预览，apply=true 才写入），不修改模板/其他租户/套餐。
 对象名称模糊搜索、删桶、分片上传、重命名/移动、容量配额均不提供，既有 prefix 仍只作前缀定位。
