@@ -39,6 +39,11 @@ type CreateExecutionRequest struct {
 	Parameters         *ExecutionParameters   `protobuf:"bytes,15,opt,name=parameters,proto3" json:"parameters,omitempty"`
 	TimeoutSeconds     *uint64                `protobuf:"varint,16,opt,name=timeout_seconds,proto3,oneof" json:"timeout_seconds,omitempty"`
 	FinetuningTemplate *string                `protobuf:"bytes,17,opt,name=finetuning_template,proto3,oneof" json:"finetuning_template,omitempty"`
+	// Catalogue training image selection. General training accepts the pair or
+	// neither (trusted material default); finetuning rejects both. The values are
+	// forwarded unchanged to the shared strict intent parser.
+	TrainingImageId    *string `protobuf:"bytes,18,opt,name=training_image_id,proto3,oneof" json:"training_image_id,omitempty"`
+	TrainingImageScope *string `protobuf:"bytes,19,opt,name=training_image_scope,proto3,oneof" json:"training_image_scope,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -153,6 +158,20 @@ func (x *CreateExecutionRequest) GetTimeoutSeconds() uint64 {
 func (x *CreateExecutionRequest) GetFinetuningTemplate() string {
 	if x != nil && x.FinetuningTemplate != nil {
 		return *x.FinetuningTemplate
+	}
+	return ""
+}
+
+func (x *CreateExecutionRequest) GetTrainingImageId() string {
+	if x != nil && x.TrainingImageId != nil {
+		return *x.TrainingImageId
+	}
+	return ""
+}
+
+func (x *CreateExecutionRequest) GetTrainingImageScope() string {
+	if x != nil && x.TrainingImageScope != nil {
+		return *x.TrainingImageScope
 	}
 	return ""
 }
@@ -3795,16 +3814,20 @@ type ExecutionView struct {
 	ImageId                     string                 `protobuf:"bytes,34,opt,name=image_id,proto3" json:"image_id,omitempty"`
 	ImageVersion                int64                  `protobuf:"varint,35,opt,name=image_version,proto3" json:"image_version,omitempty"`
 	ImageScope                  string                 `protobuf:"bytes,36,opt,name=image_scope,proto3" json:"image_scope,omitempty"`
-	ComputeState                string                 `protobuf:"bytes,9,opt,name=compute_state,proto3" json:"compute_state,omitempty"`
-	DeliveryState               string                 `protobuf:"bytes,10,opt,name=delivery_state,proto3" json:"delivery_state,omitempty"`
-	CloseState                  string                 `protobuf:"bytes,11,opt,name=close_state,proto3" json:"close_state,omitempty"`
-	ResourceState               string                 `protobuf:"bytes,12,opt,name=resource_state,proto3" json:"resource_state,omitempty"`
-	CurrentStep                 string                 `protobuf:"bytes,13,opt,name=current_step,proto3" json:"current_step,omitempty"`
-	StopRequested               bool                   `protobuf:"varint,14,opt,name=stop_requested,proto3" json:"stop_requested,omitempty"`
-	CloseGeneration             uint64                 `protobuf:"varint,15,opt,name=close_generation,proto3" json:"close_generation,omitempty"`
-	AcceptedAt                  string                 `protobuf:"bytes,16,opt,name=accepted_at,proto3" json:"accepted_at,omitempty"`
-	DeadlineAt                  string                 `protobuf:"bytes,17,opt,name=deadline_at,proto3" json:"deadline_at,omitempty"`
-	ObservedAt                  string                 `protobuf:"bytes,18,opt,name=observed_at,proto3" json:"observed_at,omitempty"`
+	// 通用训练所运行镜像的冻结摘要与 Resource 权威 registry 主机。
+	// 微调保持材料固定的镜像身份，这两个字段为空。
+	TrainingImageDigest            string `protobuf:"bytes,37,opt,name=training_image_digest,proto3" json:"training_image_digest,omitempty"`
+	TrainingImageRegistryAuthority string `protobuf:"bytes,38,opt,name=training_image_registry_authority,proto3" json:"training_image_registry_authority,omitempty"`
+	ComputeState                   string `protobuf:"bytes,9,opt,name=compute_state,proto3" json:"compute_state,omitempty"`
+	DeliveryState                  string `protobuf:"bytes,10,opt,name=delivery_state,proto3" json:"delivery_state,omitempty"`
+	CloseState                     string `protobuf:"bytes,11,opt,name=close_state,proto3" json:"close_state,omitempty"`
+	ResourceState                  string `protobuf:"bytes,12,opt,name=resource_state,proto3" json:"resource_state,omitempty"`
+	CurrentStep                    string `protobuf:"bytes,13,opt,name=current_step,proto3" json:"current_step,omitempty"`
+	StopRequested                  bool   `protobuf:"varint,14,opt,name=stop_requested,proto3" json:"stop_requested,omitempty"`
+	CloseGeneration                uint64 `protobuf:"varint,15,opt,name=close_generation,proto3" json:"close_generation,omitempty"`
+	AcceptedAt                     string `protobuf:"bytes,16,opt,name=accepted_at,proto3" json:"accepted_at,omitempty"`
+	DeadlineAt                     string `protobuf:"bytes,17,opt,name=deadline_at,proto3" json:"deadline_at,omitempty"`
+	ObservedAt                     string `protobuf:"bytes,18,opt,name=observed_at,proto3" json:"observed_at,omitempty"`
 	// Mirrors ModelDev ExecutionView.steps (field 31). Role/state stay strings
 	// because the step set depends on kind.
 	Steps []*ExecutionStepView `protobuf:"bytes,29,rep,name=steps,proto3" json:"steps,omitempty"`
@@ -3975,6 +3998,20 @@ func (x *ExecutionView) GetImageVersion() int64 {
 func (x *ExecutionView) GetImageScope() string {
 	if x != nil {
 		return x.ImageScope
+	}
+	return ""
+}
+
+func (x *ExecutionView) GetTrainingImageDigest() string {
+	if x != nil {
+		return x.TrainingImageDigest
+	}
+	return ""
+}
+
+func (x *ExecutionView) GetTrainingImageRegistryAuthority() string {
+	if x != nil {
+		return x.TrainingImageRegistryAuthority
 	}
 	return ""
 }
@@ -5310,7 +5347,7 @@ var File_modeldev_service_v1_execution_proto protoreflect.FileDescriptor
 
 const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\n" +
-	"#modeldev/service/v1/execution.proto\x12\x13modeldev.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\xa1\a\n" +
+	"#modeldev/service/v1/execution.proto\x12\x13modeldev.service.v1\x1a$gnostic/openapi/v3/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\xd8\b\n" +
 	"\x16CreateExecutionRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12.\n" +
@@ -5325,13 +5362,17 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"parameters\x18\x0f \x01(\v2(.modeldev.service.v1.ExecutionParametersR\n" +
 	"parameters\x12E\n" +
 	"\x0ftimeout_seconds\x18\x10 \x01(\x04B\x16\xbaG\x13\xca\x01\ainteger\x9a\x02\x06uint64H\x03R\x0ftimeout_seconds\x88\x01\x01\x125\n" +
-	"\x13finetuning_template\x18\x11 \x01(\tH\x04R\x13finetuning_template\x88\x01\x01:m\xbaGj\xba\x01\x04name\xba\x01\x04kind\xba\x01\x11implementation_id\xba\x01\x11compute_preset_id\xba\x01\x12dataset_version_id\xba\x01\n" +
+	"\x13finetuning_template\x18\x11 \x01(\tH\x04R\x13finetuning_template\x88\x01\x01\x12?\n" +
+	"\x11training_image_id\x18\x12 \x01(\tB\f\xbaG\t\xca\x01\x06stringH\x05R\x11training_image_id\x88\x01\x01\x12E\n" +
+	"\x14training_image_scope\x18\x13 \x01(\tB\f\xbaG\t\xca\x01\x06stringH\x06R\x14training_image_scope\x88\x01\x01:m\xbaGj\xba\x01\x04name\xba\x01\x04kind\xba\x01\x11implementation_id\xba\x01\x11compute_preset_id\xba\x01\x12dataset_version_id\xba\x01\n" +
 	"parameters\xba\x01\x0fidempotency_keyB\x18\n" +
 	"\x16_base_model_version_idB\x12\n" +
 	"\x10_target_model_idB\x11\n" +
 	"\x0f_new_model_nameB\x12\n" +
 	"\x10_timeout_secondsB\x16\n" +
-	"\x14_finetuning_templateJ\x04\b\x03\x10\x04J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\n" +
+	"\x14_finetuning_templateB\x14\n" +
+	"\x12_training_image_idB\x17\n" +
+	"\x15_training_image_scopeJ\x04\b\x03\x10\x04J\x04\b\x06\x10\aJ\x04\b\a\x10\bJ\x04\b\b\x10\tJ\x04\b\n" +
 	"\x10\vR\tpreset_idR\x10image_version_idR\x12general_parametersR\x13source_execution_idR\n" +
 	"finetuning\"\x85\x02\n" +
 	"\x1fCheckFinetuningReadinessRequest\x124\n" +
@@ -5719,7 +5760,7 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"gap_reason\x18\x03 \x01(\tH\x01R\n" +
 	"gap_reason\x88\x01\x01B\b\n" +
 	"\x06_valueB\r\n" +
-	"\v_gap_reason\"\xf2\r\n" +
+	"\v_gap_reason\"\xf6\x0e\n" +
 	"\rExecutionView\x12\"\n" +
 	"\foperation_id\x18\x01 \x01(\tR\foperation_id\x12\"\n" +
 	"\fexecution_id\x18\x02 \x01(\tR\fexecution_id\x12\x12\n" +
@@ -5738,7 +5779,9 @@ const file_modeldev_service_v1_execution_proto_rawDesc = "" +
 	"\x10input_version_id\x18\a \x01(\tR\x10input_version_id\x12\x1a\n" +
 	"\bimage_id\x18\" \x01(\tR\bimage_id\x12$\n" +
 	"\rimage_version\x18# \x01(\x03R\rimage_version\x12 \n" +
-	"\vimage_scope\x18$ \x01(\tR\vimage_scope\x12$\n" +
+	"\vimage_scope\x18$ \x01(\tR\vimage_scope\x124\n" +
+	"\x15training_image_digest\x18% \x01(\tR\x15training_image_digest\x12L\n" +
+	"!training_image_registry_authority\x18& \x01(\tR!training_image_registry_authority\x12$\n" +
 	"\rcompute_state\x18\t \x01(\tR\rcompute_state\x12&\n" +
 	"\x0edelivery_state\x18\n" +
 	" \x01(\tR\x0edelivery_state\x12 \n" +

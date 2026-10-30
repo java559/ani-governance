@@ -341,6 +341,7 @@ func modelDevPublicExecution(execution *modeldevcontractv1.ExecutionView) *model
 		OperationId: execution.Identity.OperationId, ExecutionId: execution.Identity.ExecutionId, Name: execution.Name,
 		Kind: strings.TrimPrefix(execution.Kind.String(), "EXECUTION_KIND_"), ImplementationId: execution.ImplementationId, ComputePresetId: execution.ComputePresetId,
 		InputVersionId: execution.InputVersionId, ImageId: execution.ImageId, ImageVersion: execution.ImageVersion, ImageScope: execution.ImageScope,
+		TrainingImageDigest: execution.TrainingImageDigest, TrainingImageRegistryAuthority: execution.TrainingImageRegistryAuthority,
 		ComputeState:  strings.TrimPrefix(execution.States.ComputeState.String(), "COMPUTE_STATE_"),
 		DeliveryState: strings.TrimPrefix(execution.States.DeliveryState.String(), "DELIVERY_STATE_"),
 		CloseState:    strings.TrimPrefix(execution.States.CloseState.String(), "CLOSE_STATE_"),

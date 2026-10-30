@@ -76,3 +76,28 @@ func TestDecodeModelDevCreateRejectsAmbiguousOrInjectedJSON(t *testing.T) {
 		})
 	}
 }
+
+// The catalogue selection is forwarded unchanged to the shared strict parser;
+// a partial pair is rejected before any persistence.
+func TestDecodeModelDevCreateForwardsTrainingImageSelection(t *testing.T) {
+	id := "img_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	raw := `{` + modelDevCreateIntentJSON + `,"training_image_id":"` + id + `","training_image_scope":"platform","idempotency_key":"selection-1"}`
+	in, err := decodeModelDevCreate(strings.NewReader(raw))
+	require.NoError(t, err)
+	require.NotNil(t, in.Intent.TrainingImageID)
+	require.Equal(t, id, *in.Intent.TrainingImageID)
+	require.NotNil(t, in.Intent.TrainingImageScope)
+	require.Equal(t, "platform", *in.Intent.TrainingImageScope)
+
+	for _, partial := range []string{
+		`"training_image_id":"` + id + `",`,
+		`"training_image_scope":"platform",`,
+		`"training_image_id":"registry.example.test/cpu/mlp:latest","training_image_scope":"platform",`,
+		`"training_image_id":"` + id + `","training_image_scope":"global",`,
+	} {
+		body := `{` + modelDevCreateIntentJSON + `,` + partial + `"idempotency_key":"selection-2"}`
+		if _, err := decodeModelDevCreate(strings.NewReader(body)); err == nil {
+			t.Fatalf("partial or non-catalogue selection accepted: %s", partial)
+		}
+	}
+}
