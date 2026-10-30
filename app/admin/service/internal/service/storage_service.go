@@ -97,6 +97,8 @@ func mapStorageError(err error) error {
 		switch st.message {
 		case "CAPACITY_MUST_NOT_DECREASE":
 			return errors.BadRequest(st.message, "扩容容量不能小于当前申请容量")
+		case "OBJECT_TOO_LARGE":
+			return errors.BadRequest(st.message, "文件超过上传大小上限")
 		}
 		return errors.BadRequest("STORAGE_INVALID_REQUEST", "存储请求参数不合法")
 	case "NotFound":
@@ -114,6 +116,12 @@ func mapStorageError(err error) error {
 			return errors.Conflict(st.message, "存储卷已被删除并重新创建，请刷新列表")
 		case "VOLUME_IN_USE":
 			return errors.Conflict(st.message, "存储卷仍被使用，无法删除")
+		case "BUCKET_ALREADY_EXISTS":
+			return errors.Conflict(st.message, "桶名已存在")
+		case "OBJECT_ALREADY_EXISTS":
+			return errors.Conflict(st.message, "文件已存在，请确认是否覆盖")
+		case "OBJECT_IDENTITY_CHANGED":
+			return errors.Conflict(st.message, "文件已被替换，请刷新后重试")
 		}
 		return errors.Conflict("STORAGE_RESOURCE_CONFLICT", "存储资源冲突")
 	case "Aborted":
@@ -122,6 +130,12 @@ func mapStorageError(err error) error {
 		switch st.message {
 		case "DOWNLOAD_ENDPOINT_UNAVAILABLE":
 			return errors.ServiceUnavailable(st.message, "当前环境未配置浏览器下载地址")
+		case "UPLOAD_ENDPOINT_UNAVAILABLE":
+			return errors.ServiceUnavailable(st.message, "当前环境未配置文件上传地址")
+		case "BUCKET_CREATION_DISABLED":
+			return errors.Forbidden(st.message, "当前环境未开放建桶")
+		case "BUCKET_LIMIT_REACHED":
+			return errors.Conflict(st.message, "桶数量已达上限，请先清理")
 		case "VOLUME_TERMINATING":
 			return errors.Conflict(st.message, "存储卷正在删除中")
 		}
@@ -332,7 +346,7 @@ func (s *StorageService) ListBuckets(ctx context.Context, r *storagepb.ListBucke
 		if int64(index) < offset || int64(index) >= offset+int64(limit) {
 			continue
 		}
-		out.Items = append(out.Items, &storagepb.Bucket{Id: item.GetId(), Name: item.GetName()})
+		out.Items = append(out.Items, wireStorageBucket(item))
 	}
 	return out, nil
 }
@@ -405,6 +419,91 @@ func (s *StorageService) GetDownloadURL(ctx context.Context, r *storagepb.GetDow
 		return nil, mapStorageError(err)
 	}
 	return &storagepb.GetDownloadURLResponse{Url: reply.GetUrl(), ExpiresAt: reply.GetExpiresAt()}, nil
+}
+
+func (s *StorageService) CreateBucket(ctx context.Context, r *storagepb.CreateBucketRequest) (*storagepb.CreateBucketResponse, error) {
+	if r == nil || r.GetData() == nil || strings.TrimSpace(r.GetData().GetName()) == "" {
+		return nil, storageBadRequest()
+	}
+	tenant, actor, err := s.trustedStorageOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := s.client.CreateBucket(ctx, tenant, actor, &resourcestorage.CreateBucketRequest{
+		Name: strings.TrimSpace(r.GetData().GetName()),
+	})
+	if err != nil {
+		return nil, mapStorageError(err)
+	}
+	return &storagepb.CreateBucketResponse{Bucket: wireStorageBucket(reply.GetBucket())}, nil
+}
+
+func wireStorageBucket(bucket *resourcestorage.Bucket) *storagepb.Bucket {
+	if bucket == nil {
+		return nil
+	}
+	return &storagepb.Bucket{
+		Id: bucket.GetId(), Name: bucket.GetName(), CreatedAt: bucket.GetCreatedAt(),
+		Region: bucket.GetRegion(), StorageClass: bucket.GetStorageClass(), Acl: bucket.GetAcl(),
+	}
+}
+
+func (s *StorageService) GetBucketStats(ctx context.Context, r *storagepb.GetBucketStatsRequest) (*storagepb.GetBucketStatsResponse, error) {
+	if r == nil || r.GetBucketId() == "" {
+		return nil, storageBadRequest()
+	}
+	tenant, actor, err := s.trustedStorageOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := s.client.GetBucketStats(ctx, tenant, actor, &resourcestorage.GetBucketStatsRequest{BucketId: r.GetBucketId()})
+	if err != nil {
+		return nil, mapStorageError(err)
+	}
+	return &storagepb.GetBucketStatsResponse{
+		ObjectCount: reply.GetObjectCount(), TotalSize: reply.GetTotalSize(),
+		Truncated: reply.GetTruncated(), Scanned: reply.GetScanned(),
+	}, nil
+}
+
+func (s *StorageService) GetUploadURL(ctx context.Context, r *storagepb.GetUploadURLRequest) (*storagepb.GetUploadURLResponse, error) {
+	storageNoStore(ctx)
+	if r == nil || r.GetData() == nil || r.GetData().GetBucketId() == "" || r.GetData().GetKey() == "" || r.GetData().GetSize() <= 0 {
+		return nil, storageBadRequest()
+	}
+	tenant, actor, err := s.trustedStorageOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data := r.GetData()
+	reply, err := s.client.GetUploadURL(ctx, tenant, actor, &resourcestorage.GetUploadURLRequest{
+		BucketId: data.GetBucketId(), Key: data.GetKey(), ContentType: data.GetContentType(),
+		Size: data.GetSize(), Overwrite: data.GetOverwrite(),
+	})
+	if err != nil {
+		return nil, mapStorageError(err)
+	}
+	return &storagepb.GetUploadURLResponse{
+		Url: reply.GetUrl(), Headers: reply.GetHeaders(), ExpiresAt: reply.GetExpiresAt(), Key: reply.GetKey(),
+	}, nil
+}
+
+func (s *StorageService) DeleteObject(ctx context.Context, r *storagepb.DeleteObjectRequest) (*storagepb.DeleteObjectResponse, error) {
+	if r == nil || r.GetData() == nil || r.GetData().GetBucketId() == "" || r.GetData().GetKey() == "" {
+		return nil, storageBadRequest()
+	}
+	tenant, actor, err := s.trustedStorageOperator(ctx)
+	if err != nil {
+		return nil, err
+	}
+	data := r.GetData()
+	reply, err := s.client.DeleteObject(ctx, tenant, actor, &resourcestorage.DeleteObjectRequest{
+		BucketId: data.GetBucketId(), Key: data.GetKey(), ExpectedEtag: data.GetExpectedEtag(),
+	})
+	if err != nil {
+		return nil, mapStorageError(err)
+	}
+	return &storagepb.DeleteObjectResponse{State: reply.GetState()}, nil
 }
 
 func wireStorageVolume(volume *resourcestorage.Volume) *storagepb.Volume {

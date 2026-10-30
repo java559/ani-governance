@@ -223,15 +223,25 @@ func TestCountsAndKeys(t *testing.T) {
 		"POST /api/v1/instances/{data.instance_id}:detach-pvc": {Code: "instance:pvc:detach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 		"GET /api/v1/instances/{instance_id}/mountable-pvcs":   {Code: "instance:pvc:attach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 	}
+	storageStats := map[string]expectation{
+		"GET /api/v1/storage/buckets/{bucket_id}/stats": {Code: "storage:bucket:list", Source: "sql/data/20261030_storage_bucket_stats_permission.sql", BusinessModule: "STORAGE", ScopeKind: "tenant"},
+	}
+	const storageWriteSource = "sql/data/20261029_storage_write_permissions.sql"
+	storageWrites := map[string]expectation{
+		"POST /api/v1/storage/buckets":                                     {Code: "storage:bucket:create", Source: storageWriteSource, BusinessModule: "STORAGE", ScopeKind: "tenant"},
+		"POST /api/v1/storage/buckets/{data.bucket_id}/objects:upload-url": {Code: "storage:object:upload", Source: storageWriteSource, BusinessModule: "STORAGE", ScopeKind: "tenant"},
+		"POST /api/v1/storage/buckets/{data.bucket_id}/objects:delete":     {Code: "storage:object:delete", Source: storageWriteSource, BusinessModule: "STORAGE", ScopeKind: "tenant"},
+	}
 	if want := 227; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
-	if want := 204 + len(platformComponentReads) + len(platformComponentLogStreams); CapabilityCount() != want {
+	// dev 已删除 3 条设备退役路由，基数相应下调；storageWrites 为本次新增。
+	if want := 201 + len(platformComponentReads) + len(platformComponentLogStreams) + len(storageWrites) + len(storageStats); CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if len(keys) != 390 {
-		t.Errorf("AllKeys() = %d, want 390", len(keys))
+	if want := 387 + len(storageWrites) + len(storageStats); len(keys) != want {
+		t.Errorf("AllKeys() = %d, want %d", len(keys), want)
 	}
 	keySet := make(map[string]bool, len(keys))
 	for _, k := range keys {
@@ -243,6 +253,8 @@ func TestCountsAndKeys(t *testing.T) {
 	}{
 		{"gpu-read-management", gpuSource, managementOperations, gpuReads},
 		{"platform-eip-capability", eipSource, capabilityOperations, platformEIPReadsAndRelease},
+		{"storage-write-capability", storageWriteSource, capabilityOperations, storageWrites},
+		{"storage-stats-capability", "sql/data/20261030_storage_bucket_stats_permission.sql", capabilityOperations, storageStats},
 	} {
 		t.Run(table.name, func(t *testing.T) {
 			actual := make(map[string]expectation)

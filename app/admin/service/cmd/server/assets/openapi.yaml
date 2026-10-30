@@ -11476,7 +11476,7 @@ paths:
             tags:
                 - StorageService
             summary: ListBuckets
-            description: Requires storage:bucket:list. Only buckets configured for the authenticated tenant are returned.
+            description: Requires storage:bucket:list. Returns configured and dynamically created buckets belonging to the authenticated tenant.
             operationId: StorageService_ListBuckets
             parameters:
                 - name: page
@@ -11507,9 +11507,27 @@ paths:
                                 $ref: '#/components/schemas/ListBucketsResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
+        post:
+            tags:
+                - StorageService
+            summary: CreateBucket
+            description: Requires storage:bucket:create. Logical name is S3-compatible lowercase ASCII; physical name is derived by the server. Repeat create is idempotent.
+            operationId: StorageService_CreateBucket
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateBucketRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateBucketResponse'
+            security:
+                - BearerAuth: []
     /api/v1/storage/buckets/{bucket_id}/objects:
         get:
             tags:
@@ -11564,9 +11582,56 @@ paths:
                                 $ref: '#/components/schemas/ListObjectsResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
+    /api/v1/storage/buckets/{bucket_id}/stats:
+        get:
+            tags:
+                - StorageService
+            summary: GetBucketStats
+            description: Requires storage:bucket:list. On-demand object count and total size for one bucket; scanning is capped and truncated=true means the numbers are lower bounds.
+            operationId: StorageService_GetBucketStats
+            parameters:
+                - name: bucket_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBucketStatsResponse'
+            security:
+                - BearerAuth: []
+    /api/v1/storage/buckets/{data.bucket_id}/objects:delete:
+        post:
+            tags:
+                - StorageService
+            summary: DeleteObject
+            description: Requires storage:object:delete. Deletes exactly one object key; repeat delete returns GONE. Directory prefixes are not recursive.
+            operationId: StorageService_DeleteObject
+            parameters:
+                - name: data.bucket_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteObjectRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteObjectResponse'
+            security:
+                - BearerAuth: []
     /api/v1/storage/buckets/{data.bucket_id}/objects:download-url:
         post:
             tags:
@@ -11595,9 +11660,6 @@ paths:
                                 $ref: '#/components/schemas/GetDownloadURLResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
     /api/v1/storage/buckets/{data.bucket_id}/objects:head:
         post:
             tags:
@@ -11626,9 +11688,34 @@ paths:
                                 $ref: '#/components/schemas/HeadObjectResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
+    /api/v1/storage/buckets/{data.bucket_id}/objects:upload-url:
+        post:
+            tags:
+                - StorageService
+            summary: GetUploadURL
+            description: Requires storage:object:upload. Returns a short-lived presigned PUT URL bound to one key; the client sends the file directly to object storage with the returned headers.
+            operationId: StorageService_GetUploadURL
+            parameters:
+                - name: data.bucket_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/GetUploadURLRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetUploadURLResponse'
+            security:
+                - BearerAuth: []
     /api/v1/storage/classes:
         get:
             tags:
@@ -11656,9 +11743,6 @@ paths:
                                 $ref: '#/components/schemas/ListStorageClassesResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
     /api/v1/storage/volumes:
         get:
             tags:
@@ -11699,9 +11783,6 @@ paths:
                                 $ref: '#/components/schemas/ListVolumesResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
         post:
             tags:
                 - StorageService
@@ -11723,9 +11804,6 @@ paths:
                                 $ref: '#/components/schemas/CreateVolumeResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
     /api/v1/storage/volumes/{data.pvc_name}:delete:
         post:
             tags:
@@ -11754,9 +11832,6 @@ paths:
                                 $ref: '#/components/schemas/DeleteVolumeResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
     /api/v1/storage/volumes/{data.pvc_name}:update:
         post:
             tags:
@@ -11785,9 +11860,6 @@ paths:
                                 $ref: '#/components/schemas/UpdateVolumeResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
     /api/v1/storage/volumes/{pvc_name}:
         get:
             tags:
@@ -11810,9 +11882,6 @@ paths:
                                 $ref: '#/components/schemas/GetVolumeResponse'
             security:
                 - BearerAuth: []
-                - AccessKeyAuth: []
-                  SignatureAuth: []
-                  SignatureTime: []
     /api/v1/virtual-machine-dns-defaults:
         get:
             tags:
@@ -13935,6 +14004,15 @@ components:
                     type: string
                 name:
                     type: string
+                created_at:
+                    type: string
+                    format: date-time
+                region:
+                    type: string
+                storage_class:
+                    type: string
+                acl:
+                    type: string
         Callback:
             type: object
             properties:
@@ -14359,6 +14437,21 @@ components:
                 data:
                     $ref: '#/components/schemas/Api'
             description: 创建 - 请求
+        CreateBucketData:
+            type: object
+            properties:
+                name:
+                    type: string
+        CreateBucketRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateBucketData'
+        CreateBucketResponse:
+            type: object
+            properties:
+                bucket:
+                    $ref: '#/components/schemas/Bucket'
         CreateConfigRequest:
             type: object
             properties:
@@ -15417,6 +15510,26 @@ components:
                         type: integer
                         format: uint32
                     description: 收件箱记录ID列表，为空表示清空收件箱
+        DeleteObjectData:
+            type: object
+            properties:
+                bucket_id:
+                    type: string
+                key:
+                    type: string
+                expected_etag:
+                    type: string
+        DeleteObjectRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/DeleteObjectData'
+        DeleteObjectResponse:
+            type: object
+            properties:
+                state:
+                    type: string
+                    description: DELETED：本次删除了存在的对象；GONE：对象本来就不存在。
         DeletePublicAddressPoolResponse:
             type: object
             properties:
@@ -16690,6 +16803,18 @@ components:
                 imageBase64:
                     type: string
                     description: 验证码图片的Base64编码字符串，客户端可以解码并显示给用户
+        GetBucketStatsResponse:
+            type: object
+            properties:
+                object_count:
+                    type: string
+                total_size:
+                    type: string
+                truncated:
+                    type: boolean
+                    description: 达到扫描上限时为 true，数值是下限。
+                scanned:
+                    type: string
         GetDefaultVPCEgressResponse:
             type: object
             properties:
@@ -16888,16 +17013,16 @@ components:
         GetUploadURLData:
             type: object
             properties:
-                version:
+                bucket_id:
                     type: string
-                file_name:
+                key:
                     type: string
-                size_bytes:
+                content_type:
                     type: string
-                idempotency_key:
+                size:
                     type: string
-                checksum_sha256:
-                    type: string
+                overwrite:
+                    type: boolean
         GetUploadURLRequest:
             type: object
             properties:

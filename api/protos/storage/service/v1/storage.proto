@@ -145,6 +145,10 @@ message DeleteVolumeResponse {
 message Bucket {
   string id = 1;
   string name = 2;
+  google.protobuf.Timestamp created_at = 3 [json_name = "created_at"];
+  string region = 4;
+  string storage_class = 5 [json_name = "storage_class"];
+  string acl = 6;
 }
 
 message ListBucketsRequest {
@@ -219,4 +223,62 @@ message GetDownloadURLRequest {
 message GetDownloadURLResponse {
   string url = 1;
   google.protobuf.Timestamp expires_at = 2 [json_name = "expires_at"];
+}
+
+message CreateBucketData {
+  string name = 1;
+}
+
+message CreateBucketRequest {
+  CreateBucketData data = 1;
+}
+
+message CreateBucketResponse {
+  Bucket bucket = 1;
+}
+
+message GetUploadURLData {
+  string bucket_id = 1 [json_name = "bucket_id"];
+  string key = 2;
+  string content_type = 3 [json_name = "content_type"];
+  int64 size = 4;
+  optional bool overwrite = 5;
+}
+
+message GetUploadURLRequest {
+  GetUploadURLData data = 1;
+}
+
+message GetUploadURLResponse {
+  string url = 1;
+  map<string, string> headers = 2;
+  google.protobuf.Timestamp expires_at = 3 [json_name = "expires_at"];
+  string key = 4;
+}
+
+message DeleteObjectData {
+  string bucket_id = 1 [json_name = "bucket_id"];
+  string key = 2;
+  string expected_etag = 3 [json_name = "expected_etag"];
+}
+
+message DeleteObjectRequest {
+  DeleteObjectData data = 1;
+}
+
+message DeleteObjectResponse {
+  // DELETED：本次删除了存在的对象；GONE：对象本来就不存在。
+  string state = 1;
+}
+
+message GetBucketStatsRequest {
+  string bucket_id = 1 [json_name = "bucket_id"];
+}
+
+message GetBucketStatsResponse {
+  int64 object_count = 1 [json_name = "object_count"];
+  int64 total_size = 2 [json_name = "total_size"];
+  // 达到扫描上限时为 true，数值是下限。
+  bool truncated = 3;
+  int64 scanned = 4;
 }

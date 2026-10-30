@@ -64,6 +64,13 @@ func TestStorageErrorMapping(t *testing.T) {
 		{grpcstatus.Error(grpccodes.Unavailable, "VOLUME_USAGE_UNKNOWN"), 503, "VOLUME_USAGE_UNKNOWN"},
 		{grpcstatus.Error(grpccodes.Aborted, "STORAGE_RESOURCE_CONFLICT"), 409, "STORAGE_RESOURCE_CONFLICT"},
 		{grpcstatus.Error(grpccodes.NotFound, "STORAGE_RESOURCE_NOT_FOUND"), 404, "STORAGE_RESOURCE_NOT_FOUND"},
+		{grpcstatus.Error(grpccodes.AlreadyExists, "BUCKET_ALREADY_EXISTS"), 409, "BUCKET_ALREADY_EXISTS"},
+		{grpcstatus.Error(grpccodes.AlreadyExists, "OBJECT_ALREADY_EXISTS"), 409, "OBJECT_ALREADY_EXISTS"},
+		{grpcstatus.Error(grpccodes.AlreadyExists, "OBJECT_IDENTITY_CHANGED"), 409, "OBJECT_IDENTITY_CHANGED"},
+		{grpcstatus.Error(grpccodes.InvalidArgument, "OBJECT_TOO_LARGE"), 400, "OBJECT_TOO_LARGE"},
+		{grpcstatus.Error(grpccodes.FailedPrecondition, "UPLOAD_ENDPOINT_UNAVAILABLE"), 503, "UPLOAD_ENDPOINT_UNAVAILABLE"},
+		{grpcstatus.Error(grpccodes.FailedPrecondition, "BUCKET_CREATION_DISABLED"), 403, "BUCKET_CREATION_DISABLED"},
+		{grpcstatus.Error(grpccodes.FailedPrecondition, "BUCKET_LIMIT_REACHED"), 409, "BUCKET_LIMIT_REACHED"},
 	}
 	for _, tc := range cases {
 		mapped, ok := mapStorageError(tc.err).(*kratoserrors.Error)
@@ -80,6 +87,46 @@ func TestStorageAccessDeniedMessage(t *testing.T) {
 	}
 }
 
+func TestStorageWriteHandlersValidateData(t *testing.T) {
+	svc := NewStorageService(nil, nil)
+	cases := []struct {
+		name string
+		call func() error
+	}{
+		{"create bucket nil data", func() error {
+			_, err := svc.CreateBucket(context.Background(), &storagepb.CreateBucketRequest{})
+			return err
+		}},
+		{"create bucket empty name", func() error {
+			_, err := svc.CreateBucket(context.Background(), &storagepb.CreateBucketRequest{Data: &storagepb.CreateBucketData{Name: "  "}})
+			return err
+		}},
+		{"upload missing key", func() error {
+			_, err := svc.GetUploadURL(context.Background(), &storagepb.GetUploadURLRequest{Data: &storagepb.GetUploadURLData{BucketId: "files", Size: 1}})
+			return err
+		}},
+		{"upload zero size", func() error {
+			_, err := svc.GetUploadURL(context.Background(), &storagepb.GetUploadURLRequest{Data: &storagepb.GetUploadURLData{BucketId: "files", Key: "a.txt"}})
+			return err
+		}},
+		{"stats empty bucket", func() error {
+			_, err := svc.GetBucketStats(context.Background(), &storagepb.GetBucketStatsRequest{})
+			return err
+		}},
+		{"delete empty key", func() error {
+			_, err := svc.DeleteObject(context.Background(), &storagepb.DeleteObjectRequest{Data: &storagepb.DeleteObjectData{BucketId: "files"}})
+			return err
+		}},
+	}
+	for _, tc := range cases {
+		err := tc.call()
+		kratosErr, ok := err.(*kratoserrors.Error)
+		if !ok || kratosErr.Code != 400 || kratosErr.Reason != "STORAGE_INVALID_REQUEST" {
+			t.Fatalf("%s: unexpected error %v", tc.name, err)
+		}
+	}
+}
+
 func TestStorageRoutesRegistered(t *testing.T) {
 	operations := []string{
 		adminV1.OperationStorageServiceListStorageClasses,
@@ -92,6 +139,10 @@ func TestStorageRoutesRegistered(t *testing.T) {
 		adminV1.OperationStorageServiceListObjects,
 		adminV1.OperationStorageServiceHeadObject,
 		adminV1.OperationStorageServiceGetDownloadURL,
+		adminV1.OperationStorageServiceCreateBucket,
+		adminV1.OperationStorageServiceGetUploadURL,
+		adminV1.OperationStorageServiceDeleteObject,
+		adminV1.OperationStorageServiceGetBucketStats,
 	}
 	seen := map[string]bool{}
 	for _, operation := range operations {
