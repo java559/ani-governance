@@ -171,6 +171,7 @@ message ListInstancesRequest {
  string compute_type = 6 [json_name = "compute_type"];
  string observed_state = 7;
  string name = 8;
+ string id = 9;
 }
 message GetOperationRequest { string operation_id = 1 [json_name = "operation_id"]; }
 message ExecInstanceData { string instance_id = 1; string idempotency_key = 2; int64 expected_version = 3; int32 rows = 4; int32 cols = 5; }

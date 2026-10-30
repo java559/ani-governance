@@ -193,7 +193,7 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 			allowed[k] = true
 		}
 	case *view.ListInstancesRequest:
-		for _, k := range []string{"page", "pageSize", "instance_kind", "compute_type", "observedState", "name"} {
+		for _, k := range []string{"page", "pageSize", "instance_kind", "compute_type", "observedState", "name", "id"} {
 			allowed[k] = true
 		}
 	case *computeview.ListPresetsRequest, *computeview.AdminListPresetsRequest:
@@ -271,6 +271,12 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 				max = 80
 			}
 			if utf8.RuneCountInString(value) > max {
+				return invalid
+			}
+			object[field] = value
+		case "id":
+			value = strings.TrimSpace(value)
+			if utf8.RuneCountInString(value) > 36 {
 				return invalid
 			}
 			object[field] = value

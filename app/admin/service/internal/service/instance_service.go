@@ -387,7 +387,7 @@ func (s *InstanceService) ListInstances(ctx context.Context, r *view.ListInstanc
 	if e != nil {
 		return nil, e
 	}
-	items, e := s.binding.client.List(ctx, tenant, actor, &res.ListInstancesRequest{TenantId: tenant, Page: page, PageSize: size, InstanceKind: r.InstanceKind, ComputeType: r.ComputeType, ObservedState: r.ObservedState, Name: r.Name})
+	items, e := s.binding.client.List(ctx, tenant, actor, &res.ListInstancesRequest{TenantId: tenant, Page: page, PageSize: size, InstanceKind: r.InstanceKind, ComputeType: r.ComputeType, ObservedState: r.ObservedState, Name: r.Name, Id: r.Id})
 	if e != nil {
 		return nil, e
 	}
