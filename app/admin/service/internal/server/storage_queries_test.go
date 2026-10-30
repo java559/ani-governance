@@ -101,5 +101,12 @@ func TestStorageQueriesHTTPContract(t *testing.T) {
 	r = httptest.NewRecorder()
 	srv.ServeHTTP(r, httptest.NewRequest(http.MethodPost, "/api/v1/storage/volumes?page=1", nil))
 	require.Equal(t, 400, r.Code, r.Body.String())
+	for _, path := range []string{"/api/v1/storage/buckets", "/api/v1/storage/buckets/files/objects:upload-url", "/api/v1/storage/buckets/files/objects:delete"} {
+		for _, query := range []string{"?page=1", "?unknown=1", "?"} {
+			r := httptest.NewRecorder()
+			srv.ServeHTTP(r, httptest.NewRequest(http.MethodPost, path+query, strings.NewReader(`{"data":{}}`)))
+			require.Equal(t, 400, r.Code, path+query)
+		}
+	}
 	require.Equal(t, len(valid)+1, calls, "rejected requests must not reach the service")
 }
