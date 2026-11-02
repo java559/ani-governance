@@ -16,6 +16,8 @@ import (
 	inferencev1 "go-wind-admin/api/gen/go/inference/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
+	sandboxview "go-wind-admin/api/gen/go/sandbox/service/v1"
+	vmview "go-wind-admin/api/gen/go/vm/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/service"
 	"go-wind-admin/pkg/middleware/auth"
@@ -64,11 +66,27 @@ func (s *overviewQuotaStub) ListTenantAccounts(context.Context, uint32) ([]*quot
 	return s.accounts, nil
 }
 
+// overviewVMsStub 按键为 state 返回 total；空 state 表示无过滤调用。
+type overviewVMsStub struct{ totals map[string]int64 }
+
+func (s *overviewVMsStub) ListVMs(_ context.Context, r *vmview.ListVMsRequest) (*vmview.ListVMsResponse, error) {
+	return &vmview.ListVMsResponse{Total: s.totals[r.GetState()]}, nil
+}
+
+// overviewSandboxesStub 只在单页内返回全部 items，够用于契约测试。
+type overviewSandboxesStub struct{ items []*sandboxview.Sandbox }
+
+func (s *overviewSandboxesStub) ListSandboxes(_ context.Context, _ *sandboxview.ListSandboxesRequest) (*sandboxview.ListSandboxesResponse, error) {
+	return &sandboxview.ListSandboxesResponse{Items: s.items, Total: int64(len(s.items))}, nil
+}
+
 func overviewTestService(deny bool) *service.OverviewService {
 	return service.NewOverviewService(nil,
 		&overviewInstancesStub{totals: map[string]int64{"running": 2, "stopped": 1, "pending": 0}},
 		&overviewInferenceStub{items: []*inferencev1.InferenceView{{DesiredState: "running", Phase: "ready"}}},
 		&overviewModelsStub{totals: map[string]int64{"ready": 4}},
+		&overviewVMsStub{totals: map[string]int64{}},
+		&overviewSandboxesStub{},
 		&overviewQuotaStub{accounts: []*quotapb.QuotaAccountView{
 			{QuotaCode: "gpu.shared_memory_mib", Unit: "MiB", Limit: "98280", Occupied: "0", Available: "98280", Configured: true, Enforcement: quotapb.Enforcement_ENFORCED},
 			{QuotaCode: "gpu.physical.count", Unit: "gpu", Limit: "2", Occupied: "0", Available: "2", Configured: true, Enforcement: quotapb.Enforcement_ENFORCED},
