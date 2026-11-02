@@ -9,6 +9,8 @@ import (
 	inferencev1 "go-wind-admin/api/gen/go/inference/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
+	sandboxview "go-wind-admin/api/gen/go/sandbox/service/v1"
+	vmview "go-wind-admin/api/gen/go/vm/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -69,6 +71,56 @@ func (f *overviewModelsFake) ListModels(_ context.Context, in *catalogv1.ListMod
 	return &catalogv1.ListModelsResponse{Total: f.totals[in.GetStatus()]}, nil
 }
 
+// overviewVMFake 按键为 state 返回 total，空 state 表示无过滤调用。
+type overviewVMFake struct {
+	totals map[string]int64
+	err    error
+	calls  int
+}
+
+func (f *overviewVMFake) ListVMs(_ context.Context, r *vmview.ListVMsRequest) (*vmview.ListVMsResponse, error) {
+	f.calls++
+	if f.err != nil {
+		return nil, f.err
+	}
+	return &vmview.ListVMsResponse{Total: f.totals[r.GetState()]}, nil
+}
+
+// overviewSandboxFake 按页返回 items；reportedTotal 用于模拟含墓碑的 total。
+type overviewSandboxFake struct {
+	items         []*sandboxview.Sandbox
+	reportedTotal int64
+	err           error
+	calls         int
+}
+
+func (f *overviewSandboxFake) ListSandboxes(_ context.Context, r *sandboxview.ListSandboxesRequest) (*sandboxview.ListSandboxesResponse, error) {
+	f.calls++
+	if f.err != nil {
+		return nil, f.err
+	}
+	page, size := int(r.GetPage()), int(r.GetPageSize())
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 {
+		size = 20
+	}
+	start := (page - 1) * size
+	end := start + size
+	if start > len(f.items) {
+		start = len(f.items)
+	}
+	if end > len(f.items) {
+		end = len(f.items)
+	}
+	total := f.reportedTotal
+	if total == 0 {
+		total = int64(len(f.items))
+	}
+	return &sandboxview.ListSandboxesResponse{Items: f.items[start:end], Total: total}, nil
+}
+
 type overviewAuthFake struct {
 	entry, models, inference error
 	entryCalls, sourceCalls  int
@@ -113,7 +165,13 @@ func overviewService(instances overviewInstanceLister, inference overviewInferen
 	if len(quota) > 0 {
 		q = quota[0]
 	}
-	return NewOverviewService(nil, instances, inference, models, q, authorization)
+	// 默认给空数据源，已有用例只关心容器实例口径。
+	return NewOverviewService(nil, instances, inference, models, &overviewVMFake{}, &overviewSandboxFake{}, q, authorization)
+}
+
+// overviewServiceWithResources 允许指定 VM 与沙箱数据源，用于验证三类资源合并。
+func overviewServiceWithResources(instances overviewInstanceLister, vms overviewVMLister, sandboxes overviewSandboxLister, inference overviewInferenceLister, models overviewModelLister, authorization OverviewAuthorizer) *OverviewService {
+	return NewOverviewService(nil, instances, inference, models, vms, sandboxes, nil, authorization)
 }
 
 func overviewIdentity(t *testing.T, label string, total, primary, degraded, other int64) {
@@ -439,5 +497,87 @@ func TestOverviewGpuQuotaMissingReaderKeepsKeys(t *testing.T) {
 	}
 	if card.GetSharedMemoryMib().GetConfigured() || card.GetPhysicalCount().GetConfigured() {
 		t.Fatalf("missing reader must not look configured: %+v", card)
+	}
+}
+
+// TestOverviewMergesContainerVMAndSandbox 验证实例卡是三类资源之和，
+// 且各来源过渡态口径独立：容器 pending 算异常、VM 过渡态归其他、沙箱 unknown 算异常。
+func TestOverviewMergesContainerVMAndSandbox(t *testing.T) {
+	instances := &overviewInstancesFake{totals: map[string]int64{"running": 2, "stopped": 1, "pending": 3}}
+	vms := &overviewVMFake{totals: map[string]int64{"": 10, "running": 4, "stopped": 3, "failed": 1}}
+	sandboxes := &overviewSandboxFake{items: []*sandboxview.Sandbox{
+		{ObservedState: "running"},
+		{ObservedState: "running"},
+		{ObservedState: "paused"},
+		{ObservedState: "unknown"},
+		{ObservedState: "provisioning"},
+		{ObservedState: "deleted"},
+	}}
+	s := overviewServiceWithResources(
+		instances, vms, sandboxes,
+		&overviewInferenceFake{},
+		&overviewModelsFake{totals: map[string]int64{}},
+		&overviewAuthFake{},
+	)
+	out, err := s.GetOverview(overviewCtx(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	i := out.GetInstances()
+	// 容器 6（running 2 / stopped 1 / failed 3 / other 1）+ VM 10（running 4 / stopped 3 /
+	// failed 1 / other 5）+ 沙箱 5（running 2 / paused 1 / failed 1 / other 2，deleted 已剔除）。
+	if i.GetTotal() != 21 || i.GetByState()["running"] != 8 || i.GetByState()["failed"] != 5 ||
+		i.GetByState()["stopped"] != 5 || i.GetByState()["pending"] != 0 || i.GetOther() != 8 {
+		t.Fatalf("instances=%+v", i)
+	}
+	overviewIdentity(t, "instances", i.GetTotal(), i.GetByState()["running"], i.GetByState()["failed"], i.GetOther())
+	if _, ok := i.GetByState()["deleted"]; ok {
+		t.Fatal("instances must not expose deleted")
+	}
+	if vms.calls != 4 {
+		t.Fatalf("vm calls=%d want 4", vms.calls)
+	}
+}
+
+// TestOverviewVMSandboxDegradeAlone 验证 VM 与沙箱同时失败时只丢这两路贡献，
+// 容器计数与其他卡片保持，整体仍 200。
+func TestOverviewVMSandboxDegradeAlone(t *testing.T) {
+	failure := kratoserrors.ServiceUnavailable("SOURCE_UNAVAILABLE", "down")
+	instances := &overviewInstancesFake{totals: map[string]int64{"running": 2, "stopped": 1, "pending": 3}}
+	s := overviewServiceWithResources(
+		instances,
+		&overviewVMFake{err: failure},
+		&overviewSandboxFake{err: failure},
+		&overviewInferenceFake{},
+		&overviewModelsFake{totals: map[string]int64{}},
+		&overviewAuthFake{},
+	)
+	out, err := s.GetOverview(overviewCtx(), &emptypb.Empty{})
+	if err != nil {
+		t.Fatalf("degraded overview must stay 200: %v", err)
+	}
+	i := out.GetInstances()
+	if i.GetTotal() != 6 || i.GetByState()["running"] != 2 || i.GetByState()["failed"] != 3 || i.GetOther() != 1 {
+		t.Fatalf("container counts lost or not isolated: %+v", i)
+	}
+	overviewIdentity(t, "instances", i.GetTotal(), i.GetByState()["running"], i.GetByState()["failed"], i.GetOther())
+}
+
+// TestOverviewSandboxPaginationIsCapped 验证沙箱翻页触顶后按已统计返回，不 panic 不死循环。
+func TestOverviewSandboxPaginationIsCapped(t *testing.T) {
+	sandboxes := &overviewSandboxFake{reportedTotal: 10000}
+	s := overviewServiceWithResources(
+		&overviewInstancesFake{totals: map[string]int64{}},
+		&overviewVMFake{},
+		sandboxes,
+		&overviewInferenceFake{},
+		&overviewModelsFake{totals: map[string]int64{}},
+		&overviewAuthFake{},
+	)
+	if _, err := s.GetOverview(overviewCtx(), &emptypb.Empty{}); err != nil {
+		t.Fatal(err)
+	}
+	if sandboxes.calls != overviewSandboxMaxPages {
+		t.Fatalf("sandbox pages fetched=%d want %d", sandboxes.calls, overviewSandboxMaxPages)
 	}
 }

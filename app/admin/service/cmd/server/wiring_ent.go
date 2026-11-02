@@ -504,14 +504,6 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		sandboxOwner = instanceOwner
 	}
 	sandboxService := service.NewSandboxService(sandboxOwner, data.NewInstanceAuthorizationRepo(entClient), tenantRepo, quotaLedgerRepo)
-	overviewService := service.NewOverviewService(
-		ctx.NewLoggerHelper("overview/service/admin-service"),
-		instanceService,
-		inferenceService,
-		modelService,
-		quotaAdminRepo,
-		data.NewInstanceAuthorizationRepo(entClient),
-	)
 	vmAcceptance, err := service.NewGpuAcceptance(quotaLedgerRepo, quotaRegistry, tenantRepo, nil, vmBinding, quotaWorker)
 	if err != nil {
 		rollback()
@@ -522,6 +514,17 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		vmSessions = instanceSession
 	}
 	vmService := service.NewVMService(vmAcceptance, vmBinding, tenantRepo, quotaLedgerRepo, vmSessions)
+	// 首页实例卡要合并容器实例、虚拟机与沙箱，因此 overviewService 必须在这三者之后构造。
+	overviewService := service.NewOverviewService(
+		ctx.NewLoggerHelper("overview/service/admin-service"),
+		instanceService,
+		inferenceService,
+		modelService,
+		vmService,
+		sandboxService,
+		quotaAdminRepo,
+		data.NewInstanceAuthorizationRepo(entClient),
+	)
 	computeService := service.NewComputePresetService(computeClient, computeCatalog)
 	modeldevGPU := service.ModelDevGPUAdmission{Eligibility: data.NewGpuUseAuthorizationRepo(entClient)}
 	if acceleratorClient != nil {

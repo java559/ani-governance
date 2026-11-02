@@ -11,6 +11,8 @@ import (
 	inferencev1 "go-wind-admin/api/gen/go/inference/service/v1"
 	view "go-wind-admin/api/gen/go/instance/service/v1"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
+	sandboxview "go-wind-admin/api/gen/go/sandbox/service/v1"
+	vmview "go-wind-admin/api/gen/go/vm/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 	"go-wind-admin/pkg/middleware/auth"
@@ -30,6 +32,9 @@ const (
 	// 推理列表不支持按状态过滤，只能全量翻页；单页 100、最多 50 页（5000 条）。
 	overviewInferencePageSize = int32(100)
 	overviewInferenceMaxPages = 50
+	// 沙箱列表同样不支持按状态过滤且 total 含 deleted 墓碑，只能全量翻页后本地聚合。
+	overviewSandboxPageSize = uint32(100)
+	overviewSandboxMaxPages = 50
 	// 传输层预算 10s，内部聚合预算 8s，留 2s 余量写回 200。
 	overviewAggregateBudget = 8 * time.Second
 	// GPU 配额单位兜底值：数据源缺失该目录项时仍要给出稳定单位，与目录登记一致。
@@ -57,6 +62,16 @@ type overviewModelLister interface {
 	ListModels(context.Context, *catalogv1.ListModelsRequest) (*catalogv1.ListModelsResponse, error)
 }
 
+// overviewVMLister 读虚拟机列表；state 为闭合展示状态，不传只排除 deleted。
+type overviewVMLister interface {
+	ListVMs(context.Context, *vmview.ListVMsRequest) (*vmview.ListVMsResponse, error)
+}
+
+// overviewSandboxLister 读沙箱列表；该接口没有状态过滤参数。
+type overviewSandboxLister interface {
+	ListSandboxes(context.Context, *sandboxview.ListSandboxesRequest) (*sandboxview.ListSandboxesResponse, error)
+}
+
 // overviewQuotaReader 读本租户的配额账户投影；与 /api/v1/me/quota-accounts 同源。
 type overviewQuotaReader interface {
 	ListTenantAccounts(context.Context, uint32) ([]*quotapb.QuotaAccountView, error)
@@ -70,6 +85,8 @@ type OverviewService struct {
 	instances     overviewInstanceLister
 	inference     overviewInferenceLister
 	models        overviewModelLister
+	vms           overviewVMLister
+	sandboxes     overviewSandboxLister
 	quota         overviewQuotaReader
 	authorization OverviewAuthorizer
 }
@@ -79,10 +96,15 @@ func NewOverviewService(
 	instances overviewInstanceLister,
 	inference overviewInferenceLister,
 	models overviewModelLister,
+	vms overviewVMLister,
+	sandboxes overviewSandboxLister,
 	quota overviewQuotaReader,
 	authorization OverviewAuthorizer,
 ) *OverviewService {
-	return &OverviewService{log: log, instances: instances, inference: inference, models: models, quota: quota, authorization: authorization}
+	return &OverviewService{
+		log: log, instances: instances, inference: inference, models: models,
+		vms: vms, sandboxes: sandboxes, quota: quota, authorization: authorization,
+	}
 }
 
 func (s *OverviewService) warnf(ctx context.Context, format string, args ...any) {
@@ -134,11 +156,21 @@ func (s *OverviewService) GetOverview(ctx context.Context, _ *emptypb.Empty) (*a
 	// 知识库没有任何数据源，恒为空计数（不调用任何下游）。
 	call, cancel := context.WithTimeout(ctx, overviewAggregateBudget)
 	defer cancel()
+	// 实例卡由容器实例、虚拟机、沙箱三路组成，各自独立降级后再相加。
+	var containers, vms, sandboxes overviewInstanceStateCounts
 	var wg sync.WaitGroup
-	wg.Add(4)
+	wg.Add(6)
 	go func() {
 		defer wg.Done()
-		out.Instances = s.instanceOverview(call, p)
+		containers = s.containerOverviewCounts(call, p)
+	}()
+	go func() {
+		defer wg.Done()
+		vms = s.vmOverviewCounts(call, p)
+	}()
+	go func() {
+		defer wg.Done()
+		sandboxes = s.sandboxOverviewCounts(call, p)
 	}()
 	go func() {
 		defer wg.Done()
@@ -153,17 +185,42 @@ func (s *OverviewService) GetOverview(ctx context.Context, _ *emptypb.Empty) (*a
 		out.GpuQuota = s.gpuQuotaOverview(call, p)
 	}()
 	wg.Wait()
+	out.Instances = mergeInstanceCounts(containers, vms, sandboxes)
 	return out, nil
 }
 
-// instanceOverview 按 running/stopped/pending 三次计数（pageSize=1），不使用
-// 无过滤 total（含 deleted）。pending 计入异常：by_state.failed = pending 数，
-// by_state.pending 恒为 0。
-func (s *OverviewService) instanceOverview(ctx context.Context, p *auth.Principal) *adminV1.ConsoleInstanceOverview {
+// overviewInstanceStateCounts 是单个资源来源折算到卡片四行后的计数。
+// 约定 total = running + failed + other；stopped 是 other 的子集（other 还含过渡态）。
+type overviewInstanceStateCounts struct {
+	total, running, stopped, failed, other int64
+}
+
+// mergeInstanceCounts 把三类资源的计数相加为一张「实例总数」卡。
+// by_state.pending 键保留但恒为 0：各来源的过渡态已在各自内部折叠。
+func mergeInstanceCounts(parts ...overviewInstanceStateCounts) *adminV1.ConsoleInstanceOverview {
 	card := zeroInstanceOverview()
+	var total, running, stopped, failed, other int64
+	for _, part := range parts {
+		total += part.total
+		running += part.running
+		stopped += part.stopped
+		failed += part.failed
+		other += part.other
+	}
+	card.Total = total
+	card.ByState["running"] = running
+	card.ByState["stopped"] = stopped
+	card.ByState["failed"] = failed
+	card.Other = other
+	return card
+}
+
+// containerOverviewCounts 按 running/stopped/pending 三次计数（pageSize=1），不使用
+// 无过滤 total（含 deleted）。pending 计入异常：failed = pending 数。
+func (s *OverviewService) containerOverviewCounts(ctx context.Context, p *auth.Principal) overviewInstanceStateCounts {
 	if s.instances == nil {
 		s.warnf(ctx, "console overview data source degraded: source=instances tenant=%d err=missing", p.TenantID)
-		return card
+		return overviewInstanceStateCounts{}
 	}
 	page, size := uint32(1), uint32(1)
 	counts := make(map[string]int64, 3)
@@ -171,16 +228,123 @@ func (s *OverviewService) instanceOverview(ctx context.Context, p *auth.Principa
 		reply, err := s.instances.ListInstances(ctx, &view.ListInstancesRequest{Page: &page, PageSize: &size, ObservedState: state})
 		if err != nil || reply == nil {
 			s.warnf(ctx, "console overview data source degraded: source=instances state=%s tenant=%d err=%v", state, p.TenantID, err)
-			return card
+			return overviewInstanceStateCounts{}
 		}
 		counts[state] = reply.GetTotal()
 	}
-	card.Total = counts["running"] + counts["stopped"] + counts["pending"]
-	card.ByState["running"] = counts["running"]
-	card.ByState["stopped"] = counts["stopped"]
-	card.ByState["failed"] = counts["pending"]
-	card.Other = counts["stopped"]
-	return card
+	return overviewInstanceStateCounts{
+		total:   counts["running"] + counts["stopped"] + counts["pending"],
+		running: counts["running"],
+		stopped: counts["stopped"],
+		failed:  counts["pending"],
+		other:   counts["stopped"],
+	}
+}
+
+// overviewVMFilterStates 是 VM 侧参与精确计数的状态；其余过渡态由差值归入「其他」。
+var overviewVMFilterStates = []string{"running", "stopped", "failed"}
+
+// vmOverviewCounts 用四次计数（total + running/stopped/failed，pageSize=1）汇总虚拟机。
+// VM 有真实的 failed 观测值，只有 failed 计入异常；pending/provisioning/starting/
+// stopping/deleting 等过渡态归「其他」，避免正常创建期间首页持续飘红。
+func (s *OverviewService) vmOverviewCounts(ctx context.Context, p *auth.Principal) overviewInstanceStateCounts {
+	if s.vms == nil {
+		s.warnf(ctx, "console overview data source degraded: source=virtual_machines tenant=%d err=missing", p.TenantID)
+		return overviewInstanceStateCounts{}
+	}
+	page, size := uint32(1), uint32(1)
+	all, err := s.vms.ListVMs(ctx, &vmview.ListVMsRequest{Page: &page, PageSize: &size})
+	if err != nil || all == nil {
+		s.warnf(ctx, "console overview data source degraded: source=virtual_machines tenant=%d err=%v", p.TenantID, err)
+		return overviewInstanceStateCounts{}
+	}
+	unfiltered := all.GetTotal()
+	counts := make(map[string]int64, len(overviewVMFilterStates))
+	for _, state := range overviewVMFilterStates {
+		value := state
+		reply, err := s.vms.ListVMs(ctx, &vmview.ListVMsRequest{Page: &page, PageSize: &size, State: &value})
+		if err != nil || reply == nil {
+			s.warnf(ctx, "console overview data source degraded: source=virtual_machines state=%s tenant=%d err=%v", state, p.TenantID, err)
+			return overviewInstanceStateCounts{}
+		}
+		counts[state] = reply.GetTotal()
+	}
+	running, stopped, failed := counts["running"], counts["stopped"], counts["failed"]
+	transitional := unfiltered - running - stopped - failed
+	if transitional < 0 {
+		s.warnf(ctx, "console overview vm state drift: tenant=%d total=%d running=%d stopped=%d failed=%d",
+			p.TenantID, unfiltered, running, stopped, failed)
+		transitional = 0
+	}
+	return overviewInstanceStateCounts{
+		total:   running + stopped + failed + transitional,
+		running: running,
+		stopped: stopped,
+		failed:  failed,
+		other:   stopped + transitional,
+	}
+}
+
+// sandboxOverviewCounts 全量翻页后按 observed_state 本地聚合：列表既没有状态过滤，
+// 其 total 也把 deleted 墓碑算了进去，因此不能直接用 total。
+// running→running、paused→「其他」、unknown→异常（沙箱没有 failed 状态）、
+// provisioning/deleting 与未识别值→「其他」，deleted 丢弃。
+func (s *OverviewService) sandboxOverviewCounts(ctx context.Context, p *auth.Principal) overviewInstanceStateCounts {
+	if s.sandboxes == nil {
+		s.warnf(ctx, "console overview data source degraded: source=sandboxes tenant=%d err=missing", p.TenantID)
+		return overviewInstanceStateCounts{}
+	}
+	page, size := uint32(1), overviewSandboxPageSize
+	first, err := s.sandboxes.ListSandboxes(ctx, &sandboxview.ListSandboxesRequest{Page: &page, PageSize: &size})
+	if err != nil || first == nil {
+		s.warnf(ctx, "console overview data source degraded: source=sandboxes tenant=%d err=%v", p.TenantID, err)
+		return overviewInstanceStateCounts{}
+	}
+	pages := int((first.GetTotal() + int64(size) - 1) / int64(size))
+	if pages > overviewSandboxMaxPages {
+		pages = overviewSandboxMaxPages
+		s.warnf(ctx, "console overview sandbox pages capped: tenant=%d total=%d", p.TenantID, first.GetTotal())
+	}
+	var running, stopped, failed, transitional int64
+	collect := func(items []*sandboxview.Sandbox) {
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
+			switch item.GetObservedState() {
+			case "running":
+				running++
+			case "paused":
+				stopped++
+			case "unknown":
+				failed++
+			case "deleted":
+				// 墓碑记录，不计入任何一行。
+			case "provisioning", "deleting":
+				transitional++
+			default:
+				transitional++
+				s.warnf(ctx, "console overview sandbox state unrecognized: state=%s tenant=%d", item.GetObservedState(), p.TenantID)
+			}
+		}
+	}
+	collect(first.GetItems())
+	for n := uint32(2); n <= uint32(pages); n++ {
+		requestPage := n
+		reply, err := s.sandboxes.ListSandboxes(ctx, &sandboxview.ListSandboxesRequest{Page: &requestPage, PageSize: &size})
+		if err != nil || reply == nil {
+			s.warnf(ctx, "console overview data source degraded: source=sandboxes page=%d tenant=%d err=%v", n, p.TenantID, err)
+			return overviewInstanceStateCounts{}
+		}
+		collect(reply.GetItems())
+	}
+	return overviewInstanceStateCounts{
+		total:   running + stopped + failed + transitional,
+		running: running,
+		stopped: stopped,
+		failed:  failed,
+		other:   stopped + transitional,
+	}
 }
 
 // inferenceOverview 全量翻页并按 desiredState 剔除软删记录，再按 phase 聚合：
