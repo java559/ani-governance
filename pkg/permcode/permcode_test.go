@@ -258,11 +258,12 @@ func TestCountsAndKeys(t *testing.T) {
 		"GET /api/v1/networks/vpcs/{vpc_id}/associated-instances":     {Code: "network:vpc:get", Source: "sql/data/20261009_network_permissions.sql ; pkg/middleware/auth/network_policy.go", BusinessModule: "NETWORK", ScopeKind: "tenant"},
 		"GET /api/v1/networks/subnets/{subnet_id}/associated-instances": {Code: "network:subnet:get", Source: "sql/data/20261009_network_permissions.sql ; pkg/middleware/auth/network_policy.go", BusinessModule: "NETWORK", ScopeKind: "tenant"},
 	}
-	// The tenant VM image catalog adds six route rows. Both reads reuse vm:read, so the
-	// distinct key set grows by only the three new write codes.
+	// The tenant VM image catalog adds six route rows. The key set is keyed by
+	// (method, path), so it grows by six even though only three permission codes are
+	// new: both reads reuse vm:read but are separate routes.
 	const vmImageSource = "scripts/ops/sql/register-vm-image-permissions.sql"
 	const vmImageCapabilities = 6
-	const vmImageNewKeys = 3
+	const vmImageKeysPerRoute = 6
 	vmImageRoutes := map[string]expectation{
 		"GET /api/v1/virtual-machine-images":                                   {Code: "vm:read", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
 		"GET /api/v1/virtual-machine-images/{image_id}":                        {Code: "vm:read", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
@@ -283,7 +284,7 @@ func TestCountsAndKeys(t *testing.T) {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances + vmImageNewKeys; len(keys) != want {
+	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances + vmImageKeysPerRoute; len(keys) != want {
 		t.Errorf("AllKeys() = %d, want %d", len(keys), want)
 	}
 	keySet := make(map[string]bool, len(keys))
