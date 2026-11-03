@@ -97,7 +97,7 @@ func TestServiceTagToBusinessModuleReverseMapping(t *testing.T) {
 		identityV1.Module_INSTANCE:         {"InstanceService", "OverviewService"},
 		identityV1.Module_SANDBOX:          {"SandboxService"},
 		identityV1.Module_STORAGE:          {"StorageService"},
-		identityV1.Module_VIRTUAL_MACHINE:  {"VMService"},
+		identityV1.Module_VIRTUAL_MACHINE:  {"VMService", "VMImageService"},
 		identityV1.Module_DASHBOARD:        {"AdminPortalService", "DashboardService", "AuthenticationService", "ResourceUsageAdminService"},
 		identityV1.Module_OPM:              {"UserService", "OrgUnitService", "PositionService", "UserProfileService", "RoleService"},
 		identityV1.Module_PERMISSION:       {"MenuService", "ApiService", "PermissionService", "PermissionGroupService"},
