@@ -101,6 +101,8 @@ const (
 	ModuleVirtualMachine  Module = "VIRTUAL_MACHINE"
 	ModuleInstance        Module = "INSTANCE"
 	ModuleStorage         Module = "STORAGE"
+	ModuleModelDev        Module = "MODELDEV"
+	ModuleSandbox         Module = "SANDBOX"
 )
 
 func (m Module) String() string {
@@ -110,7 +112,7 @@ func (m Module) String() string {
 // ModuleValidator is a validator for the "module" field enum values. It is called by the builders before save.
 func ModuleValidator(m Module) error {
 	switch m {
-	case ModuleDashboard, ModuleOpm, ModuleSystem, ModuleDict, ModuleTenant, ModulePermission, ModuleLog, ModuleInternalMessage, ModuleTask, ModuleModel, ModuleNetwork, ModuleAccelerator, ModuleImage, ModuleInference, ModuleVirtualMachine, ModuleInstance, ModuleStorage:
+	case ModuleDashboard, ModuleOpm, ModuleSystem, ModuleDict, ModuleTenant, ModulePermission, ModuleLog, ModuleInternalMessage, ModuleTask, ModuleModel, ModuleNetwork, ModuleAccelerator, ModuleImage, ModuleInference, ModuleVirtualMachine, ModuleInstance, ModuleStorage, ModuleModelDev, ModuleSandbox:
 		return nil
 	default:
 		return fmt.Errorf("planmodule: invalid enum value for module field: %q", m)

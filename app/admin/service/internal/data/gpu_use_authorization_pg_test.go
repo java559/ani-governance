@@ -31,7 +31,7 @@ func TestGpuUseAuthorizationPostgres(t *testing.T) {
 			currentPlan := c.Client().Plan.Create().SetName(name).SaveX(ctx)
 			current := c.Client().Tenant.Create().SetCode(name).SetName(name).SetStatus(tenant.StatusOn).SetPlanID(currentPlan.ID).SaveX(ctx)
 			member := c.Client().User.Create().SetTenantID(current.ID).SetUsername(name).SetStatus(user.StatusNormal).SaveX(ctx)
-			c.Client().PlanModule.Create().SetPlanID(currentPlan.ID).SetModule(planmodule.ModuleModel).SaveX(ctx)
+			c.Client().PlanModule.Create().SetPlanID(currentPlan.ID).SetModule(planmodule.ModuleModelDev).SaveX(ctx)
 			accelerator := c.Client().PlanModule.Create().SetPlanID(currentPlan.ID).SetModule(planmodule.ModuleAccelerator).SaveX(ctx)
 			tenantID, userID := current.ID, member.ID
 			past := time.Now().UTC().Add(-time.Hour)

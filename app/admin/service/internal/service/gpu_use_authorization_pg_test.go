@@ -32,7 +32,7 @@ func TestGpuTrainingUseCombinesRealBusinessAuthorizationWithoutInstance(t *testi
 	name := "training-use-" + uuid.NewString()
 	plan, err := c.Client().Plan.Create().SetName(name).Save(sys)
 	require.NoError(t, err)
-	for _, module := range []planmodule.Module{planmodule.ModuleModel, planmodule.ModuleAccelerator} {
+	for _, module := range []planmodule.Module{planmodule.ModuleModelDev, planmodule.ModuleAccelerator} {
 		require.NoError(t, c.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(module).Exec(sys))
 	}
 	tenant, err := c.Client().Tenant.Create().SetName(name).SetCode(name).SetPlanID(plan.ID).Save(sys)
@@ -47,7 +47,7 @@ func TestGpuTrainingUseCombinesRealBusinessAuthorizationWithoutInstance(t *testi
 	require.NoError(t, err)
 	route, err := c.Client().Api.Query().Where(api.ModuleEQ("ModelDevService"), api.PathEQ("/api/v1/modeldev/executions"), api.MethodEQ("POST"), api.ScopeEQ(api.ScopeAdmin)).Only(sys)
 	if ent.IsNotFound(err) {
-		route, err = c.Client().Api.Create().SetModule("ModelDevService").SetPath("/api/v1/modeldev/executions").SetMethod("POST").SetScope(api.ScopeAdmin).SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(sys)
+		route, err = c.Client().Api.Create().SetModule("ModelDevService").SetPath("/api/v1/modeldev/executions").SetMethod("POST").SetScope(api.ScopeAdmin).SetBusinessModule(api.BusinessModuleModelDev).SetStatus(api.StatusOn).Save(sys)
 	}
 	require.NoError(t, err)
 	require.NoError(t, c.Client().PermissionApi.Create().SetPermissionID(permissionRow.ID).SetAPIID(route.ID).Exec(sys))
@@ -62,7 +62,7 @@ func TestGpuTrainingUseCombinesRealBusinessAuthorizationWithoutInstance(t *testi
 				return business.AuthorizeCreate(ctx, tenant.ID, operator.ID)
 			})
 			require.NoError(t, err)
-			require.NoError(t, authorizeNewGpuUse(ctx, grant, eligibility), "MODEL business grant plus ACCELERATOR, without INSTANCE or Profile GET")
+			require.NoError(t, authorizeNewGpuUse(ctx, grant, eligibility), "MODELDEV business grant plus ACCELERATOR, without INSTANCE or Profile GET")
 		})
 	}
 	require.ErrorIs(t, data.NewInstanceAuthorizationRepo(c).AuthorizeCatalog(ctx, tenant.ID, operator.ID), data.ErrActionAuthorizationDenied)

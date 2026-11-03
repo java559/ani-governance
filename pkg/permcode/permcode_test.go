@@ -412,12 +412,12 @@ func TestSandboxCapabilities(t *testing.T) {
 		{"DELETE", "/api/v1/sandbox/{sandbox_id}/tokens/{token_id}", "token:revoke"},
 	} {
 		exp, err := Resolve(r.method, r.path)
-		if err != nil || exp.Code != "sandbox:"+r.action || exp.BusinessModule != "INSTANCE" || exp.ScopeKind != "tenant" {
+		if err != nil || exp.Code != "sandbox:"+r.action || exp.BusinessModule != "SANDBOX" || exp.ScopeKind != "tenant" {
 			t.Fatalf("Sandbox capability %s %s: %+v %v", r.method, r.path, exp, err)
 		}
 	}
 	module, code, ok := ComputeCatalogGrant("SANDBOX")
-	if !ok || module != "INSTANCE" || code != "sandbox:preset:read" {
+	if !ok || module != "SANDBOX" || code != "sandbox:preset:read" {
 		t.Fatalf("Sandbox catalog grant: %s %s %v", module, code, ok)
 	}
 }

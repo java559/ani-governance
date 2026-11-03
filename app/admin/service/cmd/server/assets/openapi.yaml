@@ -14507,6 +14507,8 @@ components:
                         - INSTANCE
                         - VIRTUAL_MACHINE
                         - STORAGE
+                        - MODELDEV
+                        - SANDBOX
                     type: string
                     description: 所属业务功能模块（用于套餐白名单过滤）
                     format: enum
@@ -20930,6 +20932,8 @@ components:
                         - INSTANCE
                         - VIRTUAL_MACHINE
                         - STORAGE
+                        - MODELDEV
+                        - SANDBOX
                     type: string
                     description: 所属业务功能模块
                     format: enum
@@ -22317,6 +22321,8 @@ components:
                         - INSTANCE
                         - VIRTUAL_MACHINE
                         - STORAGE
+                        - MODELDEV
+                        - SANDBOX
                     type: string
                     description: 功能模块
                     format: enum

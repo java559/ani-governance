@@ -109,7 +109,7 @@ func (r *ModelDevAuthorizationRepo) AuthorizeQuery(ctx context.Context, tenantID
 		if err := r.authorizeCurrent(ctx, tenantID, userID, modelDevFinetuningReadinessAction); err != nil {
 			return err
 		}
-		// Reuse the existing TRAINING-specific code and MODEL entitlement.
+		// Reuse the existing TRAINING-specific code and MODELDEV entitlement.
 		// The shared compute directory API itself belongs to SYSTEM.
 		err := NewComputeCatalogAuthorizationRepo(r.entClient).AuthorizeComputeCatalog(ctx, tenantID, userID, "TRAINING")
 		switch {
@@ -316,6 +316,8 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 	}
 	if action != modelDevManageInputAction && action != modelDevManageExecutionAction {
 		path, method := "/api/v1/modeldev/executions", "POST"
+		// 模型开发自身入口按 MODELDEV 套餐资格校验；引用模型仓库资产时按 MODEL 校验。
+		expectedModule := api.BusinessModuleModelDev
 		switch action {
 		case modelDevEnsureEnvironmentAction:
 			path, method = ModelDevEnsureEnvironmentPath, "POST"
@@ -323,7 +325,7 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 			path, method = ModelDevGetEnvironmentPath, "GET"
 		case modelDevFinetuningReadinessAction:
 			for _, required := range []string{"/api/v1/model-versions/{model_version_id}", "/api/v1/model-versions/{model_version_id}/download-url"} {
-				if err := authorizeModelDevAPI(ctx, tx, permissionIDs, required, "GET"); err != nil {
+				if err := authorizeModelDevAPI(ctx, tx, permissionIDs, required, "GET", api.BusinessModuleModel); err != nil {
 					return err
 				}
 			}
@@ -357,17 +359,18 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 		case modelDevListInputVersionsAction:
 			path, method = ModelDevListInputVersionsPath, "GET"
 		case modelDevFinetuningArtifactsAction:
-			if err := authorizeModelDevAPI(ctx, tx, permissionIDs, "/api/v1/model-versions/{model_version_id}", "GET"); err != nil {
+			if err := authorizeModelDevAPI(ctx, tx, permissionIDs, "/api/v1/model-versions/{model_version_id}", "GET", api.BusinessModuleModel); err != nil {
 				return err
 			}
 			path, method = "/api/v1/model-versions/{model_version_id}/download-url", "GET"
+			expectedModule = api.BusinessModuleModel
 		case modelDevFinetuningExistingModelAction, modelDevFinetuningNewModelAction:
 			for _, required := range []struct{ path, method string }{
 				{"/api/v1/model-versions/{model_version_id}", "GET"},
 				{"/api/v1/model-versions/{model_version_id}/download-url", "GET"},
 				{"/api/v1/model-versions", "POST"},
 			} {
-				if err := authorizeModelDevAPI(ctx, tx, permissionIDs, required.path, required.method); err != nil {
+				if err := authorizeModelDevAPI(ctx, tx, permissionIDs, required.path, required.method, api.BusinessModuleModel); err != nil {
 					return err
 				}
 			}
@@ -376,8 +379,9 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 			} else {
 				path, method = "/api/v1/models/{model_id}", "GET"
 			}
+			expectedModule = api.BusinessModuleModel
 		}
-		if err := authorizeModelDevAPI(ctx, tx, permissionIDs, path, method); err != nil {
+		if err := authorizeModelDevAPI(ctx, tx, permissionIDs, path, method, expectedModule); err != nil {
 			return err
 		}
 	}
@@ -387,7 +391,7 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 	return nil
 }
 
-func authorizeModelDevAPI(ctx context.Context, tx *ent.Tx, permissionIDs []uint32, path, method string) error {
+func authorizeModelDevAPI(ctx context.Context, tx *ent.Tx, permissionIDs []uint32, path, method string, businessModule api.BusinessModule) error {
 	var apiIDs []uint32
 	err := tx.PermissionApi.Query().Where(
 		permissionapi.PermissionIDIn(permissionIDs...), permissionapi.APIIDGT(0), permissionapi.DeletedAtIsNil(),
@@ -400,7 +404,7 @@ func authorizeModelDevAPI(ctx context.Context, tx *ent.Tx, permissionIDs []uint3
 	}
 	allowed, err := tx.Api.Query().Where(
 		api.IDIn(apiIDs...), api.StatusEQ(api.StatusOn), api.DeletedAtIsNil(),
-		api.ScopeEQ(api.ScopeAdmin), api.BusinessModuleEQ(api.BusinessModuleModel),
+		api.ScopeEQ(api.ScopeAdmin), api.BusinessModuleEQ(businessModule),
 		api.PathEQ(path), api.MethodEQ(method),
 	).Exist(ctx)
 	if err != nil {

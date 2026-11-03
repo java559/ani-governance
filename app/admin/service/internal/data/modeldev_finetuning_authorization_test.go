@@ -35,7 +35,7 @@ func TestModelDevFinetuningRequiresCurrentModelAPIRights(t *testing.T) {
 	plan, err := client.Client().Plan.Create().SetName("ModelDev readiness " + id).Save(ctx)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return client.Client().Plan.DeleteOneID(plan.ID).Exec(c) })
-	module, err := client.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModel).Save(ctx)
+	module, err := client.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModelDev).Save(ctx)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return client.Client().PlanModule.DeleteOneID(module.ID).Exec(c) })
 	owner, err := client.Client().Tenant.Create().SetCode("md-model-auth-" + id).SetName("ModelDev model rights " + id).SetStatus(tenant.StatusOn).Save(ctx)
@@ -67,6 +67,10 @@ func TestModelDevFinetuningRequiresCurrentModelAPIRights(t *testing.T) {
 	for i, route := range paths {
 		code := "md-model-right:" + uuid.NewString()
 		businessModule := api.BusinessModuleModel
+		if i == 5 || i == 6 {
+			// 模型开发自身路由（执行创建、readiness）按 MODELDEV 归类。
+			businessModule = api.BusinessModuleModelDev
+		}
 		if i == 7 {
 			code, businessModule = "modeldev:compute-preset:read", api.BusinessModuleSystem
 		}

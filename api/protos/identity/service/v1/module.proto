@@ -18,11 +18,13 @@ enum Module {
   INTERNAL_MESSAGE = 8; // 内部消息
   TASK = 10;            // 任务管理
   NETWORK = 12;         // 网络资源
-  MODEL = 11;           // 模型目录
+  MODEL = 11;           // 模型仓库：模型与版本资产管理
   ACCELERATOR = 13;     // GPU supply and tenant read views
   IMAGE = 14;           // Registered container images and restricted publishing
   INFERENCE = 15;        // Inference service management
   INSTANCE = 16;        // GPU container instances, separate current action grants
   VIRTUAL_MACHINE = 17; // Virtual machines; feature entitlement, no resource charge
   STORAGE = 18;         // Independent volumes and read-only object browsing
+  MODELDEV = 19;        // 模型开发：训练、微调与执行管理
+  SANDBOX = 20;         // 沙箱：独立于容器实例的生命周期与套餐资格
 }
