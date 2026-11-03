@@ -142,26 +142,53 @@ var vmImageReasons = map[string]bool{
 	"VM_SCOPE_DENIED": true, "VM_ADAPTER_UNAVAILABLE": true,
 }
 
+// vmImageStatusCode is the HTTP status each published image reason carries. The table
+// exists because a plain gRPC status arrives here as a kratos error whose Reason is empty
+// and whose Message is the contract code: mapping only through known.Reason collapsed
+// every NotFound into 503 VM_IMAGE_DEPENDENCY_UNAVAILABLE.
+var vmImageStatusCode = map[string]int{
+	"VM_IMAGE_INVALID_ARGUMENT": 400,
+	"VM_IMAGE_NOT_FOUND":        404,
+	"VM_SCOPE_DENIED":           403,
+	"VM_VERSION_CONFLICT":       409, "VM_IDEMPOTENCY_CONFLICT": 409, "VM_IMAGE_NOT_READY": 409,
+	"VM_IMAGE_NOT_UPLOADABLE":   409, "VM_IMAGE_IN_USE": 409, "VM_IMAGE_KIND_MISMATCH": 409,
+	"VM_IMAGE_UPLOAD_DISABLED":  409, "VM_IMAGE_NATIVE_IDENTITY_CHANGED": 409,
+	"VM_IMAGE_DEPENDENCY_UNAVAILABLE": 503, "VM_ADAPTER_UNAVAILABLE": 503,
+}
+
 func vmImageHTTPError(err error) error {
 	if err == nil {
 		return nil
 	}
-	// A reason the image contract does not publish is never forwarded: the caller
-	// sees one dependency failure code instead of an internal status string.
+	// A plain gRPC status reaches this layer as a kratos error whose Reason is empty and
+	// whose Message carries the published contract code, so every carrier is inspected:
+	// Reason, Message, the gRPC status message and ErrorInfo details. Mapping only
+	// known.Reason turned every VM_IMAGE_NOT_FOUND into a 503.
+	var candidates []string
 	var known *kratoserrors.Error
 	if errors.As(err, &known) {
-		if vmImageReasons[known.Reason] {
-			return known
-		}
-		return kratoserrors.New(503, "VM_IMAGE_DEPENDENCY_UNAVAILABLE", "VM image request failed")
+		candidates = append(candidates, known.Reason, known.Message)
 	}
+	st := status.Convert(err)
+	candidates = append(candidates, st.Message())
+	for _, detail := range st.Details() {
+		if info, ok := detail.(*errdetails.ErrorInfo); ok {
+			candidates = append(candidates, info.Reason)
+		}
+	}
+	for _, reason := range candidates {
+		if code, ok := vmImageStatusCode[reason]; ok && vmImageReasons[reason] {
+			return kratoserrors.New(code, reason, "VM image request failed")
+		}
+	}
+	// Nothing publishable: keep the transport's own class when it is unambiguous and
+	// collapse everything else into one dependency failure, so a Kubernetes status
+	// string, a namespace or a native object name can never reach a browser.
 	code, reason := 503, "VM_IMAGE_DEPENDENCY_UNAVAILABLE"
 	switch status.Code(err) {
 	case codes.InvalidArgument:
 		code, reason = 400, "VM_IMAGE_INVALID_ARGUMENT"
-	case codes.Unauthenticated:
-		code, reason = 401, "VM_SCOPE_DENIED"
-	case codes.PermissionDenied:
+	case codes.Unauthenticated, codes.PermissionDenied:
 		code, reason = 403, "VM_SCOPE_DENIED"
 	case codes.NotFound:
 		code, reason = 404, "VM_IMAGE_NOT_FOUND"
@@ -169,15 +196,6 @@ func vmImageHTTPError(err error) error {
 		code, reason = 409, "VM_IDEMPOTENCY_CONFLICT"
 	case codes.FailedPrecondition:
 		code, reason = 409, "VM_IMAGE_NOT_READY"
-	}
-	st := status.Convert(err)
-	if vmImageReasons[st.Message()] {
-		reason = st.Message()
-	}
-	for _, detail := range st.Details() {
-		if info, ok := detail.(*errdetails.ErrorInfo); ok && vmImageReasons[info.Reason] {
-			reason = info.Reason
-		}
 	}
 	return kratoserrors.New(code, reason, "VM image request failed")
 }
