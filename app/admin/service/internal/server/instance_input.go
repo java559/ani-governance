@@ -215,6 +215,10 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 		for _, k := range []string{"page", "pageSize", "state", "keyword"} {
 			allowed[k] = true
 		}
+	case *vmview.ListVMImagesRequest:
+		for _, k := range []string{"page", "pageSize", "kind", "state", "keyword"} {
+			allowed[k] = true
+		}
 	case *view.ListMountablePVCsRequest, *view.ListInstanceMountablePVCsRequest:
 		for _, k := range []string{"page", "pageSize", "name"} {
 			allowed[k] = true
@@ -308,12 +312,27 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 			}
 			object[field] = value
 		case "state":
-			if value != "" && value != "all" {
+			if _, images := message.(*vmview.ListVMImagesRequest); images {
+				// The image lane uses its own closed state set; the VM display
+				// groups must not leak across as accepted filters.
+				if value != "" && value != "all" {
+					switch value {
+					case "PREPARING", "IMPORTING", "VERIFYING", "READY", "FAILED", "UNAVAILABLE", "DELETING", "DELETED":
+					default:
+						return invalid
+					}
+				}
+			} else if value != "" && value != "all" {
 				switch value {
 				case "pending", "provisioning", "starting", "stopping", "running", "stopped", "failed", "deleting", "deleted":
 				default:
 					return invalid
 				}
+			}
+			object[field] = value
+		case "kind":
+			if value != "" && value != "DISK_IMAGE" && value != "INSTALL_ISO" {
+				return invalid
 			}
 			object[field] = value
 		case "keyword":

@@ -1,0 +1,128 @@
+version: v2
+
+clean: false
+
+managed:
+  enabled: true
+
+  disable:
+    - module: buf.build/googleapis/googleapis
+    - module: 'buf.build/envoyproxy/protoc-gen-validate'
+    - module: 'buf.build/kratos/apis'
+    - module: 'buf.build/gnostic/gnostic'
+    - module: 'buf.build/gogo/protobuf'
+
+  override:
+    # global go_package_prefix option
+    # 如果没有在各目录下单独配置go_package，则会使用该前缀。
+    - file_option: go_package_prefix
+      value: go-wind-admin/api/gen/go
+
+    # per-directory go_package options
+    # value第一部分是生成代码的包路径，第二部分是go包名。
+    - file_option: go_package
+      path: admin/service/v1
+      value: go-wind-admin/api/gen/go/admin/service/v1;adminpb
+    - file_option: go_package
+      path: audit/service/v1
+      value: go-wind-admin/api/gen/go/audit/service/v1;auditpb
+    - file_option: go_package
+      path: access_key/service/v1
+      value: go-wind-admin/api/gen/go/access_key/service/v1;accesskeypb
+    - file_option: go_package
+      path: authentication/service/v1
+      value: go-wind-admin/api/gen/go/authentication/service/v1;authenticationpb
+    - file_option: go_package
+      path: dict/service/v1
+      value: go-wind-admin/api/gen/go/dict/service/v1;dictpb
+    - file_option: go_package
+      path: storage/service/v1
+      value: go-wind-admin/api/gen/go/storage/service/v1;storagepb
+    - file_option: go_package
+      path: internal_message/service/v1
+      value: go-wind-admin/api/gen/go/internal_message/service/v1;internalmessagepb
+    - file_option: go_package
+      path: permission/service/v1
+      value: go-wind-admin/api/gen/go/permission/service/v1;permissionpb
+    - file_option: go_package
+      path: task/service/v1
+      value: go-wind-admin/api/gen/go/task/service/v1;taskpb
+    - file_option: go_package
+      path: identity/service/v1
+      value: go-wind-admin/api/gen/go/identity/service/v1;identitypb
+    - file_option: go_package
+      path: resource/service/v1
+      value: go-wind-admin/api/gen/go/permission/service/v1;resourcepb
+    - file_option: go_package
+      path: redis_cache/service/v1
+      value: go-wind-admin/api/gen/go/redis_cache/service/v1;rediscachepb
+    - file_option: go_package
+      path: config/service/v1
+      value: go-wind-admin/api/gen/go/config/service/v1;configpb
+    - file_option: go_package
+      path: inference/service/v1
+      value: go-wind-admin/api/gen/go/inference/service/v1;inferenceservicepb
+
+    # 本地化分页 Proto（api/localdeps/pagination，源码与 go-crud/api@v0.0.7 逐字节一致）。
+    # managed 全局前缀 go-wind-admin/api/gen/go 对此 Proto 例外：生成到 pkg/localdeps 目标，
+    # Go 包名保持上游生成物的 v1（原 option go_package 的 ;pagination 别名在上游生成物中
+    # 已被 go_package_prefix 抹去，这里复刻既有行为，不改变协议）。
+    - file_option: go_package
+      path: pagination/v1
+      value: go-wind-admin/pkg/localdeps/go-crud/api/gen/go/pagination/v1
+
+    # 本地化脱敏 Proto（api/localdeps/redact，与 protoc-gen-go-redact 锁定归档逐字节一致）。
+    # 这一条取代原先 managed.disable 里的外部模块 buf.build/go-wind/redact：接管后 redact 的
+    # go_package 必须与生成器 imports.go 标准 import 表里的本地运行时路径逐字符相等，
+    # Module.importPaths 才会把这个 import 认作脱敏运行时本身并沿用别名 redact，
+    # 生成的 .pb.redact.go 才引用得到符号。;redact 包名别名保持归档生成物一致，协议内容不变。
+    - file_option: go_package
+      path: redact/v1
+      value: go-wind-admin/pkg/localdeps/go-wind-toolkit/protoc-gen-go-redact/redact/v1;redact
+inputs:
+  # 租户镜像切片的固定文件清单。规范链路 make api 已经覆盖这些输入，这里保留一份
+  # 只生成切片文件的模板，使新增合同可以在不重写整个共享输出根的前提下复放生成。
+  # 插件集合与 managed 覆盖必须与 buf.gen.yaml 保持一致，否则切片产物会与规范链路漂移。
+  - directory: protos
+    paths:
+      - protos/vm/service/v1/image.proto
+      - protos/vm/service/v1/vm.proto
+      - protos/admin/service/v1/i_vm_image.proto
+      - protos/identity/service/v1/module.proto
+
+plugins:
+  # generate go code
+  #- plugin: buf.build/protocolbuffers/go
+  - local: protoc-gen-go
+    out: gen/go
+    opt: paths=source_relative # use relative paths
+
+  # generate grpc service code
+  #- plugin: buf.build/grpc/go
+  - local: protoc-gen-go-grpc
+    out: gen/go
+    opt:
+      - paths=source_relative # use relative paths
+
+  # generate rest service code
+  - local: protoc-gen-go-http
+    out: gen/go
+    opt:
+      - paths=source_relative # use relative paths
+
+  # generate kratos errors code
+  - local: protoc-gen-go-errors
+    out: gen/go
+    opt:
+      - paths=source_relative # use relative paths
+
+  # 校验生成已移到 api/buf.validate.gen.yaml（T15 固定 PGV 文件级 paths），此处不再运行 PGV。
+
+  # generate redact code
+  # 插件由本仓库 pkg/localdeps/go-wind-toolkit/protoc-gen-go-redact 构建到 tools/bin，
+  # 不再依赖 go install 外部模块；make plugin（或 scripts/generate-redact.sh）负责产出该二进制。
+  - local: ../tools/bin/protoc-gen-go-redact
+    out: gen/go
+    opt:
+      - paths=source_relative # use relative paths
+      - lang=go

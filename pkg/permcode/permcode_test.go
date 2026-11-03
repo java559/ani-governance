@@ -258,6 +258,19 @@ func TestCountsAndKeys(t *testing.T) {
 		"GET /api/v1/networks/vpcs/{vpc_id}/associated-instances":     {Code: "network:vpc:get", Source: "sql/data/20261009_network_permissions.sql ; pkg/middleware/auth/network_policy.go", BusinessModule: "NETWORK", ScopeKind: "tenant"},
 		"GET /api/v1/networks/subnets/{subnet_id}/associated-instances": {Code: "network:subnet:get", Source: "sql/data/20261009_network_permissions.sql ; pkg/middleware/auth/network_policy.go", BusinessModule: "NETWORK", ScopeKind: "tenant"},
 	}
+	// The tenant VM image catalog adds six route rows. Both reads reuse vm:read, so the
+	// distinct key set grows by only the three new write codes.
+	const vmImageSource = "scripts/ops/sql/register-vm-image-permissions.sql"
+	const vmImageCapabilities = 6
+	const vmImageNewKeys = 3
+	vmImageRoutes := map[string]expectation{
+		"GET /api/v1/virtual-machine-images":                                   {Code: "vm:read", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
+		"GET /api/v1/virtual-machine-images/{image_id}":                        {Code: "vm:read", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
+		"POST /api/v1/virtual-machine-images":                                  {Code: "vm:image:upload", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
+		"POST /api/v1/virtual-machine-images/{image_id}/upload-sessions":       {Code: "vm:image:upload", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
+		"PATCH /api/v1/virtual-machine-images/{image_id}":                      {Code: "vm:image:update", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
+		"DELETE /api/v1/virtual-machine-images/{image_id}":                     {Code: "vm:image:delete", Source: vmImageSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
+	}
 	if want := 227; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
@@ -266,11 +279,11 @@ func TestCountsAndKeys(t *testing.T) {
 	const sandboxPhaseTwoCapabilities = 9
 	const vmLogCapabilities = 1
 	const modelDevEnvironmentCapabilities = 2
-	if want := 204 - 3 + len(platformComponentReads) + len(platformComponentLogStreams) + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances; CapabilityCount() != want {
+	if want := 204 - 3 + len(platformComponentReads) + len(platformComponentLogStreams) + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances + vmImageCapabilities; CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances; len(keys) != want {
+	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances + vmImageNewKeys; len(keys) != want {
 		t.Errorf("AllKeys() = %d, want %d", len(keys), want)
 	}
 	keySet := make(map[string]bool, len(keys))
@@ -286,6 +299,7 @@ func TestCountsAndKeys(t *testing.T) {
 		{"security-group-capability", securityGroupSource, capabilityOperations, securityGroupCapabilities},
 		{"storage-write-capability", storageWriteSource, capabilityOperations, storageWrites},
 		{"storage-stats-capability", "sql/data/20261030_storage_bucket_stats_permission.sql", capabilityOperations, storageStats},
+		{"vm-image-capability", vmImageSource, capabilityOperations, vmImageRoutes},
 	} {
 		t.Run(table.name, func(t *testing.T) {
 			actual := make(map[string]expectation)

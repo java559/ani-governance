@@ -1,0 +1,116 @@
+syntax = "proto3";
+package vm.service.v1;
+import "gnostic/openapi/v3/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "redact/v1/redact.proto";
+
+// Tenant-owned image. `media_key` is the value later submitted to VM creation or
+// SetVMMedia; it is derived from image_id and is never user-assigned.
+message VMImageOS {
+  string os_family=1 [json_name="os_family"];
+  string os_version=2 [json_name="os_version"];
+  string architecture=3 [json_name="architecture"];
+  string firmware=4 [json_name="firmware"];
+  string root_bus=5 [json_name="root_bus"];
+  string data_bus=6 [json_name="data_bus"];
+  string nic_model=7 [json_name="nic_model"];
+}
+
+message VMImage {
+  string image_id=1 [json_name="image_id"];
+  string media_key=2 [json_name="media_key"];
+  string name=3;
+  string description=4;
+  // DISK_IMAGE or INSTALL_ISO.
+  string kind=5;
+  // qcow2 or iso, bound to kind by the backend.
+  string format=6;
+  // PREPARING, IMPORTING, VERIFYING, READY, FAILED, UNAVAILABLE, DELETING, DELETED.
+  string state=7;
+  // Stable platform reason code. Never a Kubernetes status string.
+  string reason=8;
+  // NONE, PENDING, RUNNING, COMPLETE, BLOCKED.
+  string cleanup_state=9 [json_name="cleanup_state"];
+  // Declared DataVolume input size, in GiB.
+  int64 source_capacity_gb=10 [json_name="source_capacity_gb"];
+  // Final PVC request produced by the backend.
+  int64 source_requested_bytes=11 [json_name="source_requested_bytes"];
+  // Capacity the cluster actually reports for the source volume.
+  int64 observed_source_capacity_bytes=12 [json_name="observed_source_capacity_bytes"];
+  // Number of bytes the checksum covers; differs from the uploaded file length.
+  int64 source_checksum_bytes=13 [json_name="source_checksum_bytes"];
+  // SHA-256 of the backend-processed source, published only at READY.
+  string source_sha256=14 [json_name="source_sha256"];
+  VMImageOS os=15;
+  int64 version=16;
+  string upload_deadline=17 [json_name="upload_deadline"];
+  // Audit only. It is never a filter, an authorization input or an owner.
+  string created_by=18 [json_name="created_by"];
+  string created_at=19 [json_name="created_at"];
+  string updated_at=20 [json_name="updated_at"];
+}
+
+message ListVMImagesRequest {
+  optional uint32 page=1;
+  optional uint32 page_size=2 [json_name="pageSize"];
+  optional string kind=3;
+  optional string state=4;
+  optional string keyword=5;
+}
+message ListVMImagesResponse { repeated VMImage items=1; int64 total=2; }
+
+message GetVMImageRequest { string image_id=1 [json_name="image_id"]; }
+
+
+message CreateVMImageData {
+  string idempotency_key=1 [json_name="idempotency_key"];
+  string name=2;
+  string description=3;
+  string kind=4;
+  string format=5;
+  int64 source_capacity_gb=6 [json_name="source_capacity_gb"];
+  VMImageOS os=7;
+}
+message CreateVMImageRequest { CreateVMImageData data=1; }
+
+// The image id travels in the path. Nothing else is accepted: tenant, namespace,
+// PVC, UID, storage class and upload origin are all derived by the backend.
+message CreateVMImageUploadSessionData { string idempotency_key=1 [json_name="idempotency_key"]; }
+message CreateVMImageUploadSessionRequest {
+  string image_id=1 [json_name="image_id"];
+  CreateVMImageUploadSessionData data=2;
+}
+
+// Short-lived single-use ticket for the raw PUT. The token is redacted from every
+// log, trace and error report and is never stored by any service.
+message VMImageUploadSession {
+  string image_id=1 [json_name="image_id"];
+  string upload_session_id=2 [json_name="upload_session_id"];
+  string method=3;
+  string upload_url=4 [json_name="upload_url"];
+  string bearer_token=5 [json_name="bearer_token", (redact.value).string="*"];
+  string expires_at=6 [json_name="expires_at"];
+  string content_type=7 [json_name="content_type"];
+  int64 max_file_bytes=8 [json_name="max_file_bytes"];
+}
+
+message UpdateVMImageData {
+  string name=1;
+  string description=2;
+  int64 expected_version=3 [json_name="expected_version"];
+  string idempotency_key=4 [json_name="idempotency_key"];
+}
+message UpdateVMImageRequest {
+  string image_id=1 [json_name="image_id"];
+  UpdateVMImageData data=2;
+  google.protobuf.FieldMask update_mask=3 [json_name="update_mask", (gnostic.openapi.v3.property) = { type: "string" description: "Comma-separated snake_case paths, e.g. name,description. Only name and description are mutable." }];
+}
+
+message DeleteVMImageData {
+  int64 expected_version=1 [json_name="expected_version"];
+  string idempotency_key=2 [json_name="idempotency_key"];
+}
+message DeleteVMImageRequest {
+  string image_id=3 [json_name="image_id"];
+  DeleteVMImageData data=4;
+}

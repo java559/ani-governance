@@ -15,6 +15,12 @@ const VMMediaPath = "/api/v1/virtual-machine-media"
 const VMDNSDefaultsPath = "/api/v1/virtual-machine-dns-defaults"
 const VMLogsPath = "/api/v1/virtual-machines/{vm_id}/logs"
 
+// Tenant image catalog. Reads stay on vm:read; the three write capabilities are
+// separate codes so upload, rename and delete can be granted independently.
+const VMImageCollectionPath = "/api/v1/virtual-machine-images"
+const VMImageGetPath = "/api/v1/virtual-machine-images/{image_id}"
+const VMImageSessionPath = "/api/v1/virtual-machine-images/{image_id}/upload-sessions"
+
 type VMRoute struct{ Path, Method string }
 
 var vmRoutes = map[string]VMRoute{
@@ -42,6 +48,12 @@ var vmRoutes = map[string]VMRoute{
 	"delete-snapshot":  {"/api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}", "DELETE"},
 	"preview-restore":  {"/api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}/restore-preview", "POST"},
 	"restore-snapshot": {"/api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}/restore", "POST"},
+	"image-list":       {VMImageCollectionPath, "GET"},
+	"image-get":        {VMImageGetPath, "GET"},
+	"image-create":     {VMImageCollectionPath, "POST"},
+	"image-session":    {VMImageSessionPath, "POST"},
+	"image-update":     {VMImageGetPath, "PATCH"},
+	"image-delete":     {VMImageGetPath, "DELETE"},
 }
 
 func VMActionRoute(action string) (VMRoute, bool) { r, ok := vmRoutes[action]; return r, ok }

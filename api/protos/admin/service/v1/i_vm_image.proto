@@ -1,0 +1,107 @@
+syntax = "proto3";
+package admin.service.v1;
+import "google/api/annotations.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "vm/service/v1/image.proto";
+
+// Tenant self-service VM images. File bytes never pass through this BFF: the
+// browser uploads them straight to the platform upload entrypoint with a
+// short-lived ticket, so only small control requests appear here.
+service VMImageService {
+  rpc ListVMImages(vm.service.v1.ListVMImagesRequest) returns (vm.service.v1.ListVMImagesResponse) {
+    option (google.api.http) = { get: "/api/v1/virtual-machine-images" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "List the authenticated tenant's images"
+      description: "Requires vm:read and the VIRTUAL_MACHINE subscription. Tenant comes from the authenticated context and is never a query parameter. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero page values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. total counts the same filter under the same tenant. Deleted tombstones are hidden unless state=DELETED."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid page, kind, state or keyword" } } },
+        { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+        { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc GetVMImage(vm.service.v1.GetVMImageRequest) returns (vm.service.v1.VMImage) {
+    option (google.api.http) = { get: "/api/v1/virtual-machine-images/{image_id}" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "Read one image in the authenticated tenant"
+      description: "Requires vm:read and the VIRTUAL_MACHINE subscription. A missing image and another tenant's image are indistinguishable: both return 404 and carry no native object identity."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid image id" } } },
+        { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+        { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+        { name: "404" value: { response: { description: "Image not found in this tenant" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc CreateVMImage(vm.service.v1.CreateVMImageRequest) returns (vm.service.v1.VMImage) {
+    option (google.api.http) = { post: "/api/v1/virtual-machine-images" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "Register an image upload target"
+      description: "Requires vm:image:upload and the VIRTUAL_MACHINE subscription. Returns 202 with the durable record: image_id is assigned by the backend and media_key is derived from it, so a client can never choose or reuse a key. This only registers the target; no bytes have been transferred and the record starts in PREPARING. Repeating the same idempotency_key with the same content replays the first result, and the same key with different content or another target returns 409. File bytes are uploaded separately through an upload session."
+      responses: { response_or_reference: [
+        { name: "202" value: { response: { description: "Accepted" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/VMImage" } } } }] } } } },
+        { name: "400" value: { response: { description: "Invalid kind, format, size or os profile" } } },
+        { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+        { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+        { name: "409" value: { response: { description: "Idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image upload is disabled or the backend is unavailable" } } }
+      ] }
+    };
+  }
+  rpc CreateVMImageUploadSession(vm.service.v1.CreateVMImageUploadSessionRequest) returns (vm.service.v1.VMImageUploadSession) {
+    option (google.api.http) = { post: "/api/v1/virtual-machine-images/{image_id}/upload-sessions" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "Issue a short-lived raw upload ticket"
+      description: "Requires vm:image:upload. Returned only for a target that can still accept bytes, and never for READY. The response is Cache-Control: no-store; the browser must send exactly the returned method, url and headers to the upload entrypoint, using the raw File body, and must not attach the platform JWT, FormData or an extra content type. The ticket is single-use, expires on its own and is never persisted by any service."
+      responses: { response_or_reference: [
+        { name: "200" value: { response: { description: "OK" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/VMImageUploadSession" } } } }] } } } },
+        { name: "400" value: { response: { description: "Invalid image id or idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+        { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+        { name: "404" value: { response: { description: "Image not found in this tenant" } } },
+        { name: "409" value: { response: { description: "Target cannot accept an upload" } } },
+        { name: "503" value: { response: { description: "Image upload is disabled or the backend is unavailable" } } }
+      ] }
+    };
+  }
+  rpc UpdateVMImage(vm.service.v1.UpdateVMImageRequest) returns (vm.service.v1.VMImage) {
+    option (google.api.http) = { patch: "/api/v1/virtual-machine-images/{image_id}" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "Rename or re-describe an image"
+      description: "Requires vm:image:update. update_mask is a comma-separated string and only name and description are accepted; an empty, wildcard, unknown or repeated path is rejected with 400. description present with an empty string clears it, while an omitted field is preserved. kind, format, every capacity measure, source_sha256, media_key, state and created_by are immutable. A stale expected_version returns 409 VERSION_CONFLICT."
+      responses: { response_or_reference: [
+        { name: "200" value: { response: { description: "OK" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/VMImage" } } } }] } } } },
+        { name: "400" value: { response: { description: "Invalid mask or mutable field value" } } },
+        { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+        { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+        { name: "404" value: { response: { description: "Image not found in this tenant" } } },
+        { name: "409" value: { response: { description: "Version conflict or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc DeleteVMImage(vm.service.v1.DeleteVMImageRequest) returns (vm.service.v1.VMImage) {
+    option (google.api.http) = { delete: "/api/v1/virtual-machine-images/{image_id}" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "Delete an image and its source objects"
+      description: "Requires vm:image:delete with expected_version and idempotency_key in the body. Returns 202 with the record in DELETING. While any VM still holds a pin on this source the request returns 409 VM_IMAGE_IN_USE and the state does not change; deleting a source never affects an already cloned system disk or a retained media copy. Repeating the accepted request replays the same result."
+      responses: { response_or_reference: [
+        { name: "202" value: { response: { description: "Accepted" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/VMImage" } } } }] } } } },
+        { name: "400" value: { response: { description: "Invalid image id, version or idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+        { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+        { name: "404" value: { response: { description: "Image not found in this tenant" } } },
+        { name: "409" value: { response: { description: "Image is in use, or version/idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+}
