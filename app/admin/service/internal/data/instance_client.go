@@ -41,7 +41,7 @@ func instanceCall[T any](c *InstanceClient, ctx context.Context, tenant, actor s
 }
 func (c *InstanceClient) Resolve(ctx context.Context, t, a string, r *pb.CreateInstanceData, defaults *pb.SchedulingOptions) (*pb.CreateSpec, error) {
 	return instanceCall(c, ctx, t, a, func(ctx context.Context) (*pb.CreateSpec, error) {
-		return c.client.ResolveCreateSpec(ctx, &pb.ResolveCreateSpecRequest{TenantId: t, Data: r, SchedulingDefaults: defaults, InstanceContractVersion: CurrentInstanceContractVersion})
+		return c.client.ResolveCreateSpec(ctx, &pb.ResolveCreateSpecRequest{TenantId: t, Data: r, SchedulingDefaults: defaults})
 	})
 }
 

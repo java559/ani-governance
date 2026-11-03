@@ -1,0 +1,36 @@
+syntax = "proto3";
+package modeldev.service.v1;
+
+import "gnostic/openapi/v3/annotations.proto";
+import "google/protobuf/timestamp.proto";
+
+// Current authenticated tenant only. The Ensure operation UUID is supplied in
+// the mandatory Idempotency-Key header, never in the JSON object.
+message EnsureTenantExecutionEnvironmentRequest {
+  option (gnostic.openapi.v3.schema) = {
+    type: "object"
+    additional_properties: {boolean: false}
+  };
+}
+message GetTenantExecutionEnvironmentRequest {}
+message TenantExecutionEnvironmentView {
+  string environment_id = 1 [json_name = "environment_id"];
+  string cluster_id = 2 [json_name = "cluster_id"];
+  string namespace_name = 3 [json_name = "namespace_name"];
+  optional string namespace_uid = 4 [json_name = "namespace_uid"];
+  string state = 5;
+  string phase = 6;
+  string reason_code = 7 [json_name = "reason_code"];
+  bool retryable = 8;
+  uint32 retry_after_seconds = 9 [json_name = "retry_after_seconds"];
+  optional string binding_digest = 10 [json_name = "binding_digest"];
+  optional string experiment_id = 11 [json_name = "experiment_id"];
+  google.protobuf.Timestamp updated_at = 12 [json_name = "updated_at"];
+  google.protobuf.Timestamp last_verified_at = 13 [json_name = "last_verified_at"];
+}
+message EnsureTenantExecutionEnvironmentResponse {
+  TenantExecutionEnvironmentView environment = 1;
+}
+message GetTenantExecutionEnvironmentResponse {
+  TenantExecutionEnvironmentView environment = 1;
+}

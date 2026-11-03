@@ -20,13 +20,22 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SandboxService_CreateSandbox_FullMethodName       = "/admin.service.v1.SandboxService/CreateSandbox"
-	SandboxService_ListSandboxes_FullMethodName       = "/admin.service.v1.SandboxService/ListSandboxes"
-	SandboxService_GetSandbox_FullMethodName          = "/admin.service.v1.SandboxService/GetSandbox"
-	SandboxService_GetSandboxOperation_FullMethodName = "/admin.service.v1.SandboxService/GetSandboxOperation"
-	SandboxService_PauseSandbox_FullMethodName        = "/admin.service.v1.SandboxService/PauseSandbox"
-	SandboxService_ResumeSandbox_FullMethodName       = "/admin.service.v1.SandboxService/ResumeSandbox"
-	SandboxService_DeleteSandbox_FullMethodName       = "/admin.service.v1.SandboxService/DeleteSandbox"
+	SandboxService_CreateSandbox_FullMethodName           = "/admin.service.v1.SandboxService/CreateSandbox"
+	SandboxService_ListSandboxes_FullMethodName           = "/admin.service.v1.SandboxService/ListSandboxes"
+	SandboxService_GetSandbox_FullMethodName              = "/admin.service.v1.SandboxService/GetSandbox"
+	SandboxService_GetSandboxOperation_FullMethodName     = "/admin.service.v1.SandboxService/GetSandboxOperation"
+	SandboxService_PauseSandbox_FullMethodName            = "/admin.service.v1.SandboxService/PauseSandbox"
+	SandboxService_ResumeSandbox_FullMethodName           = "/admin.service.v1.SandboxService/ResumeSandbox"
+	SandboxService_DeleteSandbox_FullMethodName           = "/admin.service.v1.SandboxService/DeleteSandbox"
+	SandboxService_RunSandboxCode_FullMethodName          = "/admin.service.v1.SandboxService/RunSandboxCode"
+	SandboxService_GetSandboxCodeRun_FullMethodName       = "/admin.service.v1.SandboxService/GetSandboxCodeRun"
+	SandboxService_ListSandboxFiles_FullMethodName        = "/admin.service.v1.SandboxService/ListSandboxFiles"
+	SandboxService_ReadSandboxFile_FullMethodName         = "/admin.service.v1.SandboxService/ReadSandboxFile"
+	SandboxService_WriteSandboxFile_FullMethodName        = "/admin.service.v1.SandboxService/WriteSandboxFile"
+	SandboxService_DeleteSandboxFile_FullMethodName       = "/admin.service.v1.SandboxService/DeleteSandboxFile"
+	SandboxService_GetSandboxFileOperation_FullMethodName = "/admin.service.v1.SandboxService/GetSandboxFileOperation"
+	SandboxService_CreateSandboxToken_FullMethodName      = "/admin.service.v1.SandboxService/CreateSandboxToken"
+	SandboxService_RevokeSandboxToken_FullMethodName      = "/admin.service.v1.SandboxService/RevokeSandboxToken"
 )
 
 // SandboxServiceClient is the client API for SandboxService service.
@@ -40,6 +49,15 @@ type SandboxServiceClient interface {
 	PauseSandbox(ctx context.Context, in *v1.PauseSandboxRequest, opts ...grpc.CallOption) (*v1.SandboxAcceptance, error)
 	ResumeSandbox(ctx context.Context, in *v1.ResumeSandboxRequest, opts ...grpc.CallOption) (*v1.SandboxAcceptance, error)
 	DeleteSandbox(ctx context.Context, in *v1.DeleteSandboxRequest, opts ...grpc.CallOption) (*v1.SandboxAcceptance, error)
+	RunSandboxCode(ctx context.Context, in *v1.RunSandboxCodeRequest, opts ...grpc.CallOption) (*v1.SandboxCodeRun, error)
+	GetSandboxCodeRun(ctx context.Context, in *v1.GetSandboxCodeRunRequest, opts ...grpc.CallOption) (*v1.SandboxCodeRun, error)
+	ListSandboxFiles(ctx context.Context, in *v1.ListSandboxFilesRequest, opts ...grpc.CallOption) (*v1.SandboxFileResult, error)
+	ReadSandboxFile(ctx context.Context, in *v1.ReadSandboxFileRequest, opts ...grpc.CallOption) (*v1.SandboxFileResult, error)
+	WriteSandboxFile(ctx context.Context, in *v1.WriteSandboxFileRequest, opts ...grpc.CallOption) (*v1.SandboxFileOperation, error)
+	DeleteSandboxFile(ctx context.Context, in *v1.DeleteSandboxFileRequest, opts ...grpc.CallOption) (*v1.SandboxFileOperation, error)
+	GetSandboxFileOperation(ctx context.Context, in *v1.GetSandboxFileOperationRequest, opts ...grpc.CallOption) (*v1.SandboxFileOperation, error)
+	CreateSandboxToken(ctx context.Context, in *v1.CreateSandboxTokenRequest, opts ...grpc.CallOption) (*v1.SandboxAccessToken, error)
+	RevokeSandboxToken(ctx context.Context, in *v1.RevokeSandboxTokenRequest, opts ...grpc.CallOption) (*v1.RevokeSandboxTokenResponse, error)
 }
 
 type sandboxServiceClient struct {
@@ -120,6 +138,96 @@ func (c *sandboxServiceClient) DeleteSandbox(ctx context.Context, in *v1.DeleteS
 	return out, nil
 }
 
+func (c *sandboxServiceClient) RunSandboxCode(ctx context.Context, in *v1.RunSandboxCodeRequest, opts ...grpc.CallOption) (*v1.SandboxCodeRun, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxCodeRun)
+	err := c.cc.Invoke(ctx, SandboxService_RunSandboxCode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) GetSandboxCodeRun(ctx context.Context, in *v1.GetSandboxCodeRunRequest, opts ...grpc.CallOption) (*v1.SandboxCodeRun, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxCodeRun)
+	err := c.cc.Invoke(ctx, SandboxService_GetSandboxCodeRun_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) ListSandboxFiles(ctx context.Context, in *v1.ListSandboxFilesRequest, opts ...grpc.CallOption) (*v1.SandboxFileResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxFileResult)
+	err := c.cc.Invoke(ctx, SandboxService_ListSandboxFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) ReadSandboxFile(ctx context.Context, in *v1.ReadSandboxFileRequest, opts ...grpc.CallOption) (*v1.SandboxFileResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxFileResult)
+	err := c.cc.Invoke(ctx, SandboxService_ReadSandboxFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) WriteSandboxFile(ctx context.Context, in *v1.WriteSandboxFileRequest, opts ...grpc.CallOption) (*v1.SandboxFileOperation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxFileOperation)
+	err := c.cc.Invoke(ctx, SandboxService_WriteSandboxFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) DeleteSandboxFile(ctx context.Context, in *v1.DeleteSandboxFileRequest, opts ...grpc.CallOption) (*v1.SandboxFileOperation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxFileOperation)
+	err := c.cc.Invoke(ctx, SandboxService_DeleteSandboxFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) GetSandboxFileOperation(ctx context.Context, in *v1.GetSandboxFileOperationRequest, opts ...grpc.CallOption) (*v1.SandboxFileOperation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxFileOperation)
+	err := c.cc.Invoke(ctx, SandboxService_GetSandboxFileOperation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) CreateSandboxToken(ctx context.Context, in *v1.CreateSandboxTokenRequest, opts ...grpc.CallOption) (*v1.SandboxAccessToken, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SandboxAccessToken)
+	err := c.cc.Invoke(ctx, SandboxService_CreateSandboxToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sandboxServiceClient) RevokeSandboxToken(ctx context.Context, in *v1.RevokeSandboxTokenRequest, opts ...grpc.CallOption) (*v1.RevokeSandboxTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.RevokeSandboxTokenResponse)
+	err := c.cc.Invoke(ctx, SandboxService_RevokeSandboxToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SandboxServiceServer is the server API for SandboxService service.
 // All implementations must embed UnimplementedSandboxServiceServer
 // for forward compatibility.
@@ -131,6 +239,15 @@ type SandboxServiceServer interface {
 	PauseSandbox(context.Context, *v1.PauseSandboxRequest) (*v1.SandboxAcceptance, error)
 	ResumeSandbox(context.Context, *v1.ResumeSandboxRequest) (*v1.SandboxAcceptance, error)
 	DeleteSandbox(context.Context, *v1.DeleteSandboxRequest) (*v1.SandboxAcceptance, error)
+	RunSandboxCode(context.Context, *v1.RunSandboxCodeRequest) (*v1.SandboxCodeRun, error)
+	GetSandboxCodeRun(context.Context, *v1.GetSandboxCodeRunRequest) (*v1.SandboxCodeRun, error)
+	ListSandboxFiles(context.Context, *v1.ListSandboxFilesRequest) (*v1.SandboxFileResult, error)
+	ReadSandboxFile(context.Context, *v1.ReadSandboxFileRequest) (*v1.SandboxFileResult, error)
+	WriteSandboxFile(context.Context, *v1.WriteSandboxFileRequest) (*v1.SandboxFileOperation, error)
+	DeleteSandboxFile(context.Context, *v1.DeleteSandboxFileRequest) (*v1.SandboxFileOperation, error)
+	GetSandboxFileOperation(context.Context, *v1.GetSandboxFileOperationRequest) (*v1.SandboxFileOperation, error)
+	CreateSandboxToken(context.Context, *v1.CreateSandboxTokenRequest) (*v1.SandboxAccessToken, error)
+	RevokeSandboxToken(context.Context, *v1.RevokeSandboxTokenRequest) (*v1.RevokeSandboxTokenResponse, error)
 	mustEmbedUnimplementedSandboxServiceServer()
 }
 
@@ -161,6 +278,33 @@ func (UnimplementedSandboxServiceServer) ResumeSandbox(context.Context, *v1.Resu
 }
 func (UnimplementedSandboxServiceServer) DeleteSandbox(context.Context, *v1.DeleteSandboxRequest) (*v1.SandboxAcceptance, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteSandbox not implemented")
+}
+func (UnimplementedSandboxServiceServer) RunSandboxCode(context.Context, *v1.RunSandboxCodeRequest) (*v1.SandboxCodeRun, error) {
+	return nil, status.Error(codes.Unimplemented, "method RunSandboxCode not implemented")
+}
+func (UnimplementedSandboxServiceServer) GetSandboxCodeRun(context.Context, *v1.GetSandboxCodeRunRequest) (*v1.SandboxCodeRun, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSandboxCodeRun not implemented")
+}
+func (UnimplementedSandboxServiceServer) ListSandboxFiles(context.Context, *v1.ListSandboxFilesRequest) (*v1.SandboxFileResult, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSandboxFiles not implemented")
+}
+func (UnimplementedSandboxServiceServer) ReadSandboxFile(context.Context, *v1.ReadSandboxFileRequest) (*v1.SandboxFileResult, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReadSandboxFile not implemented")
+}
+func (UnimplementedSandboxServiceServer) WriteSandboxFile(context.Context, *v1.WriteSandboxFileRequest) (*v1.SandboxFileOperation, error) {
+	return nil, status.Error(codes.Unimplemented, "method WriteSandboxFile not implemented")
+}
+func (UnimplementedSandboxServiceServer) DeleteSandboxFile(context.Context, *v1.DeleteSandboxFileRequest) (*v1.SandboxFileOperation, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteSandboxFile not implemented")
+}
+func (UnimplementedSandboxServiceServer) GetSandboxFileOperation(context.Context, *v1.GetSandboxFileOperationRequest) (*v1.SandboxFileOperation, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSandboxFileOperation not implemented")
+}
+func (UnimplementedSandboxServiceServer) CreateSandboxToken(context.Context, *v1.CreateSandboxTokenRequest) (*v1.SandboxAccessToken, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSandboxToken not implemented")
+}
+func (UnimplementedSandboxServiceServer) RevokeSandboxToken(context.Context, *v1.RevokeSandboxTokenRequest) (*v1.RevokeSandboxTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RevokeSandboxToken not implemented")
 }
 func (UnimplementedSandboxServiceServer) mustEmbedUnimplementedSandboxServiceServer() {}
 func (UnimplementedSandboxServiceServer) testEmbeddedByValue()                        {}
@@ -309,6 +453,168 @@ func _SandboxService_DeleteSandbox_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SandboxService_RunSandboxCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.RunSandboxCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).RunSandboxCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_RunSandboxCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).RunSandboxCode(ctx, req.(*v1.RunSandboxCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_GetSandboxCodeRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetSandboxCodeRunRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).GetSandboxCodeRun(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_GetSandboxCodeRun_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).GetSandboxCodeRun(ctx, req.(*v1.GetSandboxCodeRunRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_ListSandboxFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListSandboxFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).ListSandboxFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_ListSandboxFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).ListSandboxFiles(ctx, req.(*v1.ListSandboxFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_ReadSandboxFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ReadSandboxFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).ReadSandboxFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_ReadSandboxFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).ReadSandboxFile(ctx, req.(*v1.ReadSandboxFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_WriteSandboxFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.WriteSandboxFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).WriteSandboxFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_WriteSandboxFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).WriteSandboxFile(ctx, req.(*v1.WriteSandboxFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_DeleteSandboxFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteSandboxFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).DeleteSandboxFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_DeleteSandboxFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).DeleteSandboxFile(ctx, req.(*v1.DeleteSandboxFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_GetSandboxFileOperation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetSandboxFileOperationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).GetSandboxFileOperation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_GetSandboxFileOperation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).GetSandboxFileOperation(ctx, req.(*v1.GetSandboxFileOperationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_CreateSandboxToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateSandboxTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).CreateSandboxToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_CreateSandboxToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).CreateSandboxToken(ctx, req.(*v1.CreateSandboxTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SandboxService_RevokeSandboxToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.RevokeSandboxTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SandboxServiceServer).RevokeSandboxToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SandboxService_RevokeSandboxToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SandboxServiceServer).RevokeSandboxToken(ctx, req.(*v1.RevokeSandboxTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SandboxService_ServiceDesc is the grpc.ServiceDesc for SandboxService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -343,6 +649,42 @@ var SandboxService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSandbox",
 			Handler:    _SandboxService_DeleteSandbox_Handler,
+		},
+		{
+			MethodName: "RunSandboxCode",
+			Handler:    _SandboxService_RunSandboxCode_Handler,
+		},
+		{
+			MethodName: "GetSandboxCodeRun",
+			Handler:    _SandboxService_GetSandboxCodeRun_Handler,
+		},
+		{
+			MethodName: "ListSandboxFiles",
+			Handler:    _SandboxService_ListSandboxFiles_Handler,
+		},
+		{
+			MethodName: "ReadSandboxFile",
+			Handler:    _SandboxService_ReadSandboxFile_Handler,
+		},
+		{
+			MethodName: "WriteSandboxFile",
+			Handler:    _SandboxService_WriteSandboxFile_Handler,
+		},
+		{
+			MethodName: "DeleteSandboxFile",
+			Handler:    _SandboxService_DeleteSandboxFile_Handler,
+		},
+		{
+			MethodName: "GetSandboxFileOperation",
+			Handler:    _SandboxService_GetSandboxFileOperation_Handler,
+		},
+		{
+			MethodName: "CreateSandboxToken",
+			Handler:    _SandboxService_CreateSandboxToken_Handler,
+		},
+		{
+			MethodName: "RevokeSandboxToken",
+			Handler:    _SandboxService_RevokeSandboxToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

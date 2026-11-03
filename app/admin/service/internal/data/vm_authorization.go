@@ -18,7 +18,8 @@ const VMLogsPath = "/api/v1/virtual-machines/{vm_id}/logs"
 type VMRoute struct{ Path, Method string }
 
 var vmRoutes = map[string]VMRoute{
-	"create": {VMCollectionPath, "POST"}, "list": {VMCollectionPath, "GET"}, "get": {VMGetPath, "GET"}, "delete": {VMDeletePath, "DELETE"}, "operation": {VMOperationPath, "GET"},
+	"set-security-groups": {"/api/v1/virtual-machines/{data.vm_id}/security-groups", "PUT"},
+	"create":              {VMCollectionPath, "POST"}, "list": {VMCollectionPath, "GET"}, "get": {VMGetPath, "GET"}, "delete": {VMDeletePath, "DELETE"}, "operation": {VMOperationPath, "GET"},
 	"start":            {"/api/v1/virtual-machines/{data.vm_id}/start", "POST"},
 	"stop":             {"/api/v1/virtual-machines/{data.vm_id}/stop", "POST"},
 	"restart":          {"/api/v1/virtual-machines/{data.vm_id}/restart", "POST"},

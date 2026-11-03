@@ -45,9 +45,9 @@ DELETE 分配独立 operation ID，关联原 CREATE。只有锁内证明原 CREA
 
 先发布匹配的独立 Inference API 并确认正式下载，再升级 owner 根模块、显式运行
 owner 新迁移、部署匹配 runtime，最后升级锁定同一 API 的 Gov。Gov 复用现有
-QuotaOperation/charges/dispatch 表，不增加 CPU 账本或本次 Gov 数据库迁移；
-非实例行的 `instance_contract_version=1` 默认值不表示 Inference 合同版本，
-Inference 仅按 `inference-managed-v2` schema 解释。历史普通资源没有 Gov 原 CREATE
+QuotaOperation/charges/dispatch 表，不增加 CPU 账本；Inference 仅按
+`inference-managed-v2` schema 解释。容器配置收敛的独立显式迁移已删除共享表中
+无业务用途的实例配置版本占位，不改变 Inference 协议。历史普通资源没有 Gov 原 CREATE
 时保留 owner 原查询/删除路径，不回填受管身份或配额。权限目录先 dry-run 后显式同步，
 角色/套餐同步与真实库迁移按部署授权执行。
 

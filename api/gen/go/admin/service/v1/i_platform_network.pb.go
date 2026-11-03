@@ -27,7 +27,7 @@ var File_admin_service_v1_i_platform_network_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_platform_network_proto_rawDesc = "" +
 	"\n" +
-	")admin/service/v1/i_platform_network.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a)catalog/service/v1/platform_network.proto\x1a%catalog/service/v1/platform_eip.proto2\x91r\n" +
+	")admin/service/v1/i_platform_network.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a)catalog/service/v1/platform_network.proto\x1a%catalog/service/v1/platform_eip.proto2\xccz\n" +
 	"\x16PlatformNetworkService\x12\xa2\x03\n" +
 	"\x10ListPlatformEIPs\x12+.catalog.service.v1.ListPlatformEIPsRequest\x1a,.catalog.service.v1.ListPlatformEIPsResponse\"\xb2\x02\xbaG\x8b\x02\x12\x10ListPlatformEIPs\x1a\xe4\x01Platform user JWT and network:platform:eip:list. All EIP owners in the configured cluster; page/pageSize and items/total, server-side tenant_id/name/address/pool_id/state/scope filters. Tenant identities and API keys are denied.Z\x10\n" +
 	"\x0e\n" +
@@ -136,7 +136,11 @@ const file_admin_service_v1_i_platform_network_proto_rawDesc = "" +
 	"\x19CreateIntranetAddressPool\x124.catalog.service.v1.CreateIntranetAddressPoolRequest\x1a5.catalog.service.v1.CreateIntranetAddressPoolResponse\"\xb6\x02\xbaG\xf0\x01\x12\x19CreateIntranetAddressPool\x1a\xc0\x01Requires platform user JWT and network:platform:intranet-pool:create. Write acceptance is asynchronous; inspect resource state and last_operation_id. Tenant identities and API keys are denied.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02<:\x01*b\bresource\"-/api/v1/admin/networks/intranet-address-pools\x12\xe8\x02\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02<:\x01*b\bresource\"-/api/v1/admin/networks/intranet-address-pools\x12\xc8\x03\n" +
+	"\x17GetIntranetPoolDefaults\x122.catalog.service.v1.GetIntranetPoolDefaultsRequest\x1a3.catalog.service.v1.GetIntranetPoolDefaultsResponse\"\xc3\x02\xbaG\x82\x02\x12\x17GetIntranetPoolDefaults\x1a\xd4\x01Requires platform user JWT and network:platform:intranet-pool:get. Returns trusted Provider defaults for creating a basic network; accepts no tenant or cluster override. Tenant identities and API keys are denied.Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x027\x125/api/v1/admin/networks/intranet-address-pool-defaults\x12\xe8\x02\n" +
 	"\x16GetIntranetAddressPool\x121.catalog.service.v1.GetIntranetAddressPoolRequest\x1a2.catalog.service.v1.GetIntranetAddressPoolResponse\"\xe6\x01\xbaG\x99\x01\x12\x16GetIntranetAddressPool\x1amRequires platform user JWT and network:platform:intranet-pool:get. Tenant identities and API keys are denied.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
@@ -160,7 +164,11 @@ const file_admin_service_v1_i_platform_network_proto_rawDesc = "" +
 	"\x16SetDefaultIntranetPool\x121.catalog.service.v1.SetDefaultIntranetPoolRequest\x1a2.catalog.service.v1.SetDefaultIntranetPoolResponse\"\xc6\x02\xbaG\xee\x01\x12\x16SetDefaultIntranetPool\x1a\xc1\x01Requires platform user JWT and network:platform:intranet-pool:default. Write acceptance is asynchronous; inspect resource state and last_operation_id. Tenant identities and API keys are denied.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02N:\x01*b\bresource\"?/api/v1/admin/networks/intranet-address-pools/{pool_id}/default\x12\xf5\x02\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02N:\x01*b\bresource\"?/api/v1/admin/networks/intranet-address-pools/{pool_id}/default\x12\xed\x04\n" +
+	"$SetIntranetPoolAutoAllocationEnabled\x12?.catalog.service.v1.SetIntranetPoolAutoAllocationEnabledRequest\x1a@.catalog.service.v1.SetIntranetPoolAutoAllocationEnabledResponse\"\xc1\x03\xbaG\xe1\x02\x12$SetIntranetPoolAutoAllocationEnabled\x1a\xa6\x02Requires platform user JWT and network:platform:intranet-pool:auto-allocate. Enable atomically selects the default pool, enables allocation and new VPC base EIP/SNAT provisioning. Disable affects future VPCs only and requires the current default pool. Tenant identities and API keys are denied.Z\x10\n" +
+	"\x0e\n" +
+	"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02V:\x01*b\bresource\x1aG/api/v1/admin/networks/intranet-address-pools/{pool_id}/auto-allocation\x12\xf5\x02\n" +
 	"\x1eGetPlatformNetworkCapabilities\x129.catalog.service.v1.GetPlatformNetworkCapabilitiesRequest\x1a:.catalog.service.v1.GetPlatformNetworkCapabilitiesResponse\"\xdb\x01\xbaG\x9e\x01\x12\x1eGetPlatformNetworkCapabilities\x1ajRequires platform user JWT and network:platform:capability:get. Tenant identities and API keys are denied.Z\x10\n" +
 	"\x0e\n" +
 	"\n" +
@@ -172,75 +180,79 @@ const file_admin_service_v1_i_platform_network_proto_rawDesc = "" +
 	"\x14com.admin.service.v1B\x15IPlatformNetworkProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_platform_network_proto_goTypes = []any{
-	(*v1.ListPlatformEIPsRequest)(nil),                  // 0: catalog.service.v1.ListPlatformEIPsRequest
-	(*v1.GetPlatformEIPRequest)(nil),                    // 1: catalog.service.v1.GetPlatformEIPRequest
-	(*v1.ReleasePlatformEIPRequest)(nil),                // 2: catalog.service.v1.ReleasePlatformEIPRequest
-	(*v1.CreateDefaultVPCEgressRequest)(nil),            // 3: catalog.service.v1.CreateDefaultVPCEgressRequest
-	(*v1.GetDefaultVPCEgressRequest)(nil),               // 4: catalog.service.v1.GetDefaultVPCEgressRequest
-	(*v1.GetCurrentDefaultVPCEgressRequest)(nil),        // 5: catalog.service.v1.GetCurrentDefaultVPCEgressRequest
-	(*v1.DeleteDefaultVPCEgressRequest)(nil),            // 6: catalog.service.v1.DeleteDefaultVPCEgressRequest
-	(*v1.CreateVirtualSwitchRequest)(nil),               // 7: catalog.service.v1.CreateVirtualSwitchRequest
-	(*v1.GetVirtualSwitchRequest)(nil),                  // 8: catalog.service.v1.GetVirtualSwitchRequest
-	(*v1.ListVirtualSwitchesRequest)(nil),               // 9: catalog.service.v1.ListVirtualSwitchesRequest
-	(*v1.DeleteVirtualSwitchRequest)(nil),               // 10: catalog.service.v1.DeleteVirtualSwitchRequest
-	(*v1.CreateVlanNetworkRequest)(nil),                 // 11: catalog.service.v1.CreateVlanNetworkRequest
-	(*v1.GetVlanNetworkRequest)(nil),                    // 12: catalog.service.v1.GetVlanNetworkRequest
-	(*v1.ListVlanNetworksRequest)(nil),                  // 13: catalog.service.v1.ListVlanNetworksRequest
-	(*v1.DeleteVlanNetworkRequest)(nil),                 // 14: catalog.service.v1.DeleteVlanNetworkRequest
-	(*v1.CreateEgressGatewayRequest)(nil),               // 15: catalog.service.v1.CreateEgressGatewayRequest
-	(*v1.GetEgressGatewayRequest)(nil),                  // 16: catalog.service.v1.GetEgressGatewayRequest
-	(*v1.ListEgressGatewaysRequest)(nil),                // 17: catalog.service.v1.ListEgressGatewaysRequest
-	(*v1.DeleteEgressGatewayRequest)(nil),               // 18: catalog.service.v1.DeleteEgressGatewayRequest
-	(*v1.CreatePublicAddressPoolRequest)(nil),           // 19: catalog.service.v1.CreatePublicAddressPoolRequest
-	(*v1.GetPublicAddressPoolRequest)(nil),              // 20: catalog.service.v1.GetPublicAddressPoolRequest
-	(*v1.ListPublicAddressPoolsRequest)(nil),            // 21: catalog.service.v1.ListPublicAddressPoolsRequest
-	(*v1.DeletePublicAddressPoolRequest)(nil),           // 22: catalog.service.v1.DeletePublicAddressPoolRequest
-	(*v1.RecordPublicPoolVerificationRequest)(nil),      // 23: catalog.service.v1.RecordPublicPoolVerificationRequest
-	(*v1.SetPublicPoolAllocationEnabledRequest)(nil),    // 24: catalog.service.v1.SetPublicPoolAllocationEnabledRequest
-	(*v1.SetDefaultPublicPoolRequest)(nil),              // 25: catalog.service.v1.SetDefaultPublicPoolRequest
-	(*v1.CreateIntranetAddressPoolRequest)(nil),         // 26: catalog.service.v1.CreateIntranetAddressPoolRequest
-	(*v1.GetIntranetAddressPoolRequest)(nil),            // 27: catalog.service.v1.GetIntranetAddressPoolRequest
-	(*v1.ListIntranetAddressPoolsRequest)(nil),          // 28: catalog.service.v1.ListIntranetAddressPoolsRequest
-	(*v1.DeleteIntranetAddressPoolRequest)(nil),         // 29: catalog.service.v1.DeleteIntranetAddressPoolRequest
-	(*v1.RecordIntranetPoolVerificationRequest)(nil),    // 30: catalog.service.v1.RecordIntranetPoolVerificationRequest
-	(*v1.SetIntranetPoolAllocationEnabledRequest)(nil),  // 31: catalog.service.v1.SetIntranetPoolAllocationEnabledRequest
-	(*v1.SetDefaultIntranetPoolRequest)(nil),            // 32: catalog.service.v1.SetDefaultIntranetPoolRequest
-	(*v1.GetPlatformNetworkCapabilitiesRequest)(nil),    // 33: catalog.service.v1.GetPlatformNetworkCapabilitiesRequest
-	(*v1.GetPlatformOperationRequest)(nil),              // 34: catalog.service.v1.GetPlatformOperationRequest
-	(*v1.ListPlatformEIPsResponse)(nil),                 // 35: catalog.service.v1.ListPlatformEIPsResponse
-	(*v1.GetPlatformEIPResponse)(nil),                   // 36: catalog.service.v1.GetPlatformEIPResponse
-	(*v1.ReleasePlatformEIPResponse)(nil),               // 37: catalog.service.v1.ReleasePlatformEIPResponse
-	(*v1.CreateDefaultVPCEgressResponse)(nil),           // 38: catalog.service.v1.CreateDefaultVPCEgressResponse
-	(*v1.GetDefaultVPCEgressResponse)(nil),              // 39: catalog.service.v1.GetDefaultVPCEgressResponse
-	(*v1.DeleteDefaultVPCEgressResponse)(nil),           // 40: catalog.service.v1.DeleteDefaultVPCEgressResponse
-	(*v1.CreateVirtualSwitchResponse)(nil),              // 41: catalog.service.v1.CreateVirtualSwitchResponse
-	(*v1.GetVirtualSwitchResponse)(nil),                 // 42: catalog.service.v1.GetVirtualSwitchResponse
-	(*v1.ListVirtualSwitchesResponse)(nil),              // 43: catalog.service.v1.ListVirtualSwitchesResponse
-	(*v1.DeleteVirtualSwitchResponse)(nil),              // 44: catalog.service.v1.DeleteVirtualSwitchResponse
-	(*v1.CreateVlanNetworkResponse)(nil),                // 45: catalog.service.v1.CreateVlanNetworkResponse
-	(*v1.GetVlanNetworkResponse)(nil),                   // 46: catalog.service.v1.GetVlanNetworkResponse
-	(*v1.ListVlanNetworksResponse)(nil),                 // 47: catalog.service.v1.ListVlanNetworksResponse
-	(*v1.DeleteVlanNetworkResponse)(nil),                // 48: catalog.service.v1.DeleteVlanNetworkResponse
-	(*v1.CreateEgressGatewayResponse)(nil),              // 49: catalog.service.v1.CreateEgressGatewayResponse
-	(*v1.GetEgressGatewayResponse)(nil),                 // 50: catalog.service.v1.GetEgressGatewayResponse
-	(*v1.ListEgressGatewaysResponse)(nil),               // 51: catalog.service.v1.ListEgressGatewaysResponse
-	(*v1.DeleteEgressGatewayResponse)(nil),              // 52: catalog.service.v1.DeleteEgressGatewayResponse
-	(*v1.CreatePublicAddressPoolResponse)(nil),          // 53: catalog.service.v1.CreatePublicAddressPoolResponse
-	(*v1.GetPublicAddressPoolResponse)(nil),             // 54: catalog.service.v1.GetPublicAddressPoolResponse
-	(*v1.ListPublicAddressPoolsResponse)(nil),           // 55: catalog.service.v1.ListPublicAddressPoolsResponse
-	(*v1.DeletePublicAddressPoolResponse)(nil),          // 56: catalog.service.v1.DeletePublicAddressPoolResponse
-	(*v1.RecordPublicPoolVerificationResponse)(nil),     // 57: catalog.service.v1.RecordPublicPoolVerificationResponse
-	(*v1.SetPublicPoolAllocationEnabledResponse)(nil),   // 58: catalog.service.v1.SetPublicPoolAllocationEnabledResponse
-	(*v1.SetDefaultPublicPoolResponse)(nil),             // 59: catalog.service.v1.SetDefaultPublicPoolResponse
-	(*v1.CreateIntranetAddressPoolResponse)(nil),        // 60: catalog.service.v1.CreateIntranetAddressPoolResponse
-	(*v1.GetIntranetAddressPoolResponse)(nil),           // 61: catalog.service.v1.GetIntranetAddressPoolResponse
-	(*v1.ListIntranetAddressPoolsResponse)(nil),         // 62: catalog.service.v1.ListIntranetAddressPoolsResponse
-	(*v1.DeleteIntranetAddressPoolResponse)(nil),        // 63: catalog.service.v1.DeleteIntranetAddressPoolResponse
-	(*v1.RecordIntranetPoolVerificationResponse)(nil),   // 64: catalog.service.v1.RecordIntranetPoolVerificationResponse
-	(*v1.SetIntranetPoolAllocationEnabledResponse)(nil), // 65: catalog.service.v1.SetIntranetPoolAllocationEnabledResponse
-	(*v1.SetDefaultIntranetPoolResponse)(nil),           // 66: catalog.service.v1.SetDefaultIntranetPoolResponse
-	(*v1.GetPlatformNetworkCapabilitiesResponse)(nil),   // 67: catalog.service.v1.GetPlatformNetworkCapabilitiesResponse
-	(*v1.GetPlatformOperationResponse)(nil),             // 68: catalog.service.v1.GetPlatformOperationResponse
+	(*v1.ListPlatformEIPsRequest)(nil),                      // 0: catalog.service.v1.ListPlatformEIPsRequest
+	(*v1.GetPlatformEIPRequest)(nil),                        // 1: catalog.service.v1.GetPlatformEIPRequest
+	(*v1.ReleasePlatformEIPRequest)(nil),                    // 2: catalog.service.v1.ReleasePlatformEIPRequest
+	(*v1.CreateDefaultVPCEgressRequest)(nil),                // 3: catalog.service.v1.CreateDefaultVPCEgressRequest
+	(*v1.GetDefaultVPCEgressRequest)(nil),                   // 4: catalog.service.v1.GetDefaultVPCEgressRequest
+	(*v1.GetCurrentDefaultVPCEgressRequest)(nil),            // 5: catalog.service.v1.GetCurrentDefaultVPCEgressRequest
+	(*v1.DeleteDefaultVPCEgressRequest)(nil),                // 6: catalog.service.v1.DeleteDefaultVPCEgressRequest
+	(*v1.CreateVirtualSwitchRequest)(nil),                   // 7: catalog.service.v1.CreateVirtualSwitchRequest
+	(*v1.GetVirtualSwitchRequest)(nil),                      // 8: catalog.service.v1.GetVirtualSwitchRequest
+	(*v1.ListVirtualSwitchesRequest)(nil),                   // 9: catalog.service.v1.ListVirtualSwitchesRequest
+	(*v1.DeleteVirtualSwitchRequest)(nil),                   // 10: catalog.service.v1.DeleteVirtualSwitchRequest
+	(*v1.CreateVlanNetworkRequest)(nil),                     // 11: catalog.service.v1.CreateVlanNetworkRequest
+	(*v1.GetVlanNetworkRequest)(nil),                        // 12: catalog.service.v1.GetVlanNetworkRequest
+	(*v1.ListVlanNetworksRequest)(nil),                      // 13: catalog.service.v1.ListVlanNetworksRequest
+	(*v1.DeleteVlanNetworkRequest)(nil),                     // 14: catalog.service.v1.DeleteVlanNetworkRequest
+	(*v1.CreateEgressGatewayRequest)(nil),                   // 15: catalog.service.v1.CreateEgressGatewayRequest
+	(*v1.GetEgressGatewayRequest)(nil),                      // 16: catalog.service.v1.GetEgressGatewayRequest
+	(*v1.ListEgressGatewaysRequest)(nil),                    // 17: catalog.service.v1.ListEgressGatewaysRequest
+	(*v1.DeleteEgressGatewayRequest)(nil),                   // 18: catalog.service.v1.DeleteEgressGatewayRequest
+	(*v1.CreatePublicAddressPoolRequest)(nil),               // 19: catalog.service.v1.CreatePublicAddressPoolRequest
+	(*v1.GetPublicAddressPoolRequest)(nil),                  // 20: catalog.service.v1.GetPublicAddressPoolRequest
+	(*v1.ListPublicAddressPoolsRequest)(nil),                // 21: catalog.service.v1.ListPublicAddressPoolsRequest
+	(*v1.DeletePublicAddressPoolRequest)(nil),               // 22: catalog.service.v1.DeletePublicAddressPoolRequest
+	(*v1.RecordPublicPoolVerificationRequest)(nil),          // 23: catalog.service.v1.RecordPublicPoolVerificationRequest
+	(*v1.SetPublicPoolAllocationEnabledRequest)(nil),        // 24: catalog.service.v1.SetPublicPoolAllocationEnabledRequest
+	(*v1.SetDefaultPublicPoolRequest)(nil),                  // 25: catalog.service.v1.SetDefaultPublicPoolRequest
+	(*v1.CreateIntranetAddressPoolRequest)(nil),             // 26: catalog.service.v1.CreateIntranetAddressPoolRequest
+	(*v1.GetIntranetPoolDefaultsRequest)(nil),               // 27: catalog.service.v1.GetIntranetPoolDefaultsRequest
+	(*v1.GetIntranetAddressPoolRequest)(nil),                // 28: catalog.service.v1.GetIntranetAddressPoolRequest
+	(*v1.ListIntranetAddressPoolsRequest)(nil),              // 29: catalog.service.v1.ListIntranetAddressPoolsRequest
+	(*v1.DeleteIntranetAddressPoolRequest)(nil),             // 30: catalog.service.v1.DeleteIntranetAddressPoolRequest
+	(*v1.RecordIntranetPoolVerificationRequest)(nil),        // 31: catalog.service.v1.RecordIntranetPoolVerificationRequest
+	(*v1.SetIntranetPoolAllocationEnabledRequest)(nil),      // 32: catalog.service.v1.SetIntranetPoolAllocationEnabledRequest
+	(*v1.SetDefaultIntranetPoolRequest)(nil),                // 33: catalog.service.v1.SetDefaultIntranetPoolRequest
+	(*v1.SetIntranetPoolAutoAllocationEnabledRequest)(nil),  // 34: catalog.service.v1.SetIntranetPoolAutoAllocationEnabledRequest
+	(*v1.GetPlatformNetworkCapabilitiesRequest)(nil),        // 35: catalog.service.v1.GetPlatformNetworkCapabilitiesRequest
+	(*v1.GetPlatformOperationRequest)(nil),                  // 36: catalog.service.v1.GetPlatformOperationRequest
+	(*v1.ListPlatformEIPsResponse)(nil),                     // 37: catalog.service.v1.ListPlatformEIPsResponse
+	(*v1.GetPlatformEIPResponse)(nil),                       // 38: catalog.service.v1.GetPlatformEIPResponse
+	(*v1.ReleasePlatformEIPResponse)(nil),                   // 39: catalog.service.v1.ReleasePlatformEIPResponse
+	(*v1.CreateDefaultVPCEgressResponse)(nil),               // 40: catalog.service.v1.CreateDefaultVPCEgressResponse
+	(*v1.GetDefaultVPCEgressResponse)(nil),                  // 41: catalog.service.v1.GetDefaultVPCEgressResponse
+	(*v1.DeleteDefaultVPCEgressResponse)(nil),               // 42: catalog.service.v1.DeleteDefaultVPCEgressResponse
+	(*v1.CreateVirtualSwitchResponse)(nil),                  // 43: catalog.service.v1.CreateVirtualSwitchResponse
+	(*v1.GetVirtualSwitchResponse)(nil),                     // 44: catalog.service.v1.GetVirtualSwitchResponse
+	(*v1.ListVirtualSwitchesResponse)(nil),                  // 45: catalog.service.v1.ListVirtualSwitchesResponse
+	(*v1.DeleteVirtualSwitchResponse)(nil),                  // 46: catalog.service.v1.DeleteVirtualSwitchResponse
+	(*v1.CreateVlanNetworkResponse)(nil),                    // 47: catalog.service.v1.CreateVlanNetworkResponse
+	(*v1.GetVlanNetworkResponse)(nil),                       // 48: catalog.service.v1.GetVlanNetworkResponse
+	(*v1.ListVlanNetworksResponse)(nil),                     // 49: catalog.service.v1.ListVlanNetworksResponse
+	(*v1.DeleteVlanNetworkResponse)(nil),                    // 50: catalog.service.v1.DeleteVlanNetworkResponse
+	(*v1.CreateEgressGatewayResponse)(nil),                  // 51: catalog.service.v1.CreateEgressGatewayResponse
+	(*v1.GetEgressGatewayResponse)(nil),                     // 52: catalog.service.v1.GetEgressGatewayResponse
+	(*v1.ListEgressGatewaysResponse)(nil),                   // 53: catalog.service.v1.ListEgressGatewaysResponse
+	(*v1.DeleteEgressGatewayResponse)(nil),                  // 54: catalog.service.v1.DeleteEgressGatewayResponse
+	(*v1.CreatePublicAddressPoolResponse)(nil),              // 55: catalog.service.v1.CreatePublicAddressPoolResponse
+	(*v1.GetPublicAddressPoolResponse)(nil),                 // 56: catalog.service.v1.GetPublicAddressPoolResponse
+	(*v1.ListPublicAddressPoolsResponse)(nil),               // 57: catalog.service.v1.ListPublicAddressPoolsResponse
+	(*v1.DeletePublicAddressPoolResponse)(nil),              // 58: catalog.service.v1.DeletePublicAddressPoolResponse
+	(*v1.RecordPublicPoolVerificationResponse)(nil),         // 59: catalog.service.v1.RecordPublicPoolVerificationResponse
+	(*v1.SetPublicPoolAllocationEnabledResponse)(nil),       // 60: catalog.service.v1.SetPublicPoolAllocationEnabledResponse
+	(*v1.SetDefaultPublicPoolResponse)(nil),                 // 61: catalog.service.v1.SetDefaultPublicPoolResponse
+	(*v1.CreateIntranetAddressPoolResponse)(nil),            // 62: catalog.service.v1.CreateIntranetAddressPoolResponse
+	(*v1.GetIntranetPoolDefaultsResponse)(nil),              // 63: catalog.service.v1.GetIntranetPoolDefaultsResponse
+	(*v1.GetIntranetAddressPoolResponse)(nil),               // 64: catalog.service.v1.GetIntranetAddressPoolResponse
+	(*v1.ListIntranetAddressPoolsResponse)(nil),             // 65: catalog.service.v1.ListIntranetAddressPoolsResponse
+	(*v1.DeleteIntranetAddressPoolResponse)(nil),            // 66: catalog.service.v1.DeleteIntranetAddressPoolResponse
+	(*v1.RecordIntranetPoolVerificationResponse)(nil),       // 67: catalog.service.v1.RecordIntranetPoolVerificationResponse
+	(*v1.SetIntranetPoolAllocationEnabledResponse)(nil),     // 68: catalog.service.v1.SetIntranetPoolAllocationEnabledResponse
+	(*v1.SetDefaultIntranetPoolResponse)(nil),               // 69: catalog.service.v1.SetDefaultIntranetPoolResponse
+	(*v1.SetIntranetPoolAutoAllocationEnabledResponse)(nil), // 70: catalog.service.v1.SetIntranetPoolAutoAllocationEnabledResponse
+	(*v1.GetPlatformNetworkCapabilitiesResponse)(nil),       // 71: catalog.service.v1.GetPlatformNetworkCapabilitiesResponse
+	(*v1.GetPlatformOperationResponse)(nil),                 // 72: catalog.service.v1.GetPlatformOperationResponse
 }
 var file_admin_service_v1_i_platform_network_proto_depIdxs = []int32{
 	0,  // 0: admin.service.v1.PlatformNetworkService.ListPlatformEIPs:input_type -> catalog.service.v1.ListPlatformEIPsRequest
@@ -270,51 +282,55 @@ var file_admin_service_v1_i_platform_network_proto_depIdxs = []int32{
 	24, // 24: admin.service.v1.PlatformNetworkService.SetPublicPoolAllocationEnabled:input_type -> catalog.service.v1.SetPublicPoolAllocationEnabledRequest
 	25, // 25: admin.service.v1.PlatformNetworkService.SetDefaultPublicPool:input_type -> catalog.service.v1.SetDefaultPublicPoolRequest
 	26, // 26: admin.service.v1.PlatformNetworkService.CreateIntranetAddressPool:input_type -> catalog.service.v1.CreateIntranetAddressPoolRequest
-	27, // 27: admin.service.v1.PlatformNetworkService.GetIntranetAddressPool:input_type -> catalog.service.v1.GetIntranetAddressPoolRequest
-	28, // 28: admin.service.v1.PlatformNetworkService.ListIntranetAddressPools:input_type -> catalog.service.v1.ListIntranetAddressPoolsRequest
-	29, // 29: admin.service.v1.PlatformNetworkService.DeleteIntranetAddressPool:input_type -> catalog.service.v1.DeleteIntranetAddressPoolRequest
-	30, // 30: admin.service.v1.PlatformNetworkService.RecordIntranetPoolVerification:input_type -> catalog.service.v1.RecordIntranetPoolVerificationRequest
-	31, // 31: admin.service.v1.PlatformNetworkService.SetIntranetPoolAllocationEnabled:input_type -> catalog.service.v1.SetIntranetPoolAllocationEnabledRequest
-	32, // 32: admin.service.v1.PlatformNetworkService.SetDefaultIntranetPool:input_type -> catalog.service.v1.SetDefaultIntranetPoolRequest
-	33, // 33: admin.service.v1.PlatformNetworkService.GetPlatformNetworkCapabilities:input_type -> catalog.service.v1.GetPlatformNetworkCapabilitiesRequest
-	34, // 34: admin.service.v1.PlatformNetworkService.GetPlatformOperation:input_type -> catalog.service.v1.GetPlatformOperationRequest
-	35, // 35: admin.service.v1.PlatformNetworkService.ListPlatformEIPs:output_type -> catalog.service.v1.ListPlatformEIPsResponse
-	36, // 36: admin.service.v1.PlatformNetworkService.GetPlatformEIP:output_type -> catalog.service.v1.GetPlatformEIPResponse
-	37, // 37: admin.service.v1.PlatformNetworkService.ReleasePlatformEIP:output_type -> catalog.service.v1.ReleasePlatformEIPResponse
-	38, // 38: admin.service.v1.PlatformNetworkService.CreateDefaultVPCEgress:output_type -> catalog.service.v1.CreateDefaultVPCEgressResponse
-	39, // 39: admin.service.v1.PlatformNetworkService.GetDefaultVPCEgress:output_type -> catalog.service.v1.GetDefaultVPCEgressResponse
-	39, // 40: admin.service.v1.PlatformNetworkService.GetCurrentDefaultVPCEgress:output_type -> catalog.service.v1.GetDefaultVPCEgressResponse
-	40, // 41: admin.service.v1.PlatformNetworkService.DeleteDefaultVPCEgress:output_type -> catalog.service.v1.DeleteDefaultVPCEgressResponse
-	41, // 42: admin.service.v1.PlatformNetworkService.CreateVirtualSwitch:output_type -> catalog.service.v1.CreateVirtualSwitchResponse
-	42, // 43: admin.service.v1.PlatformNetworkService.GetVirtualSwitch:output_type -> catalog.service.v1.GetVirtualSwitchResponse
-	43, // 44: admin.service.v1.PlatformNetworkService.ListVirtualSwitches:output_type -> catalog.service.v1.ListVirtualSwitchesResponse
-	44, // 45: admin.service.v1.PlatformNetworkService.DeleteVirtualSwitch:output_type -> catalog.service.v1.DeleteVirtualSwitchResponse
-	45, // 46: admin.service.v1.PlatformNetworkService.CreateVlanNetwork:output_type -> catalog.service.v1.CreateVlanNetworkResponse
-	46, // 47: admin.service.v1.PlatformNetworkService.GetVlanNetwork:output_type -> catalog.service.v1.GetVlanNetworkResponse
-	47, // 48: admin.service.v1.PlatformNetworkService.ListVlanNetworks:output_type -> catalog.service.v1.ListVlanNetworksResponse
-	48, // 49: admin.service.v1.PlatformNetworkService.DeleteVlanNetwork:output_type -> catalog.service.v1.DeleteVlanNetworkResponse
-	49, // 50: admin.service.v1.PlatformNetworkService.CreateEgressGateway:output_type -> catalog.service.v1.CreateEgressGatewayResponse
-	50, // 51: admin.service.v1.PlatformNetworkService.GetEgressGateway:output_type -> catalog.service.v1.GetEgressGatewayResponse
-	51, // 52: admin.service.v1.PlatformNetworkService.ListEgressGateways:output_type -> catalog.service.v1.ListEgressGatewaysResponse
-	52, // 53: admin.service.v1.PlatformNetworkService.DeleteEgressGateway:output_type -> catalog.service.v1.DeleteEgressGatewayResponse
-	53, // 54: admin.service.v1.PlatformNetworkService.CreatePublicAddressPool:output_type -> catalog.service.v1.CreatePublicAddressPoolResponse
-	54, // 55: admin.service.v1.PlatformNetworkService.GetPublicAddressPool:output_type -> catalog.service.v1.GetPublicAddressPoolResponse
-	55, // 56: admin.service.v1.PlatformNetworkService.ListPublicAddressPools:output_type -> catalog.service.v1.ListPublicAddressPoolsResponse
-	56, // 57: admin.service.v1.PlatformNetworkService.DeletePublicAddressPool:output_type -> catalog.service.v1.DeletePublicAddressPoolResponse
-	57, // 58: admin.service.v1.PlatformNetworkService.RecordPublicPoolVerification:output_type -> catalog.service.v1.RecordPublicPoolVerificationResponse
-	58, // 59: admin.service.v1.PlatformNetworkService.SetPublicPoolAllocationEnabled:output_type -> catalog.service.v1.SetPublicPoolAllocationEnabledResponse
-	59, // 60: admin.service.v1.PlatformNetworkService.SetDefaultPublicPool:output_type -> catalog.service.v1.SetDefaultPublicPoolResponse
-	60, // 61: admin.service.v1.PlatformNetworkService.CreateIntranetAddressPool:output_type -> catalog.service.v1.CreateIntranetAddressPoolResponse
-	61, // 62: admin.service.v1.PlatformNetworkService.GetIntranetAddressPool:output_type -> catalog.service.v1.GetIntranetAddressPoolResponse
-	62, // 63: admin.service.v1.PlatformNetworkService.ListIntranetAddressPools:output_type -> catalog.service.v1.ListIntranetAddressPoolsResponse
-	63, // 64: admin.service.v1.PlatformNetworkService.DeleteIntranetAddressPool:output_type -> catalog.service.v1.DeleteIntranetAddressPoolResponse
-	64, // 65: admin.service.v1.PlatformNetworkService.RecordIntranetPoolVerification:output_type -> catalog.service.v1.RecordIntranetPoolVerificationResponse
-	65, // 66: admin.service.v1.PlatformNetworkService.SetIntranetPoolAllocationEnabled:output_type -> catalog.service.v1.SetIntranetPoolAllocationEnabledResponse
-	66, // 67: admin.service.v1.PlatformNetworkService.SetDefaultIntranetPool:output_type -> catalog.service.v1.SetDefaultIntranetPoolResponse
-	67, // 68: admin.service.v1.PlatformNetworkService.GetPlatformNetworkCapabilities:output_type -> catalog.service.v1.GetPlatformNetworkCapabilitiesResponse
-	68, // 69: admin.service.v1.PlatformNetworkService.GetPlatformOperation:output_type -> catalog.service.v1.GetPlatformOperationResponse
-	35, // [35:70] is the sub-list for method output_type
-	0,  // [0:35] is the sub-list for method input_type
+	27, // 27: admin.service.v1.PlatformNetworkService.GetIntranetPoolDefaults:input_type -> catalog.service.v1.GetIntranetPoolDefaultsRequest
+	28, // 28: admin.service.v1.PlatformNetworkService.GetIntranetAddressPool:input_type -> catalog.service.v1.GetIntranetAddressPoolRequest
+	29, // 29: admin.service.v1.PlatformNetworkService.ListIntranetAddressPools:input_type -> catalog.service.v1.ListIntranetAddressPoolsRequest
+	30, // 30: admin.service.v1.PlatformNetworkService.DeleteIntranetAddressPool:input_type -> catalog.service.v1.DeleteIntranetAddressPoolRequest
+	31, // 31: admin.service.v1.PlatformNetworkService.RecordIntranetPoolVerification:input_type -> catalog.service.v1.RecordIntranetPoolVerificationRequest
+	32, // 32: admin.service.v1.PlatformNetworkService.SetIntranetPoolAllocationEnabled:input_type -> catalog.service.v1.SetIntranetPoolAllocationEnabledRequest
+	33, // 33: admin.service.v1.PlatformNetworkService.SetDefaultIntranetPool:input_type -> catalog.service.v1.SetDefaultIntranetPoolRequest
+	34, // 34: admin.service.v1.PlatformNetworkService.SetIntranetPoolAutoAllocationEnabled:input_type -> catalog.service.v1.SetIntranetPoolAutoAllocationEnabledRequest
+	35, // 35: admin.service.v1.PlatformNetworkService.GetPlatformNetworkCapabilities:input_type -> catalog.service.v1.GetPlatformNetworkCapabilitiesRequest
+	36, // 36: admin.service.v1.PlatformNetworkService.GetPlatformOperation:input_type -> catalog.service.v1.GetPlatformOperationRequest
+	37, // 37: admin.service.v1.PlatformNetworkService.ListPlatformEIPs:output_type -> catalog.service.v1.ListPlatformEIPsResponse
+	38, // 38: admin.service.v1.PlatformNetworkService.GetPlatformEIP:output_type -> catalog.service.v1.GetPlatformEIPResponse
+	39, // 39: admin.service.v1.PlatformNetworkService.ReleasePlatformEIP:output_type -> catalog.service.v1.ReleasePlatformEIPResponse
+	40, // 40: admin.service.v1.PlatformNetworkService.CreateDefaultVPCEgress:output_type -> catalog.service.v1.CreateDefaultVPCEgressResponse
+	41, // 41: admin.service.v1.PlatformNetworkService.GetDefaultVPCEgress:output_type -> catalog.service.v1.GetDefaultVPCEgressResponse
+	41, // 42: admin.service.v1.PlatformNetworkService.GetCurrentDefaultVPCEgress:output_type -> catalog.service.v1.GetDefaultVPCEgressResponse
+	42, // 43: admin.service.v1.PlatformNetworkService.DeleteDefaultVPCEgress:output_type -> catalog.service.v1.DeleteDefaultVPCEgressResponse
+	43, // 44: admin.service.v1.PlatformNetworkService.CreateVirtualSwitch:output_type -> catalog.service.v1.CreateVirtualSwitchResponse
+	44, // 45: admin.service.v1.PlatformNetworkService.GetVirtualSwitch:output_type -> catalog.service.v1.GetVirtualSwitchResponse
+	45, // 46: admin.service.v1.PlatformNetworkService.ListVirtualSwitches:output_type -> catalog.service.v1.ListVirtualSwitchesResponse
+	46, // 47: admin.service.v1.PlatformNetworkService.DeleteVirtualSwitch:output_type -> catalog.service.v1.DeleteVirtualSwitchResponse
+	47, // 48: admin.service.v1.PlatformNetworkService.CreateVlanNetwork:output_type -> catalog.service.v1.CreateVlanNetworkResponse
+	48, // 49: admin.service.v1.PlatformNetworkService.GetVlanNetwork:output_type -> catalog.service.v1.GetVlanNetworkResponse
+	49, // 50: admin.service.v1.PlatformNetworkService.ListVlanNetworks:output_type -> catalog.service.v1.ListVlanNetworksResponse
+	50, // 51: admin.service.v1.PlatformNetworkService.DeleteVlanNetwork:output_type -> catalog.service.v1.DeleteVlanNetworkResponse
+	51, // 52: admin.service.v1.PlatformNetworkService.CreateEgressGateway:output_type -> catalog.service.v1.CreateEgressGatewayResponse
+	52, // 53: admin.service.v1.PlatformNetworkService.GetEgressGateway:output_type -> catalog.service.v1.GetEgressGatewayResponse
+	53, // 54: admin.service.v1.PlatformNetworkService.ListEgressGateways:output_type -> catalog.service.v1.ListEgressGatewaysResponse
+	54, // 55: admin.service.v1.PlatformNetworkService.DeleteEgressGateway:output_type -> catalog.service.v1.DeleteEgressGatewayResponse
+	55, // 56: admin.service.v1.PlatformNetworkService.CreatePublicAddressPool:output_type -> catalog.service.v1.CreatePublicAddressPoolResponse
+	56, // 57: admin.service.v1.PlatformNetworkService.GetPublicAddressPool:output_type -> catalog.service.v1.GetPublicAddressPoolResponse
+	57, // 58: admin.service.v1.PlatformNetworkService.ListPublicAddressPools:output_type -> catalog.service.v1.ListPublicAddressPoolsResponse
+	58, // 59: admin.service.v1.PlatformNetworkService.DeletePublicAddressPool:output_type -> catalog.service.v1.DeletePublicAddressPoolResponse
+	59, // 60: admin.service.v1.PlatformNetworkService.RecordPublicPoolVerification:output_type -> catalog.service.v1.RecordPublicPoolVerificationResponse
+	60, // 61: admin.service.v1.PlatformNetworkService.SetPublicPoolAllocationEnabled:output_type -> catalog.service.v1.SetPublicPoolAllocationEnabledResponse
+	61, // 62: admin.service.v1.PlatformNetworkService.SetDefaultPublicPool:output_type -> catalog.service.v1.SetDefaultPublicPoolResponse
+	62, // 63: admin.service.v1.PlatformNetworkService.CreateIntranetAddressPool:output_type -> catalog.service.v1.CreateIntranetAddressPoolResponse
+	63, // 64: admin.service.v1.PlatformNetworkService.GetIntranetPoolDefaults:output_type -> catalog.service.v1.GetIntranetPoolDefaultsResponse
+	64, // 65: admin.service.v1.PlatformNetworkService.GetIntranetAddressPool:output_type -> catalog.service.v1.GetIntranetAddressPoolResponse
+	65, // 66: admin.service.v1.PlatformNetworkService.ListIntranetAddressPools:output_type -> catalog.service.v1.ListIntranetAddressPoolsResponse
+	66, // 67: admin.service.v1.PlatformNetworkService.DeleteIntranetAddressPool:output_type -> catalog.service.v1.DeleteIntranetAddressPoolResponse
+	67, // 68: admin.service.v1.PlatformNetworkService.RecordIntranetPoolVerification:output_type -> catalog.service.v1.RecordIntranetPoolVerificationResponse
+	68, // 69: admin.service.v1.PlatformNetworkService.SetIntranetPoolAllocationEnabled:output_type -> catalog.service.v1.SetIntranetPoolAllocationEnabledResponse
+	69, // 70: admin.service.v1.PlatformNetworkService.SetDefaultIntranetPool:output_type -> catalog.service.v1.SetDefaultIntranetPoolResponse
+	70, // 71: admin.service.v1.PlatformNetworkService.SetIntranetPoolAutoAllocationEnabled:output_type -> catalog.service.v1.SetIntranetPoolAutoAllocationEnabledResponse
+	71, // 72: admin.service.v1.PlatformNetworkService.GetPlatformNetworkCapabilities:output_type -> catalog.service.v1.GetPlatformNetworkCapabilitiesResponse
+	72, // 73: admin.service.v1.PlatformNetworkService.GetPlatformOperation:output_type -> catalog.service.v1.GetPlatformOperationResponse
+	37, // [37:74] is the sub-list for method output_type
+	0,  // [0:37] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

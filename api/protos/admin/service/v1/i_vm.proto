@@ -4,6 +4,7 @@ import "google/api/annotations.proto";
 import "gnostic/openapi/v3/annotations.proto";
 import "vm/service/v1/vm.proto";
 service VMService {
+ rpc SetVMSecurityGroups(vm.service.v1.ChangeVMRequest) returns(vm.service.v1.VMOperation) { option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "202" value: { response: { description: "Accepted" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/VMOperation" } } } }] } } } }] } }; option(google.api.http)={put:"/api/v1/virtual-machines/{data.vm_id}/security-groups" body:"*"}; }
  rpc CreateVM(vm.service.v1.CreateVMRequest) returns(vm.service.v1.VMAcceptance) { option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "202" value: { response: { description: "Accepted" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/VMAcceptance" } } } }] } } } }] } }; option(google.api.http)={post:"/api/v1/virtual-machines" body:"*"}; }
  rpc ListVMs(vm.service.v1.ListVMsRequest) returns(vm.service.v1.ListVMsResponse) { option(google.api.http)={get:"/api/v1/virtual-machines"}; }
  rpc GetVM(vm.service.v1.GetVMRequest) returns(vm.service.v1.VirtualMachine) { option(google.api.http)={get:"/api/v1/virtual-machines/{vm_id}"}; }

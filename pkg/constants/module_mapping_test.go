@@ -16,7 +16,7 @@ func TestServiceTagToBusinessModuleExactMapping(t *testing.T) {
 	expected := map[string]identityV1.Module{
 		"ImageService":              identityV1.Module_IMAGE,
 		"InstanceService":           identityV1.Module_INSTANCE,
-		"SandboxService":            identityV1.Module_INSTANCE,
+		"SandboxService":            identityV1.Module_SANDBOX,
 		"OverviewService":           identityV1.Module_INSTANCE,
 		"StorageService":            identityV1.Module_STORAGE,
 		"VMService":                 identityV1.Module_VIRTUAL_MACHINE,
@@ -81,7 +81,7 @@ func TestServiceTagToBusinessModuleExactMapping(t *testing.T) {
 		"InferenceService":            identityV1.Module_INFERENCE,
 		"InferenceKeyService":         identityV1.Module_INFERENCE,
 		"InferenceDiagnosticsService": identityV1.Module_INFERENCE,
-		"ModelDevService":             identityV1.Module_MODEL,
+		"ModelDevService":             identityV1.Module_MODELDEV,
 	}
 	assert.Equal(t, expected, ServiceTagToBusinessModule,
 		"ServiceTagToBusinessModule 内容漂移；如为有意变更请同步更新本测试")
@@ -93,7 +93,8 @@ func TestServiceTagToBusinessModuleExactMapping(t *testing.T) {
 func TestServiceTagToBusinessModuleReverseMapping(t *testing.T) {
 	expected := map[identityV1.Module][]string{
 		identityV1.Module_IMAGE:            {"ImageService"},
-		identityV1.Module_INSTANCE:         {"InstanceService", "SandboxService", "OverviewService"},
+		identityV1.Module_INSTANCE:         {"InstanceService", "OverviewService"},
+		identityV1.Module_SANDBOX:          {"SandboxService"},
 		identityV1.Module_STORAGE:          {"StorageService"},
 		identityV1.Module_VIRTUAL_MACHINE:  {"VMService"},
 		identityV1.Module_DASHBOARD:        {"AdminPortalService", "DashboardService", "AuthenticationService", "ResourceUsageAdminService"},
@@ -107,7 +108,8 @@ func TestServiceTagToBusinessModuleReverseMapping(t *testing.T) {
 		identityV1.Module_INTERNAL_MESSAGE: {"InternalMessageService", "InternalMessageCategoryService", "InternalMessageRecipientService"},
 		identityV1.Module_NETWORK:          {"NetworkService", "PlatformNetworkService"},
 		identityV1.Module_ACCELERATOR:      {"AcceleratorAdminService", "AcceleratorService", "GpuAdminService", "GpuService", "GpuTenantAdminService"},
-		identityV1.Module_MODEL:            {"ModelDevService", "ModelService"},
+		identityV1.Module_MODEL:            {"ModelService"},
+		identityV1.Module_MODELDEV:         {"ModelDevService"},
 		identityV1.Module_INFERENCE:        {"InferenceService", "InferenceDiagnosticsService", "InferenceKeyService"},
 	}
 
@@ -139,9 +141,6 @@ func TestServiceTagToBusinessModuleValuesValid(t *testing.T) {
 
 // modulesWithoutService 是"已在枚举中定义、但当前确实没有服务登记"的模块白名单。
 // 加入本表等于显式声明：该模块此刻没有任何服务承接，是有意为之而非漏登记。
-//
-// ModelDev and the Model BFF share the MODEL module. This is intentional:
-// model import/version lifecycle and ModelDev are both tenant model workflows.
 var modulesWithoutService = map[identityV1.Module]string{}
 
 // TestServiceTagToBusinessModuleCoversAllDefinedModules 覆盖完备性：每个已定义的

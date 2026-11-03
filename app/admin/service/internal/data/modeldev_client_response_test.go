@@ -56,7 +56,7 @@ func modelDevResponseFixture(t *testing.T) modelDevResponseCase {
 	require.NoError(t, err)
 	identity := cpup01.IdentityRef{TenantID: scope.ResourceTenantID, Actor: scope.Actor, OperationID: uuid.NewString(), ExecutionID: uuid.NewString(), IntentHash: hash}
 	snapshot.IdentityRef = identity
-	snapshot.RuntimePlan.Name = cpup01.RuntimeName(snapshot.Environment.NamespaceUID, identity.ExecutionID)
+	bindModelDevFixtureScope(t, &snapshot)
 	selection := &compute.ComputeSelection{SchemaVersion: compute.SelectionSchemaVersion, PresetId: intent.ComputePresetID, Code: "cpu-small", Name: "CPU small", ComputeType: "cpu", CpuMillis: 1000, MemoryMib: 1024}
 	selection.SelectionDigest, err = compute.SelectionDigest(selection)
 	require.NoError(t, err)

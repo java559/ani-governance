@@ -57,10 +57,22 @@ Key 由 Inference 签发并保存在 `inference_access_keys`，Governance 不存
 保持失败并回滚，不转为重放。Gov 对重放结果继续执行上述意图比较。
 
 列表缺省独立使用 `page=1/pageSize=20`。当前 owner 将两参数均限制为 `1..100`，
-HTTP 保留该实际限制；支持直接跳页，不接受游标、筛选或排序参数。空列表返回
-`items:[]`；`total` 保留 owner 的总数。重复参数、前导零、空值、未知参数或查询
+HTTP 保留该实际限制；支持直接跳页。可选查询参数 `served_model_name` 按 AK 当前
+绑定策略的允许模型列表做区分大小写的精确匹配，去除参数首尾空白；在分页前
+筛选，策略修改或 AK 重新绑定后立即反映。未绑定策略的旧 AK 不匹配模型筛选；
+不传该参数时保留原有列表行为。例如：
+
+```http
+GET /api/v1/inference-keys?served_model_name=qwen3&page=1&pageSize=20
+```
+
+不接受游标或排序参数。空列表返回 `items:[]`；`total` 是当前租户符合筛选条件
+的总数。重复参数、前导零、空值、未知参数或查询
 请求体返回 400。非列表接口不接受 query。写入严格拒绝未知 JSON 字段、重复字段
 和伪造身份；轮换请求中的 `key_id` 如提供，必须与路径一致。
+
+升级时须先部署支持模型筛选的 Inference，再部署发送该参数的 Governance；旧
+Inference 会忽略新增的 Proto 字段，不能提供正确的筛选结果。
 
 Inference `internal/data/postgres/access_key.go` 的列表与计数使用同一只读
 REPEATABLE READ 事务。并发写入不会使一次响应中的 `items` 与 `total` 使用不同

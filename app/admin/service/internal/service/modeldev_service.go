@@ -40,14 +40,15 @@ type ModelDevComputeResolver interface {
 }
 
 type ModelDevService struct {
-	authorization *data.ModelDevAuthorizationRepo
-	tenants       ResourceTenantResolver
-	acceptances   *data.ModelDevAcceptanceRepo
-	compute       ModelDevComputeResolver
-	resolver      *data.ModelDevClient
-	gpu           ModelDevGPUAdmission
-	monitoring    ModelDevMonitoringClient
-	metricGate    *modelDevMetricGate
+	createMaintenance *ModelDevCreateMaintenance
+	authorization     *data.ModelDevAuthorizationRepo
+	tenants           ResourceTenantResolver
+	acceptances       *data.ModelDevAcceptanceRepo
+	compute           ModelDevComputeResolver
+	resolver          *data.ModelDevClient
+	gpu               ModelDevGPUAdmission
+	monitoring        ModelDevMonitoringClient
+	metricGate        *modelDevMetricGate
 }
 
 type ModelDevGPUAdmission struct {
@@ -104,6 +105,13 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	}
 	if principal.Type != auth.SubjectUser || principal.TenantID == 0 {
 		return nil, errors.Forbidden("FORBIDDEN", "tenant user required")
+	}
+	if s != nil {
+		finish, allowed := s.createMaintenance.begin()
+		if !allowed {
+			return nil, errors.ServiceUnavailable("MODELDEV_CREATE_MAINTENANCE", "modeldev create is paused for maintenance")
+		}
+		defer finish()
 	}
 	if s == nil || s.authorization == nil || s.tenants == nil || s.acceptances == nil {
 		return nil, modelDevCreateUnavailable()
@@ -352,6 +360,9 @@ func modelDevCreateResolutionFailure(err error) error {
 
 func modelDevPublicResolutionError(code int, detail *modeldevcontractv1.ErrorDetail) error {
 	reason := strings.TrimPrefix(detail.Reason.String(), "ERROR_REASON_")
+	if reason, ok := data.ModelDevEnvironmentReason(detail); ok {
+		return errors.New(code, "ENVIRONMENT_NOT_READY", "environment is not ready").WithMetadata(map[string]string{"environment_reason": reason})
+	}
 	metadata := map[string]string{"upstream_request_id": detail.CorrelationId}
 	if detail.Kind != "" {
 		metadata["kind"] = detail.Kind

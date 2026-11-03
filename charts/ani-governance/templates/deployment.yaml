@@ -61,6 +61,18 @@ spec:
             - name: GWA_AUTH_REFRESH_COOKIE_INSECURE
               value: "true"
             {{- end }}
+            {{- if .Values.downstream.resource.enabled }}
+            - name: ANI_INSTANCE_ADDR
+              value: {{ required "downstream.resource.address is required" .Values.downstream.resource.address | quote }}
+            - name: ANI_INSTANCE_CLUSTER_ID
+              value: {{ required "downstream.resource.clusterID is required" .Values.downstream.resource.clusterID | quote }}
+            - name: ANI_INSTANCE_CA
+              value: /service-identity/resource/ca.crt
+            - name: ANI_INSTANCE_CERT
+              value: /service-identity/resource/tls.crt
+            - name: ANI_INSTANCE_KEY
+              value: /service-identity/resource/tls.key
+            {{- end }}
             {{- if .Values.downstream.model.enabled }}
             - name: ANI_MODEL_ADDR
               value: {{ required "downstream.model.address is required" .Values.downstream.model.address | quote }}
@@ -172,6 +184,11 @@ spec:
               readOnly: true
             - name: tmp
               mountPath: /tmp
+            {{- if .Values.downstream.resource.enabled }}
+            - name: resource-identity
+              mountPath: /service-identity/resource
+              readOnly: true
+            {{- end }}
             {{- if .Values.componentLogs.enabled }}
             - name: component-logs-config
               mountPath: /run/component-logs
@@ -234,6 +251,24 @@ spec:
             defaultMode: 0440
         - name: tmp
           emptyDir: {}
+        {{- if .Values.downstream.resource.enabled }}
+        - name: resource-identity
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret:
+                  name: {{ required "downstream.resource.clientCertificateSecret is required" .Values.downstream.resource.clientCertificateSecret }}
+                  items:
+                    - key: tls.crt
+                      path: tls.crt
+                    - key: tls.key
+                      path: tls.key
+              - secret:
+                  name: {{ required "downstream.resource.caSecret is required" .Values.downstream.resource.caSecret }}
+                  items:
+                    - key: {{ required "downstream.resource.caKey is required" .Values.downstream.resource.caKey }}
+                      path: ca.crt
+        {{- end }}
         {{- if .Values.componentLogs.enabled }}
         - name: component-logs-config
           configMap:

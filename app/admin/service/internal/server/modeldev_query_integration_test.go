@@ -236,7 +236,7 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 	plan, err := writer.Client().Plan.Create().SetName("cpu-query-" + suffix).Save(sys)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return writer.Client().Plan.DeleteOneID(plan.ID).Exec(c) })
-	module, err := writer.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModel).Save(sys)
+	module, err := writer.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModelDev).Save(sys)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return writer.Client().PlanModule.DeleteOneID(module.ID).Exec(c) })
 	type apiRoute struct{ path, method string }
@@ -253,7 +253,7 @@ func testModelDevBFFMainFlow(t *testing.T, stopping, listLogs, stopBefore bool) 
 	var apiIDs []uint32
 	queryAPI := map[string]uint32{}
 	for _, route := range routes {
-		row, e := writer.Client().Api.Create().SetModule("ModelDevService").SetScope(api.ScopeAdmin).SetPath(route.path).SetMethod(route.method).SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(sys)
+		row, e := writer.Client().Api.Create().SetModule("ModelDevService").SetScope(api.ScopeAdmin).SetPath(route.path).SetMethod(route.method).SetBusinessModule(api.BusinessModuleModelDev).SetStatus(api.StatusOn).Save(sys)
 		require.NoError(t, e)
 		apiIDs = append(apiIDs, row.ID)
 		if route.method == "GET" {

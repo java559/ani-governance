@@ -16,18 +16,19 @@ import (
 // ModelDevDispatchWorker delivers already committed CPU admissions. It owns
 // neither current user authorization nor Release/default resolution.
 type ModelDevDispatchWorker struct {
-	repository *data.ModelDevAcceptanceRepo
-	client     *data.ModelDevClient
-	log        *bLogger.Helper
-	workerID   string
-	mu         sync.Mutex
-	cancel     context.CancelFunc
-	done       chan struct{}
+	createMaintenance *ModelDevCreateMaintenance
+	repository        *data.ModelDevAcceptanceRepo
+	client            *data.ModelDevClient
+	log               *bLogger.Helper
+	workerID          string
+	mu                sync.Mutex
+	cancel            context.CancelFunc
+	done              chan struct{}
 }
 
 // Construction performs no database or network work and starts no goroutine.
 func NewModelDevDispatchWorker(ctx *bootstrap.Context, repository *data.ModelDevAcceptanceRepo, client *data.ModelDevClient) *ModelDevDispatchWorker {
-	w := &ModelDevDispatchWorker{repository: repository, client: client, done: make(chan struct{})}
+	w := &ModelDevDispatchWorker{repository: repository, client: client, done: make(chan struct{}), createMaintenance: NewModelDevCreateMaintenance(false)}
 	if ctx != nil {
 		w.log = ctx.NewLoggerHelper("modeldev-dispatch/worker/admin-service")
 	}
@@ -56,13 +57,17 @@ func (w *ModelDevDispatchWorker) Start(ctx context.Context) error {
 	// This is a managed cross-tenant queue, not an incoming user request.
 	// The SystemViewer retains the lifecycle cancellation and does not grant
 	// permission to alter the immutable actor, scope or command in a claim.
-	ctx, w.cancel = context.WithCancel(appViewer.NewSystemViewerContext(ctx))
+	// Shutdown can cancel the Start parent before invoking Stop.
+	// Retain values but let Stop own cancellation, so it can first drain the
+	// existing bounded Create calls and their leases while close work continues.
+	ctx, w.cancel = context.WithCancel(context.WithoutCancel(appViewer.NewSystemViewerContext(ctx)))
 	go w.loop(ctx)
 	return nil
 }
 
-// Stop cancels the current bounded database/RPC call and joins the loop.
-// A canceled in-flight command keeps its lease for durable replay on expiry.
+// Stop first blocks new Create admission/claims and drains their current work.
+// Close delivery continues until the final cancellation. An incomplete drain
+// is reported and any canceled in-flight lease still requires reconciliation.
 func (w *ModelDevDispatchWorker) Stop(ctx context.Context) error {
 	if w == nil {
 		return nil
@@ -72,23 +77,29 @@ func (w *ModelDevDispatchWorker) Stop(ctx context.Context) error {
 		w.mu.Unlock()
 		return nil
 	}
-	w.cancel()
-	done := w.done
+	cancelWorker, done := w.cancel, w.done
 	w.mu.Unlock()
+	drainContext, cancelDrain := context.WithTimeout(ctx, 20*time.Second)
+	drainErr := w.createMaintenance.pauseAndDrain(drainContext)
+	if drainErr == nil && w.repository != nil && w.workerID != "" {
+		drainErr = w.waitCreateLeaseExit(drainContext)
+	}
+	cancelDrain()
+	cancelWorker()
 	select {
 	case <-done:
-		return nil
+		return drainErr
 	default:
 	}
 	timer := time.NewTimer(5 * time.Second)
 	defer timer.Stop()
 	select {
 	case <-done:
-		return nil
+		return drainErr
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Join(drainErr, ctx.Err())
 	case <-timer.C:
-		return errors.New("modeldev dispatch worker stop timeout")
+		return errors.Join(drainErr, errors.New("modeldev dispatch worker stop timeout"))
 	}
 }
 
@@ -110,6 +121,11 @@ func (w *ModelDevDispatchWorker) loop(ctx context.Context) {
 }
 
 func (w *ModelDevDispatchWorker) deliverNext(ctx context.Context) bool {
+	finish, allowed := w.createMaintenance.begin()
+	if !allowed {
+		return false
+	}
+	defer finish()
 	claimContext, cancel := context.WithTimeout(ctx, 3*time.Second)
 	claim, err := w.repository.ClaimDelivery(claimContext, w.workerID, 15*time.Second)
 	cancel()
@@ -175,5 +191,26 @@ func (w *ModelDevDispatchWorker) deliverNext(ctx context.Context) bool {
 func (w *ModelDevDispatchWorker) warn(message string) {
 	if w.log != nil {
 		w.log.Warnf(context.Background(), "%s", message)
+	}
+}
+
+func (w *ModelDevDispatchWorker) waitCreateLeaseExit(ctx context.Context) error {
+	for {
+		call, cancel := context.WithTimeout(ctx, 3*time.Second)
+		active, err := w.repository.HasDeliveryLease(call, w.workerID)
+		cancel()
+		if err != nil {
+			return err
+		}
+		if !active {
+			return nil
+		}
+		timer := time.NewTimer(100 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
 	}
 }

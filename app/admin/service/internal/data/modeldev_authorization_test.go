@@ -79,7 +79,7 @@ func TestModelDevAuthorizationUsesCurrentRoleMembership(t *testing.T) {
 	createAPI, err := client.Client().Api.Create().
 		SetModule("modeldev-auth-" + fixtureID).SetPath("/api/v1/modeldev/executions").
 		SetMethod("POST").SetScope(api.ScopeAdmin).
-		SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(ctx)
+		SetBusinessModule(api.BusinessModuleModelDev).SetStatus(api.StatusOn).Save(ctx)
 	require.NoError(t, err, "PG fixture preparation is not authorization RED")
 	removeAfterTest(func(cleanup context.Context) error {
 		return client.Client().Api.DeleteOneID(createAPI.ID).Exec(cleanup)
@@ -138,10 +138,10 @@ func TestModelDevAuthorizationUsesCurrentRoleMembership(t *testing.T) {
 	require.Equal(t, &permissionOn, storedPermission.Status)
 	storedAPI, err := reader.Client().Api.Get(ctx, createAPI.ID)
 	require.NoError(t, err)
-	apiOn, model, admin := api.StatusOn, api.BusinessModuleModel, api.ScopeAdmin
+	apiOn, modelDev, admin := api.StatusOn, api.BusinessModuleModelDev, api.ScopeAdmin
 	path, method := "/api/v1/modeldev/executions", "POST"
 	require.Equal(t, &apiOn, storedAPI.Status)
-	require.Equal(t, &model, storedAPI.BusinessModule)
+	require.Equal(t, &modelDev, storedAPI.BusinessModule)
 	require.Equal(t, &admin, storedAPI.Scope)
 	require.Equal(t, &path, storedAPI.Path)
 	require.Equal(t, &method, storedAPI.Method)
@@ -167,7 +167,7 @@ func TestModelDevAuthorizationUsesCurrentRoleMembership(t *testing.T) {
 	))
 	repo := NewModelDevAuthorizationRepo(client)
 	require.NoError(t, repo.AuthorizeCreate(requestCtx, owner.ID, operator.ID),
-		"current valid MODEL/create grant and ALL scope must authorize")
+		"current valid MODELDEV/create grant and ALL scope must authorize")
 
 	// Change one committed fact through the independent connection, retaining
 	// the original caller context. Restore even if a denial assertion fails.

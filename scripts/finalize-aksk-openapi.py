@@ -79,8 +79,8 @@ def network_operation_schema(proto_source):
 
 
 def repair_network_operation(text, proto_source=None):
-    """Scope the Operation name collision repair to the five Network DTOs."""
-    responses = ("GetOperationResponse", "GetLoadBalancerOperationResponse", "CreateLoadBalancerResponse", "UpdateLoadBalancerResponse", "DeleteLoadBalancerResponse")
+    """Scope the Operation name collision repair to Network response DTOs."""
+    responses = ("GetOperationResponse", "GetLoadBalancerOperationResponse", "CreateLoadBalancerResponse", "UpdateLoadBalancerResponse", "DeleteLoadBalancerResponse", "SecurityGroupResponse", "SecurityGroupRuleResponse", "SetEIPSecurityGroupsResponse")
     if "#/components/schemas/NetworkOperation" not in text:
         if any("        " + name + ":\n" in text for name in responses):
             raise SystemExit("Network operation routes must explicitly reference NetworkOperation")
@@ -553,6 +553,8 @@ def finalize(text):
         ("/api/v1/instances/{data.instance_id}:detach-pvc", "202", "post"),
         ("/api/v1/instances/{data.instance_id}", "202", "delete"),
         ("/api/v1/instances/{data.instance_id}/exec", "202", "post"),
+        ("/api/v1/instances/{data.instance_id}/security-groups", "202", "put"),
+        ("/api/v1/virtual-machines/{data.vm_id}/security-groups", "202", "put"),
     ):
         if "    " + route + ":\n" in text:
             text = remove_synthetic_200(text, route, status, method)

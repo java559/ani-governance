@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	VMService_SetVMSecurityGroups_FullMethodName    = "/admin.service.v1.VMService/SetVMSecurityGroups"
 	VMService_CreateVM_FullMethodName               = "/admin.service.v1.VMService/CreateVM"
 	VMService_ListVMs_FullMethodName                = "/admin.service.v1.VMService/ListVMs"
 	VMService_GetVM_FullMethodName                  = "/admin.service.v1.VMService/GetVM"
@@ -53,6 +54,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type VMServiceClient interface {
+	SetVMSecurityGroups(ctx context.Context, in *v1.ChangeVMRequest, opts ...grpc.CallOption) (*v1.VMOperation, error)
 	CreateVM(ctx context.Context, in *v1.CreateVMRequest, opts ...grpc.CallOption) (*v1.VMAcceptance, error)
 	ListVMs(ctx context.Context, in *v1.ListVMsRequest, opts ...grpc.CallOption) (*v1.ListVMsResponse, error)
 	GetVM(ctx context.Context, in *v1.GetVMRequest, opts ...grpc.CallOption) (*v1.VirtualMachine, error)
@@ -88,6 +90,16 @@ type vMServiceClient struct {
 
 func NewVMServiceClient(cc grpc.ClientConnInterface) VMServiceClient {
 	return &vMServiceClient{cc}
+}
+
+func (c *vMServiceClient) SetVMSecurityGroups(ctx context.Context, in *v1.ChangeVMRequest, opts ...grpc.CallOption) (*v1.VMOperation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.VMOperation)
+	err := c.cc.Invoke(ctx, VMService_SetVMSecurityGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *vMServiceClient) CreateVM(ctx context.Context, in *v1.CreateVMRequest, opts ...grpc.CallOption) (*v1.VMAcceptance, error) {
@@ -373,6 +385,7 @@ type VMService_StreamVMLogsClient = grpc.ServerStreamingClient[v1.VMLogFrame]
 // All implementations must embed UnimplementedVMServiceServer
 // for forward compatibility.
 type VMServiceServer interface {
+	SetVMSecurityGroups(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error)
 	CreateVM(context.Context, *v1.CreateVMRequest) (*v1.VMAcceptance, error)
 	ListVMs(context.Context, *v1.ListVMsRequest) (*v1.ListVMsResponse, error)
 	GetVM(context.Context, *v1.GetVMRequest) (*v1.VirtualMachine, error)
@@ -410,6 +423,9 @@ type VMServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedVMServiceServer struct{}
 
+func (UnimplementedVMServiceServer) SetVMSecurityGroups(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetVMSecurityGroups not implemented")
+}
 func (UnimplementedVMServiceServer) CreateVM(context.Context, *v1.CreateVMRequest) (*v1.VMAcceptance, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateVM not implemented")
 }
@@ -510,6 +526,24 @@ func RegisterVMServiceServer(s grpc.ServiceRegistrar, srv VMServiceServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&VMService_ServiceDesc, srv)
+}
+
+func _VMService_SetVMSecurityGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ChangeVMRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VMServiceServer).SetVMSecurityGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VMService_SetVMSecurityGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VMServiceServer).SetVMSecurityGroups(ctx, req.(*v1.ChangeVMRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _VMService_CreateVM_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -998,6 +1032,10 @@ var VMService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "admin.service.v1.VMService",
 	HandlerType: (*VMServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SetVMSecurityGroups",
+			Handler:    _VMService_SetVMSecurityGroups_Handler,
+		},
 		{
 			MethodName: "CreateVM",
 			Handler:    _VMService_CreateVM_Handler,

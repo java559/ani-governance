@@ -36,6 +36,10 @@ func decodeInstanceHTTP(r *http.Request, message proto.Message) error {
 	}
 	newAction := ""
 	switch message.(type) {
+	case *view.SetInstanceSecurityGroupsRequest:
+		if err := validateSecurityGroupSelectionJSON(raw); err != nil {
+			return err
+		}
 	case *view.ChangeInstanceRequest:
 		if strings.HasSuffix(r.URL.Path, ":restart") {
 			newAction = "restart"
@@ -111,6 +115,27 @@ func decodeInstanceHTTP(r *http.Request, message proto.Message) error {
 	}
 	r.Body = io.NopCloser(bytes.NewReader(raw))
 	if decodeStrictJSONHTTP(r, message) != nil {
+		return invalid
+	}
+	return nil
+}
+
+func validateSecurityGroupSelectionJSON(raw []byte) error {
+	invalid := errors.BadRequest("INVALID_INSTANCE_REQUEST", "explicit security_group_ids array required")
+	envelope, err := instanceJSONObject(raw)
+	if err != nil {
+		return invalid
+	}
+	data, err := instanceJSONObject(envelope["data"])
+	if err != nil {
+		return invalid
+	}
+	value, present := data["security_group_ids"]
+	if !present || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+		return invalid
+	}
+	var ids []string
+	if json.Unmarshal(value, &ids) != nil {
 		return invalid
 	}
 	return nil
@@ -332,7 +357,7 @@ func validateInstanceConfigurationJSON(data map[string]json.RawMessage) error {
 		}
 		return false
 	}
-	for _, field := range []string{"workspace_mount_path", "volume_mounts", "network", "labels", "annotations", "env"} {
+	for _, field := range []string{"workspace_mount_path", "volume_mounts", "network", "labels", "annotations", "env", "security_group_ids"} {
 		raw, present := data[field]
 		if !present {
 			continue

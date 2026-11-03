@@ -7,11 +7,11 @@ const ComputeCatalogPath = "/api/v1/compute-presets"
 func ComputeCatalogGrant(usage string) (module, code string, ok bool) {
 	switch usage {
 	case "SANDBOX":
-		return "INSTANCE", "sandbox:preset:read", true
+		return "SANDBOX", "sandbox:preset:read", true
 	case "CONTAINER_INSTANCE":
 		return "INSTANCE", "instance:preset:read", true
 	case "TRAINING":
-		return "MODEL", "modeldev:compute-preset:read", true
+		return "MODELDEV", "modeldev:compute-preset:read", true
 	case "INFERENCE":
 		return "INFERENCE", "inference:compute-preset:read", true
 	case "VIRTUAL_MACHINE":

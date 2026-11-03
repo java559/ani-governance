@@ -172,14 +172,14 @@ func newGpuMonitoringFixture(t *testing.T) *gpuMonitoringFixture {
 	plan, _, _ := gpuVector(t)
 	business := instanceSettingsBusiness(t)
 	business.ComputeType, business.GpuExecution, business.GpuDisplay = "gpu", plan.Resolved.Execution, plan.Resolved.Selection
-	payload, err := res.CanonicalBusinessPayloadVersion(business, 2)
+	payload, err := res.CanonicalBusinessPayload(business)
 	require.NoError(t, err)
 	sum := sha256.Sum256(payload)
-	canonical, err := gpuCanonicalJSON(GpuCanonical{SchemaVersion: 3, InstanceContractVersion: 2, GpuRequest: plan.Request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion, QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}})
+	canonical, err := gpuCanonicalJSON(GpuCanonical{SchemaVersion: 3, GpuRequest: plan.Request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion, QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}})
 	require.NoError(t, err)
 	ledger := data.NewQuotaLedgerRepo(bctx, c)
 	resourceID, createID := uuid.NewString(), uuid.NewString()
-	_, err = ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, ResourceID: resourceID, OperationID: createID, OwnerService: InstanceOwner, Action: InstanceCreateAction, ActorType: "user", ActorID: strconv.FormatUint(uint64(operator.ID), 10), IdempotencyKey: uuid.NewString(), RequestHash: "monitoring-original", CanonicalRequest: string(canonical), InstanceContractVersion: 2, Items: []data.QuotaOccupyItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}})
+	_, err = ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: tenant.ID, ResourceTenantID: tenant.ResourceTenantID, ResourceID: resourceID, OperationID: createID, OwnerService: InstanceOwner, Action: InstanceCreateAction, ActorType: "user", ActorID: strconv.FormatUint(uint64(operator.ID), 10), IdempotencyKey: uuid.NewString(), RequestHash: "monitoring-original", CanonicalRequest: string(canonical), Items: []data.QuotaOccupyItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}})
 	require.NoError(t, err)
 	ref := &acc.GpuUsageRef{TenantId: tenant.ResourceTenantID, OwnerService: InstanceOwner, ResourceId: resourceID, CreateOperationId: createID}
 	now := time.Now().UTC()

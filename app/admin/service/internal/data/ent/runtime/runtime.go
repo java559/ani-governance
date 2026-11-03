@@ -1357,48 +1357,28 @@ func init() {
 	quotaoperationDescRequestHash := quotaoperationFields[9].Descriptor()
 	// quotaoperation.RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
 	quotaoperation.RequestHashValidator = quotaoperationDescRequestHash.Validators[0].(func(string) error)
-	// quotaoperationDescInstanceContractVersion is the schema descriptor for instance_contract_version field.
-	quotaoperationDescInstanceContractVersion := quotaoperationFields[10].Descriptor()
-	// quotaoperation.DefaultInstanceContractVersion holds the default value on creation for the instance_contract_version field.
-	quotaoperation.DefaultInstanceContractVersion = quotaoperationDescInstanceContractVersion.Default.(uint32)
-	// quotaoperation.InstanceContractVersionValidator is a validator for the "instance_contract_version" field. It is called by the builders before save.
-	quotaoperation.InstanceContractVersionValidator = func() func(uint32) error {
-		validators := quotaoperationDescInstanceContractVersion.Validators
-		fns := [...]func(uint32) error{
-			validators[0].(func(uint32) error),
-			validators[1].(func(uint32) error),
-		}
-		return func(instance_contract_version uint32) error {
-			for _, fn := range fns {
-				if err := fn(instance_contract_version); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
 	// quotaoperationDescCanonicalRequest is the schema descriptor for canonical_request field.
-	quotaoperationDescCanonicalRequest := quotaoperationFields[11].Descriptor()
+	quotaoperationDescCanonicalRequest := quotaoperationFields[10].Descriptor()
 	// quotaoperation.CanonicalRequestValidator is a validator for the "canonical_request" field. It is called by the builders before save.
 	quotaoperation.CanonicalRequestValidator = quotaoperationDescCanonicalRequest.Validators[0].(func(string) error)
 	// quotaoperationDescAttemptCount is the schema descriptor for attempt_count field.
-	quotaoperationDescAttemptCount := quotaoperationFields[13].Descriptor()
+	quotaoperationDescAttemptCount := quotaoperationFields[12].Descriptor()
 	// quotaoperation.DefaultAttemptCount holds the default value on creation for the attempt_count field.
 	quotaoperation.DefaultAttemptCount = quotaoperationDescAttemptCount.Default.(int)
 	// quotaoperationDescLeaseGeneration is the schema descriptor for lease_generation field.
-	quotaoperationDescLeaseGeneration := quotaoperationFields[14].Descriptor()
+	quotaoperationDescLeaseGeneration := quotaoperationFields[13].Descriptor()
 	// quotaoperation.DefaultLeaseGeneration holds the default value on creation for the lease_generation field.
 	quotaoperation.DefaultLeaseGeneration = quotaoperationDescLeaseGeneration.Default.(int64)
 	// quotaoperationDescRetryBlocked is the schema descriptor for retry_blocked field.
-	quotaoperationDescRetryBlocked := quotaoperationFields[15].Descriptor()
+	quotaoperationDescRetryBlocked := quotaoperationFields[14].Descriptor()
 	// quotaoperation.DefaultRetryBlocked holds the default value on creation for the retry_blocked field.
 	quotaoperation.DefaultRetryBlocked = quotaoperationDescRetryBlocked.Default.(bool)
 	// quotaoperationDescLastErrorCode is the schema descriptor for last_error_code field.
-	quotaoperationDescLastErrorCode := quotaoperationFields[16].Descriptor()
+	quotaoperationDescLastErrorCode := quotaoperationFields[15].Descriptor()
 	// quotaoperation.LastErrorCodeValidator is a validator for the "last_error_code" field. It is called by the builders before save.
 	quotaoperation.LastErrorCodeValidator = quotaoperationDescLastErrorCode.Validators[0].(func(string) error)
 	// quotaoperationDescLeaseOwner is the schema descriptor for lease_owner field.
-	quotaoperationDescLeaseOwner := quotaoperationFields[18].Descriptor()
+	quotaoperationDescLeaseOwner := quotaoperationFields[17].Descriptor()
 	// quotaoperation.LeaseOwnerValidator is a validator for the "lease_owner" field. It is called by the builders before save.
 	quotaoperation.LeaseOwnerValidator = quotaoperationDescLeaseOwner.Validators[0].(func(string) error)
 	// quotaoperationDescID is the schema descriptor for id field.
@@ -1667,12 +1647,26 @@ func init() {
 	tenant.DefaultResourceTenantID = tenantDescResourceTenantID.Default.(func() string)
 	// tenant.ResourceTenantIDValidator is a validator for the "resource_tenant_id" field. It is called by the builders before save.
 	tenant.ResourceTenantIDValidator = tenantDescResourceTenantID.Validators[0].(func(string) error)
+	// tenantDescTenantSpaceOperationID is the schema descriptor for tenant_space_operation_id field.
+	tenantDescTenantSpaceOperationID := tenantFields[2].Descriptor()
+	// tenant.TenantSpaceOperationIDValidator is a validator for the "tenant_space_operation_id" field. It is called by the builders before save.
+	tenant.TenantSpaceOperationIDValidator = tenantDescTenantSpaceOperationID.Validators[0].(func(string) error)
+	// tenantDescTenantSpaceLeaseGeneration is the schema descriptor for tenant_space_lease_generation field.
+	tenantDescTenantSpaceLeaseGeneration := tenantFields[3].Descriptor()
+	// tenant.DefaultTenantSpaceLeaseGeneration holds the default value on creation for the tenant_space_lease_generation field.
+	tenant.DefaultTenantSpaceLeaseGeneration = tenantDescTenantSpaceLeaseGeneration.Default.(int64)
+	// tenant.TenantSpaceLeaseGenerationValidator is a validator for the "tenant_space_lease_generation" field. It is called by the builders before save.
+	tenant.TenantSpaceLeaseGenerationValidator = tenantDescTenantSpaceLeaseGeneration.Validators[0].(func(int64) error)
+	// tenantDescTenantSpaceLeaseOwner is the schema descriptor for tenant_space_lease_owner field.
+	tenantDescTenantSpaceLeaseOwner := tenantFields[4].Descriptor()
+	// tenant.TenantSpaceLeaseOwnerValidator is a validator for the "tenant_space_lease_owner" field. It is called by the builders before save.
+	tenant.TenantSpaceLeaseOwnerValidator = tenantDescTenantSpaceLeaseOwner.Validators[0].(func(string) error)
 	// tenantDescName is the schema descriptor for name field.
-	tenantDescName := tenantFields[1].Descriptor()
+	tenantDescName := tenantFields[7].Descriptor()
 	// tenant.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	tenant.NameValidator = tenantDescName.Validators[0].(func(string) error)
 	// tenantDescCode is the schema descriptor for code field.
-	tenantDescCode := tenantFields[2].Descriptor()
+	tenantDescCode := tenantFields[8].Descriptor()
 	// tenant.CodeValidator is a validator for the "code" field. It is called by the builders before save.
 	tenant.CodeValidator = tenantDescCode.Validators[0].(func(string) error)
 	// tenantDescID is the schema descriptor for id field.

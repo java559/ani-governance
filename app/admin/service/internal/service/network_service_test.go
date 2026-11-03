@@ -17,18 +17,20 @@ import (
 )
 
 type vpcProbe struct {
-	actor                string
-	calls                int
-	wrong                bool
-	err                  error
-	subnetGateway        *string
-	lbCreate             *networkv1.CreateLoadBalancerRequest
-	lbUpdate             *networkv1.UpdateLoadBalancerRequest
-	lbList               *networkv1.ListLoadBalancersRequest
-	snatEnabled          bool
-	snatVersion          int64
-	snatKey              string
-	vpcPage, vpcPageSize uint32
+	actor                           string
+	calls                           int
+	wrong                           bool
+	err                             error
+	subnetGateway                   *string
+	lbCreate                        *networkv1.CreateLoadBalancerRequest
+	lbUpdate                        *networkv1.UpdateLoadBalancerRequest
+	lbList                          *networkv1.ListLoadBalancersRequest
+	snatEnabled                     bool
+	snatVersion                     int64
+	snatKey                         string
+	vpcPage, vpcPageSize            uint32
+	eipSecurityGroupIDs             []string
+	eipName, eipDescription, eipKey string
 }
 
 func (p *vpcProbe) GetVPC(_ context.Context, tenant string, actor string, id string) (*networkv1.GetVPCResponse, error) {
@@ -94,9 +96,14 @@ func (p *vpcProbe) ListEIPs(_ context.Context, tenant, actor string, _ string, _
 	return &networkv1.ListEIPsResponse{Total: 37, Items: []*networkv1.EIP{{Id: "eip_11111111111111111111111111111111", TenantId: tenant, State: networkv1.ResourceState_RESOURCE_STATE_AVAILABLE}}}, p.err
 }
 
-func (p *vpcProbe) CreateEIP(_ context.Context, tenant, actor string, _, _, _ string) (*networkv1.CreateEIPResponse, error) {
+func (p *vpcProbe) CreateEIP(_ context.Context, tenant, actor string, name, description, key string, securityGroupIDs []string) (*networkv1.CreateEIPResponse, error) {
 	p.calls++
 	panicTenant(tenant, actor)
+	p.eipName, p.eipDescription, p.eipKey = name, description, key
+	p.eipSecurityGroupIDs = securityGroupIDs
+	if p.wrong {
+		tenant = "foreign"
+	}
 	return &networkv1.CreateEIPResponse{Eip: &networkv1.EIP{Id: "eip_11111111111111111111111111111111", TenantId: tenant, State: networkv1.ResourceState_RESOURCE_STATE_PROVISIONING}}, p.err
 }
 
@@ -190,6 +197,65 @@ func TestNetworkListTotalsPassThroughTrustedScope(t *testing.T) {
 	eips, err := s.ListEIPs(ctx, &catalogv1.ListEIPsRequest{Limit: 1})
 	if err != nil || eips.GetTotal() != 37 || len(eips.GetItems()) != 1 {
 		t.Fatalf("EIP total lost: %v %v", eips, err)
+	}
+}
+
+func TestNetworkCreateEIPForwardsInitialSecurityGroupsAtomically(t *testing.T) {
+	p := &vpcProbe{}
+	s := NewNetworkService(p, &tenantProbe{})
+	req := &catalogv1.CreateEIPRequest{Name: "public", Description: "egress", IdempotencyKey: "eip-key", SecurityGroupIds: []string{"sg_11111111111111111111111111111111"}}
+	if _, err := s.CreateEIP(context.Background(), req); errors.Code(err) != 401 || p.calls != 0 {
+		t.Fatalf("anonymous create reached downstream: %v", err)
+	}
+	for _, principal := range []*auth.Principal{{Type: auth.SubjectUser, ID: 7, TenantID: 5}, {Type: auth.SubjectAPIKey, ID: 42, TenantID: 5}} {
+		ctx := auth.NewPrincipalContext(context.Background(), principal)
+		before := p.calls
+		out, err := s.CreateEIP(ctx, req)
+		if err != nil || out.GetEip().GetId() == "" || p.calls != before+1 || len(p.eipSecurityGroupIDs) != 1 || p.eipSecurityGroupIDs[0] != req.SecurityGroupIds[0] || p.eipName != req.Name || p.eipDescription != req.Description || p.eipKey != req.IdempotencyKey {
+			t.Fatalf("single create command lost initial groups: %v %v", out, err)
+		}
+		p.eipSecurityGroupIDs[0] = "changed-downstream"
+		if req.SecurityGroupIds[0] == "changed-downstream" {
+			t.Fatal("downstream mutated public request")
+		}
+		p.wrong = true
+		if _, err := s.CreateEIP(ctx, req); errors.Code(err) != 503 {
+			t.Fatalf("foreign EIP create reply accepted: %v", err)
+		}
+		p.wrong = false
+	}
+	if _, err := s.CreateEIP(context.Background(), nil); errors.Code(err) != 400 {
+		t.Fatalf("nil create accepted: %v", err)
+	}
+}
+
+func TestNetworkBaseConnectivitySummaryPreservesIndependentObservation(t *testing.T) {
+	if got := wireVPC(&networkv1.VPC{}); got.BaseConnectivity != nil {
+		t.Fatal("VPC without base connectivity acquired a summary")
+	}
+	for _, state := range []string{"missing", "pending", "ready", "degraded", "deleting", "deleted", "unknown"} {
+		in := &networkv1.VPC{BaseConnectivity: &networkv1.VPCBaseConnectivity{State: state, Reason: "BASE_PENDING", ReasonMessage: "Waiting for fresh observation", ObservationStale: true}}
+		got := wireVPC(in).BaseConnectivity
+		if got == nil || got.State != state || got.Reason != in.BaseConnectivity.Reason || got.ReasonMessage != in.BaseConnectivity.ReasonMessage || !got.ObservationStale || got.ObservedAt != nil {
+			t.Fatalf("base connectivity summary lost independent observation: %v", got)
+		}
+	}
+}
+
+func TestNetworkPublicEgressAssociationPreservesObservedState(t *testing.T) {
+	if got := wireVPC(&networkv1.VPC{}); got.PublicEgress != nil {
+		t.Fatal("unbound VPC acquired an association")
+	}
+	for _, applied := range []*bool{nil, proto.Bool(false), proto.Bool(true)} {
+		in := &networkv1.VPC{PublicEgress: &networkv1.VPCPublicEgress{BindingId: testBindingID, EipId: "eip_66666666666666666666666666666666", EipAddress: "198.51.100.11", BindingState: "bound", State: networkv1.ResourceState_RESOURCE_STATE_PROVISIONING, Reason: "APPLYING", ReasonMessage: "Awaiting observation", DesiredEnabled: true, AppliedEnabled: applied, ObservationStale: true, Version: 3, LastOperationId: testOperationID}}
+		got := wireVPC(in).PublicEgress
+		if got == nil || got.BindingId != testBindingID || got.EipId != in.PublicEgress.EipId || got.EipAddress != in.PublicEgress.EipAddress || got.BindingState != "bound" || got.State != "provisioning" || got.Reason != "APPLYING" || got.ReasonMessage != in.PublicEgress.ReasonMessage || !got.DesiredEnabled || (got.AppliedEnabled == nil) != (applied == nil) || applied != nil && got.GetAppliedEnabled() != *applied || !got.ObservationStale || got.Version != 3 || got.LastOperationId != testOperationID || got.ObservedAt != nil {
+			t.Fatalf("public association/independent observation lost: %v", got)
+		}
+	}
+	eip := wireEIP(&networkv1.EIP{BindingState: "bound", BindingTarget: &networkv1.EIPBindingTarget{Kind: "snat", Id: testBindingID, State: "bound", VpcId: testVPCID}})
+	if eip.BindingState != "bound" || eip.BindingTarget.GetVpcId() != testVPCID || eip.BindingTarget.GetId() != testBindingID || eip.BindingTarget.GetState() != "bound" {
+		t.Fatalf("EIP association lost VPC/operation identity: %v", eip)
 	}
 }
 

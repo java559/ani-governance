@@ -49,8 +49,21 @@ func TestNetworkAllTenantOperationsSignAndReplayBody(t *testing.T) {
 		{"UpdateLoadBalancer", "PATCH", "/api/v1/networks/load-balancers/" + policyLBID, "", `{"expected_version":"1","idempotency_key":"update-lb","name":"updated","backends":[]}`},
 		{"DeleteLoadBalancer", "DELETE", "/api/v1/networks/load-balancers/" + policyLBID, "", ""},
 		{"GetLoadBalancerOperation", "GET", "/api/v1/networks/load-balancers/operations/" + policyOperationID, "", ""},
+		{"CreateSecurityGroup", "POST", "/api/v1/networks/security-groups", "", `{"data":{"name":"sg","rules":[{"direction":"ingress","protocol":"tcp","remote_addresses":["10.0.0.0/8"],"port_ranges":[{"min":22,"max":22}],"action":"allow","priority":3000}],"idempotency_key":"create-sg"}}`},
+		{"GetSecurityGroup", "GET", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef", "", ""},
+		{"ListSecurityGroups", "GET", "/api/v1/networks/security-groups", "name=demo&page=3&pageSize=2&state=available", ""},
+		{"UpdateSecurityGroup", "PATCH", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef", "", `{"data":{"name":"updated","description":"","expected_version":"1","idempotency_key":"update-sg"},"update_mask":"name,description"}`},
+		{"DeleteSecurityGroup", "DELETE", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef", "", ""},
+		{"ListSecurityGroupRules", "GET", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef/rules", "direction=ingress&page=2&pageSize=5", ""},
+		{"CreateSecurityGroupRule", "POST", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef/rules", "", `{"data":{"rule":{"direction":"ingress","protocol":"all","action":"drop","priority":1},"expected_version":"1","idempotency_key":"create-rule"}}`},
+		{"UpdateSecurityGroupRule", "PATCH", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef/rules/sgr_0123456789abcdef0123456789abcdef", "", `{"data":{"rule":{"direction":"egress","protocol":"all","action":"allow","priority":2},"expected_version":"2","idempotency_key":"update-rule"}}`},
+		{"DeleteSecurityGroupRule", "DELETE", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef/rules/sgr_0123456789abcdef0123456789abcdef", "", ""},
+		{"ListSecurityGroupBindings", "GET", "/api/v1/networks/security-groups/sg_0123456789abcdef0123456789abcdef/bindings", "page=1&pageSize=20", ""},
+		{"SetEIPSecurityGroups", "PUT", "/api/v1/networks/eips/" + policyEIPID + "/security-groups", "", `{"data":{"security_group_ids":[],"expected_version":"1","idempotency_key":"clear-eip-sg"}}`},
+		{"GetEIPSecurityGroups", "GET", "/api/v1/networks/eips/" + policyEIPID + "/security-groups", "", ""},
+		{"GetSecurityGroupOperation", "GET", "/api/v1/networks/security-groups/operations/" + policyOperationID, "", ""},
 	}
-	if len(NetworkOperations) != 25 {
+	if len(NetworkOperations) != len(fixtures) {
 		t.Fatal("unexpected public Network surface")
 	}
 	now := time.Unix(1700000000, 0)

@@ -4,7 +4,15 @@
 
 Governance BFF 当前提供 `/api/v1/inference/...` 推理服务管理接口，包括普通及 GPU 推理的创建、列表/详情、操作查询、更新、启停/重启和删除。业务管理请求直接访问 Governance；Higress 仅承载 OpenAI 兼容推理数据面（例如 `/v1/completions`），不得把这些 `/api/v1/...` 路由加入 Higress。Inference BFF 的列表请求使用 `page`/`pageSize`，响应使用 `items`/`total`；`total` 在 JSON 中是十进制字符串。
 
-Sandbox 管理从 Governance BFF 进入，Resource 不暴露公网 HTTP。接口为 `POST /api/v1/sandbox`、`GET /api/v1/sandbox`、`GET /api/v1/sandbox/{sandbox_id}`、`GET /api/v1/sandbox/operations/{operation_id}`，以及带 `:pause`、`:resume` 的 POST 和 DELETE。创建和生命周期请求使用 `data` 对象，返回异步受理的 `operation_id`/`resource_id`；列表返回 `items`/`total`。Sandbox 是独立资源，不要求其他实例。Gov 完成认证、权限、INSTANCE 套餐检查和可信租户映射；Resource 按租户和 Sandbox ID 检查归属。列表使用 `page/pageSize` 和默认值 `1/20`。
+Sandbox 管理从 Governance BFF 进入，Resource 不暴露公网 HTTP。接口为 `POST /api/v1/sandbox`、`GET /api/v1/sandbox`、`GET /api/v1/sandbox/{sandbox_id}`、`GET /api/v1/sandbox/operations/{operation_id}`，以及带 `:pause`、`:resume` 的 POST 和 DELETE。创建和生命周期请求使用 `data` 对象，返回异步受理的 `operation_id`/`resource_id`；列表返回 `items`/`total`。Sandbox 是独立资源，不要求其他实例。Gov 完成认证、权限、SANDBOX 套餐检查和可信租户映射；Resource 按租户和 Sandbox ID 检查归属。列表使用 `page/pageSize` 和默认值 `1/20`。
+
+Sandbox 文件接口以工作盘 `/workspace` 为根，路径为相对路径。`GET /api/v1/sandbox/{sandbox_id}/files` 接收 `path`、`limit`（默认 100，最大 500）及 `cursor`，递归返回 `items`、`total`、`next_cursor`；`GET /api/v1/sandbox/{sandbox_id}/files/content?path=...` 返回 `content_base64`。`POST /api/v1/sandbox/{sandbox_id}/files` 使用 `data` 包含 `idempotency_key`、`path`、`content_base64`、`overwrite` 和可选 `expected_version`；`DELETE` 同一路径使用 `data` 的 `idempotency_key`、`path` 和可选版本。文件内容单次上限 1 MiB。变更响应有 `operation_id`、`state` 和 `reason`，可通过 `GET /api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}` 查询。相同幂等键及参数重放返回原结果，不同内容冲突；`unknown` 不证明是否执行，不能自动重复提交新键。文件列表、读取、写入、删除和操作查询分别授权。
+
+Sandbox Token：`POST /api/v1/sandbox/{sandbox_id}/tokens` 的 `data` 包含 `idempotency_key`、可选 `expires_in`（Go duration，默认 `15m`，最长 `1h`）及 `scopes`。当前 `files` 能访问文件接口，`exec` 能访问代码执行接口；需要签发者同时具备相应全部权限，且每次使用重新核对其当前权限。未指定时沿用旧默认 `connect`，但当前无对应可访问入口；`ports` 尚不可签发。凭证内容只在签发及有效重放响应返回，并提供 `token_id`、`expires_at`、`scopes`；同键同参数在有效期内重放原凭证，过期或撤销后重放冲突。`DELETE /api/v1/sandbox/{sandbox_id}/tokens/{token_id}` 撤销；Token 仅用于对应 Sandbox 的允许接口，不能管理生命周期或签发令牌。暂停、恢复或删除造成的版本变化使旧 Token 失效。
+
+代码执行：`POST /api/v1/sandbox/{sandbox_id}/code-runs` 的 `data` 包含 `idempotency_key`、`language`、`code`、可选 `stdin`、`timeout_seconds` 和 `expected_version`；返回 `run_id`、状态和重放标记。通过 `GET /api/v1/sandbox/{sandbox_id}/code-runs/{run_id}` 查询状态、输出、退出码及截断标记。执行和查询分别授权；`unknown` 不表示远端进程已停止，也不能自动使用新键重试。
+
+创建时可以从 Resource Image 目录选择镜像，传入 `image_id` 和 `image_scope`（`tenant` 或 `platform`），也可以填写已登记的租户或平台镜像 `image_reference`；两种方式不能同时提供。Resource 校验登记和租户权限，解析并冻结实际镜像引用和 digest。当前不能直接使用未登记的镜像地址。
 
 创建命令在 Gov 持久登记，投递超时保持原命令和幂等身份重试；未知结果不能仅凭超时清除。历史命令保留原摘要及旧引用，不在投递时改写。创建重放依照冻结意图匹配，冲突返回 `409 SANDBOX_IDEMPOTENCY_CONFLICT`；生命周期重放保留 Resource 返回标志。历史验证基于旧父实例模型，不代表独立创建已完成真实验收。
 
@@ -179,3 +187,28 @@ Gov 通过 [go.mod](https://github.com/zhangzhe-ctrl/ani-governance/blob/ba7db4c
 
 模型详情 `GET /api/v1/models/{model_id}` 的 HTTP 响应直接返回 Model 资源，
 没有 `model` 外层；内部 RPC 的 GetModelResponse 保持原形状。
+
+## ModelDev 当前租户执行环境
+
+`POST /api/v1/modeldev/environment:ensure` 显式开通当前租户环境；请求必须为
+`application/json` 空对象 `{}`（最多1024字节并紧接EOF），不允许query，且恰有一个
+规范非零UUID `Idempotency-Key`。`GET /api/v1/modeldev/environment` 无body/query，
+仅返回持久观察。两接口返回 `{"environment": <view>}`，采用snake_case，state为
+`PROVISIONING/READY/BLOCKED/NEEDS_REVIEW`，phase为
+`NAMESPACE/RESOURCES/EXPERIMENT/VERIFY/PUBLISH/COMPLETE`。未确认的namespace_uid、
+experiment_id、binding_digest与last_verified_at省略。只有PROVISIONING返回202和
+`Retry-After: 2`；其他存在状态返回200，无登记Get返回404
+`ENVIRONMENT_NOT_REGISTERED`。Get不表示本次live健康探测，BLOCKED不表示开通成功。
+
+两接口要求当前tenant用户、当前有效角色的ALL数据范围、独立
+`modeldev:manage_environment`/`modeldev:view_environment`权限及对应精确API grant，
+仍服从既有MODEL套餐/租户闸门。相同key重试重新授权并读取最新结果，不缓存首次状态。
+浏览器不能指定tenant/namespace/cluster/Experiment或覆盖出站x-ani-*。
+Ensure/Get不进入执行acceptance、quota或可靠CREATE链。
+Prepare/Finalize的严格环境拒绝只输出有限`metadata.environment_reason`，不转发上游message。
+
+During the one-time ModelDev environment maintenance window, startup setting
+`ANI_MODELDEV_CREATE_PAUSED=true` returns HTTP 503 with reason
+`MODELDEV_CREATE_MAINTENANCE` only for the ModelDev Create action. Existing
+authentication and tenant-user restrictions still run; Ensure/Get, queries,
+Stop and quota release do not use that gate.

@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	runtimev1 "github.com/liangzai006/ani-inference-service/api/inference/v1"
+	"go-wind-admin/pkg/middleware/requestid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -140,11 +141,15 @@ func (c *InferenceClient) trustedContextWithTimeout(ctx context.Context, tenant,
 		return nil, nil, errors.New("invalid trusted inference identity")
 	}
 	call, cancel := context.WithTimeout(ctx, budget)
-	call = metadata.NewOutgoingContext(call, metadata.Pairs(
+	md := metadata.Pairs(
 		"x-ani-tenant-id", tenant,
 		"x-ani-actor", actor,
 		"x-ani-request-id", uuid.NewString(),
-	))
+	)
+	if origin, ok := requestid.FromContext(ctx); ok {
+		md.Set("x-ani-origin-request-id", origin)
+	}
+	call = metadata.NewOutgoingContext(call, md)
 	return call, cancel, nil
 }
 

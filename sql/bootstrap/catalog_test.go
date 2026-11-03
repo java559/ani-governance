@@ -74,5 +74,7 @@ func TestVMCatalogUsesRuntimePathVariables(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, strings.HasPrefix(resolved.Code, "vm:"))
 	}
-	require.Equal(t, 26, count) // Includes GetVMDNSDefaults alongside the original VM routes.
+	// The retained OpenAPI has 27 register-vm-permissions.sql routes plus
+	// SetVMSecurityGroups from register-security-group-permissions.sql.
+	require.Equal(t, 28, count)
 }

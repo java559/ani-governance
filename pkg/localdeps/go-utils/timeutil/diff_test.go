@@ -31,6 +31,12 @@ func TestDifferenceDays(t *testing.T) {
 }
 
 func TestTimeDifferenceDays(t *testing.T) {
+	// These fixtures use UTC dates. Pin the zone used to reconstruct midnight
+	// so the host's daylight-saving offset does not add an hour to this span.
+	local := time.Local
+	time.Local = time.UTC
+	t.Cleanup(func() { time.Local = local })
+
 	assert.Equal(t, TimeDifferenceDays(parseDate("2017-09-01"), parseDate("2017-09-01")), 0)
 	assert.Equal(t, TimeDifferenceDays(parseDate("2017-09-01"), parseDate("2017-09-02")), 1)
 	assert.Equal(t, TimeDifferenceDays(parseDate("2017-09-01"), parseDate("2017-09-03")), 2)

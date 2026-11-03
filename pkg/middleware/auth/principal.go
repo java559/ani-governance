@@ -9,17 +9,24 @@ import (
 type SubjectType string
 
 const (
-	SubjectUser   SubjectType = "user"
-	SubjectAPIKey SubjectType = "api_key"
+	SubjectUser    SubjectType = "user"
+	SubjectAPIKey  SubjectType = "api_key"
+	SubjectSandbox SubjectType = "sandbox_token"
 )
 
 // Principal is populated only after credential verification. IDs are never interchangeable.
 type Principal struct {
-	Type     SubjectType
-	ID       uint32
-	TenantID uint32
-	Roles    []string
-	Claims   *authenticationV1.UserTokenPayload
+	Type             SubjectType
+	ID               uint32
+	TenantID         uint32
+	Roles            []string
+	Claims           *authenticationV1.UserTokenPayload
+	SandboxID        string
+	SandboxTokenID   string
+	SandboxExpiresAt int64
+	ResourceTenantID string
+	IssuerID         uint32
+	SandboxScopes    []string
 }
 type principalKey struct{}
 type verifiedIdentity struct{ principal *Principal }
@@ -45,7 +52,13 @@ func PrincipalFromContext(ctx context.Context) (*Principal, error) {
 	return nil, ErrMissingJwtToken
 }
 func (p *Principal) Actor() (string, error) {
-	if p == nil || p.ID == 0 {
+	if p == nil {
+		return "", ErrExtractSubjectFailed
+	}
+	if p.Type == SubjectSandbox && p.SandboxTokenID != "" {
+		return "governance:sandbox-token:" + p.SandboxTokenID, nil
+	}
+	if p.ID == 0 {
 		return "", ErrExtractSubjectFailed
 	}
 	switch p.Type {

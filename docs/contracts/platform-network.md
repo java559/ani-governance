@@ -4,7 +4,7 @@
 
 ## 入口与权限
 
-HTTP 前缀为 `/api/v1/admin/networks`。完整方法、路由和权限以 [平台网络策略](../../pkg/middleware/auth/platform_network_policy.go) 为准，报文以 [领域 DTO](../../api/protos/catalog/service/v1/platform_network.proto) 与 [BFF 路由](../../api/protos/admin/service/v1/i_platform_network.proto) 为准。共 35 个 RPC，包括平台 EIP 查询、详情、受保护释放 3 个，平台默认 VPC 出口 4 个、虚拟交换机 4 个、Public/Intranet 池各 7 个、VLAN 4 个、网关 4 个、能力和平台 operation 各 1 个。
+HTTP 前缀为 `/api/v1/admin/networks`。完整方法、路由和权限以 [平台网络策略](../../pkg/middleware/auth/platform_network_policy.go) 为准，报文以 [领域 DTO](../../api/protos/catalog/service/v1/platform_network.proto) 与 [BFF 路由](../../api/protos/admin/service/v1/i_platform_network.proto) 为准。共 37 个 RPC，包括平台 EIP 查询、详情、受保护释放 3 个，平台默认 VPC 出口 4 个、虚拟交换机 4 个、Public/Intranet 池各 7 个、Intranet 池默认值查询与新 VPC 自动分配开关各 1 个、VLAN 4 个、网关 4 个、能力和平台 operation 各 1 个。
 
 仅已认证的平台用户（可信用户 Principal、平台身份 tenant_id=0）可访问，逐请求检查动作权限与当前 Casbin 策略；令牌中的 IsPlatformAdmin 展示标志不授权。普通租户、租户 API Key、缺失权限或已撤销策略一律拒绝。平台配置接口不借用租户 UUID。平台 EIP 管理使用独立平台 RPC；释放的真实租户由 Resource 从持久 EIP 记录解析，不接受客户端指定所有者。NETWORK 套餐检查继续只约束租户业务入口，平台配置不用虚构租户或套餐。
 
@@ -13,6 +13,12 @@ HTTP 前缀为 `/api/v1/admin/networks`。完整方法、路由和权限以 [平
 ## 请求、分页与响应
 
 新增写入请求使用 `{data: {...}}`；资源 ID 来自路由，body 中冲突 ID 拒绝。verification、allocation、default 是领域命令，沿用幂等键及 expected_version，并非任意字段 PATCH。公网 body/header 不允许断言 tenant、actor、管理员或调用服务。
+
+`PUT /api/v1/admin/networks/intranet-address-pools/{pool_id}/auto-allocation` 接收 `{data:{enabled,expected_version,idempotency_key}}`，`expected_version` 为目标池版本，响应直接返回 `PlatformResource`。独立权限为 `network:platform:intranet-pool:auto-allocate`，目录增量见 [自动分配权限](../../sql/data/20261103_intranet_auto_allocation_permissions.sql)。开启在 Resource 一次事务内选择默认池、开启该池分配并开启新 VPC 基础 EIP/SNAT 创建；关闭仅允许当前默认池，只影响之后创建的 VPC。切换默认池保留开关状态，开启时同时校验目标池并开启其分配，不迁移已有资源。Intranet 池的 `new_vpcs_enabled` 只在当前默认源且开关开启时为 true；列表和详情均返回该只读值。Provider 身份、Ready、观测时效和地址冲突准入保持，人工 verification 不是自动分配前置；不增加历史 VPC 回填入口或自动探测。
+
+`GET /api/v1/admin/networks/intranet-address-pool-defaults` 复用 `network:platform:intranet-pool:get`，不接受查询参数，直接返回 Resource 从 KCN 读取的 `default_vpc_name/default_vpc_uid/intranet_networks`。BOSS 创建表单只让管理员填写业务配置，并将读取到的 Provider 默认值填入现有创建请求；读取失败不编造 UID 或网络范围。新增路由关联同一权限的步骤包含在上述目录增量中。
+
+租户 VPC 列表、详情及写入响应的可选 `base_connectivity` 只返回 `state/reason/reason_message/observed_at/observation_stale`，与 Resource 同一读取快照一致。`state` 为 missing、pending、ready、degraded、deleting、deleted 或 unknown；ready 表示新鲜配置证据，不代表真实流量健康。不公开系统 EIP/SNAT 标识或地址池控制入口。
 
 虚拟交换机只需 `{data:{name,idempotency_key}}` 创建；名称遵守 Node label-key 名称规则并禁止点号，无区域、AZ 或简介。未绑定详情不要求 cluster_id、Provider UID 或通用 PlatformResource.configuration；首次创建二层网络才绑定集群。交换机 create/get/list/delete 各有独立 `network:platform:virtual-switch:<action>` 权限。列表采用 `page/pageSize`，独立默认 1/20，范围分别为 1～2147483647 和 1～100，支持直接跳页；响应直接为 `{items,total}`，int64 total 是十进制字符串。显式零、前导零、重复、超限、cursor/limit 或未知查询参数返回 400。
 

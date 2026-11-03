@@ -117,7 +117,6 @@ func TestInferenceStoredCommandVariantsAndDeleteScope(t *testing.T) {
 			require.Error(t, e)
 			wrong = in
 			wrong.Owner = InstanceOwner
-			wrong.InstanceContractVersion = 2
 			_, e = commandcontract.ValidateStoredCommand(wrong)
 			require.Error(t, e)
 			wrong = in

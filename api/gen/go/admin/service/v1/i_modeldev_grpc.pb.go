@@ -20,21 +20,23 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ModelDevService_CheckFinetuningReadiness_FullMethodName  = "/admin.service.v1.ModelDevService/CheckFinetuningReadiness"
-	ModelDevService_ListImplementations_FullMethodName       = "/admin.service.v1.ModelDevService/ListImplementations"
-	ModelDevService_GetInputVersion_FullMethodName           = "/admin.service.v1.ModelDevService/GetInputVersion"
-	ModelDevService_ListInputVersions_FullMethodName         = "/admin.service.v1.ModelDevService/ListInputVersions"
-	ModelDevService_ListExecutions_FullMethodName            = "/admin.service.v1.ModelDevService/ListExecutions"
-	ModelDevService_GetExecutionLogs_FullMethodName          = "/admin.service.v1.ModelDevService/GetExecutionLogs"
-	ModelDevService_ListExecutionPods_FullMethodName         = "/admin.service.v1.ModelDevService/ListExecutionPods"
-	ModelDevService_ListExecutionEvents_FullMethodName       = "/admin.service.v1.ModelDevService/ListExecutionEvents"
-	ModelDevService_QueryExecutionMetrics_FullMethodName     = "/admin.service.v1.ModelDevService/QueryExecutionMetrics"
-	ModelDevService_StopExecution_FullMethodName             = "/admin.service.v1.ModelDevService/StopExecution"
-	ModelDevService_ResumeModelRegistration_FullMethodName   = "/admin.service.v1.ModelDevService/ResumeModelRegistration"
-	ModelDevService_GetExecution_FullMethodName              = "/admin.service.v1.ModelDevService/GetExecution"
-	ModelDevService_ListExecutionArtifacts_FullMethodName    = "/admin.service.v1.ModelDevService/ListExecutionArtifacts"
-	ModelDevService_AuthorizeArtifactDownload_FullMethodName = "/admin.service.v1.ModelDevService/AuthorizeArtifactDownload"
-	ModelDevService_CreateExecution_FullMethodName           = "/admin.service.v1.ModelDevService/CreateExecution"
+	ModelDevService_EnsureTenantExecutionEnvironment_FullMethodName = "/admin.service.v1.ModelDevService/EnsureTenantExecutionEnvironment"
+	ModelDevService_GetTenantExecutionEnvironment_FullMethodName    = "/admin.service.v1.ModelDevService/GetTenantExecutionEnvironment"
+	ModelDevService_CheckFinetuningReadiness_FullMethodName         = "/admin.service.v1.ModelDevService/CheckFinetuningReadiness"
+	ModelDevService_ListImplementations_FullMethodName              = "/admin.service.v1.ModelDevService/ListImplementations"
+	ModelDevService_GetInputVersion_FullMethodName                  = "/admin.service.v1.ModelDevService/GetInputVersion"
+	ModelDevService_ListInputVersions_FullMethodName                = "/admin.service.v1.ModelDevService/ListInputVersions"
+	ModelDevService_ListExecutions_FullMethodName                   = "/admin.service.v1.ModelDevService/ListExecutions"
+	ModelDevService_GetExecutionLogs_FullMethodName                 = "/admin.service.v1.ModelDevService/GetExecutionLogs"
+	ModelDevService_ListExecutionPods_FullMethodName                = "/admin.service.v1.ModelDevService/ListExecutionPods"
+	ModelDevService_ListExecutionEvents_FullMethodName              = "/admin.service.v1.ModelDevService/ListExecutionEvents"
+	ModelDevService_QueryExecutionMetrics_FullMethodName            = "/admin.service.v1.ModelDevService/QueryExecutionMetrics"
+	ModelDevService_StopExecution_FullMethodName                    = "/admin.service.v1.ModelDevService/StopExecution"
+	ModelDevService_ResumeModelRegistration_FullMethodName          = "/admin.service.v1.ModelDevService/ResumeModelRegistration"
+	ModelDevService_GetExecution_FullMethodName                     = "/admin.service.v1.ModelDevService/GetExecution"
+	ModelDevService_ListExecutionArtifacts_FullMethodName           = "/admin.service.v1.ModelDevService/ListExecutionArtifacts"
+	ModelDevService_AuthorizeArtifactDownload_FullMethodName        = "/admin.service.v1.ModelDevService/AuthorizeArtifactDownload"
+	ModelDevService_CreateExecution_FullMethodName                  = "/admin.service.v1.ModelDevService/CreateExecution"
 )
 
 // ModelDevServiceClient is the client API for ModelDevService service.
@@ -43,6 +45,8 @@ const (
 //
 // CPU-P01 entry in the existing Governance BFF.
 type ModelDevServiceClient interface {
+	EnsureTenantExecutionEnvironment(ctx context.Context, in *v1.EnsureTenantExecutionEnvironmentRequest, opts ...grpc.CallOption) (*v1.EnsureTenantExecutionEnvironmentResponse, error)
+	GetTenantExecutionEnvironment(ctx context.Context, in *v1.GetTenantExecutionEnvironmentRequest, opts ...grpc.CallOption) (*v1.GetTenantExecutionEnvironmentResponse, error)
 	CheckFinetuningReadiness(ctx context.Context, in *v1.CheckFinetuningReadinessRequest, opts ...grpc.CallOption) (*v1.CheckFinetuningReadinessResponse, error)
 	ListImplementations(ctx context.Context, in *v1.ListImplementationsRequest, opts ...grpc.CallOption) (*v1.ListImplementationsResponse, error)
 	GetInputVersion(ctx context.Context, in *v1.GetInputVersionRequest, opts ...grpc.CallOption) (*v1.GetInputVersionResponse, error)
@@ -66,6 +70,26 @@ type modelDevServiceClient struct {
 
 func NewModelDevServiceClient(cc grpc.ClientConnInterface) ModelDevServiceClient {
 	return &modelDevServiceClient{cc}
+}
+
+func (c *modelDevServiceClient) EnsureTenantExecutionEnvironment(ctx context.Context, in *v1.EnsureTenantExecutionEnvironmentRequest, opts ...grpc.CallOption) (*v1.EnsureTenantExecutionEnvironmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.EnsureTenantExecutionEnvironmentResponse)
+	err := c.cc.Invoke(ctx, ModelDevService_EnsureTenantExecutionEnvironment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *modelDevServiceClient) GetTenantExecutionEnvironment(ctx context.Context, in *v1.GetTenantExecutionEnvironmentRequest, opts ...grpc.CallOption) (*v1.GetTenantExecutionEnvironmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetTenantExecutionEnvironmentResponse)
+	err := c.cc.Invoke(ctx, ModelDevService_GetTenantExecutionEnvironment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *modelDevServiceClient) CheckFinetuningReadiness(ctx context.Context, in *v1.CheckFinetuningReadinessRequest, opts ...grpc.CallOption) (*v1.CheckFinetuningReadinessResponse, error) {
@@ -224,6 +248,8 @@ func (c *modelDevServiceClient) CreateExecution(ctx context.Context, in *v1.Crea
 //
 // CPU-P01 entry in the existing Governance BFF.
 type ModelDevServiceServer interface {
+	EnsureTenantExecutionEnvironment(context.Context, *v1.EnsureTenantExecutionEnvironmentRequest) (*v1.EnsureTenantExecutionEnvironmentResponse, error)
+	GetTenantExecutionEnvironment(context.Context, *v1.GetTenantExecutionEnvironmentRequest) (*v1.GetTenantExecutionEnvironmentResponse, error)
 	CheckFinetuningReadiness(context.Context, *v1.CheckFinetuningReadinessRequest) (*v1.CheckFinetuningReadinessResponse, error)
 	ListImplementations(context.Context, *v1.ListImplementationsRequest) (*v1.ListImplementationsResponse, error)
 	GetInputVersion(context.Context, *v1.GetInputVersionRequest) (*v1.GetInputVersionResponse, error)
@@ -249,6 +275,12 @@ type ModelDevServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedModelDevServiceServer struct{}
 
+func (UnimplementedModelDevServiceServer) EnsureTenantExecutionEnvironment(context.Context, *v1.EnsureTenantExecutionEnvironmentRequest) (*v1.EnsureTenantExecutionEnvironmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnsureTenantExecutionEnvironment not implemented")
+}
+func (UnimplementedModelDevServiceServer) GetTenantExecutionEnvironment(context.Context, *v1.GetTenantExecutionEnvironmentRequest) (*v1.GetTenantExecutionEnvironmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTenantExecutionEnvironment not implemented")
+}
 func (UnimplementedModelDevServiceServer) CheckFinetuningReadiness(context.Context, *v1.CheckFinetuningReadinessRequest) (*v1.CheckFinetuningReadinessResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckFinetuningReadiness not implemented")
 }
@@ -313,6 +345,42 @@ func RegisterModelDevServiceServer(s grpc.ServiceRegistrar, srv ModelDevServiceS
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&ModelDevService_ServiceDesc, srv)
+}
+
+func _ModelDevService_EnsureTenantExecutionEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.EnsureTenantExecutionEnvironmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelDevServiceServer).EnsureTenantExecutionEnvironment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelDevService_EnsureTenantExecutionEnvironment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelDevServiceServer).EnsureTenantExecutionEnvironment(ctx, req.(*v1.EnsureTenantExecutionEnvironmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ModelDevService_GetTenantExecutionEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetTenantExecutionEnvironmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ModelDevServiceServer).GetTenantExecutionEnvironment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ModelDevService_GetTenantExecutionEnvironment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ModelDevServiceServer).GetTenantExecutionEnvironment(ctx, req.(*v1.GetTenantExecutionEnvironmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _ModelDevService_CheckFinetuningReadiness_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -592,6 +660,14 @@ var ModelDevService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "admin.service.v1.ModelDevService",
 	HandlerType: (*ModelDevServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "EnsureTenantExecutionEnvironment",
+			Handler:    _ModelDevService_EnsureTenantExecutionEnvironment_Handler,
+		},
+		{
+			MethodName: "GetTenantExecutionEnvironment",
+			Handler:    _ModelDevService_GetTenantExecutionEnvironment_Handler,
+		},
 		{
 			MethodName: "CheckFinetuningReadiness",
 			Handler:    _ModelDevService_CheckFinetuningReadiness_Handler,

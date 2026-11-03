@@ -37,11 +37,13 @@ type NetworkPlatformClient interface {
 	SetDefaultPublicPool(context.Context, string, *networkv1.SetDefaultPublicPoolRequest) (*networkv1.SetDefaultPublicPoolResponse, error)
 	CreateIntranetAddressPool(context.Context, string, *networkv1.CreateIntranetAddressPoolRequest) (*networkv1.CreateIntranetAddressPoolResponse, error)
 	GetIntranetAddressPool(context.Context, string, *networkv1.GetIntranetAddressPoolRequest) (*networkv1.GetIntranetAddressPoolResponse, error)
+	GetIntranetPoolDefaults(context.Context, string, *networkv1.GetIntranetPoolDefaultsRequest) (*networkv1.GetIntranetPoolDefaultsResponse, error)
 	ListIntranetAddressPools(context.Context, string, *networkv1.ListIntranetAddressPoolsRequest) (*networkv1.ListIntranetAddressPoolsResponse, error)
 	DeleteIntranetAddressPool(context.Context, string, *networkv1.DeleteIntranetAddressPoolRequest) (*networkv1.DeleteIntranetAddressPoolResponse, error)
 	RecordIntranetPoolVerification(context.Context, string, *networkv1.RecordIntranetPoolVerificationRequest) (*networkv1.RecordIntranetPoolVerificationResponse, error)
 	SetIntranetPoolAllocationEnabled(context.Context, string, *networkv1.SetIntranetPoolAllocationEnabledRequest) (*networkv1.SetIntranetPoolAllocationEnabledResponse, error)
 	SetDefaultIntranetPool(context.Context, string, *networkv1.SetDefaultIntranetPoolRequest) (*networkv1.SetDefaultIntranetPoolResponse, error)
+	SetIntranetPoolAutoAllocationEnabled(context.Context, string, *networkv1.SetIntranetPoolAutoAllocationEnabledRequest) (*networkv1.SetIntranetPoolAutoAllocationEnabledResponse, error)
 	GetPlatformNetworkCapabilities(context.Context, string, *networkv1.GetPlatformNetworkCapabilitiesRequest) (*networkv1.GetPlatformNetworkCapabilitiesResponse, error)
 	GetPlatformOperation(context.Context, string, *networkv1.GetPlatformOperationRequest) (*networkv1.GetPlatformOperationResponse, error)
 }
@@ -218,6 +220,7 @@ func wireIntranetAddressPool(v *networkv1.IntranetAddressPool) *catalogv1.Intran
 		TopologyFingerprint:    v.GetTopologyFingerprint(),
 		ObservedProviderImages: v.GetObservedProviderImages(),
 		Scope:                  v.GetScope(),
+		NewVpcsEnabled:         v.GetNewVpcsEnabled(),
 	}
 	return out
 }
@@ -955,6 +958,47 @@ func (s *PlatformNetworkService) SetDefaultIntranetPool(ctx context.Context, req
 		return nil, invalidNetworkReply()
 	}
 	return &catalogv1.SetDefaultIntranetPoolResponse{Resource: wirePlatformResource(reply.Resource)}, nil
+}
+
+func (s *PlatformNetworkService) GetIntranetPoolDefaults(ctx context.Context, req *catalogv1.GetIntranetPoolDefaultsRequest) (*catalogv1.GetIntranetPoolDefaultsResponse, error) {
+	actor, err := s.actor(ctx, "GetIntranetPoolDefaults")
+	if err != nil {
+		return nil, err
+	}
+	if req == nil {
+		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "request required")
+	}
+	reply, err := s.client.GetIntranetPoolDefaults(ctx, actor, &networkv1.GetIntranetPoolDefaultsRequest{})
+	if err != nil {
+		return nil, mapNetworkError(err)
+	}
+	if reply == nil || reply.GetDefaultVpcName() == "" || reply.GetDefaultVpcUid() == "" || len(reply.GetIntranetNetworks()) == 0 {
+		return nil, invalidNetworkReply()
+	}
+	return &catalogv1.GetIntranetPoolDefaultsResponse{DefaultVpcName: reply.GetDefaultVpcName(), DefaultVpcUid: reply.GetDefaultVpcUid(), IntranetNetworks: append([]string(nil), reply.GetIntranetNetworks()...)}, nil
+}
+
+func (s *PlatformNetworkService) SetIntranetPoolAutoAllocationEnabled(ctx context.Context, req *catalogv1.SetIntranetPoolAutoAllocationEnabledRequest) (*catalogv1.SetIntranetPoolAutoAllocationEnabledResponse, error) {
+	actor, err := s.actor(ctx, "SetIntranetPoolAutoAllocationEnabled")
+	if err != nil {
+		return nil, err
+	}
+	if req == nil || req.Data == nil {
+		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_REQUEST", "request data required")
+	}
+	if !auth.ValidPlatformNetworkID("pool_id", req.GetPoolId()) {
+		return nil, errors.BadRequest("INVALID_PLATFORM_NETWORK_ID", "invalid resource ID")
+	}
+	reply, err := s.client.SetIntranetPoolAutoAllocationEnabled(ctx, actor, &networkv1.SetIntranetPoolAutoAllocationEnabledRequest{
+		PoolId: req.GetPoolId(), Enabled: req.Data.GetEnabled(), ExpectedVersion: req.Data.GetExpectedVersion(), IdempotencyKey: req.Data.GetIdempotencyKey(),
+	})
+	if err != nil {
+		return nil, mapNetworkError(err)
+	}
+	if reply == nil || !validPlatformResource(reply.Resource, req.GetPoolId(), "intranet") {
+		return nil, invalidNetworkReply()
+	}
+	return &catalogv1.SetIntranetPoolAutoAllocationEnabledResponse{Resource: wirePlatformResource(reply.Resource)}, nil
 }
 
 func (s *PlatformNetworkService) GetPlatformNetworkCapabilities(ctx context.Context, req *catalogv1.GetPlatformNetworkCapabilitiesRequest) (*catalogv1.GetPlatformNetworkCapabilitiesResponse, error) {

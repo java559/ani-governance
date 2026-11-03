@@ -122,7 +122,9 @@ func TestInstanceDeleteVersionRejectedReplayAndLocalOperation(t *testing.T) {
 }
 
 func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu bool, schedulingScenario ...bool) {
-	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "true")
+	// Current configuration is admitted without the retired version-specific
+	// flag; authorization, durable admission and replay stay on the real path.
+	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "")
 	t.Setenv("ANI_INSTANCE_NEW_INTENTS_ENABLED", "true")
 	c := testutil.NewQuotaPGClient(t)
 	testutil.ResetQuotaFixture(t, c)
@@ -229,13 +231,13 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 	operation, e := ledger.GetOperationForUser(requestCtx, tenant.ID, first.OperationID)
 	require.NoError(t, e)
 	require.Equal(t, quotaoperation.DispatchStateAcked, operation.DispatchState, "real Resource durable ACK required")
-	require.EqualValues(t, 2, operation.InstanceContractVersion)
+	require.NotContains(t, operation.CanonicalRequest, "instance_contract_version")
 	instance, e := owner.Get(requestCtx, tenant.ResourceTenantID, "governance:user:"+strconv.FormatUint(uint64(operator.ID), 10), first.ResourceID)
 	require.NoError(t, e)
 	require.Equal(t, first.OperationID, instance.CreateOperationId)
 	configuration, err := owner.Configuration(requestCtx, tenant.ResourceTenantID, "governance:user:"+strconv.FormatUint(uint64(operator.ID), 10), first.ResourceID)
 	require.NoError(t, err)
-	require.EqualValues(t, 2, configuration.InstanceContractVersion)
+	require.Nil(t, configuration.ProtoReflect().Descriptor().Fields().ByName("instance_contract_version"))
 	require.Equal(t, "/workspace", configuration.WorkspaceMountPath, "omitted optional configuration resolves the normal current defaults")
 	require.Empty(t, configuration.VolumeMounts)
 	require.Empty(t, configuration.Env)
@@ -358,7 +360,7 @@ func instanceCurrentAuthorizationOriginalReplayAndOwnerRelease(t *testing.T, cpu
 		_, err := c.Client().PlanModule.Delete().Where(planmodule.HasPlanWith(entplan.IDEQ(p.ID)), planmodule.ModuleEQ(planmodule.ModuleAccelerator)).Exec(sys)
 		require.NoError(t, err)
 	}
-	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "false")
+	t.Setenv("ANI_INSTANCE_NEW_INTENTS_ENABLED", "false")
 	closedBinding := NewInstanceGpuBinding(resource, data.NewInstanceAuthorizationRepo(c), peer.ClusterID, schedulingPolicy)
 	closedAcceptance, err := NewGpuAcceptance(ledger, registry, data.NewTenantRepo(bctx, c), planResolver, closedBinding, nil)
 	require.NoError(t, err)

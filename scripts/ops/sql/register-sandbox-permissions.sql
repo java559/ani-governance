@@ -9,13 +9,22 @@ DO $$
 DECLARE r record; aid bigint; pid bigint;
 BEGIN
  FOR r IN SELECT * FROM (VALUES
-  ('POST','/api/v1/sandbox','sandbox:create','SandboxService','INSTANCE','CreateSandbox'),
-  ('GET','/api/v1/sandbox','sandbox:list','SandboxService','INSTANCE','ListSandboxes'),
-  ('GET','/api/v1/sandbox/{sandbox_id}','sandbox:read','SandboxService','INSTANCE','GetSandbox'),
-  ('GET','/api/v1/sandbox/operations/{operation_id}','sandbox:operation:read','SandboxService','INSTANCE','GetSandboxOperation'),
-  ('POST','/api/v1/sandbox/{data.sandbox_id}:pause','sandbox:pause','SandboxService','INSTANCE','PauseSandbox'),
-  ('POST','/api/v1/sandbox/{data.sandbox_id}:resume','sandbox:resume','SandboxService','INSTANCE','ResumeSandbox'),
-  ('DELETE','/api/v1/sandbox/{data.sandbox_id}','sandbox:delete','SandboxService','INSTANCE','DeleteSandbox'),
+  ('POST','/api/v1/sandbox','sandbox:create','SandboxService','SANDBOX','CreateSandbox'),
+  ('GET','/api/v1/sandbox','sandbox:list','SandboxService','SANDBOX','ListSandboxes'),
+  ('GET','/api/v1/sandbox/{sandbox_id}','sandbox:read','SandboxService','SANDBOX','GetSandbox'),
+  ('GET','/api/v1/sandbox/operations/{operation_id}','sandbox:operation:read','SandboxService','SANDBOX','GetSandboxOperation'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}:pause','sandbox:pause','SandboxService','SANDBOX','PauseSandbox'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}:resume','sandbox:resume','SandboxService','SANDBOX','ResumeSandbox'),
+  ('DELETE','/api/v1/sandbox/{data.sandbox_id}','sandbox:delete','SandboxService','SANDBOX','DeleteSandbox'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}/code-runs','sandbox:code:run','SandboxService','SANDBOX','RunSandboxCode'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/code-runs/{run_id}','sandbox:code:read','SandboxService','SANDBOX','GetSandboxCodeRun'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/files','sandbox:files:list','SandboxService','SANDBOX','ListSandboxFiles'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/files/content','sandbox:files:read','SandboxService','SANDBOX','ReadSandboxFile'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}/files','sandbox:files:write','SandboxService','SANDBOX','WriteSandboxFile'),
+  ('DELETE','/api/v1/sandbox/{data.sandbox_id}/files','sandbox:files:delete','SandboxService','SANDBOX','DeleteSandboxFile'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}','sandbox:files:operation:read','SandboxService','SANDBOX','GetSandboxFileOperation'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}/tokens','sandbox:token:create','SandboxService','SANDBOX','CreateSandboxToken'),
+  ('DELETE','/api/v1/sandbox/{sandbox_id}/tokens/{token_id}','sandbox:token:revoke','SandboxService','SANDBOX','RevokeSandboxToken'),
   ('GET','/api/v1/compute-presets','sandbox:preset:read','ComputePresetService','SYSTEM','ListPresets')
  ) AS routes(method,path,code,module,business_module,rpc) LOOP
   IF (SELECT count(*) FROM sys_apis WHERE path=r.path AND method=r.method) <> 1 THEN

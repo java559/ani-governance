@@ -15,6 +15,7 @@ import (
 	entPlan "go-wind-admin/app/admin/service/internal/data/ent/plan"
 	entPlanQuota "go-wind-admin/app/admin/service/internal/data/ent/planquota"
 	entTenant "go-wind-admin/app/admin/service/internal/data/ent/tenant"
+	"go-wind-admin/app/admin/service/internal/data/ent/user"
 	"go-wind-admin/app/admin/service/tests/testutil"
 )
 
@@ -168,7 +169,16 @@ func TestTenantUsageRepoSqlite_CleanupTenantData(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, client.User.Create().SetUsername("sqlite_usage_user_keep").SetTenantID(otherTenant.ID).Exec(ctx))
 
-	require.NoError(t, repo.CleanupTenantData(ctx, tid), "清理租户数据应成功")
+	require.Error(t, repo.CleanupTenantData(ctx, tid), "空间关闭前不能清理租户数据")
+	before, err := client.User.Query().Where(user.TenantIDEQ(tid)).Count(ctx)
+	require.NoError(t, err)
+	require.Equal(t, 1, before, "等待空间关闭时必须保留用户")
+	closing, err := client.Tenant.Get(ctx, tid)
+	require.NoError(t, err)
+	require.Equal(t, entTenant.TenantSpaceStateCLOSING, closing.TenantSpaceState)
+	// A real deployment receives this acknowledgement from Resource.
+	require.NoError(t, client.Tenant.UpdateOneID(tid).SetTenantSpaceState(entTenant.TenantSpaceStateCLOSED).Exec(ctx))
+	require.NoError(t, repo.CleanupTenantData(ctx, tid), "空间关闭后清理租户数据应成功")
 
 	apiCount, err := client.ApiAuditLog.Query().Count(ctx)
 	require.NoError(t, err)

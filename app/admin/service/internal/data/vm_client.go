@@ -87,6 +87,8 @@ func (c *VMClient) Target(ctx context.Context, t, a, id string, version int64) (
 func (c *VMClient) Change(ctx context.Context, t, a, action string, in proto.Message) (*vm.Operation, error) {
 	return vmCall(c, ctx, t, a, func(ctx context.Context) (*vm.Operation, error) {
 		switch action {
+		case "set-security-groups":
+			return c.client.SetSecurityGroups(ctx, in.(*vm.SetSecurityGroupsRequest))
 		case "start":
 			return c.client.Start(ctx, in.(*vm.ChangeVMRequest))
 		case "stop":

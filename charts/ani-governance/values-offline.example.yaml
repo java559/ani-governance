@@ -1,0 +1,64 @@
+# Copy outside Git; replace all image versions and the browser origin.
+fullnameOverride: ani-governance
+image:
+  repository: registry.example.invalid/ani/governance
+  tag: REPLACE_WITH_SERVER_TAG
+  digest: ""
+adminImage:
+  repository: registry.example.invalid/ani/governance-admin
+  tag: REPLACE_WITH_ADMIN_TAG
+  digest: ""
+atlasImage:
+  repository: registry.example.invalid/ani/governance-atlas
+  tag: REPLACE_WITH_ATLAS_TAG
+  digest: ""
+imagePullSecrets: []
+
+# The browser reaches Governance through the Console /api proxy.
+service:
+  type: ClusterIP
+  httpNodePort: null
+  sseNodePort: null
+auth:
+  consoleOrigins:
+    - http://console.example.invalid:30081
+  bossOrigins:
+    - https://boss.example.invalid
+  # Only for the HTTP example above. Use false for HTTPS.
+  insecureRefreshCookie: true
+corsOrigins:
+  - http://console.example.invalid:30081
+redis:
+  # Shared platform Valkey; the configuration key retains its Redis protocol name.
+  address: valkey.ani-platform.svc.cluster.local:6379
+
+config:
+  existingSecret: ani-governance-config
+  secretKey: zz-secrets.yaml
+  authSecret: ani-governance-auth
+database:
+  migrationSecret: ani-governance-migration
+  dsnKey: dsn
+downstream:
+  model:
+    enabled: true
+    address: ani-model-grpc.ani-system.svc.cluster.local:19090
+    serverName: ani-model.ani.internal
+    caSecret: ani-model-server-tls
+    caKey: ca.crt
+    clientCertificateSecret: governance-client-tls
+  inference:
+    enabled: false
+  accelerator:
+    enabled: false
+
+# Bootstrap must issue both leaf certificates and wait for Ready before Helm.
+# No duplicate Certificate ownership between bootstrap and the two Charts.
+certificate:
+  enabled: false
+  issuerRef:
+    name: ani-ca
+    kind: ClusterIssuer
+  secretName: governance-client-tls
+quotaInternal:
+  enabled: false

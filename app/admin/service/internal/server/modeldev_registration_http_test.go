@@ -91,7 +91,7 @@ func TestModelDevRegistrationHTTPUsesOriginalSourceAndCurrentGrants(t *testing.T
 	plan, err := writer.Client().Plan.Create().SetName("registration " + id).Save(sys)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return writer.Client().Plan.DeleteOneID(plan.ID).Exec(c) })
-	module, err := writer.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModel).Save(sys)
+	module, err := writer.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModelDev).Save(sys)
 	require.NoError(t, err)
 	cleanup(func(c context.Context) error { return writer.Client().PlanModule.DeleteOneID(module.ID).Exec(c) })
 	owner, err := writer.Client().Tenant.Create().SetName("registration " + id).SetCode("registration-" + id).SetResourceTenantID(uuid.NewString()).SetStatus(tenant.StatusOn).SetPlanID(plan.ID).Save(sys)
@@ -132,7 +132,11 @@ func TestModelDevRegistrationHTTPUsesOriginalSourceAndCurrentGrants(t *testing.T
 		if i == 0 {
 			code = data.ModelDevManageExecutionPermissionCode
 		}
-		businessModule := api.BusinessModuleModel
+		businessModule := api.BusinessModuleModelDev
+		if i >= 1 && i <= 5 {
+			// 模型仓库资产读取与版本写入仍按 MODEL 归类。
+			businessModule = api.BusinessModuleModel
+		}
 		if i == 9 {
 			code, businessModule = "modeldev:compute-preset:read", api.BusinessModuleSystem
 		}

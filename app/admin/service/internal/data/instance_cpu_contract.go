@@ -6,11 +6,10 @@ import (
 )
 
 const (
-	InstanceCPUCanonicalSchema     = commandcontract.InstanceCPUCanonicalSchema
-	CurrentInstanceContractVersion = commandcontract.CurrentInstanceContractVersion
-	instanceCPUOwner               = commandcontract.InstanceOwner
-	instanceCPUCreateAction        = commandcontract.InstanceCreateAction
-	instanceCPUDeleteAction        = commandcontract.InstanceDeleteAction
+	InstanceCPUCanonicalSchema = commandcontract.InstanceCPUCanonicalSchema
+	instanceCPUOwner           = commandcontract.InstanceOwner
+	instanceCPUCreateAction    = commandcontract.InstanceCreateAction
+	instanceCPUDeleteAction    = commandcontract.InstanceDeleteAction
 )
 
 type InstanceCPUCanonical = commandcontract.InstanceCPUCanonical
@@ -43,6 +42,6 @@ func validateOperationCharges(op *ent.QuotaOperation, charges []*ent.QuotaCharge
 	if op.CreateOperationID != nil {
 		createID = *op.CreateOperationID
 	}
-	_, err := commandcontract.ValidateStoredCommand(commandcontract.StoredCommand{Owner: op.OwnerService, Action: op.Action, TenantID: op.ResourceTenantID, ResourceID: op.ResourceID, OperationID: op.OperationID, ActorType: op.ActorType, ActorID: op.ActorID, CreateOperationID: createID, InstanceContractVersion: op.InstanceContractVersion, Canonical: []byte(op.CanonicalRequest), Charges: refs, RequireChargeIDs: true})
+	_, err := commandcontract.ValidateStoredCommand(commandcontract.StoredCommand{Owner: op.OwnerService, Action: op.Action, TenantID: op.ResourceTenantID, ResourceID: op.ResourceID, OperationID: op.OperationID, ActorType: op.ActorType, ActorID: op.ActorID, CreateOperationID: createID, Canonical: []byte(op.CanonicalRequest), Charges: refs, RequireChargeIDs: true})
 	return err
 }

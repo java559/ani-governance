@@ -7,6 +7,7 @@ import (
 	entCrud "go-wind-admin/pkg/localdeps/go-crud/entgo"
 )
 
+const InstanceSecurityGroupsPath = "/api/v1/instances/{data.instance_id}/security-groups"
 const InstanceCreatePath = "/api/v1/instances"
 const InstanceDeletePath = "/api/v1/instances/{data.instance_id}"
 const InstanceStartPath = "/api/v1/instances/{data.instance_id}:start"
@@ -32,6 +33,14 @@ const SandboxOperationPath = "/api/v1/sandbox/operations/{operation_id}"
 const SandboxPausePath = "/api/v1/sandbox/{data.sandbox_id}:pause"
 const SandboxResumePath = "/api/v1/sandbox/{data.sandbox_id}:resume"
 const SandboxDeletePath = "/api/v1/sandbox/{data.sandbox_id}"
+const SandboxCodeRunPath = "/api/v1/sandbox/{data.sandbox_id}/code-runs"
+const SandboxCodeRunGetPath = "/api/v1/sandbox/{sandbox_id}/code-runs/{run_id}"
+const SandboxFilesListPath = "/api/v1/sandbox/{sandbox_id}/files"
+const SandboxFilesContentPath = "/api/v1/sandbox/{sandbox_id}/files/content"
+const SandboxFilesMutatePath = "/api/v1/sandbox/{data.sandbox_id}/files"
+const SandboxFilesOperationPath = "/api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}"
+const SandboxTokenCreatePath = "/api/v1/sandbox/{data.sandbox_id}/tokens"
+const SandboxTokenRevokePath = "/api/v1/sandbox/{sandbox_id}/tokens/{token_id}"
 
 // ObservabilityResourceTrendPath 是首页资源趋势路由。按 2026-10-27 定案挂
 // INSTANCE 模块（现有套餐 plan2/plan3 均含 INSTANCE、均无 DASHBOARD），
@@ -60,9 +69,13 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 		return ErrActionAuthorizationDenied
 	}
 	allowed := false
+	// 沙箱是独立套餐模块，不能复用容器实例的 INSTANCE 资格。
+	module := "INSTANCE"
 	switch path {
 	case InstanceCreatePath:
 		allowed = method == "POST" || method == "GET"
+	case InstanceSecurityGroupsPath:
+		allowed = method == "PUT"
 	case InstanceDeletePath:
 		allowed = method == "DELETE"
 	case InstanceStartPath, InstanceStopPath, InstanceRestartPath, InstanceAttachPVCPath, InstanceDetachPVCPath, InstanceExecPath, InstanceMetricsQueryPath:
@@ -73,17 +86,24 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 		allowed = method == "GET"
 	case SandboxCreatePath:
 		allowed = method == "POST" || method == "GET"
-	case SandboxPausePath, SandboxResumePath:
+		module = "SANDBOX"
+	case SandboxPausePath, SandboxResumePath, SandboxCodeRunPath, SandboxTokenCreatePath:
 		allowed = method == "POST"
-	case SandboxDeletePath:
+		module = "SANDBOX"
+	case SandboxFilesMutatePath:
+		allowed = method == "POST" || method == "DELETE"
+		module = "SANDBOX"
+	case SandboxDeletePath, SandboxTokenRevokePath:
 		allowed = method == "DELETE"
-	case SandboxGetPath, SandboxOperationPath:
+		module = "SANDBOX"
+	case SandboxGetPath, SandboxOperationPath, SandboxCodeRunGetPath, SandboxFilesListPath, SandboxFilesContentPath, SandboxFilesOperationPath:
 		allowed = method == "GET"
+		module = "SANDBOX"
 	}
 	if !allowed || r == nil || r.current == nil {
 		return ErrActionAuthorizationDenied
 	}
-	return r.current.authorizeRoute(ctx, tenant, user, path, "INSTANCE", method)
+	return r.current.authorizeRoute(ctx, tenant, user, path, module, method)
 }
 
 // AuthorizeSource 供首页聚合按数据源二次鉴权：只允许 GET，模块由调用方指定

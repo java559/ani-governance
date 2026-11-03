@@ -220,6 +220,8 @@ func TestInferenceKeyHTTPManagementWithRealTenantGateAndCasbin(t *testing.T) {
 	page := peer.lastRequest.(*runtimev1.ListInferenceAccessKeysRequest)
 	require.EqualValues(t, 1, page.Page)
 	require.EqualValues(t, 2, page.PageSize)
+	fire("GET", base+"?pageSize=2&served_model_name=%20model%20", "", "user-a", 200)
+	require.Equal(t, "model", peer.lastRequest.(*runtimev1.ListInferenceAccessKeysRequest).GetServedModelName())
 	list = fire("GET", base+"?page=3", "", "user-a", 200)
 	require.Equal(t, "1", list["total"])
 	require.Equal(t, []any{}, list["items"])
@@ -277,6 +279,8 @@ func TestInferenceKeyHTTPRejectsMalformedInputAndSigningCredentials(t *testing.T
 		{"GET", base + "?page=0", ""}, {"GET", base + "?page=01", ""},
 		{"GET", base + "?page=101", ""}, {"GET", base + "?page=1&page=2", ""},
 		{"GET", base + "?pageSize=", ""}, {"GET", base + "?pageSize=101", ""},
+		{"GET", base + "?served_model_name=", ""}, {"GET", base + "?served_model_name=%20", ""},
+		{"GET", base + "?served_model_name=a&served_model_name=b", ""}, {"GET", base + "?served_model_name=%00", ""},
 		{"GET", base + "?tenant_id=forged", ""}, {"GET", base, `{}`},
 		{"POST", base, `{"tenant_id":"forged","data":{}}`},
 		{"POST", base, `{"data":{"secret":"private"}}`},

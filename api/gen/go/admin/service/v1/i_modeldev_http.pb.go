@@ -23,9 +23,11 @@ const _ = http.SupportPackageIsVersion1
 const OperationModelDevServiceAuthorizeArtifactDownload = "/admin.service.v1.ModelDevService/AuthorizeArtifactDownload"
 const OperationModelDevServiceCheckFinetuningReadiness = "/admin.service.v1.ModelDevService/CheckFinetuningReadiness"
 const OperationModelDevServiceCreateExecution = "/admin.service.v1.ModelDevService/CreateExecution"
+const OperationModelDevServiceEnsureTenantExecutionEnvironment = "/admin.service.v1.ModelDevService/EnsureTenantExecutionEnvironment"
 const OperationModelDevServiceGetExecution = "/admin.service.v1.ModelDevService/GetExecution"
 const OperationModelDevServiceGetExecutionLogs = "/admin.service.v1.ModelDevService/GetExecutionLogs"
 const OperationModelDevServiceGetInputVersion = "/admin.service.v1.ModelDevService/GetInputVersion"
+const OperationModelDevServiceGetTenantExecutionEnvironment = "/admin.service.v1.ModelDevService/GetTenantExecutionEnvironment"
 const OperationModelDevServiceListExecutionArtifacts = "/admin.service.v1.ModelDevService/ListExecutionArtifacts"
 const OperationModelDevServiceListExecutionEvents = "/admin.service.v1.ModelDevService/ListExecutionEvents"
 const OperationModelDevServiceListExecutionPods = "/admin.service.v1.ModelDevService/ListExecutionPods"
@@ -40,9 +42,11 @@ type ModelDevServiceHTTPServer interface {
 	AuthorizeArtifactDownload(context.Context, *v1.AuthorizeArtifactDownloadRequest) (*v1.AuthorizeArtifactDownloadResponse, error)
 	CheckFinetuningReadiness(context.Context, *v1.CheckFinetuningReadinessRequest) (*v1.CheckFinetuningReadinessResponse, error)
 	CreateExecution(context.Context, *v1.CreateExecutionRequest) (*v1.CreateExecutionResponse, error)
+	EnsureTenantExecutionEnvironment(context.Context, *v1.EnsureTenantExecutionEnvironmentRequest) (*v1.EnsureTenantExecutionEnvironmentResponse, error)
 	GetExecution(context.Context, *v1.GetExecutionRequest) (*v1.GetExecutionResponse, error)
 	GetExecutionLogs(context.Context, *v1.GetExecutionLogsRequest) (*v1.GetExecutionLogsResponse, error)
 	GetInputVersion(context.Context, *v1.GetInputVersionRequest) (*v1.GetInputVersionResponse, error)
+	GetTenantExecutionEnvironment(context.Context, *v1.GetTenantExecutionEnvironmentRequest) (*v1.GetTenantExecutionEnvironmentResponse, error)
 	ListExecutionArtifacts(context.Context, *v1.ListExecutionArtifactsRequest) (*v1.ListExecutionArtifactsResponse, error)
 	ListExecutionEvents(context.Context, *v1.ListExecutionEventsRequest) (*v1.ListExecutionEventsResponse, error)
 	ListExecutionPods(context.Context, *v1.ListExecutionPodsRequest) (*v1.ListExecutionPodsResponse, error)
@@ -56,6 +60,8 @@ type ModelDevServiceHTTPServer interface {
 
 func RegisterModelDevServiceHTTPServer(s *http.Server, srv ModelDevServiceHTTPServer) {
 	r := s.Route("/")
+	r.POST("/api/v1/modeldev/environment:ensure", _ModelDevService_EnsureTenantExecutionEnvironment0_HTTP_Handler(srv))
+	r.GET("/api/v1/modeldev/environment", _ModelDevService_GetTenantExecutionEnvironment0_HTTP_Handler(srv))
 	r.POST("/api/v1/modeldev/finetuning/readiness/check", _ModelDevService_CheckFinetuningReadiness0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/implementations", _ModelDevService_ListImplementations0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/input-versions/{input_version_id}", _ModelDevService_GetInputVersion0_HTTP_Handler(srv))
@@ -71,6 +77,47 @@ func RegisterModelDevServiceHTTPServer(s *http.Server, srv ModelDevServiceHTTPSe
 	r.GET("/api/v1/modeldev/executions/{execution_id}/artifacts", _ModelDevService_ListExecutionArtifacts0_HTTP_Handler(srv))
 	r.GET("/api/v1/modeldev/artifacts/{artifact_id}/content", _ModelDevService_AuthorizeArtifactDownload0_HTTP_Handler(srv))
 	r.POST("/api/v1/modeldev/executions", _ModelDevService_CreateExecution0_HTTP_Handler(srv))
+}
+
+func _ModelDevService_EnsureTenantExecutionEnvironment0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.EnsureTenantExecutionEnvironmentRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelDevServiceEnsureTenantExecutionEnvironment)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.EnsureTenantExecutionEnvironment(ctx, req.(*v1.EnsureTenantExecutionEnvironmentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.EnsureTenantExecutionEnvironmentResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _ModelDevService_GetTenantExecutionEnvironment0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetTenantExecutionEnvironmentRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationModelDevServiceGetTenantExecutionEnvironment)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetTenantExecutionEnvironment(ctx, req.(*v1.GetTenantExecutionEnvironmentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetTenantExecutionEnvironmentResponse)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _ModelDevService_CheckFinetuningReadiness0_HTTP_Handler(srv ModelDevServiceHTTPServer) func(ctx http.Context) error {
@@ -398,9 +445,11 @@ type ModelDevServiceHTTPClient interface {
 	AuthorizeArtifactDownload(ctx context.Context, req *v1.AuthorizeArtifactDownloadRequest, opts ...http.CallOption) (rsp *v1.AuthorizeArtifactDownloadResponse, err error)
 	CheckFinetuningReadiness(ctx context.Context, req *v1.CheckFinetuningReadinessRequest, opts ...http.CallOption) (rsp *v1.CheckFinetuningReadinessResponse, err error)
 	CreateExecution(ctx context.Context, req *v1.CreateExecutionRequest, opts ...http.CallOption) (rsp *v1.CreateExecutionResponse, err error)
+	EnsureTenantExecutionEnvironment(ctx context.Context, req *v1.EnsureTenantExecutionEnvironmentRequest, opts ...http.CallOption) (rsp *v1.EnsureTenantExecutionEnvironmentResponse, err error)
 	GetExecution(ctx context.Context, req *v1.GetExecutionRequest, opts ...http.CallOption) (rsp *v1.GetExecutionResponse, err error)
 	GetExecutionLogs(ctx context.Context, req *v1.GetExecutionLogsRequest, opts ...http.CallOption) (rsp *v1.GetExecutionLogsResponse, err error)
 	GetInputVersion(ctx context.Context, req *v1.GetInputVersionRequest, opts ...http.CallOption) (rsp *v1.GetInputVersionResponse, err error)
+	GetTenantExecutionEnvironment(ctx context.Context, req *v1.GetTenantExecutionEnvironmentRequest, opts ...http.CallOption) (rsp *v1.GetTenantExecutionEnvironmentResponse, err error)
 	ListExecutionArtifacts(ctx context.Context, req *v1.ListExecutionArtifactsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionArtifactsResponse, err error)
 	ListExecutionEvents(ctx context.Context, req *v1.ListExecutionEventsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionEventsResponse, err error)
 	ListExecutionPods(ctx context.Context, req *v1.ListExecutionPodsRequest, opts ...http.CallOption) (rsp *v1.ListExecutionPodsResponse, err error)
@@ -459,6 +508,19 @@ func (c *ModelDevServiceHTTPClientImpl) CreateExecution(ctx context.Context, in 
 	return &out, nil
 }
 
+func (c *ModelDevServiceHTTPClientImpl) EnsureTenantExecutionEnvironment(ctx context.Context, in *v1.EnsureTenantExecutionEnvironmentRequest, opts ...http.CallOption) (*v1.EnsureTenantExecutionEnvironmentResponse, error) {
+	var out v1.EnsureTenantExecutionEnvironmentResponse
+	pattern := "/api/v1/modeldev/environment:ensure"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationModelDevServiceEnsureTenantExecutionEnvironment))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *ModelDevServiceHTTPClientImpl) GetExecution(ctx context.Context, in *v1.GetExecutionRequest, opts ...http.CallOption) (*v1.GetExecutionResponse, error) {
 	var out v1.GetExecutionResponse
 	pattern := "/api/v1/modeldev/executions/{execution_id}"
@@ -492,6 +554,19 @@ func (c *ModelDevServiceHTTPClientImpl) GetInputVersion(ctx context.Context, in 
 	opts = append(opts, http.Operation(OperationModelDevServiceGetInputVersion))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out.InputVersion, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *ModelDevServiceHTTPClientImpl) GetTenantExecutionEnvironment(ctx context.Context, in *v1.GetTenantExecutionEnvironmentRequest, opts ...http.CallOption) (*v1.GetTenantExecutionEnvironmentResponse, error) {
+	var out v1.GetTenantExecutionEnvironmentResponse
+	pattern := "/api/v1/modeldev/environment"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationModelDevServiceGetTenantExecutionEnvironment))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

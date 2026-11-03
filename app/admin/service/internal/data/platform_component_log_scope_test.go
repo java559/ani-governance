@@ -55,6 +55,7 @@ func TestPlatformComponentLogScopeRejectsUnregistered(t *testing.T) {
 		"ani-governance-sandbox-20261027-abcde",
 		"ani-governance-64bbb9fdf4-qmk2n",
 		"ani-auth-service",
+		// Index names are not registered platform components.
 		"ani-logs-2026.10.28",
 		"ani-system/ani-governance",
 		"ANI-GOVERNANCE",

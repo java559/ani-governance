@@ -223,6 +223,25 @@ func TestCountsAndKeys(t *testing.T) {
 		"POST /api/v1/instances/{data.instance_id}:detach-pvc": {Code: "instance:pvc:detach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 		"GET /api/v1/instances/{instance_id}/mountable-pvcs":   {Code: "instance:pvc:attach", Source: instanceRestartPVCSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
 	}
+	// main retired three physical-device entries; this slice adds fifteen exact SG grants.
+	const securityGroupSource = "scripts/ops/sql/register-security-group-permissions.sql"
+	securityGroupCapabilities := map[string]expectation{
+		"POST /api/v1/networks/security-groups":                                       {Code: "network:security-group:create", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"GET /api/v1/networks/security-groups/{security_group_id}":                    {Code: "network:security-group:get", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"GET /api/v1/networks/security-groups":                                        {Code: "network:security-group:list", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"PATCH /api/v1/networks/security-groups/{security_group_id}":                  {Code: "network:security-group:update", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"DELETE /api/v1/networks/security-groups/{security_group_id}":                 {Code: "network:security-group:delete", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"GET /api/v1/networks/security-groups/{security_group_id}/rules":              {Code: "network:security-group:rule:list", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"POST /api/v1/networks/security-groups/{security_group_id}/rules":             {Code: "network:security-group:rule:create", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"PATCH /api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}":  {Code: "network:security-group:rule:update", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"DELETE /api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}": {Code: "network:security-group:rule:delete", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"GET /api/v1/networks/security-groups/{security_group_id}/bindings":           {Code: "network:security-group:binding:list", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"PUT /api/v1/networks/eips/{eip_id}/security-groups":                          {Code: "network:eip:security-groups:set", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"PUT /api/v1/instances/{data.instance_id}/security-groups":                    {Code: "instance:security-groups:set", Source: securityGroupSource, BusinessModule: "INSTANCE", ScopeKind: "tenant"},
+		"PUT /api/v1/virtual-machines/{data.vm_id}/security-groups":                   {Code: "vm:security-groups:set", Source: securityGroupSource, BusinessModule: "VIRTUAL_MACHINE", ScopeKind: "tenant"},
+		"GET /api/v1/networks/eips/{eip_id}/security-groups":                          {Code: "network:eip:security-groups:get", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"GET /api/v1/networks/security-groups/operations/{operation_id}":              {Code: "network:security-group:operation:get", Source: securityGroupSource, BusinessModule: "NETWORK", ScopeKind: "tenant"},
+	}
 	storageStats := map[string]expectation{
 		"GET /api/v1/storage/buckets/{bucket_id}/stats": {Code: "storage:bucket:list", Source: "sql/data/20261030_storage_bucket_stats_permission.sql", BusinessModule: "STORAGE", ScopeKind: "tenant"},
 	}
@@ -235,12 +254,16 @@ func TestCountsAndKeys(t *testing.T) {
 	if want := 227; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
-	// dev 已删除 3 条设备退役路由，基数相应下调；storageWrites 为本次新增。
-	if want := 201 + len(platformComponentReads) + len(platformComponentLogStreams) + len(storageWrites) + len(storageStats); CapabilityCount() != want {
+	// The Sandbox code, file and token APIs add nine capabilities to the
+	// lifecycle-only baseline used by this cross-branch count.
+	const sandboxPhaseTwoCapabilities = 9
+	const vmLogCapabilities = 1
+	const modelDevEnvironmentCapabilities = 2
+	if want := 204 - 3 + len(platformComponentReads) + len(platformComponentLogStreams) + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities; CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if want := 387 + len(storageWrites) + len(storageStats); len(keys) != want {
+	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities; len(keys) != want {
 		t.Errorf("AllKeys() = %d, want %d", len(keys), want)
 	}
 	keySet := make(map[string]bool, len(keys))
@@ -253,6 +276,7 @@ func TestCountsAndKeys(t *testing.T) {
 	}{
 		{"gpu-read-management", gpuSource, managementOperations, gpuReads},
 		{"platform-eip-capability", eipSource, capabilityOperations, platformEIPReadsAndRelease},
+		{"security-group-capability", securityGroupSource, capabilityOperations, securityGroupCapabilities},
 		{"storage-write-capability", storageWriteSource, capabilityOperations, storageWrites},
 		{"storage-stats-capability", "sql/data/20261030_storage_bucket_stats_permission.sql", capabilityOperations, storageStats},
 	} {
@@ -377,14 +401,30 @@ func TestSandboxCapabilities(t *testing.T) {
 		{"POST", "/api/v1/sandbox/{data.sandbox_id}:pause", "pause"},
 		{"POST", "/api/v1/sandbox/{data.sandbox_id}:resume", "resume"},
 		{"DELETE", "/api/v1/sandbox/{data.sandbox_id}", "delete"},
+		{"POST", "/api/v1/sandbox/{data.sandbox_id}/code-runs", "code:run"},
+		{"GET", "/api/v1/sandbox/{sandbox_id}/code-runs/{run_id}", "code:read"},
+		{"GET", "/api/v1/sandbox/{sandbox_id}/files", "files:list"},
+		{"GET", "/api/v1/sandbox/{sandbox_id}/files/content", "files:read"},
+		{"POST", "/api/v1/sandbox/{data.sandbox_id}/files", "files:write"},
+		{"DELETE", "/api/v1/sandbox/{data.sandbox_id}/files", "files:delete"},
+		{"GET", "/api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}", "files:operation:read"},
+		{"POST", "/api/v1/sandbox/{data.sandbox_id}/tokens", "token:create"},
+		{"DELETE", "/api/v1/sandbox/{sandbox_id}/tokens/{token_id}", "token:revoke"},
 	} {
 		exp, err := Resolve(r.method, r.path)
-		if err != nil || exp.Code != "sandbox:"+r.action || exp.BusinessModule != "INSTANCE" || exp.ScopeKind != "tenant" {
+		if err != nil || exp.Code != "sandbox:"+r.action || exp.BusinessModule != "SANDBOX" || exp.ScopeKind != "tenant" {
 			t.Fatalf("Sandbox capability %s %s: %+v %v", r.method, r.path, exp, err)
 		}
 	}
 	module, code, ok := ComputeCatalogGrant("SANDBOX")
-	if !ok || module != "INSTANCE" || code != "sandbox:preset:read" {
+	if !ok || module != "SANDBOX" || code != "sandbox:preset:read" {
 		t.Fatalf("Sandbox catalog grant: %s %s %v", module, code, ok)
+	}
+}
+
+func TestVMLogsUseTenantReadCapability(t *testing.T) {
+	got, err := Resolve("GET", "/api/v1/virtual-machines/{vm_id}/logs")
+	if err != nil || got.Code != "vm:read" || got.BusinessModule != "VIRTUAL_MACHINE" || got.ScopeKind != "tenant" {
+		t.Fatalf("VM logs capability = %+v, err=%v", got, err)
 	}
 }

@@ -30,7 +30,7 @@ BEGIN
      WHERE path = r.path
        AND method = r.method
        AND module = 'ModelDevService'
-       AND business_module = 'MODEL'
+       AND business_module = 'MODELDEV'
        AND scope = 'ADMIN'
        AND status = 'ON'
        AND deleted_at IS NULL;

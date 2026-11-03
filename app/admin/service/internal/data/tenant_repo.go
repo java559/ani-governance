@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	kratosErrors "github.com/go-kratos/kratos/v2/errors"
+	"github.com/google/uuid"
 	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 
@@ -224,6 +226,8 @@ func (r *TenantRepo) CreateWithTx(ctx context.Context, tx *ent.Tx, data *identit
 	}
 
 	builder := tx.Tenant.Create().
+		SetTenantSpaceState(tenant.TenantSpaceStateQUEUED).
+		SetTenantSpaceOperationID(uuid.NewString()).
 		SetNillableName(data.Name).
 		SetNillableCode(data.Code).
 		SetNillableDomain(data.Domain).
@@ -336,12 +340,38 @@ func (r *TenantRepo) Delete(ctx context.Context, req *identityV1.DeleteTenantReq
 	}
 
 	// 计划 §6.12：存在配额账户或历史操作的租户不得物理删除（409 QUOTA_HISTORY_PRESENT）。
-	// 在持有 tenant 锁后检查新账本；未产生新配额记录的租户保留原行为。
-	if err := r.checkQuotaHistory(ctx, req.GetId()); err != nil {
+	// 检查与删除必须使用同一事务，否则租户行锁在实际删除前已释放。
+	tx, err := r.entClient.Client().Tx(ctx)
+	if err != nil {
+		r.log.Errorf(ctx, "delete tenant %d: start tx failed: %s", req.GetId(), err.Error())
+		return identityV1.ErrorInternalServerError("start transaction failed")
+	}
+	defer func() { _ = tx.Rollback() }()
+	if err := r.checkQuotaHistory(ctx, tx, req.GetId()); err != nil {
 		return err
 	}
-
-	if err := r.entClient.Client().Tenant.DeleteOneID(req.GetId()).Exec(ctx); err != nil {
+	if supportsRowLock(r.entClient) {
+		// Sandbox creation history has a tenant foreign key and must not be
+		// silently discarded or surface as an opaque database failure.
+		var sandboxHistory bool
+		if err = tx.SandboxScan(appViewer.NewSystemViewerContext(ctx), `SELECT EXISTS(SELECT 1 FROM sys_sandbox_create_intents WHERE tenant_id=$1)`, []any{req.GetId()}, &sandboxHistory); err != nil {
+			return err
+		}
+		if sandboxHistory {
+			return kratosErrors.Conflict("SANDBOX_HISTORY_PRESENT", "租户包含 Sandbox 创建记录，无法物理删除")
+		}
+	}
+	_, closed, err := beginTenantSpaceClose(appViewer.NewSystemViewerContext(ctx), tx, req.GetId(), supportsRowLock(r.entClient))
+	if err != nil {
+		return err
+	}
+	if !closed {
+		if err = tx.Commit(); err != nil {
+			return identityV1.ErrorInternalServerError("tenant space close failed")
+		}
+		return kratosErrors.Conflict("TENANT_SPACE_CLOSING", "租户空间正在关闭，请先清理 Sandbox 后重试")
+	}
+	if err := tx.Tenant.DeleteOneID(req.GetId()).Exec(ctx); err != nil {
 		if ent.IsNotFound(err) {
 			return identityV1.ErrorNotFound("tenant not found")
 		}
@@ -350,29 +380,26 @@ func (r *TenantRepo) Delete(ctx context.Context, req *identityV1.DeleteTenantReq
 
 		return identityV1.ErrorInternalServerError("delete failed")
 	}
+	if err := tx.Commit(); err != nil {
+		r.log.Errorf(ctx, "delete tenant %d: commit failed: %s", req.GetId(), err.Error())
+		return identityV1.ErrorInternalServerError("delete failed")
+	}
 
 	return nil
 }
 
 // checkQuotaHistory 检查租户是否已有配额账本记录（账户/操作/占额/回执任一存在即拒绝）。
 // 锁顺序：先 tenant FOR UPDATE 再检查，防止检查与占额并发竞态。
-func (r *TenantRepo) checkQuotaHistory(ctx context.Context, tenantId uint32) error {
+func (r *TenantRepo) checkQuotaHistory(ctx context.Context, tx *ent.Tx, tenantId uint32) error {
 	if tenantId == 0 {
 		return nil
 	}
 	sysCtx := appViewer.NewSystemViewerContext(ctx)
-	tx, err := r.entClient.Client().Tx(sysCtx)
-	if err != nil {
-		r.log.Errorf(ctx, "delete tenant %d: start tx failed: %s", tenantId, err.Error())
-		return identityV1.ErrorInternalServerError("start transaction failed")
-	}
-	defer func() { _ = tx.Rollback() }()
-
 	tq := tx.Tenant.Query().Where(tenant.IDEQ(tenantId))
 	if supportsRowLock(r.entClient) {
 		tq = tq.ForUpdate()
 	}
-	if _, err = tq.Only(sysCtx); ent.IsNotFound(err) {
+	if _, err := tq.Only(sysCtx); ent.IsNotFound(err) {
 		return identityV1.ErrorNotFound("tenant not found")
 	} else if err != nil {
 		r.log.Errorf(ctx, "delete tenant %d: lock tenant failed: %s", tenantId, err.Error())

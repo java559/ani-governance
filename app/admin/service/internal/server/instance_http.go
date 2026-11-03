@@ -40,6 +40,9 @@ func RegisterInstanceHTTPServer(server *http.Server, s *service.InstanceService)
 		{"PUT", data.InstanceSchedulerConfigPath, admin.OperationInstanceServiceUpdateSchedulerConfig, func() proto.Message { return new(view.UpdateSchedulerConfigRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
 			return s.UpdateSchedulerConfig(c, r.(*view.UpdateSchedulerConfigRequest))
 		}},
+		{"PUT", data.InstanceSecurityGroupsPath, admin.OperationInstanceServiceSetInstanceSecurityGroups, func() proto.Message { return new(view.SetInstanceSecurityGroupsRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.SetInstanceSecurityGroups(c, r.(*view.SetInstanceSecurityGroupsRequest))
+		}},
 		{"POST", data.InstanceCreatePath, admin.OperationInstanceServiceCreateInstance, func() proto.Message { return new(view.CreateInstanceRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
 			return s.CreateInstance(c, r.(*view.CreateInstanceRequest))
 		}},
@@ -102,6 +105,12 @@ func RegisterInstanceHTTPServer(server *http.Server, s *service.InstanceService)
 					return e
 				}
 				switch in := request.(type) {
+				case *view.SetInstanceSecurityGroupsRequest:
+					bound := path.(*view.SetInstanceSecurityGroupsRequest)
+					if in.Data == nil || bound.Data == nil || (in.Data.InstanceId != "" && in.Data.InstanceId != bound.Data.InstanceId) {
+						return kratoserrors.BadRequest("INVALID_INSTANCE_REQUEST", "instance path mismatch")
+					}
+					in.Data.InstanceId = bound.Data.InstanceId
 				case *view.ChangeInstanceRequest:
 					bound := path.(*view.ChangeInstanceRequest)
 					if in.Data == nil || bound.Data == nil || (in.Data.InstanceId != "" && in.Data.InstanceId != bound.Data.InstanceId) {

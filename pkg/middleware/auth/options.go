@@ -79,6 +79,7 @@ type options struct {
 
 	signingKeyStore                   SigningKeyStore
 	accessTokenChecker                AccessTokenChecker // 访问令牌检查器
+	sandboxTokenVerifier              SandboxTokenVerifier
 	tenantAccessChecker               TenantAccessChecker
 	enableCheckRefreshTokenExpiration bool // 是否启用刷新令牌过期检查
 	enableCheckScopes                 bool // 是否启用作用域检查
@@ -170,4 +171,8 @@ func WithLogger(logger bLogger.Logger) Option {
 
 func WithSigningKeyStore(store SigningKeyStore) Option {
 	return func(o *options) { o.signingKeyStore = store }
+}
+
+func WithSandboxTokenVerifier(verifier SandboxTokenVerifier) Option {
+	return func(opts *options) { opts.sandboxTokenVerifier = verifier }
 }

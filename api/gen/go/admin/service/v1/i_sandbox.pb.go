@@ -27,7 +27,7 @@ var File_admin_service_v1_i_sandbox_proto protoreflect.FileDescriptor
 
 const file_admin_service_v1_i_sandbox_proto_rawDesc = "" +
 	"\n" +
-	" admin/service/v1/i_sandbox.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a sandbox/service/v1/sandbox.proto2\xe4\a\n" +
+	" admin/service/v1/i_sandbox.proto\x12\x10admin.service.v1\x1a\x1cgoogle/api/annotations.proto\x1a$gnostic/openapi/v3/annotations.proto\x1a sandbox/service/v1/sandbox.proto2\xa1\x13\n" +
 	"\x0eSandboxService\x12|\n" +
 	"\rCreateSandbox\x12(.sandbox.service.v1.CreateSandboxRequest\x1a%.sandbox.service.v1.SandboxAcceptance\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/api/v1/sandbox\x12}\n" +
 	"\rListSandboxes\x12(.sandbox.service.v1.ListSandboxesRequest\x1a).sandbox.service.v1.ListSandboxesResponse\"\x17\x82\xd3\xe4\x93\x02\x11\x12\x0f/api/v1/sandbox\x12v\n" +
@@ -36,21 +36,44 @@ const file_admin_service_v1_i_sandbox_proto_rawDesc = "" +
 	"\x13GetSandboxOperation\x12..sandbox.service.v1.GetSandboxOperationRequest\x1a$.sandbox.service.v1.SandboxOperation\"1\x82\xd3\xe4\x93\x02+\x12)/api/v1/sandbox/operations/{operation_id}\x12\x92\x01\n" +
 	"\fPauseSandbox\x12'.sandbox.service.v1.PauseSandboxRequest\x1a%.sandbox.service.v1.SandboxAcceptance\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/api/v1/sandbox/{data.sandbox_id}:pause\x12\x95\x01\n" +
 	"\rResumeSandbox\x12(.sandbox.service.v1.ResumeSandboxRequest\x1a%.sandbox.service.v1.SandboxAcceptance\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/sandbox/{data.sandbox_id}:resume\x12\x8e\x01\n" +
-	"\rDeleteSandbox\x12(.sandbox.service.v1.DeleteSandboxRequest\x1a%.sandbox.service.v1.SandboxAcceptance\",\x82\xd3\xe4\x93\x02&:\x01**!/api/v1/sandbox/{data.sandbox_id}B\xba\x01\n" +
+	"\rDeleteSandbox\x12(.sandbox.service.v1.DeleteSandboxRequest\x1a%.sandbox.service.v1.SandboxAcceptance\",\x82\xd3\xe4\x93\x02&:\x01**!/api/v1/sandbox/{data.sandbox_id}\x12\x97\x01\n" +
+	"\x0eRunSandboxCode\x12).sandbox.service.v1.RunSandboxCodeRequest\x1a\".sandbox.service.v1.SandboxCodeRun\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/sandbox/{data.sandbox_id}/code-runs\x12\x9e\x01\n" +
+	"\x11GetSandboxCodeRun\x12,.sandbox.service.v1.GetSandboxCodeRunRequest\x1a\".sandbox.service.v1.SandboxCodeRun\"7\x82\xd3\xe4\x93\x021\x12//api/v1/sandbox/{sandbox_id}/code-runs/{run_id}\x12\x92\x01\n" +
+	"\x10ListSandboxFiles\x12+.sandbox.service.v1.ListSandboxFilesRequest\x1a%.sandbox.service.v1.SandboxFileResult\"*\x82\xd3\xe4\x93\x02$\x12\"/api/v1/sandbox/{sandbox_id}/files\x12\x98\x01\n" +
+	"\x0fReadSandboxFile\x12*.sandbox.service.v1.ReadSandboxFileRequest\x1a%.sandbox.service.v1.SandboxFileResult\"2\x82\xd3\xe4\x93\x02,\x12*/api/v1/sandbox/{sandbox_id}/files/content\x12\x9d\x01\n" +
+	"\x10WriteSandboxFile\x12+.sandbox.service.v1.WriteSandboxFileRequest\x1a(.sandbox.service.v1.SandboxFileOperation\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/api/v1/sandbox/{data.sandbox_id}/files\x12\x9f\x01\n" +
+	"\x11DeleteSandboxFile\x12,.sandbox.service.v1.DeleteSandboxFileRequest\x1a(.sandbox.service.v1.SandboxFileOperation\"2\x82\xd3\xe4\x93\x02,:\x01**'/api/v1/sandbox/{data.sandbox_id}/files\x12\xbc\x01\n" +
+	"\x17GetSandboxFileOperation\x122.sandbox.service.v1.GetSandboxFileOperationRequest\x1a(.sandbox.service.v1.SandboxFileOperation\"C\x82\xd3\xe4\x93\x02=\x12;/api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}\x12\xa0\x01\n" +
+	"\x12CreateSandboxToken\x12-.sandbox.service.v1.CreateSandboxTokenRequest\x1a&.sandbox.service.v1.SandboxAccessToken\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/sandbox/{data.sandbox_id}/tokens\x12\xab\x01\n" +
+	"\x12RevokeSandboxToken\x12-.sandbox.service.v1.RevokeSandboxTokenRequest\x1a..sandbox.service.v1.RevokeSandboxTokenResponse\"6\x82\xd3\xe4\x93\x020*./api/v1/sandbox/{sandbox_id}/tokens/{token_id}B\xba\x01\n" +
 	"\x14com.admin.service.v1B\rISandboxProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var file_admin_service_v1_i_sandbox_proto_goTypes = []any{
-	(*v1.CreateSandboxRequest)(nil),       // 0: sandbox.service.v1.CreateSandboxRequest
-	(*v1.ListSandboxesRequest)(nil),       // 1: sandbox.service.v1.ListSandboxesRequest
-	(*v1.GetSandboxRequest)(nil),          // 2: sandbox.service.v1.GetSandboxRequest
-	(*v1.GetSandboxOperationRequest)(nil), // 3: sandbox.service.v1.GetSandboxOperationRequest
-	(*v1.PauseSandboxRequest)(nil),        // 4: sandbox.service.v1.PauseSandboxRequest
-	(*v1.ResumeSandboxRequest)(nil),       // 5: sandbox.service.v1.ResumeSandboxRequest
-	(*v1.DeleteSandboxRequest)(nil),       // 6: sandbox.service.v1.DeleteSandboxRequest
-	(*v1.SandboxAcceptance)(nil),          // 7: sandbox.service.v1.SandboxAcceptance
-	(*v1.ListSandboxesResponse)(nil),      // 8: sandbox.service.v1.ListSandboxesResponse
-	(*v1.Sandbox)(nil),                    // 9: sandbox.service.v1.Sandbox
-	(*v1.SandboxOperation)(nil),           // 10: sandbox.service.v1.SandboxOperation
+	(*v1.CreateSandboxRequest)(nil),           // 0: sandbox.service.v1.CreateSandboxRequest
+	(*v1.ListSandboxesRequest)(nil),           // 1: sandbox.service.v1.ListSandboxesRequest
+	(*v1.GetSandboxRequest)(nil),              // 2: sandbox.service.v1.GetSandboxRequest
+	(*v1.GetSandboxOperationRequest)(nil),     // 3: sandbox.service.v1.GetSandboxOperationRequest
+	(*v1.PauseSandboxRequest)(nil),            // 4: sandbox.service.v1.PauseSandboxRequest
+	(*v1.ResumeSandboxRequest)(nil),           // 5: sandbox.service.v1.ResumeSandboxRequest
+	(*v1.DeleteSandboxRequest)(nil),           // 6: sandbox.service.v1.DeleteSandboxRequest
+	(*v1.RunSandboxCodeRequest)(nil),          // 7: sandbox.service.v1.RunSandboxCodeRequest
+	(*v1.GetSandboxCodeRunRequest)(nil),       // 8: sandbox.service.v1.GetSandboxCodeRunRequest
+	(*v1.ListSandboxFilesRequest)(nil),        // 9: sandbox.service.v1.ListSandboxFilesRequest
+	(*v1.ReadSandboxFileRequest)(nil),         // 10: sandbox.service.v1.ReadSandboxFileRequest
+	(*v1.WriteSandboxFileRequest)(nil),        // 11: sandbox.service.v1.WriteSandboxFileRequest
+	(*v1.DeleteSandboxFileRequest)(nil),       // 12: sandbox.service.v1.DeleteSandboxFileRequest
+	(*v1.GetSandboxFileOperationRequest)(nil), // 13: sandbox.service.v1.GetSandboxFileOperationRequest
+	(*v1.CreateSandboxTokenRequest)(nil),      // 14: sandbox.service.v1.CreateSandboxTokenRequest
+	(*v1.RevokeSandboxTokenRequest)(nil),      // 15: sandbox.service.v1.RevokeSandboxTokenRequest
+	(*v1.SandboxAcceptance)(nil),              // 16: sandbox.service.v1.SandboxAcceptance
+	(*v1.ListSandboxesResponse)(nil),          // 17: sandbox.service.v1.ListSandboxesResponse
+	(*v1.Sandbox)(nil),                        // 18: sandbox.service.v1.Sandbox
+	(*v1.SandboxOperation)(nil),               // 19: sandbox.service.v1.SandboxOperation
+	(*v1.SandboxCodeRun)(nil),                 // 20: sandbox.service.v1.SandboxCodeRun
+	(*v1.SandboxFileResult)(nil),              // 21: sandbox.service.v1.SandboxFileResult
+	(*v1.SandboxFileOperation)(nil),           // 22: sandbox.service.v1.SandboxFileOperation
+	(*v1.SandboxAccessToken)(nil),             // 23: sandbox.service.v1.SandboxAccessToken
+	(*v1.RevokeSandboxTokenResponse)(nil),     // 24: sandbox.service.v1.RevokeSandboxTokenResponse
 }
 var file_admin_service_v1_i_sandbox_proto_depIdxs = []int32{
 	0,  // 0: admin.service.v1.SandboxService.CreateSandbox:input_type -> sandbox.service.v1.CreateSandboxRequest
@@ -60,15 +83,33 @@ var file_admin_service_v1_i_sandbox_proto_depIdxs = []int32{
 	4,  // 4: admin.service.v1.SandboxService.PauseSandbox:input_type -> sandbox.service.v1.PauseSandboxRequest
 	5,  // 5: admin.service.v1.SandboxService.ResumeSandbox:input_type -> sandbox.service.v1.ResumeSandboxRequest
 	6,  // 6: admin.service.v1.SandboxService.DeleteSandbox:input_type -> sandbox.service.v1.DeleteSandboxRequest
-	7,  // 7: admin.service.v1.SandboxService.CreateSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
-	8,  // 8: admin.service.v1.SandboxService.ListSandboxes:output_type -> sandbox.service.v1.ListSandboxesResponse
-	9,  // 9: admin.service.v1.SandboxService.GetSandbox:output_type -> sandbox.service.v1.Sandbox
-	10, // 10: admin.service.v1.SandboxService.GetSandboxOperation:output_type -> sandbox.service.v1.SandboxOperation
-	7,  // 11: admin.service.v1.SandboxService.PauseSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
-	7,  // 12: admin.service.v1.SandboxService.ResumeSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
-	7,  // 13: admin.service.v1.SandboxService.DeleteSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
+	7,  // 7: admin.service.v1.SandboxService.RunSandboxCode:input_type -> sandbox.service.v1.RunSandboxCodeRequest
+	8,  // 8: admin.service.v1.SandboxService.GetSandboxCodeRun:input_type -> sandbox.service.v1.GetSandboxCodeRunRequest
+	9,  // 9: admin.service.v1.SandboxService.ListSandboxFiles:input_type -> sandbox.service.v1.ListSandboxFilesRequest
+	10, // 10: admin.service.v1.SandboxService.ReadSandboxFile:input_type -> sandbox.service.v1.ReadSandboxFileRequest
+	11, // 11: admin.service.v1.SandboxService.WriteSandboxFile:input_type -> sandbox.service.v1.WriteSandboxFileRequest
+	12, // 12: admin.service.v1.SandboxService.DeleteSandboxFile:input_type -> sandbox.service.v1.DeleteSandboxFileRequest
+	13, // 13: admin.service.v1.SandboxService.GetSandboxFileOperation:input_type -> sandbox.service.v1.GetSandboxFileOperationRequest
+	14, // 14: admin.service.v1.SandboxService.CreateSandboxToken:input_type -> sandbox.service.v1.CreateSandboxTokenRequest
+	15, // 15: admin.service.v1.SandboxService.RevokeSandboxToken:input_type -> sandbox.service.v1.RevokeSandboxTokenRequest
+	16, // 16: admin.service.v1.SandboxService.CreateSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
+	17, // 17: admin.service.v1.SandboxService.ListSandboxes:output_type -> sandbox.service.v1.ListSandboxesResponse
+	18, // 18: admin.service.v1.SandboxService.GetSandbox:output_type -> sandbox.service.v1.Sandbox
+	19, // 19: admin.service.v1.SandboxService.GetSandboxOperation:output_type -> sandbox.service.v1.SandboxOperation
+	16, // 20: admin.service.v1.SandboxService.PauseSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
+	16, // 21: admin.service.v1.SandboxService.ResumeSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
+	16, // 22: admin.service.v1.SandboxService.DeleteSandbox:output_type -> sandbox.service.v1.SandboxAcceptance
+	20, // 23: admin.service.v1.SandboxService.RunSandboxCode:output_type -> sandbox.service.v1.SandboxCodeRun
+	20, // 24: admin.service.v1.SandboxService.GetSandboxCodeRun:output_type -> sandbox.service.v1.SandboxCodeRun
+	21, // 25: admin.service.v1.SandboxService.ListSandboxFiles:output_type -> sandbox.service.v1.SandboxFileResult
+	21, // 26: admin.service.v1.SandboxService.ReadSandboxFile:output_type -> sandbox.service.v1.SandboxFileResult
+	22, // 27: admin.service.v1.SandboxService.WriteSandboxFile:output_type -> sandbox.service.v1.SandboxFileOperation
+	22, // 28: admin.service.v1.SandboxService.DeleteSandboxFile:output_type -> sandbox.service.v1.SandboxFileOperation
+	22, // 29: admin.service.v1.SandboxService.GetSandboxFileOperation:output_type -> sandbox.service.v1.SandboxFileOperation
+	23, // 30: admin.service.v1.SandboxService.CreateSandboxToken:output_type -> sandbox.service.v1.SandboxAccessToken
+	24, // 31: admin.service.v1.SandboxService.RevokeSandboxToken:output_type -> sandbox.service.v1.RevokeSandboxTokenResponse
+	16, // [16:32] is the sub-list for method output_type
+	0,  // [0:16] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

@@ -27,3 +27,9 @@ explicit Model/Inference permission registration scripts when upgrading an
 installation that still has the old umbrella `*:service:manage` API links.
 It removes only those stale API relations and leaves permission points,
 roles, plans and quotas unchanged.
+
+- `20261101010000_modeldev_environment_permissions.sql`: after reviewed API catalog
+  sync, link the two current-tenant environment APIs to their independent
+  manage/view permissions and default exact tenant-manager/template grants.
+  Existing OFF/denied rows are preserved; no module/plan is enabled. MODEL
+  entitlement remains checked by the existing tenant access middleware.

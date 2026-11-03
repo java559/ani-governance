@@ -10,41 +10,43 @@ import (
 
 // Registration is not a grant. User JWT, platform scope, action and Casbin apply.
 var PlatformNetworkOperations = map[string]NetworkOperationPolicy{
-	"/admin.service.v1.PlatformNetworkService/ListPlatformEIPs":                 {"GET", "/api/v1/admin/networks/eips", "network:platform:eip:list", true},
-	"/admin.service.v1.PlatformNetworkService/GetPlatformEIP":                   {"GET", "/api/v1/admin/networks/eips/{eip_id}", "network:platform:eip:get", true},
-	"/admin.service.v1.PlatformNetworkService/ReleasePlatformEIP":               {"DELETE", "/api/v1/admin/networks/eips/{eip_id}", "network:platform:eip:release", false},
-	"/admin.service.v1.PlatformNetworkService/CreateDefaultVPCEgress":           {"POST", "/api/v1/admin/networks/default-vpc-egresses", "network:platform:default-egress:create", false},
-	"/admin.service.v1.PlatformNetworkService/GetDefaultVPCEgress":              {"GET", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:get", true},
-	"/admin.service.v1.PlatformNetworkService/GetCurrentDefaultVPCEgress":       {"GET", "/api/v1/admin/networks/default-vpc-egress", "network:platform:default-egress:get", true},
-	"/admin.service.v1.PlatformNetworkService/DeleteDefaultVPCEgress":           {"DELETE", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:delete", false},
-	"/admin.service.v1.PlatformNetworkService/CreateVirtualSwitch":              {"POST", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:create", false},
-	"/admin.service.v1.PlatformNetworkService/GetVirtualSwitch":                 {"GET", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:get", true},
-	"/admin.service.v1.PlatformNetworkService/ListVirtualSwitches":              {"GET", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:list", true},
-	"/admin.service.v1.PlatformNetworkService/DeleteVirtualSwitch":              {"DELETE", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:delete", false},
-	"/admin.service.v1.PlatformNetworkService/CreateVlanNetwork":                {"POST", "/api/v1/admin/networks/vlan-networks", "network:platform:vlan-network:create", false},
-	"/admin.service.v1.PlatformNetworkService/GetVlanNetwork":                   {"GET", "/api/v1/admin/networks/vlan-networks/{vlan_network_id}", "network:platform:vlan-network:get", true},
-	"/admin.service.v1.PlatformNetworkService/ListVlanNetworks":                 {"GET", "/api/v1/admin/networks/vlan-networks", "network:platform:vlan-network:list", true},
-	"/admin.service.v1.PlatformNetworkService/DeleteVlanNetwork":                {"DELETE", "/api/v1/admin/networks/vlan-networks/{vlan_network_id}", "network:platform:vlan-network:delete", false},
-	"/admin.service.v1.PlatformNetworkService/CreateEgressGateway":              {"POST", "/api/v1/admin/networks/egress-gateways", "network:platform:egress-gateway:create", false},
-	"/admin.service.v1.PlatformNetworkService/GetEgressGateway":                 {"GET", "/api/v1/admin/networks/egress-gateways/{gateway_id}", "network:platform:egress-gateway:get", true},
-	"/admin.service.v1.PlatformNetworkService/ListEgressGateways":               {"GET", "/api/v1/admin/networks/egress-gateways", "network:platform:egress-gateway:list", true},
-	"/admin.service.v1.PlatformNetworkService/DeleteEgressGateway":              {"DELETE", "/api/v1/admin/networks/egress-gateways/{gateway_id}", "network:platform:egress-gateway:delete", false},
-	"/admin.service.v1.PlatformNetworkService/CreatePublicAddressPool":          {"POST", "/api/v1/admin/networks/public-address-pools", "network:platform:public-pool:create", false},
-	"/admin.service.v1.PlatformNetworkService/GetPublicAddressPool":             {"GET", "/api/v1/admin/networks/public-address-pools/{pool_id}", "network:platform:public-pool:get", true},
-	"/admin.service.v1.PlatformNetworkService/ListPublicAddressPools":           {"GET", "/api/v1/admin/networks/public-address-pools", "network:platform:public-pool:list", true},
-	"/admin.service.v1.PlatformNetworkService/DeletePublicAddressPool":          {"DELETE", "/api/v1/admin/networks/public-address-pools/{pool_id}", "network:platform:public-pool:delete", false},
-	"/admin.service.v1.PlatformNetworkService/RecordPublicPoolVerification":     {"POST", "/api/v1/admin/networks/public-address-pools/{pool_id}/verification", "network:platform:public-pool:verify", false},
-	"/admin.service.v1.PlatformNetworkService/SetPublicPoolAllocationEnabled":   {"PATCH", "/api/v1/admin/networks/public-address-pools/{pool_id}/allocation", "network:platform:public-pool:allocate", false},
-	"/admin.service.v1.PlatformNetworkService/SetDefaultPublicPool":             {"POST", "/api/v1/admin/networks/public-address-pools/{pool_id}/default", "network:platform:public-pool:default", false},
-	"/admin.service.v1.PlatformNetworkService/CreateIntranetAddressPool":        {"POST", "/api/v1/admin/networks/intranet-address-pools", "network:platform:intranet-pool:create", false},
-	"/admin.service.v1.PlatformNetworkService/GetIntranetAddressPool":           {"GET", "/api/v1/admin/networks/intranet-address-pools/{pool_id}", "network:platform:intranet-pool:get", true},
-	"/admin.service.v1.PlatformNetworkService/ListIntranetAddressPools":         {"GET", "/api/v1/admin/networks/intranet-address-pools", "network:platform:intranet-pool:list", true},
-	"/admin.service.v1.PlatformNetworkService/DeleteIntranetAddressPool":        {"DELETE", "/api/v1/admin/networks/intranet-address-pools/{pool_id}", "network:platform:intranet-pool:delete", false},
-	"/admin.service.v1.PlatformNetworkService/RecordIntranetPoolVerification":   {"POST", "/api/v1/admin/networks/intranet-address-pools/{pool_id}/verification", "network:platform:intranet-pool:verify", false},
-	"/admin.service.v1.PlatformNetworkService/SetIntranetPoolAllocationEnabled": {"PATCH", "/api/v1/admin/networks/intranet-address-pools/{pool_id}/allocation", "network:platform:intranet-pool:allocate", false},
-	"/admin.service.v1.PlatformNetworkService/SetDefaultIntranetPool":           {"POST", "/api/v1/admin/networks/intranet-address-pools/{pool_id}/default", "network:platform:intranet-pool:default", false},
-	"/admin.service.v1.PlatformNetworkService/GetPlatformNetworkCapabilities":   {"GET", "/api/v1/admin/networks/capabilities", "network:platform:capability:get", true},
-	"/admin.service.v1.PlatformNetworkService/GetPlatformOperation":             {"GET", "/api/v1/admin/networks/operations/{operation_id}", "network:platform:operation:get", true},
+	"/admin.service.v1.PlatformNetworkService/ListPlatformEIPs":                     {"GET", "/api/v1/admin/networks/eips", "network:platform:eip:list", true},
+	"/admin.service.v1.PlatformNetworkService/GetPlatformEIP":                       {"GET", "/api/v1/admin/networks/eips/{eip_id}", "network:platform:eip:get", true},
+	"/admin.service.v1.PlatformNetworkService/ReleasePlatformEIP":                   {"DELETE", "/api/v1/admin/networks/eips/{eip_id}", "network:platform:eip:release", false},
+	"/admin.service.v1.PlatformNetworkService/CreateDefaultVPCEgress":               {"POST", "/api/v1/admin/networks/default-vpc-egresses", "network:platform:default-egress:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetDefaultVPCEgress":                  {"GET", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:get", true},
+	"/admin.service.v1.PlatformNetworkService/GetCurrentDefaultVPCEgress":           {"GET", "/api/v1/admin/networks/default-vpc-egress", "network:platform:default-egress:get", true},
+	"/admin.service.v1.PlatformNetworkService/DeleteDefaultVPCEgress":               {"DELETE", "/api/v1/admin/networks/default-vpc-egresses/{egress_id}", "network:platform:default-egress:delete", false},
+	"/admin.service.v1.PlatformNetworkService/CreateVirtualSwitch":                  {"POST", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetVirtualSwitch":                     {"GET", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:get", true},
+	"/admin.service.v1.PlatformNetworkService/ListVirtualSwitches":                  {"GET", "/api/v1/admin/networks/virtual-switches", "network:platform:virtual-switch:list", true},
+	"/admin.service.v1.PlatformNetworkService/DeleteVirtualSwitch":                  {"DELETE", "/api/v1/admin/networks/virtual-switches/{virtual_switch_id}", "network:platform:virtual-switch:delete", false},
+	"/admin.service.v1.PlatformNetworkService/CreateVlanNetwork":                    {"POST", "/api/v1/admin/networks/vlan-networks", "network:platform:vlan-network:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetVlanNetwork":                       {"GET", "/api/v1/admin/networks/vlan-networks/{vlan_network_id}", "network:platform:vlan-network:get", true},
+	"/admin.service.v1.PlatformNetworkService/ListVlanNetworks":                     {"GET", "/api/v1/admin/networks/vlan-networks", "network:platform:vlan-network:list", true},
+	"/admin.service.v1.PlatformNetworkService/DeleteVlanNetwork":                    {"DELETE", "/api/v1/admin/networks/vlan-networks/{vlan_network_id}", "network:platform:vlan-network:delete", false},
+	"/admin.service.v1.PlatformNetworkService/CreateEgressGateway":                  {"POST", "/api/v1/admin/networks/egress-gateways", "network:platform:egress-gateway:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetEgressGateway":                     {"GET", "/api/v1/admin/networks/egress-gateways/{gateway_id}", "network:platform:egress-gateway:get", true},
+	"/admin.service.v1.PlatformNetworkService/ListEgressGateways":                   {"GET", "/api/v1/admin/networks/egress-gateways", "network:platform:egress-gateway:list", true},
+	"/admin.service.v1.PlatformNetworkService/DeleteEgressGateway":                  {"DELETE", "/api/v1/admin/networks/egress-gateways/{gateway_id}", "network:platform:egress-gateway:delete", false},
+	"/admin.service.v1.PlatformNetworkService/CreatePublicAddressPool":              {"POST", "/api/v1/admin/networks/public-address-pools", "network:platform:public-pool:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetPublicAddressPool":                 {"GET", "/api/v1/admin/networks/public-address-pools/{pool_id}", "network:platform:public-pool:get", true},
+	"/admin.service.v1.PlatformNetworkService/ListPublicAddressPools":               {"GET", "/api/v1/admin/networks/public-address-pools", "network:platform:public-pool:list", true},
+	"/admin.service.v1.PlatformNetworkService/DeletePublicAddressPool":              {"DELETE", "/api/v1/admin/networks/public-address-pools/{pool_id}", "network:platform:public-pool:delete", false},
+	"/admin.service.v1.PlatformNetworkService/RecordPublicPoolVerification":         {"POST", "/api/v1/admin/networks/public-address-pools/{pool_id}/verification", "network:platform:public-pool:verify", false},
+	"/admin.service.v1.PlatformNetworkService/SetPublicPoolAllocationEnabled":       {"PATCH", "/api/v1/admin/networks/public-address-pools/{pool_id}/allocation", "network:platform:public-pool:allocate", false},
+	"/admin.service.v1.PlatformNetworkService/SetDefaultPublicPool":                 {"POST", "/api/v1/admin/networks/public-address-pools/{pool_id}/default", "network:platform:public-pool:default", false},
+	"/admin.service.v1.PlatformNetworkService/CreateIntranetAddressPool":            {"POST", "/api/v1/admin/networks/intranet-address-pools", "network:platform:intranet-pool:create", false},
+	"/admin.service.v1.PlatformNetworkService/GetIntranetAddressPool":               {"GET", "/api/v1/admin/networks/intranet-address-pools/{pool_id}", "network:platform:intranet-pool:get", true},
+	"/admin.service.v1.PlatformNetworkService/GetIntranetPoolDefaults":              {"GET", "/api/v1/admin/networks/intranet-address-pool-defaults", "network:platform:intranet-pool:get", true},
+	"/admin.service.v1.PlatformNetworkService/ListIntranetAddressPools":             {"GET", "/api/v1/admin/networks/intranet-address-pools", "network:platform:intranet-pool:list", true},
+	"/admin.service.v1.PlatformNetworkService/DeleteIntranetAddressPool":            {"DELETE", "/api/v1/admin/networks/intranet-address-pools/{pool_id}", "network:platform:intranet-pool:delete", false},
+	"/admin.service.v1.PlatformNetworkService/RecordIntranetPoolVerification":       {"POST", "/api/v1/admin/networks/intranet-address-pools/{pool_id}/verification", "network:platform:intranet-pool:verify", false},
+	"/admin.service.v1.PlatformNetworkService/SetIntranetPoolAllocationEnabled":     {"PATCH", "/api/v1/admin/networks/intranet-address-pools/{pool_id}/allocation", "network:platform:intranet-pool:allocate", false},
+	"/admin.service.v1.PlatformNetworkService/SetDefaultIntranetPool":               {"POST", "/api/v1/admin/networks/intranet-address-pools/{pool_id}/default", "network:platform:intranet-pool:default", false},
+	"/admin.service.v1.PlatformNetworkService/SetIntranetPoolAutoAllocationEnabled": {"PUT", "/api/v1/admin/networks/intranet-address-pools/{pool_id}/auto-allocation", "network:platform:intranet-pool:auto-allocate", false},
+	"/admin.service.v1.PlatformNetworkService/GetPlatformNetworkCapabilities":       {"GET", "/api/v1/admin/networks/capabilities", "network:platform:capability:get", true},
+	"/admin.service.v1.PlatformNetworkService/GetPlatformOperation":                 {"GET", "/api/v1/admin/networks/operations/{operation_id}", "network:platform:operation:get", true},
 }
 
 func IsPlatformNetworkOperation(operation string) bool {
@@ -125,6 +127,8 @@ func platformNetworkMessage(operation string) proto.Message {
 		return &view.CreateIntranetAddressPoolRequest{}
 	case "GetIntranetAddressPool":
 		return &view.GetIntranetAddressPoolRequest{}
+	case "GetIntranetPoolDefaults":
+		return &view.GetIntranetPoolDefaultsRequest{}
 	case "ListIntranetAddressPools":
 		return &view.ListIntranetAddressPoolsRequest{}
 	case "DeleteIntranetAddressPool":
@@ -135,6 +139,8 @@ func platformNetworkMessage(operation string) proto.Message {
 		return &view.SetIntranetPoolAllocationEnabledRequest{}
 	case "SetDefaultIntranetPool":
 		return &view.SetDefaultIntranetPoolRequest{}
+	case "SetIntranetPoolAutoAllocationEnabled":
+		return &view.SetIntranetPoolAutoAllocationEnabledRequest{}
 	case "GetPlatformNetworkCapabilities":
 		return &view.GetPlatformNetworkCapabilitiesRequest{}
 	case "GetPlatformOperation":

@@ -59,6 +59,7 @@ func (sandboxTenantResolver) ResourceTenantID(context.Context, uint32) (string, 
 
 type sandboxTestClient struct {
 	resolved                  *res.ResolveCreateSpecResponse
+	resolveRequest            *res.ResolveCreateSpecRequest
 	command                   *res.AcceptCreateRequest
 	stored                    *res.Sandbox
 	resolveCalls, acceptCalls int
@@ -73,8 +74,9 @@ type sandboxTestClient struct {
 	deleteRequest             *res.DeleteRequest
 }
 
-func (c *sandboxTestClient) ResolveSandbox(context.Context, string, string, *res.ResolveCreateSpecRequest) (*res.ResolveCreateSpecResponse, error) {
+func (c *sandboxTestClient) ResolveSandbox(_ context.Context, _, _ string, req *res.ResolveCreateSpecRequest) (*res.ResolveCreateSpecResponse, error) {
 	c.resolveCalls++
+	c.resolveRequest = req
 	return c.resolved, c.resolveErr
 }
 func (c *sandboxTestClient) AcceptSandboxCreate(_ context.Context, _ string, _ string, r *res.AcceptCreateRequest) (*res.AcceptCreateResponse, error) {
@@ -136,6 +138,30 @@ func TestSandboxCreateUsesMappedTenantAndResourceDigest(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, wantDigest, client.command.Context.RequestDigest)
 	require.Contains(t, authz.calls, "POST "+data.SandboxCreatePath)
+}
+
+func TestSandboxCreateUsesRegisteredImageIDAndScope(t *testing.T) {
+	s, client, ctx, request := sandboxReplayFixture()
+	request.Data.ImageReference = ""
+	request.Data.ImageId = "img_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	request.Data.ImageScope = "platform"
+	client.resolved.ImageId = request.Data.ImageId
+	client.resolved.ImageScope = request.Data.ImageScope
+	result, err := s.CreateSandbox(ctx, request)
+	require.NoError(t, err)
+	require.True(t, result.Accepted)
+	require.Equal(t, request.Data.ImageId, client.resolveRequest.Data.ImageId)
+	require.Equal(t, "platform", client.resolveRequest.Data.ImageScope)
+	require.Empty(t, client.resolveRequest.Data.ImageReference)
+	require.Equal(t, request.Data.ImageId, client.command.Spec.ImageId)
+	require.Equal(t, "platform", client.command.Spec.ImageScope)
+	request.Data.ImageScope = "tenant"
+	_, err = s.CreateSandbox(ctx, request)
+	require.Error(t, err)
+	require.Equal(t, 1, client.resolveCalls)
+	request.Data.ImageReference = "registry.example/repo:tag"
+	_, err = s.CreateSandbox(ctx, request)
+	require.Error(t, err)
 }
 
 func sandboxReplayFixture() (*SandboxService, *sandboxTestClient, context.Context, *view.CreateSandboxRequest) {

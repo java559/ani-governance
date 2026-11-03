@@ -34,7 +34,23 @@ spec:
           imagePullPolicy: {{ .Values.atlasImage.pullPolicy }}
           command: ["/bin/sh", "-c"]
           args:
-            - exec /bin/atlas migrate apply --dir file:///app/migrations --url "$ANI_DATABASE_DSN"
+            - |
+              set -eu
+              # This migration was deployed before the newer main-line
+              # migration existed. Apply it alone if it is the only missing
+              # historical revision; never silently run other old migrations.
+              out_of_order=$(/bin/atlas migrate status --dir file:///app/migrations --url "$ANI_DATABASE_DSN" --format '{{ "{{" }}range .OutOfOrder{{ "}}" }}{{ "{{" }}.Name{{ "}}" }}{{ "{{" }}"\n"{{ "}}" }}{{ "{{" }}end{{ "}}" }}')
+              case "$out_of_order" in
+                '') ;;
+                20261030010000_tenant_space_intent.sql)
+                  /bin/atlas migrate apply 1 --dir file:///app/migrations --url "$ANI_DATABASE_DSN" --exec-order non-linear
+                  ;;
+                *)
+                  printf '%s\n' "Unexpected out-of-order migrations; manual review required:" "$out_of_order" >&2
+                  exit 1
+                  ;;
+              esac
+              exec /bin/atlas migrate apply --dir file:///app/migrations --url "$ANI_DATABASE_DSN"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           resources:

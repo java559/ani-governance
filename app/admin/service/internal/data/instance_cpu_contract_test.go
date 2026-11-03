@@ -12,54 +12,39 @@ import (
 	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 )
 
-// A real retired payload is retained only to prove it cannot be executed.
-const retiredCPUInstancePayload = `{"cluster_id":"10000000-0000-4000-8000-000000000001","compute_type":"cpu","cpu":"1000m","gid":"1000","gpu_display":null,"gpu_execution":null,"gpu_selection":null,"image_id":"img_10000000000040008000000000000001","image_reference":"registry.invalid/cpu@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","image_scope":"platform","instance_kind":"container","memory":"2048Mi","name":"workspace","namespace":"workspaces","preset_code":"","preset_id":"10000000-0000-4000-8000-000000000002","preset_name":"","scheduling":{"pod_placement":"NONE"},"service_account":"workspace","shell":"/bin/sh","storage_class":"cephfs","uid":"1000","workspace_size":"1Gi"}`
-
 func cpuConfigurationBusiness() *res.CreateSpec {
-	return &res.CreateSpec{InstanceContractVersion: 2, WorkspaceMountPath: "/workspace", Name: "workspace", ImageId: "img_10000000000040008000000000000001", ImageScope: "platform", PresetId: "10000000-0000-4000-8000-000000000002", ImageReference: "registry.invalid/cpu@sha256:" + strings.Repeat("a", 64), InstanceKind: "container", ComputeType: "cpu", ClusterId: "10000000-0000-4000-8000-000000000001", Namespace: "workspaces", Cpu: "1000m", Memory: "2048Mi", ServiceAccount: "workspace", StorageClass: "cephfs", WorkspaceSize: "1Gi", Shell: "/bin/sh", Uid: 1000, Gid: 1000, Scheduling: &res.SchedulingOptions{PodPlacement: res.SchedulingOptions_NONE.Enum()}}
+	return &res.CreateSpec{WorkspaceMountPath: "/workspace", Name: "workspace", ImageId: "img_10000000000040008000000000000001", ImageScope: "platform", PresetId: "10000000-0000-4000-8000-000000000002", ImageReference: "registry.invalid/cpu@sha256:" + strings.Repeat("a", 64), InstanceKind: "container", ComputeType: "cpu", ClusterId: "10000000-0000-4000-8000-000000000001", Namespace: "workspaces", Cpu: "1000m", Memory: "2048Mi", ServiceAccount: "workspace", StorageClass: "cephfs", WorkspaceSize: "1Gi", Shell: "/bin/sh", Uid: 1000, Gid: 1000, Scheduling: &res.SchedulingOptions{PodPlacement: res.SchedulingOptions_NONE.Enum()}}
 }
 
 func frozenCPUConfiguration(t *testing.T) []byte {
 	t.Helper()
-	payload, err := res.CanonicalBusinessPayloadVersion(cpuConfigurationBusiness(), 2)
+	payload, err := res.CanonicalBusinessPayload(cpuConfigurationBusiness())
 	require.NoError(t, err)
 	sum := sha256.Sum256(payload)
-	raw, err := MarshalInstanceCPUCanonical(&InstanceCPUCanonical{Schema: InstanceCPUCanonicalSchema, InstanceContractVersion: 2, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:])})
+	raw, err := MarshalInstanceCPUCanonical(&InstanceCPUCanonical{Schema: InstanceCPUCanonicalSchema, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:])})
 	require.NoError(t, err)
 	return raw
 }
 
-func TestInstanceCPUCurrentContractRejectsRetiredVersions(t *testing.T) {
-	for name, version := range map[string]uint32{"missing": 0, "v1": 1} {
-		t.Run(name, func(t *testing.T) {
-			payload := []byte(retiredCPUInstancePayload)
-			sum := sha256.Sum256(payload)
-			retired := struct {
-				Schema                  string          `json:"schema"`
-				InstanceContractVersion uint32          `json:"instance_contract_version,omitempty"`
-				BusinessPayload         json.RawMessage `json:"business_payload"`
-				BusinessPayloadDigest   string          `json:"business_payload_digest"`
-			}{InstanceCPUCanonicalSchema, version, payload, hex.EncodeToString(sum[:])}
-			raw, err := json.Marshal(retired)
-			require.NoError(t, err)
-			_, err = DecodeInstanceCPUCanonical(raw)
-			require.Error(t, err, "only the explicit current instance contract is executable")
-			require.False(t, AllowsInstanceCPUCommand(instanceCPUOwner, instanceCPUCreateAction, string(raw)))
-		})
+func TestInstanceCPUFrozenRejectsConfigurationVersionField(t *testing.T) {
+	original := frozenCPUConfiguration(t)
+	for _, version := range []string{"0", "1", "2", "3"} {
+		raw := append(append([]byte(nil), original[:len(original)-1]...), []byte(`,"instance_contract_version":`+version+"}")...)
+		_, err := DecodeInstanceCPUCanonical(raw)
+		require.Error(t, err, "a retired configuration version is an unknown field")
+		require.False(t, AllowsInstanceCPUCommand(instanceCPUOwner, instanceCPUCreateAction, string(raw)))
 	}
 }
 
-func TestInstanceCPUFrozenContractVersionAndOriginalBytes(t *testing.T) {
+func TestInstanceCPUFrozenPreservesOriginalBytes(t *testing.T) {
 	raw := frozenCPUConfiguration(t)
 	command, err := DecodeInstanceCPUCanonical(raw)
 	require.NoError(t, err)
-	require.EqualValues(t, 2, command.InstanceContractVersion)
+	require.NotContains(t, string(raw), "instance_contract_version")
 	require.True(t, AllowsInstanceCPUCommand(instanceCPUOwner, instanceCPUCreateAction, string(raw)))
-	for _, version := range []uint32{0, 1, 3} {
-		command.InstanceContractVersion = version
-		_, err = MarshalInstanceCPUCanonical(command)
-		require.Error(t, err)
-	}
+	encoded, err := MarshalInstanceCPUCanonical(command)
+	require.NoError(t, err)
+	require.Equal(t, raw, encoded)
 }
 
 func TestInstanceCPUFrozenRejectsNoncanonicalPayloadAndTampering(t *testing.T) {
@@ -92,10 +77,10 @@ func TestInstanceCPUCurrentLiteralEnvironmentBytesSurviveEnvelopeAndDelete(t *te
 	business.WorkspaceMountPath = "/work"
 	const literal = "  研究 <tag>& $(LATER)\n第二行  "
 	business.Env = []*res.InstanceEnvVar{{Name: "FIRST", Value: literal}, {Name: "LATER", Value: "unchanged"}}
-	payload, err := res.CanonicalBusinessPayloadVersion(business, 2)
+	payload, err := res.CanonicalBusinessPayload(business)
 	require.NoError(t, err)
 	sum := sha256.Sum256(payload)
-	command := InstanceCPUCanonical{Schema: InstanceCPUCanonicalSchema, InstanceContractVersion: 2, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:])}
+	command := InstanceCPUCanonical{Schema: InstanceCPUCanonicalSchema, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:])}
 	var expected bytes.Buffer
 	encoder := json.NewEncoder(&expected)
 	encoder.SetEscapeHTML(false)

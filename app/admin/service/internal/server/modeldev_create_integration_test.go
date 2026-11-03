@@ -77,7 +77,7 @@ func TestModelDevCreatePersistsBefore202AndReplaysOriginal(t *testing.T) {
 	plan, err := writer.Client().Plan.Create().SetName("modeldev-http-" + suffix).Save(sys)
 	require.NoError(t, err, "MODELDEV_CREATE_PREFLIGHT: plan fixture")
 	removeAfterTest(func(c context.Context) error { return writer.Client().Plan.DeleteOneID(plan.ID).Exec(c) })
-	module, err := writer.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModel).Save(sys)
+	module, err := writer.Client().PlanModule.Create().SetPlanID(plan.ID).SetModule(planmodule.ModuleModelDev).Save(sys)
 	require.NoError(t, err)
 	removeAfterTest(func(c context.Context) error { return writer.Client().PlanModule.DeleteOneID(module.ID).Exec(c) })
 	owner, err := writer.Client().Tenant.Create().SetName("modeldev HTTP fixture").SetCode("cpu-http-" + suffix).
@@ -104,7 +104,7 @@ func TestModelDevCreatePersistsBefore202AndReplaysOriginal(t *testing.T) {
 		return writer.Client().Permission.DeleteOneID(createPermission.ID).Exec(c)
 	})
 	createAPI, err := writer.Client().Api.Create().SetModule("ModelDevService").SetScope(api.ScopeAdmin).
-		SetPath("/api/v1/modeldev/executions").SetMethod("POST").SetBusinessModule(api.BusinessModuleModel).SetStatus(api.StatusOn).Save(sys)
+		SetPath("/api/v1/modeldev/executions").SetMethod("POST").SetBusinessModule(api.BusinessModuleModelDev).SetStatus(api.StatusOn).Save(sys)
 	require.NoError(t, err, "MODELDEV_CREATE_PREFLIGHT: this exclusive database must have no conflicting route fixture")
 	removeAfterTest(func(c context.Context) error { return writer.Client().Api.DeleteOneID(createAPI.ID).Exec(c) })
 	permissionAPI, err := writer.Client().PermissionApi.Create().SetPermissionID(createPermission.ID).SetAPIID(createAPI.ID).Save(sys)

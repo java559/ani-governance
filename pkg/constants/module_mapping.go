@@ -15,7 +15,7 @@ var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"OverviewService":             identityV1.Module_INSTANCE,
 	"StorageService":              identityV1.Module_STORAGE,
 	"VMService":                   identityV1.Module_VIRTUAL_MACHINE,
-	"SandboxService":              identityV1.Module_INSTANCE,
+	"SandboxService":              identityV1.Module_SANDBOX,
 	"ComputePresetService":        identityV1.Module_SYSTEM,
 	"AcceleratorAdminService":     identityV1.Module_ACCELERATOR,
 	"AcceleratorService":          identityV1.Module_ACCELERATOR,
@@ -30,7 +30,7 @@ var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"InferenceService":            identityV1.Module_INFERENCE,
 	"InferenceKeyService":         identityV1.Module_INFERENCE,
 	"InferenceDiagnosticsService": identityV1.Module_INFERENCE,
-	"ModelDevService":             identityV1.Module_MODEL,
+	"ModelDevService":             identityV1.Module_MODELDEV,
 	"AdminPortalService":          identityV1.Module_DASHBOARD,
 	"DashboardService":            identityV1.Module_DASHBOARD,
 

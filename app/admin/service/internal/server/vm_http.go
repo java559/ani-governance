@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"io"
 	"strings"
 )
 
@@ -26,6 +28,7 @@ func RegisterVMHTTPServer(server *http.Server, s *service.VMService) {
 	change := func() proto.Message { return new(view.ChangeVMRequest) }
 	get := func() proto.Message { return new(view.GetVMRequest) }
 	routes := []route{
+		{"set-security-groups", "SetVMSecurityGroups", change},
 		{"create", "CreateVM", func() proto.Message { return new(view.CreateVMRequest) }},
 		{"list", "ListVMs", func() proto.Message { return new(view.ListVMsRequest) }},
 		{"get", "GetVM", get}, {"delete", "DeleteVM", change},
@@ -52,6 +55,13 @@ func RegisterVMHTTPServer(server *http.Server, s *service.VMService) {
 					return kratoserrors.BadRequest("VM_INVALID_REQUEST", "invalid VM query")
 				}
 			} else {
+				if entry.action == "set-security-groups" {
+					raw, err := io.ReadAll(io.LimitReader(ctx.Request().Body, 65537))
+					if err != nil || len(raw) > 65536 || validateSecurityGroupSelectionJSON(raw) != nil {
+						return kratoserrors.BadRequest("VM_INVALID_REQUEST", "explicit security_group_ids array required")
+					}
+					ctx.Request().Body = io.NopCloser(bytes.NewReader(raw))
+				}
 				if err := decodeStrictJSONHTTP(ctx.Request(), request); err != nil {
 					return kratoserrors.BadRequest("VM_INVALID_REQUEST", "invalid VM request")
 				}
@@ -166,6 +176,8 @@ func vmHTTPError(err error) error {
 }
 func invokeVMHTTP(ctx context.Context, s *service.VMService, action string, in proto.Message) (proto.Message, error) {
 	switch action {
+	case "set-security-groups":
+		return s.SetVMSecurityGroups(ctx, in.(*view.ChangeVMRequest))
 	case "create":
 		return s.CreateVM(ctx, in.(*view.CreateVMRequest))
 	case "list":

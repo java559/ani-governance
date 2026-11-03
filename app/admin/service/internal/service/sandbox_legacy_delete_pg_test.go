@@ -35,10 +35,10 @@ func TestSandboxLegacyInstanceDeleteCanDispatch(t *testing.T) {
 	tenant, err := c.Client().Tenant.Create().SetName(name).SetCode(name).Save(sys)
 	require.NoError(t, err)
 	createID, deleteID, resource := uuid.NewString(), uuid.NewString(), uuid.NewString()
-	payload, err := res.CanonicalBusinessPayloadVersion(instanceSettingsBusiness(t), 2)
+	payload, err := res.CanonicalBusinessPayload(instanceSettingsBusiness(t))
 	require.NoError(t, err)
 	sum := sha256.Sum256(payload)
-	command := &data.InstanceCPUCanonical{Schema: data.InstanceCPUCanonicalSchema, InstanceContractVersion: 2, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:])}
+	command := &data.InstanceCPUCanonical{Schema: data.InstanceCPUCanonicalSchema, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:])}
 	createCanonical, err := data.MarshalInstanceCPUCanonical(command)
 	require.NoError(t, err)
 	command.DeleteExpectedVersion = 1
@@ -47,7 +47,7 @@ func TestSandboxLegacyInstanceDeleteCanDispatch(t *testing.T) {
 	// Historical delete rows have no Sandbox preflight marker. Their actual
 	// valid command still passes contract validation and reaches the owner.
 	for _, row := range []struct{ id, action, original, state, canonical string }{{createID, InstanceCreateAction, "", "ACKED", string(createCanonical)}, {deleteID, InstanceDeleteAction, createID, "DISPATCHING", string(deleteCanonical)}} {
-		_, err = c.DB().ExecContext(ctx, `INSERT INTO sys_quota_operations(tenant_id,operation_id,resource_tenant_id,resource_id,create_operation_id,actor_type,actor_id,owner_service,action,idempotency_key,request_hash,canonical_request,dispatch_state,instance_contract_version,created_at,updated_at) VALUES($1,$2,$3,$4,NULLIF($5,''),'user','1',$6,$7,$8,'hash',$9,$10,2,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, tenant.ID, row.id, tenant.ResourceTenantID, resource, row.original, InstanceOwner, row.action, uuid.NewString(), row.canonical, row.state)
+		_, err = c.DB().ExecContext(ctx, `INSERT INTO sys_quota_operations(tenant_id,operation_id,resource_tenant_id,resource_id,create_operation_id,actor_type,actor_id,owner_service,action,idempotency_key,request_hash,canonical_request,dispatch_state,created_at,updated_at) VALUES($1,$2,$3,$4,NULLIF($5,''),'user','1',$6,$7,$8,'hash',$9,$10,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, tenant.ID, row.id, tenant.ResourceTenantID, resource, row.original, InstanceOwner, row.action, uuid.NewString(), row.canonical, row.state)
 		require.NoError(t, err)
 	}
 	ledger := data.NewQuotaLedgerRepo(testutil.NewBootstrapContext(nil), c)

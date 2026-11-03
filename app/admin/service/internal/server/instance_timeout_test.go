@@ -293,6 +293,39 @@ func TestInferenceDiagnosticHTTPBudgetsOnlyApplyToExactGETRoutes(t *testing.T) {
 	}
 }
 
+func TestSandboxHTTPBudgetAllowsPodCallsAndPreservesCaller(t *testing.T) {
+	base := "/api/v1/sandbox/10000000-0000-4000-8000-000000000001"
+	for _, path := range []string{"/api/v1/sandbox", base + "/files", base + "/tokens", base + ":pause"} {
+		t.Run(path, func(t *testing.T) {
+			instanceHTTPTimeoutFilter(time.Second)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+				deadline, ok := r.Context().Deadline()
+				if !ok || time.Until(deadline) < 34*time.Second || time.Until(deadline) > 35*time.Second {
+					t.Fatalf("unexpected Sandbox deadline: %v", deadline)
+				}
+			})).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("POST", path, nil))
+		})
+	}
+	instanceHTTPTimeoutFilter(time.Second)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		deadline, ok := r.Context().Deadline()
+		if !ok || time.Until(deadline) > time.Second {
+			t.Fatal("unrelated path received Sandbox budget")
+		}
+	})).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/api/v1/sandbox-other", nil))
+	parent, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	instanceHTTPTimeoutFilter(time.Second)(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		got, _ := r.Context().Deadline()
+		want, _ := parent.Deadline()
+		if !got.Equal(want) {
+			t.Fatal("Sandbox budget extended caller deadline")
+		}
+		cancel()
+		if r.Context().Err() != context.Canceled {
+			t.Fatal("Sandbox budget lost caller cancellation")
+		}
+	})).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", base+"/files", nil).WithContext(parent))
+}
+
 func TestInferenceLogStreamHTTPBudgetPreservesHandlerLifetimeAndCaller(t *testing.T) {
 	path := "/api/v1/inference/services/10000000-0000-4000-8000-000000000001/logs:stream"
 	for _, tc := range []struct {

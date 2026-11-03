@@ -20,9 +20,10 @@ service InstanceService {
  // HTTP is a dedicated SSE handler. OpenAPI is supplied by the source
  // postprocessor rather than representing this stream as a unary JSON reply.
  rpc StreamInstanceLogs(instance.service.v1.InstanceLogsRequest) returns(stream instance.service.v1.InstanceLogFrame);
- // 创建使用服务器固定的当前配置合同 2；可选配置省略时正常解析默认值。
+ // 创建使用统一的容器配置；可选配置省略时正常解析默认值。
  // 新建维护闸门关闭返回 503 INSTANCE_CREATE_DISABLED，同键重放不受影响。
  rpc CreateInstance(instance.service.v1.CreateInstanceRequest) returns(instance.service.v1.Acceptance) { option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "202" value: { response: { description: "Accepted" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/Acceptance" } } } }] } } } }] } }; option(google.api.http)={post:"/api/v1/instances" body:"*"}; }
+ rpc SetInstanceSecurityGroups(instance.service.v1.SetInstanceSecurityGroupsRequest) returns(instance.service.v1.Acceptance) { option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "202" value: { response: { description: "Accepted" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/Acceptance" } } } }] } } } }] } }; option(google.api.http)={put:"/api/v1/instances/{data.instance_id}/security-groups" body:"*"}; }
  rpc ListInstances(instance.service.v1.ListInstancesRequest) returns(instance.service.v1.ListInstancesResponse) { option(google.api.http)={get:"/api/v1/instances"}; }
  rpc GetInstance(instance.service.v1.GetInstanceRequest) returns(instance.service.v1.Instance) { option(google.api.http)={get:"/api/v1/instances/{instance_id}"}; }
  rpc StartInstance(instance.service.v1.ChangeInstanceRequest) returns(instance.service.v1.Acceptance) { option (gnostic.openapi.v3.operation) = { responses: { response_or_reference: [{ name: "202" value: { response: { description: "Accepted" content: { additional_properties: [{ name: "application/json" value: { schema: { reference: { _ref: "#/components/schemas/Acceptance" } } } }] } } } }] } }; option(google.api.http)={post:"/api/v1/instances/{data.instance_id}:start" body:"*"}; }

@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"testing"
 
+	kratosErrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/stretchr/testify/require"
 	paginationV1 "go-wind-admin/pkg/localdeps/go-crud/api/gen/go/pagination/v1"
 	"go-wind-admin/pkg/localdeps/go-utils/trans"
@@ -177,7 +178,7 @@ func TestTenantServiceSqlite_TenantExists(t *testing.T) {
 }
 
 // TestTenantServiceSqlite_CreateAndDelete 验证 Create 的操作人注入与 Delete 的清理：
-// Create 后列表可见且 CreatedBy 为操作人 ID；Delete 后列表清空。
+// Create 后列表可见且 CreatedBy 为操作人 ID；关闭空间后 Delete 才能清空列表。
 func TestTenantServiceSqlite_CreateAndDelete(t *testing.T) {
 	svc := newTenantServiceForTest(t)
 	baseCtx := testutil.NewSystemViewerCtx(context.Background())
@@ -204,6 +205,24 @@ func TestTenantServiceSqlite_CreateAndDelete(t *testing.T) {
 	createdID = item.GetId()
 	require.EqualValues(t, 4242, item.GetCreatedBy(),
 		"CreatedBy 应为操作人注入的 ID")
+
+	_, err = svc.Delete(baseCtx, &identityV1.DeleteTenantRequest{
+		QueryBy: &identityV1.DeleteTenantRequest_Id{Id: createdID},
+	})
+	require.Error(t, err)
+	require.Equal(t, "TENANT_SPACE_CLOSING", kratosErrors.Reason(err))
+	stillPresent, err := svc.List(baseCtx, &paginationV1.PagingRequest{})
+	require.NoError(t, err)
+	require.Equal(t, uint64(1), stillPresent.GetTotal(), "空间未确认关闭时租户应保留")
+
+	// Model the independently verified Resource close response at the outbound
+	// boundary; this service test does not start the background dispatcher.
+	intent, closed, err := svc.tenantRepo.RequestTenantSpaceClose(baseCtx, createdID)
+	require.NoError(t, err)
+	require.False(t, closed)
+	completed, err := svc.tenantRepo.CompleteTenantSpaceClose(baseCtx, intent)
+	require.NoError(t, err)
+	require.True(t, completed)
 
 	_, err = svc.Delete(baseCtx, &identityV1.DeleteTenantRequest{
 		QueryBy: &identityV1.DeleteTenantRequest_Id{Id: createdID},
