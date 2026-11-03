@@ -113,11 +113,11 @@ SELECT json_build_object(
   'granted_permission_codes', (SELECT json_agg(DISTINCT code) FROM (VALUES
       ('vm:read'),('vm:image:upload'),('vm:image:update'),('vm:image:delete')) AS c(code)),
   'template_role_id', (SELECT id FROM sys_roles WHERE code='template:tenant:manager' AND type='TEMPLATE' AND deleted_at IS NULL),
-  'role_permissions', (SELECT json_agg(json_build_object('id',rp.id,'role_id',rp.role_id,'tenant_id',rp.tenant_id,'permission_code',p.code))
+  'role_permissions', (SELECT json_agg(json_build_object('id',rp.id,'role_id',rp.role_id,'tenant_id',rp.tenant_id,'permission_code',p.code) ORDER BY rp.id)
       FROM sys_role_permissions rp
       JOIN sys_roles r ON r.id=rp.role_id
       JOIN sys_permissions p ON p.id=rp.permission_id
       WHERE r.code IN ('template:tenant:manager','tenant:manager')
         AND p.code IN ('vm:read','vm:image:upload','vm:image:update','vm:image:delete')
-        AND rp.deleted_at IS NULL ORDER BY rp.id)
+        AND rp.deleted_at IS NULL)
 );

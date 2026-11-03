@@ -44,14 +44,14 @@ COMMIT;
 --   psql -X -A -t -v ON_ERROR_STOP=1 -f this-file.sql > register-output.txt
 -- or run them again to list the retained ids.
 SELECT json_build_object(
-  'apis', (SELECT json_agg(json_build_object('id',id,'method',method,'path',path))
-             FROM sys_apis WHERE path LIKE '/api/v1/virtual-machine-images%' AND deleted_at IS NULL ORDER BY id),
-  'permissions', (SELECT json_agg(json_build_object('id',id,'code',code))
-             FROM sys_permissions WHERE code IN ('vm:image:upload','vm:image:update','vm:image:delete') AND deleted_at IS NULL ORDER BY id),
-  'permission_apis', (SELECT json_agg(pa.id)
+  'apis', (SELECT json_agg(json_build_object('id',id,'method',method,'path',path) ORDER BY id)
+             FROM sys_apis WHERE path LIKE '/api/v1/virtual-machine-images%' AND deleted_at IS NULL),
+  'permissions', (SELECT json_agg(json_build_object('id',id,'code',code) ORDER BY id)
+             FROM sys_permissions WHERE code IN ('vm:image:upload','vm:image:update','vm:image:delete') AND deleted_at IS NULL),
+  'permission_apis', (SELECT json_agg(pa.id ORDER BY pa.id)
              FROM sys_permission_apis pa
              JOIN sys_permissions p ON p.id=pa.permission_id
              JOIN sys_apis a ON a.id=pa.api_id
              WHERE p.code IN ('vm:read','vm:image:upload','vm:image:update','vm:image:delete')
-               AND a.path LIKE '/api/v1/virtual-machine-images%' AND pa.deleted_at IS NULL ORDER BY pa.id)
+               AND a.path LIKE '/api/v1/virtual-machine-images%' AND pa.deleted_at IS NULL)
 );
