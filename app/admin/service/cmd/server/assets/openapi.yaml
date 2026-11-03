@@ -26477,9 +26477,9 @@ components:
         VMImage:
             type: object
             properties:
-                image_id:
+                imageId:
                     type: string
-                media_key:
+                mediaKey:
                     type: string
                 name:
                     type: string
@@ -26497,53 +26497,53 @@ components:
                 reason:
                     type: string
                     description: Stable platform reason code. Never a Kubernetes status string.
-                cleanup_state:
+                cleanupState:
                     type: string
                     description: NONE, PENDING, RUNNING, COMPLETE, BLOCKED.
-                source_capacity_gb:
+                sourceCapacityGb:
                     type: string
                     description: Declared DataVolume input size, in GiB.
-                source_requested_bytes:
+                sourceRequestedBytes:
                     type: string
                     description: Final PVC request produced by the backend.
-                observed_source_capacity_bytes:
+                observedSourceCapacityBytes:
                     type: string
                     description: Capacity the cluster actually reports for the source volume.
-                source_checksum_bytes:
+                sourceChecksumBytes:
                     type: string
                     description: Number of bytes the checksum covers; differs from the uploaded file length.
-                source_sha256:
+                sourceSha256:
                     type: string
                     description: SHA-256 of the backend-processed source, published only at READY.
                 os:
                     $ref: '#/components/schemas/VMImageOS'
                 version:
                     type: string
-                upload_deadline:
+                uploadDeadline:
                     type: string
-                created_by:
+                createdBy:
                     type: string
                     description: Audit only. It is never a filter, an authorization input or an owner.
-                created_at:
+                createdAt:
                     type: string
-                updated_at:
+                updatedAt:
                     type: string
         VMImageOS:
             type: object
             properties:
-                os_family:
+                osFamily:
                     type: string
-                os_version:
+                osVersion:
                     type: string
                 architecture:
                     type: string
                 firmware:
                     type: string
-                root_bus:
+                rootBus:
                     type: string
-                data_bus:
+                dataBus:
                     type: string
-                nic_model:
+                nicModel:
                     type: string
             description: |-
                 Tenant-owned image. `media_key` is the value later submitted to VM creation or
@@ -26551,21 +26551,21 @@ components:
         VMImageUploadSession:
             type: object
             properties:
-                image_id:
+                imageId:
                     type: string
-                upload_session_id:
+                uploadSessionId:
                     type: string
                 method:
                     type: string
-                upload_url:
+                uploadUrl:
                     type: string
-                bearer_token:
+                bearerToken:
                     type: string
-                expires_at:
+                expiresAt:
                     type: string
-                content_type:
+                contentType:
                     type: string
-                max_file_bytes:
+                maxFileBytes:
                     type: string
             description: |-
                 Short-lived single-use ticket for the raw PUT. The token is redacted from every

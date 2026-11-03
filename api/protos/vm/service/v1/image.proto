@@ -7,18 +7,18 @@ import "redact/v1/redact.proto";
 // Tenant-owned image. `media_key` is the value later submitted to VM creation or
 // SetVMMedia; it is derived from image_id and is never user-assigned.
 message VMImageOS {
-  string os_family=1 [json_name="os_family"];
-  string os_version=2 [json_name="os_version"];
-  string architecture=3 [json_name="architecture"];
-  string firmware=4 [json_name="firmware"];
-  string root_bus=5 [json_name="root_bus"];
-  string data_bus=6 [json_name="data_bus"];
-  string nic_model=7 [json_name="nic_model"];
+  string os_family=1;
+  string os_version=2;
+  string architecture=3;
+  string firmware=4;
+  string root_bus=5;
+  string data_bus=6;
+  string nic_model=7;
 }
 
 message VMImage {
-  string image_id=1 [json_name="image_id"];
-  string media_key=2 [json_name="media_key"];
+  string image_id=1;
+  string media_key=2;
   string name=3;
   string description=4;
   // DISK_IMAGE or INSTALL_ISO.
@@ -30,24 +30,24 @@ message VMImage {
   // Stable platform reason code. Never a Kubernetes status string.
   string reason=8;
   // NONE, PENDING, RUNNING, COMPLETE, BLOCKED.
-  string cleanup_state=9 [json_name="cleanup_state"];
+  string cleanup_state=9;
   // Declared DataVolume input size, in GiB.
-  int64 source_capacity_gb=10 [json_name="source_capacity_gb"];
+  int64 source_capacity_gb=10;
   // Final PVC request produced by the backend.
-  int64 source_requested_bytes=11 [json_name="source_requested_bytes"];
+  int64 source_requested_bytes=11;
   // Capacity the cluster actually reports for the source volume.
-  int64 observed_source_capacity_bytes=12 [json_name="observed_source_capacity_bytes"];
+  int64 observed_source_capacity_bytes=12;
   // Number of bytes the checksum covers; differs from the uploaded file length.
-  int64 source_checksum_bytes=13 [json_name="source_checksum_bytes"];
+  int64 source_checksum_bytes=13;
   // SHA-256 of the backend-processed source, published only at READY.
-  string source_sha256=14 [json_name="source_sha256"];
+  string source_sha256=14;
   VMImageOS os=15;
   int64 version=16;
-  string upload_deadline=17 [json_name="upload_deadline"];
+  string upload_deadline=17;
   // Audit only. It is never a filter, an authorization input or an owner.
-  string created_by=18 [json_name="created_by"];
-  string created_at=19 [json_name="created_at"];
-  string updated_at=20 [json_name="updated_at"];
+  string created_by=18;
+  string created_at=19;
+  string updated_at=20;
 }
 
 message ListVMImagesRequest {
@@ -84,14 +84,14 @@ message CreateVMImageUploadSessionRequest {
 // Short-lived single-use ticket for the raw PUT. The token is redacted from every
 // log, trace and error report and is never stored by any service.
 message VMImageUploadSession {
-  string image_id=1 [json_name="image_id"];
-  string upload_session_id=2 [json_name="upload_session_id"];
+  string image_id=1;
+  string upload_session_id=2;
   string method=3;
-  string upload_url=4 [json_name="upload_url"];
-  string bearer_token=5 [json_name="bearer_token", (redact.value).string="*"];
-  string expires_at=6 [json_name="expires_at"];
-  string content_type=7 [json_name="content_type"];
-  int64 max_file_bytes=8 [json_name="max_file_bytes"];
+  string upload_url=4;
+  string bearer_token=5 [(redact.value).string="*"];
+  string expires_at=6;
+  string content_type=7;
+  int64 max_file_bytes=8;
 }
 
 message UpdateVMImageData {
