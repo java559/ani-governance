@@ -130,6 +130,8 @@ message IntranetAddressPool {
   string topology_fingerprint = 11 [json_name = "topology_fingerprint"];
   repeated string observed_provider_images = 12 [json_name = "observed_provider_images"];
   string scope = 13 [json_name = "scope"];
+  // True only for the current default source while new VPC allocation is on.
+  bool new_vpcs_enabled = 14 [json_name = "new_vpcs_enabled"];
 }
 
 message IntranetPoolVerification {
@@ -360,6 +362,12 @@ message CreateIntranetAddressPoolData {
 message CreateIntranetAddressPoolRequest {
   CreateIntranetAddressPoolData data = 1 [json_name = "data"];
 }
+message GetIntranetPoolDefaultsRequest {}
+message GetIntranetPoolDefaultsResponse {
+  string default_vpc_name = 1 [json_name = "default_vpc_name"];
+  string default_vpc_uid = 2 [json_name = "default_vpc_uid"];
+  repeated string intranet_networks = 3 [json_name = "intranet_networks"];
+}
 message CreateIntranetAddressPoolResponse {
   PlatformResource resource = 1 [json_name = "resource"];
 }
@@ -425,6 +433,19 @@ message SetDefaultIntranetPoolRequest {
   SetDefaultIntranetPoolData data = 2 [json_name = "data"];
 }
 message SetDefaultIntranetPoolResponse {
+  PlatformResource resource = 1 [json_name = "resource"];
+}
+
+message SetIntranetPoolAutoAllocationEnabledData {
+  bool enabled = 1 [json_name = "enabled"];
+  int64 expected_version = 2 [json_name = "expected_version"];
+  string idempotency_key = 3 [json_name = "idempotency_key"];
+}
+message SetIntranetPoolAutoAllocationEnabledRequest {
+  string pool_id = 1 [json_name = "pool_id"];
+  SetIntranetPoolAutoAllocationEnabledData data = 2 [json_name = "data"];
+}
+message SetIntranetPoolAutoAllocationEnabledResponse {
   PlatformResource resource = 1 [json_name = "resource"];
 }
 

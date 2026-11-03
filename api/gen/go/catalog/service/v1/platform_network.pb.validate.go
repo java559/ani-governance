@@ -2244,6 +2244,8 @@ func (m *IntranetAddressPool) validate(all bool) error {
 
 	// no validation rules for Scope
 
+	// no validation rules for NewVpcsEnabled
+
 	if len(errors) > 0 {
 		return IntranetAddressPoolMultiError(errors)
 	}
@@ -7939,6 +7941,216 @@ var _ interface {
 	ErrorName() string
 } = CreateIntranetAddressPoolRequestValidationError{}
 
+// Validate checks the field values on GetIntranetPoolDefaultsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetIntranetPoolDefaultsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetIntranetPoolDefaultsRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetIntranetPoolDefaultsRequestMultiError, or nil if none found.
+func (m *GetIntranetPoolDefaultsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetIntranetPoolDefaultsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return GetIntranetPoolDefaultsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetIntranetPoolDefaultsRequestMultiError is an error wrapping multiple
+// validation errors returned by GetIntranetPoolDefaultsRequest.ValidateAll()
+// if the designated constraints aren't met.
+type GetIntranetPoolDefaultsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetIntranetPoolDefaultsRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetIntranetPoolDefaultsRequestMultiError) AllErrors() []error { return m }
+
+// GetIntranetPoolDefaultsRequestValidationError is the validation error
+// returned by GetIntranetPoolDefaultsRequest.Validate if the designated
+// constraints aren't met.
+type GetIntranetPoolDefaultsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetIntranetPoolDefaultsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetIntranetPoolDefaultsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetIntranetPoolDefaultsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetIntranetPoolDefaultsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetIntranetPoolDefaultsRequestValidationError) ErrorName() string {
+	return "GetIntranetPoolDefaultsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetIntranetPoolDefaultsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetIntranetPoolDefaultsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetIntranetPoolDefaultsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetIntranetPoolDefaultsRequestValidationError{}
+
+// Validate checks the field values on GetIntranetPoolDefaultsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *GetIntranetPoolDefaultsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on GetIntranetPoolDefaultsResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// GetIntranetPoolDefaultsResponseMultiError, or nil if none found.
+func (m *GetIntranetPoolDefaultsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *GetIntranetPoolDefaultsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for DefaultVpcName
+
+	// no validation rules for DefaultVpcUid
+
+	if len(errors) > 0 {
+		return GetIntranetPoolDefaultsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// GetIntranetPoolDefaultsResponseMultiError is an error wrapping multiple
+// validation errors returned by GetIntranetPoolDefaultsResponse.ValidateAll()
+// if the designated constraints aren't met.
+type GetIntranetPoolDefaultsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m GetIntranetPoolDefaultsResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m GetIntranetPoolDefaultsResponseMultiError) AllErrors() []error { return m }
+
+// GetIntranetPoolDefaultsResponseValidationError is the validation error
+// returned by GetIntranetPoolDefaultsResponse.Validate if the designated
+// constraints aren't met.
+type GetIntranetPoolDefaultsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e GetIntranetPoolDefaultsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e GetIntranetPoolDefaultsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e GetIntranetPoolDefaultsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e GetIntranetPoolDefaultsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e GetIntranetPoolDefaultsResponseValidationError) ErrorName() string {
+	return "GetIntranetPoolDefaultsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e GetIntranetPoolDefaultsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sGetIntranetPoolDefaultsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = GetIntranetPoolDefaultsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = GetIntranetPoolDefaultsResponseValidationError{}
+
 // Validate checks the field values on CreateIntranetAddressPoolResponse with
 // the rules defined in the proto definition for this message. If any rules
 // are violated, the first error encountered is returned, or nil if there are
@@ -9968,6 +10180,391 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = SetDefaultIntranetPoolResponseValidationError{}
+
+// Validate checks the field values on SetIntranetPoolAutoAllocationEnabledData
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *SetIntranetPoolAutoAllocationEnabledData) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// SetIntranetPoolAutoAllocationEnabledData with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in
+// SetIntranetPoolAutoAllocationEnabledDataMultiError, or nil if none found.
+func (m *SetIntranetPoolAutoAllocationEnabledData) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SetIntranetPoolAutoAllocationEnabledData) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Enabled
+
+	// no validation rules for ExpectedVersion
+
+	// no validation rules for IdempotencyKey
+
+	if len(errors) > 0 {
+		return SetIntranetPoolAutoAllocationEnabledDataMultiError(errors)
+	}
+
+	return nil
+}
+
+// SetIntranetPoolAutoAllocationEnabledDataMultiError is an error wrapping
+// multiple validation errors returned by
+// SetIntranetPoolAutoAllocationEnabledData.ValidateAll() if the designated
+// constraints aren't met.
+type SetIntranetPoolAutoAllocationEnabledDataMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SetIntranetPoolAutoAllocationEnabledDataMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SetIntranetPoolAutoAllocationEnabledDataMultiError) AllErrors() []error { return m }
+
+// SetIntranetPoolAutoAllocationEnabledDataValidationError is the validation
+// error returned by SetIntranetPoolAutoAllocationEnabledData.Validate if the
+// designated constraints aren't met.
+type SetIntranetPoolAutoAllocationEnabledDataValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SetIntranetPoolAutoAllocationEnabledDataValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SetIntranetPoolAutoAllocationEnabledDataValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SetIntranetPoolAutoAllocationEnabledDataValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SetIntranetPoolAutoAllocationEnabledDataValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SetIntranetPoolAutoAllocationEnabledDataValidationError) ErrorName() string {
+	return "SetIntranetPoolAutoAllocationEnabledDataValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SetIntranetPoolAutoAllocationEnabledDataValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSetIntranetPoolAutoAllocationEnabledData.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SetIntranetPoolAutoAllocationEnabledDataValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SetIntranetPoolAutoAllocationEnabledDataValidationError{}
+
+// Validate checks the field values on
+// SetIntranetPoolAutoAllocationEnabledRequest with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *SetIntranetPoolAutoAllocationEnabledRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// SetIntranetPoolAutoAllocationEnabledRequest with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in
+// SetIntranetPoolAutoAllocationEnabledRequestMultiError, or nil if none found.
+func (m *SetIntranetPoolAutoAllocationEnabledRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SetIntranetPoolAutoAllocationEnabledRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for PoolId
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, SetIntranetPoolAutoAllocationEnabledRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, SetIntranetPoolAutoAllocationEnabledRequestValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return SetIntranetPoolAutoAllocationEnabledRequestValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return SetIntranetPoolAutoAllocationEnabledRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// SetIntranetPoolAutoAllocationEnabledRequestMultiError is an error wrapping
+// multiple validation errors returned by
+// SetIntranetPoolAutoAllocationEnabledRequest.ValidateAll() if the designated
+// constraints aren't met.
+type SetIntranetPoolAutoAllocationEnabledRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SetIntranetPoolAutoAllocationEnabledRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SetIntranetPoolAutoAllocationEnabledRequestMultiError) AllErrors() []error { return m }
+
+// SetIntranetPoolAutoAllocationEnabledRequestValidationError is the validation
+// error returned by SetIntranetPoolAutoAllocationEnabledRequest.Validate if
+// the designated constraints aren't met.
+type SetIntranetPoolAutoAllocationEnabledRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SetIntranetPoolAutoAllocationEnabledRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SetIntranetPoolAutoAllocationEnabledRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SetIntranetPoolAutoAllocationEnabledRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SetIntranetPoolAutoAllocationEnabledRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SetIntranetPoolAutoAllocationEnabledRequestValidationError) ErrorName() string {
+	return "SetIntranetPoolAutoAllocationEnabledRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SetIntranetPoolAutoAllocationEnabledRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSetIntranetPoolAutoAllocationEnabledRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SetIntranetPoolAutoAllocationEnabledRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SetIntranetPoolAutoAllocationEnabledRequestValidationError{}
+
+// Validate checks the field values on
+// SetIntranetPoolAutoAllocationEnabledResponse with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *SetIntranetPoolAutoAllocationEnabledResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// SetIntranetPoolAutoAllocationEnabledResponse with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in
+// SetIntranetPoolAutoAllocationEnabledResponseMultiError, or nil if none found.
+func (m *SetIntranetPoolAutoAllocationEnabledResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *SetIntranetPoolAutoAllocationEnabledResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetResource()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, SetIntranetPoolAutoAllocationEnabledResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, SetIntranetPoolAutoAllocationEnabledResponseValidationError{
+					field:  "Resource",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetResource()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return SetIntranetPoolAutoAllocationEnabledResponseValidationError{
+				field:  "Resource",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return SetIntranetPoolAutoAllocationEnabledResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// SetIntranetPoolAutoAllocationEnabledResponseMultiError is an error wrapping
+// multiple validation errors returned by
+// SetIntranetPoolAutoAllocationEnabledResponse.ValidateAll() if the
+// designated constraints aren't met.
+type SetIntranetPoolAutoAllocationEnabledResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m SetIntranetPoolAutoAllocationEnabledResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m SetIntranetPoolAutoAllocationEnabledResponseMultiError) AllErrors() []error { return m }
+
+// SetIntranetPoolAutoAllocationEnabledResponseValidationError is the
+// validation error returned by
+// SetIntranetPoolAutoAllocationEnabledResponse.Validate if the designated
+// constraints aren't met.
+type SetIntranetPoolAutoAllocationEnabledResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e SetIntranetPoolAutoAllocationEnabledResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e SetIntranetPoolAutoAllocationEnabledResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e SetIntranetPoolAutoAllocationEnabledResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e SetIntranetPoolAutoAllocationEnabledResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e SetIntranetPoolAutoAllocationEnabledResponseValidationError) ErrorName() string {
+	return "SetIntranetPoolAutoAllocationEnabledResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e SetIntranetPoolAutoAllocationEnabledResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sSetIntranetPoolAutoAllocationEnabledResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = SetIntranetPoolAutoAllocationEnabledResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = SetIntranetPoolAutoAllocationEnabledResponseValidationError{}
 
 // Validate checks the field values on GetPlatformNetworkCapabilitiesRequest
 // with the rules defined in the proto definition for this message. If any

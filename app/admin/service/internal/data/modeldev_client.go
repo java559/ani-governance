@@ -383,8 +383,16 @@ func modelDevResolutionError(err error, requestID string) error {
 		return modelDevAdmissionUnavailable()
 	}
 	detail, ok := details[0].(*modeldevv1.ErrorDetail)
-	if !ok || detail == nil || len(detail.ProtoReflect().GetUnknown()) != 0 || len(detail.Violations) != 0 || detail.CorrelationId != requestID {
+	if !ok || detail == nil || len(detail.ProtoReflect().GetUnknown()) != 0 || (len(detail.Violations) != 0 && detail.Kind != "tenant_environment") || detail.CorrelationId != requestID {
 		return modelDevAdmissionUnavailable()
+	}
+	if detail.Reason == modeldevv1.ErrorReason_ERROR_REASON_ENVIRONMENT_NOT_READY {
+		if failure.Code() != codes.Unavailable {
+			return modelDevAdmissionUnavailable()
+		}
+		if _, ok := ModelDevEnvironmentReason(detail); !ok {
+			return modelDevAdmissionUnavailable()
+		}
 	}
 	var message string
 	switch {
@@ -419,7 +427,7 @@ func modelDevResolutionError(err error, requestID string) error {
 	if !modelDevCopyLimitDetail(clean, detail) {
 		return modelDevAdmissionUnavailable()
 	}
-	// Remote text is discarded. Only finite, typed limit facts survive.
+	// Remote text is discarded. Only finite typed limit or environment facts survive.
 	rebuilt, detailErr := status.New(failure.Code(), message).WithDetails(clean)
 	if detailErr != nil {
 		return modelDevAdmissionUnavailable()
@@ -428,6 +436,9 @@ func modelDevResolutionError(err error, requestID string) error {
 }
 
 func modelDevCopyLimitDetail(out, in *modeldevv1.ErrorDetail) bool {
+	if in.Kind == "tenant_environment" {
+		return modelDevCopyEnvironmentDetail(out, in)
+	}
 	limitReason := in.Reason == modeldevv1.ErrorReason_ERROR_REASON_CONTENT_LIMIT_EXCEEDED || in.Reason == modeldevv1.ErrorReason_ERROR_REASON_STRUCTURE_LIMIT_EXCEEDED || in.Reason == modeldevv1.ErrorReason_ERROR_REASON_DATASET_RECORD_TOO_LARGE
 	if !limitReason {
 		return in.Kind == "" && in.LimitName == "" && in.Actual == nil && in.Limit == nil

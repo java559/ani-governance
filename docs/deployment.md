@@ -57,6 +57,13 @@ docker build --target runtime-admin  -t <registry>/ani-governance-admin:<tag> .
 
 `scripts/atlas.sh` 固定运行目录，避免 Ent schema 位于 Go `internal` 目录导致加载失败。
 
+`20261030010000_tenant_space_intent.sql` 已在部分环境执行，但部分环境先执行了
+`20261031010000_drop_instance_contract_version.sql`。如果 `migrate status` 只报告前者
+为 out-of-order，核对数据库和 dry-run 后可先执行
+`./scripts/atlas.sh migrate apply 1 --exec-order non-linear`，再按正常顺序执行其余迁移。
+若有其他 out-of-order 文件，停止并逐项审查，不要用非线性模式批量执行。Helm 的迁移
+Job 仅对上述唯一缺失文件自动执行这一受限步骤，其他异常仍失败。
+
 **集群内执行时用独立 Atlas 镜像**：服务镜像与运维镜像都不含 Atlas（也不含 shell），结构迁移由 `scripts/deploy/atlas/build-image.sh` 产出的 `ani-atlas:<版本>-<migrations摘要>` 承担，作为一次性 Job 运行。Atlas 二进制不在仓库内，构建脚本只定位不下载，找不到就报错退出。
 
 ```bash

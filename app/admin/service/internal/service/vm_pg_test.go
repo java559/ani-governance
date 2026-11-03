@@ -236,7 +236,6 @@ func TestVMPostgresUnmeteredDeleteFenceAndOriginalReplay(t *testing.T) {
 	require.Error(t, err)
 	deletion, err := ledger.GetOperationForUser(request, tenant.ID, deleted.DeleteOperationId)
 	require.NoError(t, err)
-	require.Equal(t, uint32(1), deletion.InstanceContractVersion, "VM uses only legacy placeholder")
 	require.Equal(t, commandcontract.VMDeleteAction, deletion.Action)
 	require.Equal(t, strconv.FormatUint(uint64(operator.ID), 10), deletion.ActorID)
 	// An in-flight request can win Resource's version before a queued DELETE.

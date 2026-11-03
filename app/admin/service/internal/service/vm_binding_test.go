@@ -53,14 +53,11 @@ func vmFixtureCanonical(t *testing.T, spec *vm.CreateSpec) []byte {
 }
 func TestVMActionIsolationAndCanonical(t *testing.T) {
 	raw := vmFixtureCanonical(t, vmFixtureSpec(t))
-	input := commandcontract.StoredCommand{Owner: InstanceOwner, Action: commandcontract.VMCreateAction, Canonical: raw, InstanceContractVersion: 1}
+	input := commandcontract.StoredCommand{Owner: InstanceOwner, Action: commandcontract.VMCreateAction, Canonical: raw}
 	facts, err := commandcontract.ValidateStoredCommand(input)
 	require.NoError(t, err)
 	require.NotNil(t, facts.VM)
 	require.False(t, facts.CPU)
-	input.InstanceContractVersion = 91
-	_, err = commandcontract.ValidateStoredCommand(input)
-	require.NoError(t, err, "legacy Instance column cannot version VM")
 	for _, action := range []string{InstanceCreateAction, InstanceDeleteAction, "/vm.v1.VMService/Unknown"} {
 		input.Action = action
 		_, err = commandcontract.ValidateStoredCommand(input)
@@ -115,7 +112,6 @@ func TestVMBindingFreezesSpecWithoutQuotaPlan(t *testing.T) {
 	prepared, err := binding.PrepareManagedBusiness(context.Background(), &auth.Principal{ID: 7}, uuid.NewString(), spec.Intent)
 	require.NoError(t, err)
 	require.Nil(t, prepared.gpu)
-	require.Zero(t, prepared.instanceContractVersion)
 	first, err := prepared.freeze("tenant", "user", "7", "op", "resource", nil)
 	require.NoError(t, err)
 	peer.spec.Compute.CpuMillis = 10000

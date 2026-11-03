@@ -23,59 +23,98 @@ const _ = http.SupportPackageIsVersion1
 const OperationNetworkServiceBindVPCSnat = "/admin.service.v1.NetworkService/BindVPCSnat"
 const OperationNetworkServiceCreateEIP = "/admin.service.v1.NetworkService/CreateEIP"
 const OperationNetworkServiceCreateLoadBalancer = "/admin.service.v1.NetworkService/CreateLoadBalancer"
+const OperationNetworkServiceCreateSecurityGroup = "/admin.service.v1.NetworkService/CreateSecurityGroup"
+const OperationNetworkServiceCreateSecurityGroupRule = "/admin.service.v1.NetworkService/CreateSecurityGroupRule"
 const OperationNetworkServiceCreateSubnet = "/admin.service.v1.NetworkService/CreateSubnet"
 const OperationNetworkServiceCreateVPC = "/admin.service.v1.NetworkService/CreateVPC"
 const OperationNetworkServiceDeleteEIP = "/admin.service.v1.NetworkService/DeleteEIP"
 const OperationNetworkServiceDeleteLoadBalancer = "/admin.service.v1.NetworkService/DeleteLoadBalancer"
+const OperationNetworkServiceDeleteSecurityGroup = "/admin.service.v1.NetworkService/DeleteSecurityGroup"
+const OperationNetworkServiceDeleteSecurityGroupRule = "/admin.service.v1.NetworkService/DeleteSecurityGroupRule"
 const OperationNetworkServiceDeleteSubnet = "/admin.service.v1.NetworkService/DeleteSubnet"
 const OperationNetworkServiceDeleteVPC = "/admin.service.v1.NetworkService/DeleteVPC"
 const OperationNetworkServiceDeleteVPCSnatBinding = "/admin.service.v1.NetworkService/DeleteVPCSnatBinding"
 const OperationNetworkServiceGetEIP = "/admin.service.v1.NetworkService/GetEIP"
+const OperationNetworkServiceGetEIPSecurityGroups = "/admin.service.v1.NetworkService/GetEIPSecurityGroups"
 const OperationNetworkServiceGetLoadBalancer = "/admin.service.v1.NetworkService/GetLoadBalancer"
 const OperationNetworkServiceGetLoadBalancerOperation = "/admin.service.v1.NetworkService/GetLoadBalancerOperation"
 const OperationNetworkServiceGetOperation = "/admin.service.v1.NetworkService/GetOperation"
+const OperationNetworkServiceGetSecurityGroup = "/admin.service.v1.NetworkService/GetSecurityGroup"
+const OperationNetworkServiceGetSecurityGroupOperation = "/admin.service.v1.NetworkService/GetSecurityGroupOperation"
 const OperationNetworkServiceGetSubnet = "/admin.service.v1.NetworkService/GetSubnet"
 const OperationNetworkServiceGetVPC = "/admin.service.v1.NetworkService/GetVPC"
 const OperationNetworkServiceGetVPCSnat = "/admin.service.v1.NetworkService/GetVPCSnat"
 const OperationNetworkServiceGetVPCSnatBinding = "/admin.service.v1.NetworkService/GetVPCSnatBinding"
 const OperationNetworkServiceListEIPs = "/admin.service.v1.NetworkService/ListEIPs"
 const OperationNetworkServiceListLoadBalancers = "/admin.service.v1.NetworkService/ListLoadBalancers"
+const OperationNetworkServiceListSecurityGroupBindings = "/admin.service.v1.NetworkService/ListSecurityGroupBindings"
+const OperationNetworkServiceListSecurityGroupRules = "/admin.service.v1.NetworkService/ListSecurityGroupRules"
+const OperationNetworkServiceListSecurityGroups = "/admin.service.v1.NetworkService/ListSecurityGroups"
 const OperationNetworkServiceListSubnets = "/admin.service.v1.NetworkService/ListSubnets"
 const OperationNetworkServiceListVPCCIDRPresets = "/admin.service.v1.NetworkService/ListVPCCIDRPresets"
 const OperationNetworkServiceListVPCs = "/admin.service.v1.NetworkService/ListVPCs"
+const OperationNetworkServiceSetEIPSecurityGroups = "/admin.service.v1.NetworkService/SetEIPSecurityGroups"
 const OperationNetworkServiceSetVPCSnatEnabled = "/admin.service.v1.NetworkService/SetVPCSnatEnabled"
 const OperationNetworkServiceUpdateLoadBalancer = "/admin.service.v1.NetworkService/UpdateLoadBalancer"
+const OperationNetworkServiceUpdateSecurityGroup = "/admin.service.v1.NetworkService/UpdateSecurityGroup"
+const OperationNetworkServiceUpdateSecurityGroupRule = "/admin.service.v1.NetworkService/UpdateSecurityGroupRule"
 
 type NetworkServiceHTTPServer interface {
 	BindVPCSnat(context.Context, *v1.BindVPCSnatRequest) (*v1.BindVPCSnatResponse, error)
 	CreateEIP(context.Context, *v1.CreateEIPRequest) (*v1.CreateEIPResponse, error)
 	CreateLoadBalancer(context.Context, *v1.CreateLoadBalancerRequest) (*v1.CreateLoadBalancerResponse, error)
+	CreateSecurityGroup(context.Context, *v1.CreateSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	CreateSecurityGroupRule(context.Context, *v1.CreateSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error)
 	CreateSubnet(context.Context, *v1.CreateSubnetRequest) (*v1.CreateSubnetResponse, error)
 	CreateVPC(context.Context, *v1.CreateVPCRequest) (*v1.CreateVPCResponse, error)
 	DeleteEIP(context.Context, *v1.DeleteEIPRequest) (*v1.DeleteEIPResponse, error)
 	DeleteLoadBalancer(context.Context, *v1.DeleteLoadBalancerRequest) (*v1.DeleteLoadBalancerResponse, error)
+	DeleteSecurityGroup(context.Context, *v1.DeleteSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	DeleteSecurityGroupRule(context.Context, *v1.DeleteSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error)
 	DeleteSubnet(context.Context, *v1.DeleteSubnetRequest) (*v1.DeleteSubnetResponse, error)
 	DeleteVPC(context.Context, *v1.DeleteVPCRequest) (*v1.DeleteVPCResponse, error)
 	DeleteVPCSnatBinding(context.Context, *v1.DeleteVPCSnatBindingRequest) (*v1.DeleteVPCSnatBindingResponse, error)
 	GetEIP(context.Context, *v1.GetEIPRequest) (*v1.GetEIPResponse, error)
+	GetEIPSecurityGroups(context.Context, *v1.GetEIPSecurityGroupsRequest) (*v1.SetEIPSecurityGroupsResponse, error)
 	GetLoadBalancer(context.Context, *v1.GetLoadBalancerRequest) (*v1.GetLoadBalancerResponse, error)
 	GetLoadBalancerOperation(context.Context, *v1.GetLoadBalancerOperationRequest) (*v1.GetLoadBalancerOperationResponse, error)
 	GetOperation(context.Context, *v1.GetOperationRequest) (*v1.GetOperationResponse, error)
+	GetSecurityGroup(context.Context, *v1.GetSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	GetSecurityGroupOperation(context.Context, *v1.GetSecurityGroupOperationRequest) (*v1.GetOperationResponse, error)
 	GetSubnet(context.Context, *v1.GetSubnetRequest) (*v1.GetSubnetResponse, error)
 	GetVPC(context.Context, *v1.GetVPCRequest) (*v1.GetVPCResponse, error)
 	GetVPCSnat(context.Context, *v1.GetVPCSnatRequest) (*v1.GetVPCSnatResponse, error)
 	GetVPCSnatBinding(context.Context, *v1.GetVPCSnatBindingRequest) (*v1.GetVPCSnatBindingResponse, error)
 	ListEIPs(context.Context, *v1.ListEIPsRequest) (*v1.ListEIPsResponse, error)
 	ListLoadBalancers(context.Context, *v1.ListLoadBalancersRequest) (*v1.ListLoadBalancersResponse, error)
+	ListSecurityGroupBindings(context.Context, *v1.ListSecurityGroupBindingsRequest) (*v1.ListSecurityGroupBindingsResponse, error)
+	ListSecurityGroupRules(context.Context, *v1.ListSecurityGroupRulesRequest) (*v1.ListSecurityGroupRulesResponse, error)
+	ListSecurityGroups(context.Context, *v1.ListSecurityGroupsRequest) (*v1.ListSecurityGroupsResponse, error)
 	ListSubnets(context.Context, *v1.ListSubnetsRequest) (*v1.ListSubnetsResponse, error)
 	ListVPCCIDRPresets(context.Context, *v1.ListVPCCIDRPresetsRequest) (*v1.ListVPCCIDRPresetsResponse, error)
 	ListVPCs(context.Context, *v1.ListVPCsRequest) (*v1.ListVPCsResponse, error)
+	SetEIPSecurityGroups(context.Context, *v1.SetEIPSecurityGroupsRequest) (*v1.SetEIPSecurityGroupsResponse, error)
 	SetVPCSnatEnabled(context.Context, *v1.SetVPCSnatEnabledRequest) (*v1.SetVPCSnatEnabledResponse, error)
 	UpdateLoadBalancer(context.Context, *v1.UpdateLoadBalancerRequest) (*v1.UpdateLoadBalancerResponse, error)
+	UpdateSecurityGroup(context.Context, *v1.UpdateSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	UpdateSecurityGroupRule(context.Context, *v1.UpdateSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error)
 }
 
 func RegisterNetworkServiceHTTPServer(s *http.Server, srv NetworkServiceHTTPServer) {
 	r := s.Route("/")
+	r.GET("/api/v1/networks/eips/{eip_id}/security-groups", _NetworkService_GetEIPSecurityGroups0_HTTP_Handler(srv))
+	r.GET("/api/v1/networks/security-groups/operations/{operation_id}", _NetworkService_GetSecurityGroupOperation0_HTTP_Handler(srv))
+	r.POST("/api/v1/networks/security-groups", _NetworkService_CreateSecurityGroup0_HTTP_Handler(srv))
+	r.GET("/api/v1/networks/security-groups/{security_group_id}", _NetworkService_GetSecurityGroup0_HTTP_Handler(srv))
+	r.GET("/api/v1/networks/security-groups", _NetworkService_ListSecurityGroups0_HTTP_Handler(srv))
+	r.PATCH("/api/v1/networks/security-groups/{security_group_id}", _NetworkService_UpdateSecurityGroup0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/networks/security-groups/{security_group_id}", _NetworkService_DeleteSecurityGroup0_HTTP_Handler(srv))
+	r.GET("/api/v1/networks/security-groups/{security_group_id}/rules", _NetworkService_ListSecurityGroupRules0_HTTP_Handler(srv))
+	r.POST("/api/v1/networks/security-groups/{security_group_id}/rules", _NetworkService_CreateSecurityGroupRule0_HTTP_Handler(srv))
+	r.PATCH("/api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}", _NetworkService_UpdateSecurityGroupRule0_HTTP_Handler(srv))
+	r.DELETE("/api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}", _NetworkService_DeleteSecurityGroupRule0_HTTP_Handler(srv))
+	r.GET("/api/v1/networks/security-groups/{security_group_id}/bindings", _NetworkService_ListSecurityGroupBindings0_HTTP_Handler(srv))
+	r.PUT("/api/v1/networks/eips/{eip_id}/security-groups", _NetworkService_SetEIPSecurityGroups0_HTTP_Handler(srv))
 	r.GET("/api/v1/networks/vpc-cidr-presets", _NetworkService_ListVPCCIDRPresets0_HTTP_Handler(srv))
 	r.GET("/api/v1/networks/vpcs/{vpc_id}", _NetworkService_GetVPC0_HTTP_Handler(srv))
 	r.GET("/api/v1/networks/vpcs", _NetworkService_ListVPCs0_HTTP_Handler(srv))
@@ -101,6 +140,301 @@ func RegisterNetworkServiceHTTPServer(s *http.Server, srv NetworkServiceHTTPServ
 	r.PATCH("/api/v1/networks/load-balancers/{load_balancer_id}", _NetworkService_UpdateLoadBalancer0_HTTP_Handler(srv))
 	r.DELETE("/api/v1/networks/load-balancers/{load_balancer_id}", _NetworkService_DeleteLoadBalancer0_HTTP_Handler(srv))
 	r.GET("/api/v1/networks/load-balancers/operations/{operation_id}", _NetworkService_GetLoadBalancerOperation0_HTTP_Handler(srv))
+}
+
+func _NetworkService_GetEIPSecurityGroups0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetEIPSecurityGroupsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceGetEIPSecurityGroups)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetEIPSecurityGroups(ctx, req.(*v1.GetEIPSecurityGroupsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SetEIPSecurityGroupsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_GetSecurityGroupOperation0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetSecurityGroupOperationRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceGetSecurityGroupOperation)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSecurityGroupOperation(ctx, req.(*v1.GetSecurityGroupOperationRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetOperationResponse)
+		return ctx.Result(200, reply.Operation)
+	}
+}
+
+func _NetworkService_CreateSecurityGroup0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CreateSecurityGroupRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceCreateSecurityGroup)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateSecurityGroup(ctx, req.(*v1.CreateSecurityGroupRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SecurityGroupResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_GetSecurityGroup0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetSecurityGroupRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceGetSecurityGroup)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSecurityGroup(ctx, req.(*v1.GetSecurityGroupRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SecurityGroupResponse)
+		return ctx.Result(200, reply.SecurityGroup)
+	}
+}
+
+func _NetworkService_ListSecurityGroups0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListSecurityGroupsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceListSecurityGroups)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListSecurityGroups(ctx, req.(*v1.ListSecurityGroupsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListSecurityGroupsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_UpdateSecurityGroup0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.UpdateSecurityGroupRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceUpdateSecurityGroup)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateSecurityGroup(ctx, req.(*v1.UpdateSecurityGroupRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SecurityGroupResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_DeleteSecurityGroup0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteSecurityGroupRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceDeleteSecurityGroup)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteSecurityGroup(ctx, req.(*v1.DeleteSecurityGroupRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SecurityGroupResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_ListSecurityGroupRules0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListSecurityGroupRulesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceListSecurityGroupRules)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListSecurityGroupRules(ctx, req.(*v1.ListSecurityGroupRulesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListSecurityGroupRulesResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_CreateSecurityGroupRule0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.CreateSecurityGroupRuleRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceCreateSecurityGroupRule)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateSecurityGroupRule(ctx, req.(*v1.CreateSecurityGroupRuleRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SecurityGroupRuleResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_UpdateSecurityGroupRule0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.UpdateSecurityGroupRuleRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceUpdateSecurityGroupRule)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateSecurityGroupRule(ctx, req.(*v1.UpdateSecurityGroupRuleRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SecurityGroupRuleResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_DeleteSecurityGroupRule0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.DeleteSecurityGroupRuleRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceDeleteSecurityGroupRule)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteSecurityGroupRule(ctx, req.(*v1.DeleteSecurityGroupRuleRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SecurityGroupRuleResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_ListSecurityGroupBindings0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListSecurityGroupBindingsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceListSecurityGroupBindings)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListSecurityGroupBindings(ctx, req.(*v1.ListSecurityGroupBindingsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.ListSecurityGroupBindingsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _NetworkService_SetEIPSecurityGroups0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.SetEIPSecurityGroupsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationNetworkServiceSetEIPSecurityGroups)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetEIPSecurityGroups(ctx, req.(*v1.SetEIPSecurityGroupsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SetEIPSecurityGroupsResponse)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _NetworkService_ListVPCCIDRPresets0_HTTP_Handler(srv NetworkServiceHTTPServer) func(ctx http.Context) error {
@@ -651,28 +985,41 @@ type NetworkServiceHTTPClient interface {
 	BindVPCSnat(ctx context.Context, req *v1.BindVPCSnatRequest, opts ...http.CallOption) (rsp *v1.BindVPCSnatResponse, err error)
 	CreateEIP(ctx context.Context, req *v1.CreateEIPRequest, opts ...http.CallOption) (rsp *v1.CreateEIPResponse, err error)
 	CreateLoadBalancer(ctx context.Context, req *v1.CreateLoadBalancerRequest, opts ...http.CallOption) (rsp *v1.CreateLoadBalancerResponse, err error)
+	CreateSecurityGroup(ctx context.Context, req *v1.CreateSecurityGroupRequest, opts ...http.CallOption) (rsp *v1.SecurityGroupResponse, err error)
+	CreateSecurityGroupRule(ctx context.Context, req *v1.CreateSecurityGroupRuleRequest, opts ...http.CallOption) (rsp *v1.SecurityGroupRuleResponse, err error)
 	CreateSubnet(ctx context.Context, req *v1.CreateSubnetRequest, opts ...http.CallOption) (rsp *v1.CreateSubnetResponse, err error)
 	CreateVPC(ctx context.Context, req *v1.CreateVPCRequest, opts ...http.CallOption) (rsp *v1.CreateVPCResponse, err error)
 	DeleteEIP(ctx context.Context, req *v1.DeleteEIPRequest, opts ...http.CallOption) (rsp *v1.DeleteEIPResponse, err error)
 	DeleteLoadBalancer(ctx context.Context, req *v1.DeleteLoadBalancerRequest, opts ...http.CallOption) (rsp *v1.DeleteLoadBalancerResponse, err error)
+	DeleteSecurityGroup(ctx context.Context, req *v1.DeleteSecurityGroupRequest, opts ...http.CallOption) (rsp *v1.SecurityGroupResponse, err error)
+	DeleteSecurityGroupRule(ctx context.Context, req *v1.DeleteSecurityGroupRuleRequest, opts ...http.CallOption) (rsp *v1.SecurityGroupRuleResponse, err error)
 	DeleteSubnet(ctx context.Context, req *v1.DeleteSubnetRequest, opts ...http.CallOption) (rsp *v1.DeleteSubnetResponse, err error)
 	DeleteVPC(ctx context.Context, req *v1.DeleteVPCRequest, opts ...http.CallOption) (rsp *v1.DeleteVPCResponse, err error)
 	DeleteVPCSnatBinding(ctx context.Context, req *v1.DeleteVPCSnatBindingRequest, opts ...http.CallOption) (rsp *v1.DeleteVPCSnatBindingResponse, err error)
 	GetEIP(ctx context.Context, req *v1.GetEIPRequest, opts ...http.CallOption) (rsp *v1.GetEIPResponse, err error)
+	GetEIPSecurityGroups(ctx context.Context, req *v1.GetEIPSecurityGroupsRequest, opts ...http.CallOption) (rsp *v1.SetEIPSecurityGroupsResponse, err error)
 	GetLoadBalancer(ctx context.Context, req *v1.GetLoadBalancerRequest, opts ...http.CallOption) (rsp *v1.GetLoadBalancerResponse, err error)
 	GetLoadBalancerOperation(ctx context.Context, req *v1.GetLoadBalancerOperationRequest, opts ...http.CallOption) (rsp *v1.GetLoadBalancerOperationResponse, err error)
 	GetOperation(ctx context.Context, req *v1.GetOperationRequest, opts ...http.CallOption) (rsp *v1.GetOperationResponse, err error)
+	GetSecurityGroup(ctx context.Context, req *v1.GetSecurityGroupRequest, opts ...http.CallOption) (rsp *v1.SecurityGroupResponse, err error)
+	GetSecurityGroupOperation(ctx context.Context, req *v1.GetSecurityGroupOperationRequest, opts ...http.CallOption) (rsp *v1.GetOperationResponse, err error)
 	GetSubnet(ctx context.Context, req *v1.GetSubnetRequest, opts ...http.CallOption) (rsp *v1.GetSubnetResponse, err error)
 	GetVPC(ctx context.Context, req *v1.GetVPCRequest, opts ...http.CallOption) (rsp *v1.GetVPCResponse, err error)
 	GetVPCSnat(ctx context.Context, req *v1.GetVPCSnatRequest, opts ...http.CallOption) (rsp *v1.GetVPCSnatResponse, err error)
 	GetVPCSnatBinding(ctx context.Context, req *v1.GetVPCSnatBindingRequest, opts ...http.CallOption) (rsp *v1.GetVPCSnatBindingResponse, err error)
 	ListEIPs(ctx context.Context, req *v1.ListEIPsRequest, opts ...http.CallOption) (rsp *v1.ListEIPsResponse, err error)
 	ListLoadBalancers(ctx context.Context, req *v1.ListLoadBalancersRequest, opts ...http.CallOption) (rsp *v1.ListLoadBalancersResponse, err error)
+	ListSecurityGroupBindings(ctx context.Context, req *v1.ListSecurityGroupBindingsRequest, opts ...http.CallOption) (rsp *v1.ListSecurityGroupBindingsResponse, err error)
+	ListSecurityGroupRules(ctx context.Context, req *v1.ListSecurityGroupRulesRequest, opts ...http.CallOption) (rsp *v1.ListSecurityGroupRulesResponse, err error)
+	ListSecurityGroups(ctx context.Context, req *v1.ListSecurityGroupsRequest, opts ...http.CallOption) (rsp *v1.ListSecurityGroupsResponse, err error)
 	ListSubnets(ctx context.Context, req *v1.ListSubnetsRequest, opts ...http.CallOption) (rsp *v1.ListSubnetsResponse, err error)
 	ListVPCCIDRPresets(ctx context.Context, req *v1.ListVPCCIDRPresetsRequest, opts ...http.CallOption) (rsp *v1.ListVPCCIDRPresetsResponse, err error)
 	ListVPCs(ctx context.Context, req *v1.ListVPCsRequest, opts ...http.CallOption) (rsp *v1.ListVPCsResponse, err error)
+	SetEIPSecurityGroups(ctx context.Context, req *v1.SetEIPSecurityGroupsRequest, opts ...http.CallOption) (rsp *v1.SetEIPSecurityGroupsResponse, err error)
 	SetVPCSnatEnabled(ctx context.Context, req *v1.SetVPCSnatEnabledRequest, opts ...http.CallOption) (rsp *v1.SetVPCSnatEnabledResponse, err error)
 	UpdateLoadBalancer(ctx context.Context, req *v1.UpdateLoadBalancerRequest, opts ...http.CallOption) (rsp *v1.UpdateLoadBalancerResponse, err error)
+	UpdateSecurityGroup(ctx context.Context, req *v1.UpdateSecurityGroupRequest, opts ...http.CallOption) (rsp *v1.SecurityGroupResponse, err error)
+	UpdateSecurityGroupRule(ctx context.Context, req *v1.UpdateSecurityGroupRuleRequest, opts ...http.CallOption) (rsp *v1.SecurityGroupRuleResponse, err error)
 }
 
 type NetworkServiceHTTPClientImpl struct {
@@ -714,6 +1061,32 @@ func (c *NetworkServiceHTTPClientImpl) CreateLoadBalancer(ctx context.Context, i
 	pattern := "/api/v1/networks/load-balancers"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationNetworkServiceCreateLoadBalancer))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) CreateSecurityGroup(ctx context.Context, in *v1.CreateSecurityGroupRequest, opts ...http.CallOption) (*v1.SecurityGroupResponse, error) {
+	var out v1.SecurityGroupResponse
+	pattern := "/api/v1/networks/security-groups"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationNetworkServiceCreateSecurityGroup))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) CreateSecurityGroupRule(ctx context.Context, in *v1.CreateSecurityGroupRuleRequest, opts ...http.CallOption) (*v1.SecurityGroupRuleResponse, error) {
+	var out v1.SecurityGroupRuleResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}/rules"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationNetworkServiceCreateSecurityGroupRule))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
@@ -774,6 +1147,32 @@ func (c *NetworkServiceHTTPClientImpl) DeleteLoadBalancer(ctx context.Context, i
 	return &out, nil
 }
 
+func (c *NetworkServiceHTTPClientImpl) DeleteSecurityGroup(ctx context.Context, in *v1.DeleteSecurityGroupRequest, opts ...http.CallOption) (*v1.SecurityGroupResponse, error) {
+	var out v1.SecurityGroupResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceDeleteSecurityGroup))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) DeleteSecurityGroupRule(ctx context.Context, in *v1.DeleteSecurityGroupRuleRequest, opts ...http.CallOption) (*v1.SecurityGroupRuleResponse, error) {
+	var out v1.SecurityGroupRuleResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceDeleteSecurityGroupRule))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *NetworkServiceHTTPClientImpl) DeleteSubnet(ctx context.Context, in *v1.DeleteSubnetRequest, opts ...http.CallOption) (*v1.DeleteSubnetResponse, error) {
 	var out v1.DeleteSubnetResponse
 	pattern := "/api/v1/networks/subnets/{subnet_id}"
@@ -826,6 +1225,19 @@ func (c *NetworkServiceHTTPClientImpl) GetEIP(ctx context.Context, in *v1.GetEIP
 	return &out, nil
 }
 
+func (c *NetworkServiceHTTPClientImpl) GetEIPSecurityGroups(ctx context.Context, in *v1.GetEIPSecurityGroupsRequest, opts ...http.CallOption) (*v1.SetEIPSecurityGroupsResponse, error) {
+	var out v1.SetEIPSecurityGroupsResponse
+	pattern := "/api/v1/networks/eips/{eip_id}/security-groups"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceGetEIPSecurityGroups))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *NetworkServiceHTTPClientImpl) GetLoadBalancer(ctx context.Context, in *v1.GetLoadBalancerRequest, opts ...http.CallOption) (*v1.GetLoadBalancerResponse, error) {
 	var out v1.GetLoadBalancerResponse
 	pattern := "/api/v1/networks/load-balancers/{load_balancer_id}"
@@ -857,6 +1269,32 @@ func (c *NetworkServiceHTTPClientImpl) GetOperation(ctx context.Context, in *v1.
 	pattern := "/api/v1/networks/operations/{operation_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationNetworkServiceGetOperation))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out.Operation, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) GetSecurityGroup(ctx context.Context, in *v1.GetSecurityGroupRequest, opts ...http.CallOption) (*v1.SecurityGroupResponse, error) {
+	var out v1.SecurityGroupResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceGetSecurityGroup))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out.SecurityGroup, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) GetSecurityGroupOperation(ctx context.Context, in *v1.GetSecurityGroupOperationRequest, opts ...http.CallOption) (*v1.GetOperationResponse, error) {
+	var out v1.GetOperationResponse
+	pattern := "/api/v1/networks/security-groups/operations/{operation_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceGetSecurityGroupOperation))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out.Operation, opts...)
 	if err != nil {
@@ -943,6 +1381,45 @@ func (c *NetworkServiceHTTPClientImpl) ListLoadBalancers(ctx context.Context, in
 	return &out, nil
 }
 
+func (c *NetworkServiceHTTPClientImpl) ListSecurityGroupBindings(ctx context.Context, in *v1.ListSecurityGroupBindingsRequest, opts ...http.CallOption) (*v1.ListSecurityGroupBindingsResponse, error) {
+	var out v1.ListSecurityGroupBindingsResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}/bindings"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceListSecurityGroupBindings))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) ListSecurityGroupRules(ctx context.Context, in *v1.ListSecurityGroupRulesRequest, opts ...http.CallOption) (*v1.ListSecurityGroupRulesResponse, error) {
+	var out v1.ListSecurityGroupRulesResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}/rules"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceListSecurityGroupRules))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) ListSecurityGroups(ctx context.Context, in *v1.ListSecurityGroupsRequest, opts ...http.CallOption) (*v1.ListSecurityGroupsResponse, error) {
+	var out v1.ListSecurityGroupsResponse
+	pattern := "/api/v1/networks/security-groups"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationNetworkServiceListSecurityGroups))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *NetworkServiceHTTPClientImpl) ListSubnets(ctx context.Context, in *v1.ListSubnetsRequest, opts ...http.CallOption) (*v1.ListSubnetsResponse, error) {
 	var out v1.ListSubnetsResponse
 	pattern := "/api/v1/networks/subnets"
@@ -982,6 +1459,19 @@ func (c *NetworkServiceHTTPClientImpl) ListVPCs(ctx context.Context, in *v1.List
 	return &out, nil
 }
 
+func (c *NetworkServiceHTTPClientImpl) SetEIPSecurityGroups(ctx context.Context, in *v1.SetEIPSecurityGroupsRequest, opts ...http.CallOption) (*v1.SetEIPSecurityGroupsResponse, error) {
+	var out v1.SetEIPSecurityGroupsResponse
+	pattern := "/api/v1/networks/eips/{eip_id}/security-groups"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationNetworkServiceSetEIPSecurityGroups))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *NetworkServiceHTTPClientImpl) SetVPCSnatEnabled(ctx context.Context, in *v1.SetVPCSnatEnabledRequest, opts ...http.CallOption) (*v1.SetVPCSnatEnabledResponse, error) {
 	var out v1.SetVPCSnatEnabledResponse
 	pattern := "/api/v1/networks/snat/bindings/{binding_id}"
@@ -1000,6 +1490,32 @@ func (c *NetworkServiceHTTPClientImpl) UpdateLoadBalancer(ctx context.Context, i
 	pattern := "/api/v1/networks/load-balancers/{load_balancer_id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationNetworkServiceUpdateLoadBalancer))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PATCH", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) UpdateSecurityGroup(ctx context.Context, in *v1.UpdateSecurityGroupRequest, opts ...http.CallOption) (*v1.SecurityGroupResponse, error) {
+	var out v1.SecurityGroupResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationNetworkServiceUpdateSecurityGroup))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PATCH", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *NetworkServiceHTTPClientImpl) UpdateSecurityGroupRule(ctx context.Context, in *v1.UpdateSecurityGroupRuleRequest, opts ...http.CallOption) (*v1.SecurityGroupRuleResponse, error) {
+	var out v1.SecurityGroupRuleResponse
+	pattern := "/api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationNetworkServiceUpdateSecurityGroupRule))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "PATCH", path, in, &out, opts...)
 	if err != nil {

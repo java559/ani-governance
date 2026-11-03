@@ -8,6 +8,7 @@ import (
 
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"go-wind-admin/app/admin/service/internal/data/ent"
+	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
@@ -72,6 +73,13 @@ func (r *QuotaLedgerRepo) RegisterSandboxCreateIntent(ctx context.Context, in Sa
 			}
 			out, replay = old, true
 			return nil
+		}
+		row, e := tx.Tenant.Query().Where(tenant.IDEQ(in.TenantID)).Only(ctx)
+		if e != nil {
+			return e
+		}
+		if row.TenantSpaceState == tenant.TenantSpaceStateCLOSING || row.TenantSpaceState == tenant.TenantSpaceStateCLOSED {
+			return kratoserrors.Conflict("TENANT_SPACE_CLOSING", "租户空间正在关闭，无法创建 Sandbox")
 		}
 		_, e = tx.SandboxExec(ctx, `INSERT INTO sys_sandbox_create_intents(tenant_id,resource_tenant_id,instance_id,sandbox_id,operation_id,intent_digest,actor,command) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`, in.TenantID, in.ResourceTenantID, in.InstanceID, in.SandboxID, in.OperationID, in.IntentDigest, in.Actor, string(in.Command))
 		if e != nil {

@@ -39,6 +39,8 @@ func TestInstanceHTTPConfigurationRejectsNullAndInternalFields(t *testing.T) {
 		`{"data":{"volume_mounts":[{"pvc_name":"data","mount_path":"/data","read_only":null}]}}`,
 		`{"data":{"env":[{"name":"TOKEN","value":null}]}}`,
 		`{"data":{"instance_contract_version":1}}`,
+		`{"data":{"instance_contract_version":2}}`,
+		`{"data":{"instanceContractVersion":2}}`,
 		`{"data":{"volume_mounts":[{"pvc_name":"data","pvc_uid":"forged","mount_path":"/data"}]}}`,
 	} {
 		r := httptest.NewRequest("POST", "/api/v1/instances", strings.NewReader(body))

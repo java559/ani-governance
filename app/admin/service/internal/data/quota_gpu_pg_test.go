@@ -132,7 +132,6 @@ func gpuLedgerInput(t *testing.T, c *ent.Client, tid, pid uint32) *QuotaOccupyIn
 	// deliberately not a valid managed command.
 	in.OwnerService = commandcontract.InstanceOwner
 	in.Action = commandcontract.InstanceCreateAction
-	in.InstanceContractVersion = CurrentInstanceContractVersion
 	in.Items = []QuotaOccupyItem{{"gpu.physical.count", 2}, {"storage.bytes", 10}}
 	business := cpuConfigurationBusiness()
 	business.ComputeType = "gpu"
@@ -143,10 +142,10 @@ func gpuLedgerInput(t *testing.T, c *ent.Client, tid, pid uint32) *QuotaOccupyIn
 	require.NoError(t, e)
 	business.GpuExecution = execution
 	business.GpuDisplay = &acc.GpuDisplay{ProfileId: request.ProfileId, ProfileVersion: request.ProfileVersion, ProfileName: "ledger whole GPU", Mode: acc.SupplyMode_WHOLE_EXCLUSIVE, ModelKey: "nvidia-tesla-t4"}
-	payload, e := res.CanonicalBusinessPayloadVersion(business, CurrentInstanceContractVersion)
+	payload, e := res.CanonicalBusinessPayload(business)
 	require.NoError(t, e)
 	digest := sha256.Sum256(payload)
-	canonical := commandcontract.GpuCanonical{SchemaVersion: 3, InstanceContractVersion: CurrentInstanceContractVersion, GpuRequest: request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(digest[:]), MeteringVersion: commandcontract.GpuMeteringVersion, QuotaItems: []commandcontract.GpuQuotaItem{{QuotaCode: "gpu.physical.count", Units: 2}, {QuotaCode: "storage.bytes", Units: 10}}}
+	canonical := commandcontract.GpuCanonical{SchemaVersion: 3, GpuRequest: request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(digest[:]), MeteringVersion: commandcontract.GpuMeteringVersion, QuotaItems: []commandcontract.GpuQuotaItem{{QuotaCode: "gpu.physical.count", Units: 2}, {QuotaCode: "storage.bytes", Units: 10}}}
 	blob, e := commandcontract.CanonicalJSON(canonical)
 	require.NoError(t, e)
 	_, e = commandcontract.DecodeGpuCanonical(blob)
@@ -286,7 +285,6 @@ func TestQuotaGpuDeleteReleaseAndProjectionRecovery(t *testing.T) {
 	storage.CanonicalRequest = `{"resource":"storage"}`
 	storage.OwnerService = "ani-storage-service"
 	storage.Action = "STORAGE_CREATE"
-	storage.InstanceContractVersion = 0
 	storage.Items = []QuotaOccupyItem{{"storage.bytes", 10}}
 	storageOp, e := r.Occupy(ctx, &storage)
 	require.NoError(t, e)

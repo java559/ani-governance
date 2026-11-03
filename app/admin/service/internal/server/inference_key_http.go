@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/go-kratos/kratos/v2/transport/http"
 	admin "go-wind-admin/api/gen/go/admin/service/v1"
@@ -43,8 +44,16 @@ func registerInferenceKeyHTTP(server *http.Server, inference *service.InferenceS
 		}
 		in := new(view.ListInferenceKeysRequest)
 		for key, vs := range values {
-			if (key != "page" && key != "pageSize") || len(vs) != 1 {
-				return view.ErrorInvalidInferenceKeyRequest("only single page and pageSize parameters are accepted")
+			if (key != "page" && key != "pageSize" && key != "served_model_name") || len(vs) != 1 {
+				return view.ErrorInvalidInferenceKeyRequest("only single page, pageSize and served_model_name parameters are accepted")
+			}
+			if key == "served_model_name" {
+				model := strings.TrimSpace(vs[0])
+				if model == "" || strings.ContainsRune(model, '\x00') {
+					return view.ErrorInvalidInferenceKeyRequest("served_model_name must be nonempty")
+				}
+				in.ServedModelName = &model
+				continue
 			}
 			n, err := strconv.ParseInt(vs[0], 10, 32)
 			if err != nil || n < 1 || n > 100 || strconv.FormatInt(n, 10) != vs[0] {

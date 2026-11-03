@@ -3,10 +3,13 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/middleware"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/stretchr/testify/require"
@@ -19,6 +22,11 @@ import (
 )
 
 const sandboxHTTPResourceID = "22222222-2222-4222-8222-222222222222"
+
+type sandboxCountingBody struct{ reads int }
+
+func (b *sandboxCountingBody) Read([]byte) (int, error) { b.reads++; return 0, io.EOF }
+func (b *sandboxCountingBody) Close() error             { return nil }
 
 type sandboxHTTPAuthorization struct{ denied bool }
 
@@ -50,11 +58,28 @@ func (sandboxHTTPTenants) ResourceTenantID(context.Context, uint32) (string, err
 
 type sandboxHTTPResource struct {
 	service.SandboxOwnerClient
-	calls   int
-	list    *res.ListSandboxesRequest
-	failure error
-	create  *res.AcceptCreateRequest
-	created *res.Sandbox
+	calls      int
+	list       *res.ListSandboxesRequest
+	failure    error
+	create     *res.AcceptCreateRequest
+	created    *res.Sandbox
+	codeRun    *res.RunCodeRequest
+	fileReason string
+	tokenReq   *res.CreateTokenRequest
+}
+
+func (o *sandboxHTTPResource) RunSandboxCode(_ context.Context, tenant, actor string, r *res.RunCodeRequest) (*res.CodeRun, error) {
+	if r.TenantId != tenant || actor != "governance:user:9" {
+		panic("untrusted code-run scope")
+	}
+	o.calls++
+	o.codeRun = r
+	return &res.CodeRun{RunId: r.RunId, SandboxId: r.SandboxId, State: "accepted", Stdout: []byte("previous-private-output")}, o.failure
+}
+
+func (o *sandboxHTTPResource) GetSandboxCodeRun(_ context.Context, _, _ string, r *res.GetCodeRunRequest) (*res.CodeRun, error) {
+	o.calls++
+	return &res.CodeRun{RunId: r.RunId, SandboxId: r.SandboxId, State: "succeeded", Stdout: []byte("hello\n")}, o.failure
 }
 
 func (o *sandboxHTTPResource) ListSandboxes(_ context.Context, t, a string, r *res.ListSandboxesRequest) (*res.ListSandboxesResponse, error) {
@@ -77,7 +102,7 @@ func (o *sandboxHTTPResource) GetSandbox(_ context.Context, _ string, _ string, 
 }
 func (o *sandboxHTTPResource) ResolveSandbox(_ context.Context, _, _ string, r *res.ResolveCreateSpecRequest) (*res.ResolveCreateSpecResponse, error) {
 	o.calls++
-	return &res.ResolveCreateSpecResponse{Name: r.Data.Name, ImageReference: r.Data.ImageReference, PresetId: r.Data.PresetId, Workspace: &res.WorkspaceSpec{Size: "10Gi"}}, nil
+	return &res.ResolveCreateSpecResponse{Name: r.Data.Name, ImageId: r.Data.ImageId, ImageScope: r.Data.ImageScope, ImageReference: r.Data.ImageReference, PresetId: r.Data.PresetId, Workspace: &res.WorkspaceSpec{Size: "10Gi"}}, nil
 }
 func (o *sandboxHTTPResource) AcceptSandboxCreate(_ context.Context, _, _ string, r *res.AcceptCreateRequest) (*res.AcceptCreateResponse, error) {
 	o.calls++
@@ -165,10 +190,67 @@ func TestSandboxHTTPPaginationAndCommandBoundary(t *testing.T) {
 	response = fire("POST", collection, createBody, 200)
 	require.NoError(t, json.Unmarshal(response.Body.Bytes(), &result))
 	require.Equal(t, true, result["replayed"])
+	idBody := `{"data":{"idempotency_key":"create-image-id","name":"demo","preset_id":"44444444-4444-4444-8444-444444444444","image_id":"img_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","image_scope":"platform"}}`
+	fire("POST", collection, idBody, 200)
+	require.Equal(t, "img_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", owner.create.Spec.ImageId)
+	require.Equal(t, "platform", owner.create.Spec.ImageScope)
+	fire("POST", collection, `{"data":{"idempotency_key":"invalid-both","name":"demo","preset_id":"44444444-4444-4444-8444-444444444444","image_id":"img_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","image_scope":"platform","image_reference":"registry.example/repo:tag"}}`, 400)
 	authorization.denied = true
 	before := owner.calls
 	fire("GET", collection, "", 403)
 	require.Equal(t, before, owner.calls)
+}
+
+func TestSandboxCodeRunHTTPCreateAndGet(t *testing.T) {
+	owner := new(sandboxHTTPResource)
+	server := khttp.NewServer(khttp.Middleware(func(next middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, r any) (any, error) {
+			return next(auth.NewPrincipalContext(ctx, &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 7}), r)
+		}
+	}))
+	RegisterSandboxHTTPServer(server, service.NewSandboxService(owner, new(sandboxHTTPAuthorization), sandboxHTTPTenants{}, sandboxHTTPAdmission{}))
+	base := "/api/v1/sandbox/" + sandboxHTTPResourceID + "/code-runs"
+	request := httptest.NewRequest("POST", base, strings.NewReader(`{"data":{"idempotency_key":"run-1","language":"python","code":"print('hello')","timeout_seconds":10}}`))
+	request.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	server.ServeHTTP(w, request)
+	require.Equal(t, 200, w.Code, w.Body.String())
+	require.NotContains(t, w.Body.String(), "previous-private-output")
+	require.NotNil(t, owner.codeRun)
+	require.Equal(t, sandboxHTTPResourceID, owner.codeRun.SandboxId)
+	require.Equal(t, "print('hello')", owner.codeRun.Code)
+	require.NotEmpty(t, owner.codeRun.RunId)
+	get := httptest.NewRequest("GET", base+"/"+owner.codeRun.RunId, nil)
+	w = httptest.NewRecorder()
+	server.ServeHTTP(w, get)
+	require.Equal(t, 200, w.Code, w.Body.String())
+	var response map[string]any
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+	require.Equal(t, "succeeded", response["state"])
+	require.Equal(t, "hello\n", response["stdout"])
+
+	bad := httptest.NewRequest("POST", base, strings.NewReader(`{"data":{"sandbox_id":"other","idempotency_key":"run-1","language":"python","code":"1"}}`))
+	bad.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	server.ServeHTTP(w, bad)
+	require.Equal(t, 400, w.Code, w.Body.String())
+}
+
+func TestSandboxCodeRunAuthenticatesBeforeReadingBody(t *testing.T) {
+	server := khttp.NewServer(khttp.Middleware(func(middleware.Handler) middleware.Handler {
+		return func(context.Context, any) (any, error) {
+			return nil, kratoserrors.Unauthorized("UNAUTHORIZED", "authentication required")
+		}
+	}))
+	RegisterSandboxHTTPServer(server, service.NewSandboxService(new(sandboxHTTPResource), new(sandboxHTTPAuthorization), sandboxHTTPTenants{}, sandboxHTTPAdmission{}))
+	body := &sandboxCountingBody{}
+	request := httptest.NewRequest("POST", "/api/v1/sandbox/"+sandboxHTTPResourceID+"/code-runs", nil)
+	request.Body = body
+	request.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	server.ServeHTTP(w, request)
+	require.Equal(t, 401, w.Code, w.Body.String())
+	require.Zero(t, body.reads)
 }
 
 func TestSandboxHTTPErrorsPreservePublicReasons(t *testing.T) {
@@ -281,4 +363,129 @@ func TestSandboxHTTPFailedResolutionReconcilesAcceptedIntent(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (o *sandboxHTTPResource) QuerySandboxFiles(_ context.Context, tenant, actor string, r *res.QueryFilesRequest) (*res.FileResult, error) {
+	if r.TenantId != tenant || actor != "governance:user:9" {
+		panic("untrusted file scope")
+	}
+	o.calls++
+	if r.Action == "read" {
+		return &res.FileResult{Path: r.Path, ContentBase64: "aGVsbG8="}, o.failure
+	}
+	return &res.FileResult{Items: []*res.FileEntry{{Path: r.Path + "/hello", Kind: "file"}}, Total: 1}, o.failure
+}
+func (o *sandboxHTTPResource) MutateSandboxFiles(_ context.Context, tenant, actor string, r *res.MutateFilesRequest) (*res.FileOperation, error) {
+	if r.TenantId != tenant || actor != "governance:user:9" {
+		panic("untrusted file scope")
+	}
+	o.calls++
+	state := "succeeded"
+	if o.fileReason != "" {
+		state = "failed"
+	}
+	return &res.FileOperation{OperationId: r.OperationId, SandboxId: r.SandboxId, State: state, Reason: o.fileReason, Result: &res.FileResult{Path: r.Path}}, o.failure
+}
+func (o *sandboxHTTPResource) GetSandboxFileOperation(_ context.Context, _, _ string, r *res.GetFileOperationRequest) (*res.FileOperation, error) {
+	o.calls++
+	return &res.FileOperation{OperationId: r.OperationId, SandboxId: r.SandboxId, State: "succeeded", Result: &res.FileResult{}}, o.failure
+}
+
+func TestSandboxFilesHTTPContractsAndAuthorization(t *testing.T) {
+	owner := new(sandboxHTTPResource)
+	authorization := new(sandboxHTTPAuthorization)
+	server := khttp.NewServer(khttp.Middleware(func(next middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, r any) (any, error) {
+			return next(auth.NewPrincipalContext(ctx, &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 7}), r)
+		}
+	}))
+	RegisterSandboxHTTPServer(server, service.NewSandboxService(owner, authorization, sandboxHTTPTenants{}, sandboxHTTPAdmission{}))
+	base := "/api/v1/sandbox/" + sandboxHTTPResourceID + "/files"
+	fire := func(method, path, body string, code int) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, path, strings.NewReader(body))
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, r)
+		require.Equal(t, code, w.Code, w.Body.String())
+		return w
+	}
+	w := fire("GET", base+"?path=sub&limit=10&cursor=1", "", 200)
+	require.Contains(t, w.Body.String(), "sub/hello")
+	w = fire("GET", base+"/content?path=sub%2Fhello", "", 200)
+	require.Contains(t, w.Body.String(), "aGVsbG8=")
+	fire("POST", base, `{"data":{"idempotency_key":"key","path":"sub/hello","content_base64":"aGVsbG8="}}`, 200)
+	fire("DELETE", base, `{"data":{"idempotency_key":"delete-key","path":"sub/hello"}}`, 200)
+	fire("GET", base+"?sandbox_id=other", "", 400)
+	fire("POST", base, `{"data":{"sandbox_id":"other","idempotency_key":"key","path":"x"}}`, 400)
+	owner.fileReason = "conflict"
+	fire("POST", base, `{"data":{"idempotency_key":"conflict","path":"sub/hello","content_base64":"aGVsbG8="}}`, 409)
+	owner.fileReason = ""
+	owner.failure = status.Error(codes.ResourceExhausted, "SANDBOX_FILE_TOO_LARGE")
+	fire("GET", base+"/content?path=too-big", "", 413)
+	owner.failure = nil
+	before := owner.calls
+	authorization.denied = true
+	fire("GET", base+"/content?path=secret", "", 403)
+	require.Equal(t, before, owner.calls)
+}
+
+func TestSandboxFileWriteAuthenticatesBeforeReadingBody(t *testing.T) {
+	server := khttp.NewServer(khttp.Middleware(func(middleware.Handler) middleware.Handler {
+		return func(context.Context, any) (any, error) {
+			return nil, kratoserrors.Unauthorized("UNAUTHORIZED", "authentication required")
+		}
+	}))
+	RegisterSandboxHTTPServer(server, service.NewSandboxService(new(sandboxHTTPResource), new(sandboxHTTPAuthorization), sandboxHTTPTenants{}, sandboxHTTPAdmission{}))
+	body := &sandboxCountingBody{}
+	request := httptest.NewRequest("POST", "/api/v1/sandbox/"+sandboxHTTPResourceID+"/files", nil)
+	request.Body = body
+	request.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	server.ServeHTTP(w, request)
+	require.Equal(t, 401, w.Code, w.Body.String())
+	require.Zero(t, body.reads)
+}
+
+func (o *sandboxHTTPResource) CreateSandboxToken(_ context.Context, tenant, actor string, r *res.CreateTokenRequest) (*res.SandboxAccessToken, error) {
+	if r.TenantId != tenant || actor != "governance:user:9" {
+		panic("untrusted token issuer")
+	}
+	o.calls++
+	o.tokenReq = r
+	return &res.SandboxAccessToken{TokenId: r.TokenId, Value: "ani.sbx.fake.signature", Scopes: r.Scopes, ExpiresAt: time.Now().Add(time.Minute).Unix()}, o.failure
+}
+func (o *sandboxHTTPResource) RevokeSandboxToken(_ context.Context, tenant, actor string, r *res.RevokeTokenRequest) error {
+	if r.TenantId != tenant || actor != "governance:user:9" {
+		panic("untrusted token revoker")
+	}
+	o.calls++
+	return o.failure
+}
+func TestSandboxTokenIssueAndRevokeHTTP(t *testing.T) {
+	owner := new(sandboxHTTPResource)
+	authorization := new(sandboxHTTPAuthorization)
+	server := khttp.NewServer(khttp.Middleware(func(next middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, r any) (any, error) {
+			return next(auth.NewPrincipalContext(ctx, &auth.Principal{Type: auth.SubjectUser, ID: 9, TenantID: 7}), r)
+		}
+	}))
+	RegisterSandboxHTTPServer(server, service.NewSandboxService(owner, authorization, sandboxHTTPTenants{}, sandboxHTTPAdmission{}))
+	base := "/api/v1/sandbox/" + sandboxHTTPResourceID + "/tokens"
+	fire := func(method, path, body string, expected int) *httptest.ResponseRecorder {
+		t.Helper()
+		r := httptest.NewRequest(method, path, strings.NewReader(body))
+		r.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, r)
+		require.Equal(t, expected, w.Code, w.Body.String())
+		return w
+	}
+	result := fire("POST", base, `{"data":{"idempotency_key":"token-1","expires_in":"15m","scopes":["files"]}}`, 200)
+	require.Contains(t, result.Body.String(), "ani.sbx.fake.signature")
+	require.NotNil(t, owner.tokenReq)
+	require.EqualValues(t, 7, owner.tokenReq.GovTenantId)
+	require.EqualValues(t, 9, owner.tokenReq.IssuerId)
+	fire("DELETE", base+"/"+owner.tokenReq.TokenId, "", 200)
+	fire("POST", base, `{"data":{"idempotency_key":"bad","expires_in":"2h"}}`, 400)
+	fire("POST", base, `{"data":{"idempotency_key":"ports","scopes":["ports"]}}`, 501)
 }

@@ -22,6 +22,7 @@ func freezeModelDevFixture(t *testing.T, scope ModelDevAdmissionScope, candidate
 	timing, err := (cpup01.TimingConfiguration{ExecutionTimeoutDefaultSeconds: old.ExecutionTimeoutSeconds, ExecutionTimeoutMaxSeconds: old.ExecutionTimeoutMaxSeconds, StepTimeoutSeconds: old.StepTimeoutSeconds}).Resolve(candidate.AcceptedAt, candidate.Intent.TimeoutSeconds)
 	require.NoError(t, err)
 	candidate.Snapshot.IdentityRef = cpup01.IdentityRef{TenantID: scope.ResourceTenantID, Actor: scope.Actor, OperationID: candidate.OperationID, ExecutionID: candidate.ExecutionID, IntentHash: hash}
+	bindModelDevFixtureScope(t, &candidate.Snapshot)
 	candidate.Snapshot.Timing = timing
 	candidate.Snapshot.DeadlineAt = timing.ExecutionDeadlineAt
 	candidate.Snapshot.RuntimePlan.Name = cpup01.RuntimeName(candidate.Snapshot.Environment.NamespaceUID, candidate.ExecutionID)

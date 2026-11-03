@@ -13,9 +13,8 @@ import (
 // A compiled owner prepares its business snapshot. Identity, accounting and
 // persistence are owned by the existing shared admission mechanism.
 type preparedManagedBusiness struct {
-	gpu                     *acc.GpuRequest
-	instanceContractVersion uint32
-	freeze                  func(tenant, actorType, actorID, operationID, resourceID string, plan *acc.ResolvedGpuRequest) ([]byte, error)
+	gpu    *acc.GpuRequest
+	freeze func(tenant, actorType, actorID, operationID, resourceID string, plan *acc.ResolvedGpuRequest) ([]byte, error)
 }
 type managedBusinessPreparer interface {
 	PrepareManagedBusiness(context.Context, *auth.Principal, string, proto.Message) (*preparedManagedBusiness, error)
@@ -64,7 +63,7 @@ func (s *GpuAcceptance) acceptPreparedCreate(ctx context.Context, p *auth.Princi
 	if err != nil {
 		return nil, err
 	}
-	result, err := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: resourceID, OperationID: operationID, ActorType: string(p.Type), ActorID: actorID, OwnerService: s.binding.OwnerService(), Action: s.binding.CreateAction(), IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), Items: items, InstanceContractVersion: prepared.instanceContractVersion})
+	result, err := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: resourceID, OperationID: operationID, ActorType: string(p.Type), ActorID: actorID, OwnerService: s.binding.OwnerService(), Action: s.binding.CreateAction(), IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), Items: items})
 	if err == nil && s.worker != nil {
 		s.worker.Notify()
 	}

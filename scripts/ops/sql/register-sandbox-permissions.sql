@@ -16,6 +16,15 @@ BEGIN
   ('POST','/api/v1/sandbox/{data.sandbox_id}:pause','sandbox:pause','SandboxService','INSTANCE','PauseSandbox'),
   ('POST','/api/v1/sandbox/{data.sandbox_id}:resume','sandbox:resume','SandboxService','INSTANCE','ResumeSandbox'),
   ('DELETE','/api/v1/sandbox/{data.sandbox_id}','sandbox:delete','SandboxService','INSTANCE','DeleteSandbox'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}/code-runs','sandbox:code:run','SandboxService','INSTANCE','RunSandboxCode'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/code-runs/{run_id}','sandbox:code:read','SandboxService','INSTANCE','GetSandboxCodeRun'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/files','sandbox:files:list','SandboxService','INSTANCE','ListSandboxFiles'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/files/content','sandbox:files:read','SandboxService','INSTANCE','ReadSandboxFile'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}/files','sandbox:files:write','SandboxService','INSTANCE','WriteSandboxFile'),
+  ('DELETE','/api/v1/sandbox/{data.sandbox_id}/files','sandbox:files:delete','SandboxService','INSTANCE','DeleteSandboxFile'),
+  ('GET','/api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}','sandbox:files:operation:read','SandboxService','INSTANCE','GetSandboxFileOperation'),
+  ('POST','/api/v1/sandbox/{data.sandbox_id}/tokens','sandbox:token:create','SandboxService','INSTANCE','CreateSandboxToken'),
+  ('DELETE','/api/v1/sandbox/{sandbox_id}/tokens/{token_id}','sandbox:token:revoke','SandboxService','INSTANCE','RevokeSandboxToken'),
   ('GET','/api/v1/compute-presets','sandbox:preset:read','ComputePresetService','SYSTEM','ListPresets')
  ) AS routes(method,path,code,module,business_module,rpc) LOOP
   IF (SELECT count(*) FROM sys_apis WHERE path=r.path AND method=r.method) <> 1 THEN

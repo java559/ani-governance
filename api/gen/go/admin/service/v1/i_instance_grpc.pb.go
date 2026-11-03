@@ -33,6 +33,7 @@ const (
 	InstanceService_ListInstanceEvents_FullMethodName               = "/admin.service.v1.InstanceService/ListInstanceEvents"
 	InstanceService_StreamInstanceLogs_FullMethodName               = "/admin.service.v1.InstanceService/StreamInstanceLogs"
 	InstanceService_CreateInstance_FullMethodName                   = "/admin.service.v1.InstanceService/CreateInstance"
+	InstanceService_SetInstanceSecurityGroups_FullMethodName        = "/admin.service.v1.InstanceService/SetInstanceSecurityGroups"
 	InstanceService_ListInstances_FullMethodName                    = "/admin.service.v1.InstanceService/ListInstances"
 	InstanceService_GetInstance_FullMethodName                      = "/admin.service.v1.InstanceService/GetInstance"
 	InstanceService_StartInstance_FullMethodName                    = "/admin.service.v1.InstanceService/StartInstance"
@@ -65,9 +66,10 @@ type InstanceServiceClient interface {
 	// HTTP is a dedicated SSE handler. OpenAPI is supplied by the source
 	// postprocessor rather than representing this stream as a unary JSON reply.
 	StreamInstanceLogs(ctx context.Context, in *v1.InstanceLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[v1.InstanceLogFrame], error)
-	// 创建使用服务器固定的当前配置合同 2；可选配置省略时正常解析默认值。
+	// 创建使用统一的容器配置；可选配置省略时正常解析默认值。
 	// 新建维护闸门关闭返回 503 INSTANCE_CREATE_DISABLED，同键重放不受影响。
 	CreateInstance(ctx context.Context, in *v1.CreateInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
+	SetInstanceSecurityGroups(ctx context.Context, in *v1.SetInstanceSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
 	ListInstances(ctx context.Context, in *v1.ListInstancesRequest, opts ...grpc.CallOption) (*v1.ListInstancesResponse, error)
 	GetInstance(ctx context.Context, in *v1.GetInstanceRequest, opts ...grpc.CallOption) (*v1.Instance, error)
 	StartInstance(ctx context.Context, in *v1.ChangeInstanceRequest, opts ...grpc.CallOption) (*v1.Acceptance, error)
@@ -228,6 +230,16 @@ func (c *instanceServiceClient) CreateInstance(ctx context.Context, in *v1.Creat
 	return out, nil
 }
 
+func (c *instanceServiceClient) SetInstanceSecurityGroups(ctx context.Context, in *v1.SetInstanceSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.Acceptance, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.Acceptance)
+	err := c.cc.Invoke(ctx, InstanceService_SetInstanceSecurityGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *instanceServiceClient) ListInstances(ctx context.Context, in *v1.ListInstancesRequest, opts ...grpc.CallOption) (*v1.ListInstancesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.ListInstancesResponse)
@@ -357,9 +369,10 @@ type InstanceServiceServer interface {
 	// HTTP is a dedicated SSE handler. OpenAPI is supplied by the source
 	// postprocessor rather than representing this stream as a unary JSON reply.
 	StreamInstanceLogs(*v1.InstanceLogsRequest, grpc.ServerStreamingServer[v1.InstanceLogFrame]) error
-	// 创建使用服务器固定的当前配置合同 2；可选配置省略时正常解析默认值。
+	// 创建使用统一的容器配置；可选配置省略时正常解析默认值。
 	// 新建维护闸门关闭返回 503 INSTANCE_CREATE_DISABLED，同键重放不受影响。
 	CreateInstance(context.Context, *v1.CreateInstanceRequest) (*v1.Acceptance, error)
+	SetInstanceSecurityGroups(context.Context, *v1.SetInstanceSecurityGroupsRequest) (*v1.Acceptance, error)
 	ListInstances(context.Context, *v1.ListInstancesRequest) (*v1.ListInstancesResponse, error)
 	GetInstance(context.Context, *v1.GetInstanceRequest) (*v1.Instance, error)
 	StartInstance(context.Context, *v1.ChangeInstanceRequest) (*v1.Acceptance, error)
@@ -419,6 +432,9 @@ func (UnimplementedInstanceServiceServer) StreamInstanceLogs(*v1.InstanceLogsReq
 }
 func (UnimplementedInstanceServiceServer) CreateInstance(context.Context, *v1.CreateInstanceRequest) (*v1.Acceptance, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateInstance not implemented")
+}
+func (UnimplementedInstanceServiceServer) SetInstanceSecurityGroups(context.Context, *v1.SetInstanceSecurityGroupsRequest) (*v1.Acceptance, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetInstanceSecurityGroups not implemented")
 }
 func (UnimplementedInstanceServiceServer) ListInstances(context.Context, *v1.ListInstancesRequest) (*v1.ListInstancesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListInstances not implemented")
@@ -701,6 +717,24 @@ func _InstanceService_CreateInstance_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _InstanceService_SetInstanceSecurityGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.SetInstanceSecurityGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceServiceServer).SetInstanceSecurityGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceService_SetInstanceSecurityGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceServiceServer).SetInstanceSecurityGroups(ctx, req.(*v1.SetInstanceSecurityGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _InstanceService_ListInstances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v1.ListInstancesRequest)
 	if err := dec(in); err != nil {
@@ -953,6 +987,10 @@ var InstanceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateInstance",
 			Handler:    _InstanceService_CreateInstance_Handler,
+		},
+		{
+			MethodName: "SetInstanceSecurityGroups",
+			Handler:    _InstanceService_SetInstanceSecurityGroups_Handler,
 		},
 		{
 			MethodName: "ListInstances",

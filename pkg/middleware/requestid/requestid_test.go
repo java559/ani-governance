@@ -2,6 +2,7 @@ package requestid
 
 import (
 	"context"
+	"encoding/json"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -180,6 +181,26 @@ func TestServerAttachesRequestIDToErrorMetadata(t *testing.T) {
 	// 错误体里的 request_id 必须与响应头一致，否则排障时对不上。
 	generated := rec.Header().Get(HeaderRequestID)
 	require.Contains(t, body, generated, "错误体中的 request_id 应与响应头一致")
+}
+
+func TestServerDoesNotMutateSharedErrors(t *testing.T) {
+	shared := errors.Unauthorized("UNAUTHORIZED", "missing bearer token").WithMetadata(map[string]string{"other": "value"})
+	srv := probeServer(t, func(context.Context) error { return shared })
+	for _, id := range []string{"request-one", "request-two"} {
+		t.Run(id, func(t *testing.T) {
+			t.Parallel()
+			rec := fire(t, srv, map[string]string{HeaderRequestID: id})
+			require.Equal(t, 401, rec.Code)
+			var body struct {
+				Metadata map[string]string `json:"metadata"`
+			}
+			require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+			require.Equal(t, id, rec.Header().Get(HeaderRequestID))
+			require.Equal(t, id, body.Metadata[MetadataKey])
+			require.Equal(t, "value", body.Metadata["other"])
+		})
+	}
+	t.Cleanup(func() { require.NotContains(t, shared.Metadata, MetadataKey) })
 }
 
 // TestContextHelpers 验证上下文存取辅助函数。

@@ -88,8 +88,6 @@ func validateVMStored(in StoredCommand) (*Facts, error) {
 	if len(in.Charges) != 0 || deletion != (in.CreateOperationID != "") || deletion != (command.DeleteExpectedVersion > 0) {
 		return nil, Invalid("invalid VM command association or charges")
 	}
-	// InstanceContractVersion is a historical storage placeholder for VM rows.
-	// It is not consulted to authorize this independent VM contract.
 	return &Facts{BusinessPayload: command.CreateSpec, VM: command}, nil
 }
 

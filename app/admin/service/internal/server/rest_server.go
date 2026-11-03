@@ -51,6 +51,7 @@ func NewRestMiddleware(
 	permissionAuditLogRepo *data.PermissionAuditLogRepo,
 	dataAccessAuditLogRepo *data.DataAccessAuditLogRepo,
 	policyEvaluationLogRepo *data.PolicyEvaluationLogRepo,
+	sandboxVerifier ...auth.SandboxTokenVerifier,
 ) []middleware.Middleware {
 	var ms []middleware.Middleware
 	// recovery 必须置于链首：任何中间件/handler 的 panic（如审计日志解析畸形 JWT）
@@ -62,7 +63,12 @@ func NewRestMiddleware(
 	ms = append(ms, requestid.Server())
 	// Login request String() may include the submitted password.
 	// Keep operation/status/error evidence, but never log request bodies here.
-	ms = append(ms, logging.Server(log.NewFilter(bLogger.AsKratosLogger(ctx.GetLogger()), log.FilterKey("args"))))
+	requestLogger := log.With(log.NewFilter(bLogger.AsKratosLogger(ctx.GetLogger()), log.FilterKey("args")), "request_id", log.Valuer(func(ctx context.Context) any {
+		id, _ := requestid.FromContext(ctx)
+		return id
+	}))
+	ms = append(ms, logging.Server(requestLogger))
+	ms = append(ms, inferenceAcceptanceLogging(requestLogger))
 
 	ms = append(ms, applogging.Server(
 		applogging.WithWriteApiLogFunc(func(ctx context.Context, data *auditV1.ApiAuditLog) error {
@@ -119,21 +125,44 @@ func NewRestMiddleware(
 		adminV1.OperationAuthenticationServiceAcceptInvitation,
 	)
 
+	var verifier auth.SandboxTokenVerifier
+	if len(sandboxVerifier) > 0 {
+		verifier = sandboxVerifier[0]
+	}
+	normalAuthz := authz.Server(newEvalLoggingEngine(authorizer.Engine(), policyEvaluationLogRepo))
+	sandboxAwareAuthz := sandboxAwareAuthorization(normalAuthz)
 	ms = append(ms, selector.Server(
 		auth.Server(
 			auth.WithAccessTokenChecker(accessTokenChecker),
+			auth.WithSandboxTokenVerifier(verifier),
 			auth.WithSigningKeyStore(signingKeyStore),
 			auth.WithTenantAccessChecker(tenantAccessChecker),
 			auth.WithInjectMetadata(false),
 			auth.WithInjectEnt(true),
 		),
-		authz.Server(newEvalLoggingEngine(authorizer.Engine(), policyEvaluationLogRepo)),
+		sandboxAwareAuthz,
 	).
 		Match(rpc.NewRestWhiteListMatcher()).
 		Build(),
 	)
 
 	return ms
+}
+
+// A Sandbox token has already passed the dedicated Resource verifier and
+// tenant gate. Its action authorization is checked in SandboxService using
+// the bound scope and the issuer's current grant; all other subjects retain
+// the ordinary Casbin middleware.
+func sandboxAwareAuthorization(normal middleware.Middleware) middleware.Middleware {
+	return func(next middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, req any) (any, error) {
+			p, err := auth.PrincipalFromContext(ctx)
+			if err == nil && p.Type == auth.SubjectSandbox {
+				return next(ctx, req)
+			}
+			return normal(next)(ctx, req)
+		}
+	}
 }
 
 // NewRestServer new an REST server.

@@ -20,37 +20,63 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NetworkService_ListVPCCIDRPresets_FullMethodName       = "/admin.service.v1.NetworkService/ListVPCCIDRPresets"
-	NetworkService_GetVPC_FullMethodName                   = "/admin.service.v1.NetworkService/GetVPC"
-	NetworkService_ListVPCs_FullMethodName                 = "/admin.service.v1.NetworkService/ListVPCs"
-	NetworkService_CreateVPC_FullMethodName                = "/admin.service.v1.NetworkService/CreateVPC"
-	NetworkService_DeleteVPC_FullMethodName                = "/admin.service.v1.NetworkService/DeleteVPC"
-	NetworkService_GetOperation_FullMethodName             = "/admin.service.v1.NetworkService/GetOperation"
-	NetworkService_GetEIP_FullMethodName                   = "/admin.service.v1.NetworkService/GetEIP"
-	NetworkService_ListEIPs_FullMethodName                 = "/admin.service.v1.NetworkService/ListEIPs"
-	NetworkService_CreateEIP_FullMethodName                = "/admin.service.v1.NetworkService/CreateEIP"
-	NetworkService_DeleteEIP_FullMethodName                = "/admin.service.v1.NetworkService/DeleteEIP"
-	NetworkService_GetVPCSnat_FullMethodName               = "/admin.service.v1.NetworkService/GetVPCSnat"
-	NetworkService_BindVPCSnat_FullMethodName              = "/admin.service.v1.NetworkService/BindVPCSnat"
-	NetworkService_CreateSubnet_FullMethodName             = "/admin.service.v1.NetworkService/CreateSubnet"
-	NetworkService_GetSubnet_FullMethodName                = "/admin.service.v1.NetworkService/GetSubnet"
-	NetworkService_ListSubnets_FullMethodName              = "/admin.service.v1.NetworkService/ListSubnets"
-	NetworkService_DeleteSubnet_FullMethodName             = "/admin.service.v1.NetworkService/DeleteSubnet"
-	NetworkService_GetVPCSnatBinding_FullMethodName        = "/admin.service.v1.NetworkService/GetVPCSnatBinding"
-	NetworkService_SetVPCSnatEnabled_FullMethodName        = "/admin.service.v1.NetworkService/SetVPCSnatEnabled"
-	NetworkService_DeleteVPCSnatBinding_FullMethodName     = "/admin.service.v1.NetworkService/DeleteVPCSnatBinding"
-	NetworkService_CreateLoadBalancer_FullMethodName       = "/admin.service.v1.NetworkService/CreateLoadBalancer"
-	NetworkService_GetLoadBalancer_FullMethodName          = "/admin.service.v1.NetworkService/GetLoadBalancer"
-	NetworkService_ListLoadBalancers_FullMethodName        = "/admin.service.v1.NetworkService/ListLoadBalancers"
-	NetworkService_UpdateLoadBalancer_FullMethodName       = "/admin.service.v1.NetworkService/UpdateLoadBalancer"
-	NetworkService_DeleteLoadBalancer_FullMethodName       = "/admin.service.v1.NetworkService/DeleteLoadBalancer"
-	NetworkService_GetLoadBalancerOperation_FullMethodName = "/admin.service.v1.NetworkService/GetLoadBalancerOperation"
+	NetworkService_GetEIPSecurityGroups_FullMethodName      = "/admin.service.v1.NetworkService/GetEIPSecurityGroups"
+	NetworkService_GetSecurityGroupOperation_FullMethodName = "/admin.service.v1.NetworkService/GetSecurityGroupOperation"
+	NetworkService_CreateSecurityGroup_FullMethodName       = "/admin.service.v1.NetworkService/CreateSecurityGroup"
+	NetworkService_GetSecurityGroup_FullMethodName          = "/admin.service.v1.NetworkService/GetSecurityGroup"
+	NetworkService_ListSecurityGroups_FullMethodName        = "/admin.service.v1.NetworkService/ListSecurityGroups"
+	NetworkService_UpdateSecurityGroup_FullMethodName       = "/admin.service.v1.NetworkService/UpdateSecurityGroup"
+	NetworkService_DeleteSecurityGroup_FullMethodName       = "/admin.service.v1.NetworkService/DeleteSecurityGroup"
+	NetworkService_ListSecurityGroupRules_FullMethodName    = "/admin.service.v1.NetworkService/ListSecurityGroupRules"
+	NetworkService_CreateSecurityGroupRule_FullMethodName   = "/admin.service.v1.NetworkService/CreateSecurityGroupRule"
+	NetworkService_UpdateSecurityGroupRule_FullMethodName   = "/admin.service.v1.NetworkService/UpdateSecurityGroupRule"
+	NetworkService_DeleteSecurityGroupRule_FullMethodName   = "/admin.service.v1.NetworkService/DeleteSecurityGroupRule"
+	NetworkService_ListSecurityGroupBindings_FullMethodName = "/admin.service.v1.NetworkService/ListSecurityGroupBindings"
+	NetworkService_SetEIPSecurityGroups_FullMethodName      = "/admin.service.v1.NetworkService/SetEIPSecurityGroups"
+	NetworkService_ListVPCCIDRPresets_FullMethodName        = "/admin.service.v1.NetworkService/ListVPCCIDRPresets"
+	NetworkService_GetVPC_FullMethodName                    = "/admin.service.v1.NetworkService/GetVPC"
+	NetworkService_ListVPCs_FullMethodName                  = "/admin.service.v1.NetworkService/ListVPCs"
+	NetworkService_CreateVPC_FullMethodName                 = "/admin.service.v1.NetworkService/CreateVPC"
+	NetworkService_DeleteVPC_FullMethodName                 = "/admin.service.v1.NetworkService/DeleteVPC"
+	NetworkService_GetOperation_FullMethodName              = "/admin.service.v1.NetworkService/GetOperation"
+	NetworkService_GetEIP_FullMethodName                    = "/admin.service.v1.NetworkService/GetEIP"
+	NetworkService_ListEIPs_FullMethodName                  = "/admin.service.v1.NetworkService/ListEIPs"
+	NetworkService_CreateEIP_FullMethodName                 = "/admin.service.v1.NetworkService/CreateEIP"
+	NetworkService_DeleteEIP_FullMethodName                 = "/admin.service.v1.NetworkService/DeleteEIP"
+	NetworkService_GetVPCSnat_FullMethodName                = "/admin.service.v1.NetworkService/GetVPCSnat"
+	NetworkService_BindVPCSnat_FullMethodName               = "/admin.service.v1.NetworkService/BindVPCSnat"
+	NetworkService_CreateSubnet_FullMethodName              = "/admin.service.v1.NetworkService/CreateSubnet"
+	NetworkService_GetSubnet_FullMethodName                 = "/admin.service.v1.NetworkService/GetSubnet"
+	NetworkService_ListSubnets_FullMethodName               = "/admin.service.v1.NetworkService/ListSubnets"
+	NetworkService_DeleteSubnet_FullMethodName              = "/admin.service.v1.NetworkService/DeleteSubnet"
+	NetworkService_GetVPCSnatBinding_FullMethodName         = "/admin.service.v1.NetworkService/GetVPCSnatBinding"
+	NetworkService_SetVPCSnatEnabled_FullMethodName         = "/admin.service.v1.NetworkService/SetVPCSnatEnabled"
+	NetworkService_DeleteVPCSnatBinding_FullMethodName      = "/admin.service.v1.NetworkService/DeleteVPCSnatBinding"
+	NetworkService_CreateLoadBalancer_FullMethodName        = "/admin.service.v1.NetworkService/CreateLoadBalancer"
+	NetworkService_GetLoadBalancer_FullMethodName           = "/admin.service.v1.NetworkService/GetLoadBalancer"
+	NetworkService_ListLoadBalancers_FullMethodName         = "/admin.service.v1.NetworkService/ListLoadBalancers"
+	NetworkService_UpdateLoadBalancer_FullMethodName        = "/admin.service.v1.NetworkService/UpdateLoadBalancer"
+	NetworkService_DeleteLoadBalancer_FullMethodName        = "/admin.service.v1.NetworkService/DeleteLoadBalancer"
+	NetworkService_GetLoadBalancerOperation_FullMethodName  = "/admin.service.v1.NetworkService/GetLoadBalancerOperation"
 )
 
 // NetworkServiceClient is the client API for NetworkService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NetworkServiceClient interface {
+	GetEIPSecurityGroups(ctx context.Context, in *v1.GetEIPSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.SetEIPSecurityGroupsResponse, error)
+	GetSecurityGroupOperation(ctx context.Context, in *v1.GetSecurityGroupOperationRequest, opts ...grpc.CallOption) (*v1.GetOperationResponse, error)
+	CreateSecurityGroup(ctx context.Context, in *v1.CreateSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error)
+	GetSecurityGroup(ctx context.Context, in *v1.GetSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error)
+	ListSecurityGroups(ctx context.Context, in *v1.ListSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.ListSecurityGroupsResponse, error)
+	UpdateSecurityGroup(ctx context.Context, in *v1.UpdateSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error)
+	DeleteSecurityGroup(ctx context.Context, in *v1.DeleteSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error)
+	ListSecurityGroupRules(ctx context.Context, in *v1.ListSecurityGroupRulesRequest, opts ...grpc.CallOption) (*v1.ListSecurityGroupRulesResponse, error)
+	CreateSecurityGroupRule(ctx context.Context, in *v1.CreateSecurityGroupRuleRequest, opts ...grpc.CallOption) (*v1.SecurityGroupRuleResponse, error)
+	UpdateSecurityGroupRule(ctx context.Context, in *v1.UpdateSecurityGroupRuleRequest, opts ...grpc.CallOption) (*v1.SecurityGroupRuleResponse, error)
+	DeleteSecurityGroupRule(ctx context.Context, in *v1.DeleteSecurityGroupRuleRequest, opts ...grpc.CallOption) (*v1.SecurityGroupRuleResponse, error)
+	ListSecurityGroupBindings(ctx context.Context, in *v1.ListSecurityGroupBindingsRequest, opts ...grpc.CallOption) (*v1.ListSecurityGroupBindingsResponse, error)
+	SetEIPSecurityGroups(ctx context.Context, in *v1.SetEIPSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.SetEIPSecurityGroupsResponse, error)
 	ListVPCCIDRPresets(ctx context.Context, in *v1.ListVPCCIDRPresetsRequest, opts ...grpc.CallOption) (*v1.ListVPCCIDRPresetsResponse, error)
 	GetVPC(ctx context.Context, in *v1.GetVPCRequest, opts ...grpc.CallOption) (*v1.GetVPCResponse, error)
 	ListVPCs(ctx context.Context, in *v1.ListVPCsRequest, opts ...grpc.CallOption) (*v1.ListVPCsResponse, error)
@@ -84,6 +110,136 @@ type networkServiceClient struct {
 
 func NewNetworkServiceClient(cc grpc.ClientConnInterface) NetworkServiceClient {
 	return &networkServiceClient{cc}
+}
+
+func (c *networkServiceClient) GetEIPSecurityGroups(ctx context.Context, in *v1.GetEIPSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.SetEIPSecurityGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SetEIPSecurityGroupsResponse)
+	err := c.cc.Invoke(ctx, NetworkService_GetEIPSecurityGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) GetSecurityGroupOperation(ctx context.Context, in *v1.GetSecurityGroupOperationRequest, opts ...grpc.CallOption) (*v1.GetOperationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetOperationResponse)
+	err := c.cc.Invoke(ctx, NetworkService_GetSecurityGroupOperation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) CreateSecurityGroup(ctx context.Context, in *v1.CreateSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SecurityGroupResponse)
+	err := c.cc.Invoke(ctx, NetworkService_CreateSecurityGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) GetSecurityGroup(ctx context.Context, in *v1.GetSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SecurityGroupResponse)
+	err := c.cc.Invoke(ctx, NetworkService_GetSecurityGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) ListSecurityGroups(ctx context.Context, in *v1.ListSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.ListSecurityGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListSecurityGroupsResponse)
+	err := c.cc.Invoke(ctx, NetworkService_ListSecurityGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) UpdateSecurityGroup(ctx context.Context, in *v1.UpdateSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SecurityGroupResponse)
+	err := c.cc.Invoke(ctx, NetworkService_UpdateSecurityGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) DeleteSecurityGroup(ctx context.Context, in *v1.DeleteSecurityGroupRequest, opts ...grpc.CallOption) (*v1.SecurityGroupResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SecurityGroupResponse)
+	err := c.cc.Invoke(ctx, NetworkService_DeleteSecurityGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) ListSecurityGroupRules(ctx context.Context, in *v1.ListSecurityGroupRulesRequest, opts ...grpc.CallOption) (*v1.ListSecurityGroupRulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListSecurityGroupRulesResponse)
+	err := c.cc.Invoke(ctx, NetworkService_ListSecurityGroupRules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) CreateSecurityGroupRule(ctx context.Context, in *v1.CreateSecurityGroupRuleRequest, opts ...grpc.CallOption) (*v1.SecurityGroupRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SecurityGroupRuleResponse)
+	err := c.cc.Invoke(ctx, NetworkService_CreateSecurityGroupRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) UpdateSecurityGroupRule(ctx context.Context, in *v1.UpdateSecurityGroupRuleRequest, opts ...grpc.CallOption) (*v1.SecurityGroupRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SecurityGroupRuleResponse)
+	err := c.cc.Invoke(ctx, NetworkService_UpdateSecurityGroupRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) DeleteSecurityGroupRule(ctx context.Context, in *v1.DeleteSecurityGroupRuleRequest, opts ...grpc.CallOption) (*v1.SecurityGroupRuleResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SecurityGroupRuleResponse)
+	err := c.cc.Invoke(ctx, NetworkService_DeleteSecurityGroupRule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) ListSecurityGroupBindings(ctx context.Context, in *v1.ListSecurityGroupBindingsRequest, opts ...grpc.CallOption) (*v1.ListSecurityGroupBindingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListSecurityGroupBindingsResponse)
+	err := c.cc.Invoke(ctx, NetworkService_ListSecurityGroupBindings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) SetEIPSecurityGroups(ctx context.Context, in *v1.SetEIPSecurityGroupsRequest, opts ...grpc.CallOption) (*v1.SetEIPSecurityGroupsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SetEIPSecurityGroupsResponse)
+	err := c.cc.Invoke(ctx, NetworkService_SetEIPSecurityGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *networkServiceClient) ListVPCCIDRPresets(ctx context.Context, in *v1.ListVPCCIDRPresetsRequest, opts ...grpc.CallOption) (*v1.ListVPCCIDRPresetsResponse, error) {
@@ -340,6 +496,19 @@ func (c *networkServiceClient) GetLoadBalancerOperation(ctx context.Context, in 
 // All implementations must embed UnimplementedNetworkServiceServer
 // for forward compatibility.
 type NetworkServiceServer interface {
+	GetEIPSecurityGroups(context.Context, *v1.GetEIPSecurityGroupsRequest) (*v1.SetEIPSecurityGroupsResponse, error)
+	GetSecurityGroupOperation(context.Context, *v1.GetSecurityGroupOperationRequest) (*v1.GetOperationResponse, error)
+	CreateSecurityGroup(context.Context, *v1.CreateSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	GetSecurityGroup(context.Context, *v1.GetSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	ListSecurityGroups(context.Context, *v1.ListSecurityGroupsRequest) (*v1.ListSecurityGroupsResponse, error)
+	UpdateSecurityGroup(context.Context, *v1.UpdateSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	DeleteSecurityGroup(context.Context, *v1.DeleteSecurityGroupRequest) (*v1.SecurityGroupResponse, error)
+	ListSecurityGroupRules(context.Context, *v1.ListSecurityGroupRulesRequest) (*v1.ListSecurityGroupRulesResponse, error)
+	CreateSecurityGroupRule(context.Context, *v1.CreateSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error)
+	UpdateSecurityGroupRule(context.Context, *v1.UpdateSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error)
+	DeleteSecurityGroupRule(context.Context, *v1.DeleteSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error)
+	ListSecurityGroupBindings(context.Context, *v1.ListSecurityGroupBindingsRequest) (*v1.ListSecurityGroupBindingsResponse, error)
+	SetEIPSecurityGroups(context.Context, *v1.SetEIPSecurityGroupsRequest) (*v1.SetEIPSecurityGroupsResponse, error)
 	ListVPCCIDRPresets(context.Context, *v1.ListVPCCIDRPresetsRequest) (*v1.ListVPCCIDRPresetsResponse, error)
 	GetVPC(context.Context, *v1.GetVPCRequest) (*v1.GetVPCResponse, error)
 	ListVPCs(context.Context, *v1.ListVPCsRequest) (*v1.ListVPCsResponse, error)
@@ -375,6 +544,45 @@ type NetworkServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedNetworkServiceServer struct{}
 
+func (UnimplementedNetworkServiceServer) GetEIPSecurityGroups(context.Context, *v1.GetEIPSecurityGroupsRequest) (*v1.SetEIPSecurityGroupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetEIPSecurityGroups not implemented")
+}
+func (UnimplementedNetworkServiceServer) GetSecurityGroupOperation(context.Context, *v1.GetSecurityGroupOperationRequest) (*v1.GetOperationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSecurityGroupOperation not implemented")
+}
+func (UnimplementedNetworkServiceServer) CreateSecurityGroup(context.Context, *v1.CreateSecurityGroupRequest) (*v1.SecurityGroupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSecurityGroup not implemented")
+}
+func (UnimplementedNetworkServiceServer) GetSecurityGroup(context.Context, *v1.GetSecurityGroupRequest) (*v1.SecurityGroupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSecurityGroup not implemented")
+}
+func (UnimplementedNetworkServiceServer) ListSecurityGroups(context.Context, *v1.ListSecurityGroupsRequest) (*v1.ListSecurityGroupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSecurityGroups not implemented")
+}
+func (UnimplementedNetworkServiceServer) UpdateSecurityGroup(context.Context, *v1.UpdateSecurityGroupRequest) (*v1.SecurityGroupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSecurityGroup not implemented")
+}
+func (UnimplementedNetworkServiceServer) DeleteSecurityGroup(context.Context, *v1.DeleteSecurityGroupRequest) (*v1.SecurityGroupResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteSecurityGroup not implemented")
+}
+func (UnimplementedNetworkServiceServer) ListSecurityGroupRules(context.Context, *v1.ListSecurityGroupRulesRequest) (*v1.ListSecurityGroupRulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSecurityGroupRules not implemented")
+}
+func (UnimplementedNetworkServiceServer) CreateSecurityGroupRule(context.Context, *v1.CreateSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSecurityGroupRule not implemented")
+}
+func (UnimplementedNetworkServiceServer) UpdateSecurityGroupRule(context.Context, *v1.UpdateSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSecurityGroupRule not implemented")
+}
+func (UnimplementedNetworkServiceServer) DeleteSecurityGroupRule(context.Context, *v1.DeleteSecurityGroupRuleRequest) (*v1.SecurityGroupRuleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteSecurityGroupRule not implemented")
+}
+func (UnimplementedNetworkServiceServer) ListSecurityGroupBindings(context.Context, *v1.ListSecurityGroupBindingsRequest) (*v1.ListSecurityGroupBindingsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSecurityGroupBindings not implemented")
+}
+func (UnimplementedNetworkServiceServer) SetEIPSecurityGroups(context.Context, *v1.SetEIPSecurityGroupsRequest) (*v1.SetEIPSecurityGroupsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetEIPSecurityGroups not implemented")
+}
 func (UnimplementedNetworkServiceServer) ListVPCCIDRPresets(context.Context, *v1.ListVPCCIDRPresetsRequest) (*v1.ListVPCCIDRPresetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListVPCCIDRPresets not implemented")
 }
@@ -469,6 +677,240 @@ func RegisterNetworkServiceServer(s grpc.ServiceRegistrar, srv NetworkServiceSer
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&NetworkService_ServiceDesc, srv)
+}
+
+func _NetworkService_GetEIPSecurityGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetEIPSecurityGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).GetEIPSecurityGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_GetEIPSecurityGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).GetEIPSecurityGroups(ctx, req.(*v1.GetEIPSecurityGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_GetSecurityGroupOperation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetSecurityGroupOperationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).GetSecurityGroupOperation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_GetSecurityGroupOperation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).GetSecurityGroupOperation(ctx, req.(*v1.GetSecurityGroupOperationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_CreateSecurityGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateSecurityGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).CreateSecurityGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_CreateSecurityGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).CreateSecurityGroup(ctx, req.(*v1.CreateSecurityGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_GetSecurityGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetSecurityGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).GetSecurityGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_GetSecurityGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).GetSecurityGroup(ctx, req.(*v1.GetSecurityGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_ListSecurityGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListSecurityGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).ListSecurityGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_ListSecurityGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).ListSecurityGroups(ctx, req.(*v1.ListSecurityGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_UpdateSecurityGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdateSecurityGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).UpdateSecurityGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_UpdateSecurityGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).UpdateSecurityGroup(ctx, req.(*v1.UpdateSecurityGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_DeleteSecurityGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteSecurityGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).DeleteSecurityGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_DeleteSecurityGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).DeleteSecurityGroup(ctx, req.(*v1.DeleteSecurityGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_ListSecurityGroupRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListSecurityGroupRulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).ListSecurityGroupRules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_ListSecurityGroupRules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).ListSecurityGroupRules(ctx, req.(*v1.ListSecurityGroupRulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_CreateSecurityGroupRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateSecurityGroupRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).CreateSecurityGroupRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_CreateSecurityGroupRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).CreateSecurityGroupRule(ctx, req.(*v1.CreateSecurityGroupRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_UpdateSecurityGroupRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdateSecurityGroupRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).UpdateSecurityGroupRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_UpdateSecurityGroupRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).UpdateSecurityGroupRule(ctx, req.(*v1.UpdateSecurityGroupRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_DeleteSecurityGroupRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteSecurityGroupRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).DeleteSecurityGroupRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_DeleteSecurityGroupRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).DeleteSecurityGroupRule(ctx, req.(*v1.DeleteSecurityGroupRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_ListSecurityGroupBindings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListSecurityGroupBindingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).ListSecurityGroupBindings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_ListSecurityGroupBindings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).ListSecurityGroupBindings(ctx, req.(*v1.ListSecurityGroupBindingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_SetEIPSecurityGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.SetEIPSecurityGroupsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).SetEIPSecurityGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_SetEIPSecurityGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).SetEIPSecurityGroups(ctx, req.(*v1.SetEIPSecurityGroupsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _NetworkService_ListVPCCIDRPresets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -928,6 +1370,58 @@ var NetworkService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "admin.service.v1.NetworkService",
 	HandlerType: (*NetworkServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetEIPSecurityGroups",
+			Handler:    _NetworkService_GetEIPSecurityGroups_Handler,
+		},
+		{
+			MethodName: "GetSecurityGroupOperation",
+			Handler:    _NetworkService_GetSecurityGroupOperation_Handler,
+		},
+		{
+			MethodName: "CreateSecurityGroup",
+			Handler:    _NetworkService_CreateSecurityGroup_Handler,
+		},
+		{
+			MethodName: "GetSecurityGroup",
+			Handler:    _NetworkService_GetSecurityGroup_Handler,
+		},
+		{
+			MethodName: "ListSecurityGroups",
+			Handler:    _NetworkService_ListSecurityGroups_Handler,
+		},
+		{
+			MethodName: "UpdateSecurityGroup",
+			Handler:    _NetworkService_UpdateSecurityGroup_Handler,
+		},
+		{
+			MethodName: "DeleteSecurityGroup",
+			Handler:    _NetworkService_DeleteSecurityGroup_Handler,
+		},
+		{
+			MethodName: "ListSecurityGroupRules",
+			Handler:    _NetworkService_ListSecurityGroupRules_Handler,
+		},
+		{
+			MethodName: "CreateSecurityGroupRule",
+			Handler:    _NetworkService_CreateSecurityGroupRule_Handler,
+		},
+		{
+			MethodName: "UpdateSecurityGroupRule",
+			Handler:    _NetworkService_UpdateSecurityGroupRule_Handler,
+		},
+		{
+			MethodName: "DeleteSecurityGroupRule",
+			Handler:    _NetworkService_DeleteSecurityGroupRule_Handler,
+		},
+		{
+			MethodName: "ListSecurityGroupBindings",
+			Handler:    _NetworkService_ListSecurityGroupBindings_Handler,
+		},
+		{
+			MethodName: "SetEIPSecurityGroups",
+			Handler:    _NetworkService_SetEIPSecurityGroups_Handler,
+		},
 		{
 			MethodName: "ListVPCCIDRPresets",
 			Handler:    _NetworkService_ListVPCCIDRPresets_Handler,

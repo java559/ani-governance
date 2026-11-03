@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	entCrud "go-wind-admin/pkg/localdeps/go-crud/entgo"
@@ -34,6 +35,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/api"
 	"go-wind-admin/app/admin/service/internal/data/ent/notificationchannel"
 	"go-wind-admin/app/admin/service/internal/data/ent/role"
+	tenantEnt "go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	"go-wind-admin/app/admin/service/internal/data/ent/user"
 	"go-wind-admin/app/admin/service/internal/data/ent/usercredential"
 	"go-wind-admin/app/admin/service/internal/data/ent/userrole"
@@ -180,6 +182,10 @@ func TestOnboardingModes(t *testing.T) {
 				if tenant {
 					tr := e.client.Tenant.GetX(e.ctx, tid)
 					require.Equal(t, created.ID, *tr.AdminUserID)
+					require.Equal(t, tenantEnt.TenantSpaceStateQUEUED, tr.TenantSpaceState)
+					require.NotNil(t, tr.TenantSpaceOperationID)
+					_, err := uuid.Parse(*tr.TenantSpaceOperationID)
+					require.NoError(t, err)
 					require.Equal(t, tid, *e.client.Role.GetX(e.ctx, *relations[0].RoleID).TenantID)
 				}
 				if invite {

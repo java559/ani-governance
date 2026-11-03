@@ -95,6 +95,31 @@ func ResourceTenantID(v string) predicate.Tenant {
 	return predicate.Tenant(sql.FieldEQ(FieldResourceTenantID, v))
 }
 
+// TenantSpaceOperationID applies equality check predicate on the "tenant_space_operation_id" field. It's identical to TenantSpaceOperationIDEQ.
+func TenantSpaceOperationID(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceLeaseGeneration applies equality check predicate on the "tenant_space_lease_generation" field. It's identical to TenantSpaceLeaseGenerationEQ.
+func TenantSpaceLeaseGeneration(v int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceLeaseGeneration, v))
+}
+
+// TenantSpaceLeaseOwner applies equality check predicate on the "tenant_space_lease_owner" field. It's identical to TenantSpaceLeaseOwnerEQ.
+func TenantSpaceLeaseOwner(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseUntil applies equality check predicate on the "tenant_space_lease_until" field. It's identical to TenantSpaceLeaseUntilEQ.
+func TenantSpaceLeaseUntil(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceLeaseUntil, v))
+}
+
+// TenantSpaceNextAttemptAt applies equality check predicate on the "tenant_space_next_attempt_at" field. It's identical to TenantSpaceNextAttemptAtEQ.
+func TenantSpaceNextAttemptAt(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceNextAttemptAt, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Tenant {
 	return predicate.Tenant(sql.FieldEQ(FieldName, v))
@@ -588,6 +613,316 @@ func ResourceTenantIDEqualFold(v string) predicate.Tenant {
 // ResourceTenantIDContainsFold applies the ContainsFold predicate on the "resource_tenant_id" field.
 func ResourceTenantIDContainsFold(v string) predicate.Tenant {
 	return predicate.Tenant(sql.FieldContainsFold(FieldResourceTenantID, v))
+}
+
+// TenantSpaceStateEQ applies the EQ predicate on the "tenant_space_state" field.
+func TenantSpaceStateEQ(v TenantSpaceState) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceState, v))
+}
+
+// TenantSpaceStateNEQ applies the NEQ predicate on the "tenant_space_state" field.
+func TenantSpaceStateNEQ(v TenantSpaceState) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceState, v))
+}
+
+// TenantSpaceStateIn applies the In predicate on the "tenant_space_state" field.
+func TenantSpaceStateIn(vs ...TenantSpaceState) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceState, vs...))
+}
+
+// TenantSpaceStateNotIn applies the NotIn predicate on the "tenant_space_state" field.
+func TenantSpaceStateNotIn(vs ...TenantSpaceState) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceState, vs...))
+}
+
+// TenantSpaceOperationIDEQ applies the EQ predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDNEQ applies the NEQ predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDNEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDIn applies the In predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceOperationID, vs...))
+}
+
+// TenantSpaceOperationIDNotIn applies the NotIn predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDNotIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceOperationID, vs...))
+}
+
+// TenantSpaceOperationIDGT applies the GT predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDGT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDGTE applies the GTE predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDGTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDLT applies the LT predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDLT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDLTE applies the LTE predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDLTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDContains applies the Contains predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDContains(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContains(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDHasPrefix applies the HasPrefix predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDHasPrefix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasPrefix(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDHasSuffix applies the HasSuffix predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDHasSuffix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasSuffix(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDIsNil applies the IsNil predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDIsNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldIsNull(FieldTenantSpaceOperationID))
+}
+
+// TenantSpaceOperationIDNotNil applies the NotNil predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDNotNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotNull(FieldTenantSpaceOperationID))
+}
+
+// TenantSpaceOperationIDEqualFold applies the EqualFold predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDEqualFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEqualFold(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceOperationIDContainsFold applies the ContainsFold predicate on the "tenant_space_operation_id" field.
+func TenantSpaceOperationIDContainsFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContainsFold(FieldTenantSpaceOperationID, v))
+}
+
+// TenantSpaceLeaseGenerationEQ applies the EQ predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationEQ(v int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceLeaseGeneration, v))
+}
+
+// TenantSpaceLeaseGenerationNEQ applies the NEQ predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationNEQ(v int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceLeaseGeneration, v))
+}
+
+// TenantSpaceLeaseGenerationIn applies the In predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationIn(vs ...int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceLeaseGeneration, vs...))
+}
+
+// TenantSpaceLeaseGenerationNotIn applies the NotIn predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationNotIn(vs ...int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceLeaseGeneration, vs...))
+}
+
+// TenantSpaceLeaseGenerationGT applies the GT predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationGT(v int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldTenantSpaceLeaseGeneration, v))
+}
+
+// TenantSpaceLeaseGenerationGTE applies the GTE predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationGTE(v int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldTenantSpaceLeaseGeneration, v))
+}
+
+// TenantSpaceLeaseGenerationLT applies the LT predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationLT(v int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldTenantSpaceLeaseGeneration, v))
+}
+
+// TenantSpaceLeaseGenerationLTE applies the LTE predicate on the "tenant_space_lease_generation" field.
+func TenantSpaceLeaseGenerationLTE(v int64) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldTenantSpaceLeaseGeneration, v))
+}
+
+// TenantSpaceLeaseOwnerEQ applies the EQ predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerNEQ applies the NEQ predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerNEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerIn applies the In predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceLeaseOwner, vs...))
+}
+
+// TenantSpaceLeaseOwnerNotIn applies the NotIn predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerNotIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceLeaseOwner, vs...))
+}
+
+// TenantSpaceLeaseOwnerGT applies the GT predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerGT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerGTE applies the GTE predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerGTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerLT applies the LT predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerLT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerLTE applies the LTE predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerLTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerContains applies the Contains predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerContains(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContains(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerHasPrefix applies the HasPrefix predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerHasPrefix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasPrefix(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerHasSuffix applies the HasSuffix predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerHasSuffix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasSuffix(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerIsNil applies the IsNil predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerIsNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldIsNull(FieldTenantSpaceLeaseOwner))
+}
+
+// TenantSpaceLeaseOwnerNotNil applies the NotNil predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerNotNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotNull(FieldTenantSpaceLeaseOwner))
+}
+
+// TenantSpaceLeaseOwnerEqualFold applies the EqualFold predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerEqualFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEqualFold(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseOwnerContainsFold applies the ContainsFold predicate on the "tenant_space_lease_owner" field.
+func TenantSpaceLeaseOwnerContainsFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContainsFold(FieldTenantSpaceLeaseOwner, v))
+}
+
+// TenantSpaceLeaseUntilEQ applies the EQ predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilEQ(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceLeaseUntil, v))
+}
+
+// TenantSpaceLeaseUntilNEQ applies the NEQ predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilNEQ(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceLeaseUntil, v))
+}
+
+// TenantSpaceLeaseUntilIn applies the In predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilIn(vs ...time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceLeaseUntil, vs...))
+}
+
+// TenantSpaceLeaseUntilNotIn applies the NotIn predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilNotIn(vs ...time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceLeaseUntil, vs...))
+}
+
+// TenantSpaceLeaseUntilGT applies the GT predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilGT(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldTenantSpaceLeaseUntil, v))
+}
+
+// TenantSpaceLeaseUntilGTE applies the GTE predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilGTE(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldTenantSpaceLeaseUntil, v))
+}
+
+// TenantSpaceLeaseUntilLT applies the LT predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilLT(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldTenantSpaceLeaseUntil, v))
+}
+
+// TenantSpaceLeaseUntilLTE applies the LTE predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilLTE(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldTenantSpaceLeaseUntil, v))
+}
+
+// TenantSpaceLeaseUntilIsNil applies the IsNil predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilIsNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldIsNull(FieldTenantSpaceLeaseUntil))
+}
+
+// TenantSpaceLeaseUntilNotNil applies the NotNil predicate on the "tenant_space_lease_until" field.
+func TenantSpaceLeaseUntilNotNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotNull(FieldTenantSpaceLeaseUntil))
+}
+
+// TenantSpaceNextAttemptAtEQ applies the EQ predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtEQ(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceNextAttemptAt, v))
+}
+
+// TenantSpaceNextAttemptAtNEQ applies the NEQ predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtNEQ(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceNextAttemptAt, v))
+}
+
+// TenantSpaceNextAttemptAtIn applies the In predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtIn(vs ...time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceNextAttemptAt, vs...))
+}
+
+// TenantSpaceNextAttemptAtNotIn applies the NotIn predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtNotIn(vs ...time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceNextAttemptAt, vs...))
+}
+
+// TenantSpaceNextAttemptAtGT applies the GT predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtGT(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldTenantSpaceNextAttemptAt, v))
+}
+
+// TenantSpaceNextAttemptAtGTE applies the GTE predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtGTE(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldTenantSpaceNextAttemptAt, v))
+}
+
+// TenantSpaceNextAttemptAtLT applies the LT predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtLT(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldTenantSpaceNextAttemptAt, v))
+}
+
+// TenantSpaceNextAttemptAtLTE applies the LTE predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtLTE(v time.Time) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldTenantSpaceNextAttemptAt, v))
+}
+
+// TenantSpaceNextAttemptAtIsNil applies the IsNil predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtIsNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldIsNull(FieldTenantSpaceNextAttemptAt))
+}
+
+// TenantSpaceNextAttemptAtNotNil applies the NotNil predicate on the "tenant_space_next_attempt_at" field.
+func TenantSpaceNextAttemptAtNotNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotNull(FieldTenantSpaceNextAttemptAt))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

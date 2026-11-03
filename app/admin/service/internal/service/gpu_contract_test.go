@@ -138,19 +138,18 @@ func TestGpuCurrentInstanceContractRejectsRetiredEnvelope(t *testing.T) {
 	business := instanceSettingsBusiness(t)
 	business.ComputeType = "gpu"
 	business.GpuExecution, business.GpuDisplay = plan.Resolved.Execution, plan.Resolved.Selection
-	payload, err := res.CanonicalBusinessPayloadVersion(business, 2)
+	payload, err := res.CanonicalBusinessPayload(business)
 	require.NoError(t, err)
 	sum := sha256.Sum256(payload)
-	command := GpuCanonical{SchemaVersion: 3, InstanceContractVersion: 2, GpuRequest: plan.Request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion, QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}}
+	command := GpuCanonical{SchemaVersion: 3, GpuRequest: plan.Request, BusinessPayload: payload, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: GpuMeteringVersion, QuotaItems: []GpuQuotaItem{{QuotaCode: GpuSharedQuotaCode, Units: 8192}}}
 	raw, err := gpuCanonicalJSON(command)
 	require.NoError(t, err)
 	_, err = DecodeGpuCanonical(raw)
 	require.NoError(t, err)
-	for _, version := range []uint32{0, 1, 3} {
-		command.InstanceContractVersion = version
-		raw, err = gpuCanonicalJSON(command)
-		require.NoError(t, err)
-		_, err = DecodeGpuCanonical(raw)
+	require.NotContains(t, string(raw), "instance_contract_version")
+	for _, version := range []uint32{0, 1, 2, 3} {
+		legacy := []byte(strings.Replace(string(raw), "{", `{"instance_contract_version":`+strconv.FormatUint(uint64(version), 10)+`,`, 1))
+		_, err = DecodeGpuCanonical(legacy)
 		require.Error(t, err)
 	}
 }

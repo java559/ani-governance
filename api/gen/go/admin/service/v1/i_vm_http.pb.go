@@ -44,6 +44,7 @@ const OperationVMServiceRestartVM = "/admin.service.v1.VMService/RestartVM"
 const OperationVMServiceRestoreVMSnapshot = "/admin.service.v1.VMService/RestoreVMSnapshot"
 const OperationVMServiceSetVMBootDevice = "/admin.service.v1.VMService/SetVMBootDevice"
 const OperationVMServiceSetVMMedia = "/admin.service.v1.VMService/SetVMMedia"
+const OperationVMServiceSetVMSecurityGroups = "/admin.service.v1.VMService/SetVMSecurityGroups"
 const OperationVMServiceStartVM = "/admin.service.v1.VMService/StartVM"
 const OperationVMServiceStopVM = "/admin.service.v1.VMService/StopVM"
 
@@ -72,12 +73,14 @@ type VMServiceHTTPServer interface {
 	RestoreVMSnapshot(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error)
 	SetVMBootDevice(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error)
 	SetVMMedia(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error)
+	SetVMSecurityGroups(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error)
 	StartVM(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error)
 	StopVM(context.Context, *v1.ChangeVMRequest) (*v1.VMOperation, error)
 }
 
 func RegisterVMServiceHTTPServer(s *http.Server, srv VMServiceHTTPServer) {
 	r := s.Route("/")
+	r.PUT("/api/v1/virtual-machines/{data.vm_id}/security-groups", _VMService_SetVMSecurityGroups0_HTTP_Handler(srv))
 	r.POST("/api/v1/virtual-machines", _VMService_CreateVM0_HTTP_Handler(srv))
 	r.GET("/api/v1/virtual-machines", _VMService_ListVMs0_HTTP_Handler(srv))
 	r.GET("/api/v1/virtual-machines/{vm_id}", _VMService_GetVM0_HTTP_Handler(srv))
@@ -104,6 +107,31 @@ func RegisterVMServiceHTTPServer(s *http.Server, srv VMServiceHTTPServer) {
 	r.POST("/api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}/restore-preview", _VMService_PreviewVMRestore0_HTTP_Handler(srv))
 	r.POST("/api/v1/virtual-machines/{data.vm_id}/snapshots/{data.snapshot_id}/restore", _VMService_RestoreVMSnapshot0_HTTP_Handler(srv))
 	r.POST("/api/v1/virtual-machines/{data.vm_id}/console-sessions", _VMService_CreateVMConsoleSession0_HTTP_Handler(srv))
+}
+
+func _VMService_SetVMSecurityGroups0_HTTP_Handler(srv VMServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ChangeVMRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationVMServiceSetVMSecurityGroups)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetVMSecurityGroups(ctx, req.(*v1.ChangeVMRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.VMOperation)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _VMService_CreateVM0_HTTP_Handler(srv VMServiceHTTPServer) func(ctx http.Context) error {
@@ -745,6 +773,7 @@ type VMServiceHTTPClient interface {
 	RestoreVMSnapshot(ctx context.Context, req *v1.ChangeVMRequest, opts ...http.CallOption) (rsp *v1.VMOperation, err error)
 	SetVMBootDevice(ctx context.Context, req *v1.ChangeVMRequest, opts ...http.CallOption) (rsp *v1.VMOperation, err error)
 	SetVMMedia(ctx context.Context, req *v1.ChangeVMRequest, opts ...http.CallOption) (rsp *v1.VMOperation, err error)
+	SetVMSecurityGroups(ctx context.Context, req *v1.ChangeVMRequest, opts ...http.CallOption) (rsp *v1.VMOperation, err error)
 	StartVM(ctx context.Context, req *v1.ChangeVMRequest, opts ...http.CallOption) (rsp *v1.VMOperation, err error)
 	StopVM(ctx context.Context, req *v1.ChangeVMRequest, opts ...http.CallOption) (rsp *v1.VMOperation, err error)
 }
@@ -1061,6 +1090,19 @@ func (c *VMServiceHTTPClientImpl) SetVMMedia(ctx context.Context, in *v1.ChangeV
 	pattern := "/api/v1/virtual-machines/{data.vm_id}/media/{data.slot}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationVMServiceSetVMMedia))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *VMServiceHTTPClientImpl) SetVMSecurityGroups(ctx context.Context, in *v1.ChangeVMRequest, opts ...http.CallOption) (*v1.VMOperation, error) {
+	var out v1.VMOperation
+	pattern := "/api/v1/virtual-machines/{data.vm_id}/security-groups"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationVMServiceSetVMSecurityGroups))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {

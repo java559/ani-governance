@@ -163,6 +163,18 @@ func (c *NetworkClient) SetDefaultIntranetPool(ctx context.Context, actor string
 	})
 }
 
+func (c *NetworkClient) GetIntranetPoolDefaults(ctx context.Context, actor string, req *networkv1.GetIntranetPoolDefaultsRequest) (*networkv1.GetIntranetPoolDefaultsResponse, error) {
+	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.GetIntranetPoolDefaultsResponse, error) {
+		return c.platform.GetIntranetPoolDefaults(ctx, req)
+	})
+}
+
+func (c *NetworkClient) SetIntranetPoolAutoAllocationEnabled(ctx context.Context, actor string, req *networkv1.SetIntranetPoolAutoAllocationEnabledRequest) (*networkv1.SetIntranetPoolAutoAllocationEnabledResponse, error) {
+	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.SetIntranetPoolAutoAllocationEnabledResponse, error) {
+		return c.platform.SetIntranetPoolAutoAllocationEnabled(ctx, req)
+	})
+}
+
 func (c *NetworkClient) GetPlatformNetworkCapabilities(ctx context.Context, actor string, req *networkv1.GetPlatformNetworkCapabilitiesRequest) (*networkv1.GetPlatformNetworkCapabilitiesResponse, error) {
 	return platformCall(c, ctx, actor, func(ctx context.Context) (*networkv1.GetPlatformNetworkCapabilitiesResponse, error) {
 		return c.platform.GetPlatformNetworkCapabilities(ctx, req)

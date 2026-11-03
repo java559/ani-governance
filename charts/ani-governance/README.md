@@ -1,5 +1,8 @@
 # ANI Governance Helm Chart
 
+> 当前平台使用共享 Valkey，新环境请参考文末的离线部署指南。下文独立 Redis
+> 步骤适用于旧部署；Chart 默认值保留以兼容已有 release。
+
 这个 Chart 部署 `/root/kubercon/ani-governance` 的 Gov BFF 入口服务，目标命名空间是
 `ani-system`。Gov 是业务入口，负责登录、租户/套餐/权限、模型 BFF、ACC 目录与 Resource 实例 BFF；数据库迁移
 与首个管理员初始化也由本 Chart 管理。
@@ -296,3 +299,14 @@ certificate:
 跨域部署时还需保证 `corsOrigins`（生成到 `server.yaml` 的 CORS origins）包含前端站点，
 且 CORS 预检放行 `X-CSRF-Token` 自定义头（本 Chart 生成的配置已包含）。前端与 API 同源
 （如前端 nginx 反向代理 `/api`）时不触发 CORS 预检，但仍受上述来源白名单约束。
+
+## 离线环境部署
+
+新环境离线部署配置、独立账号与证书准备见 [离线部署指南](README-offline.md)。
+离线示例连接平台 Valkey；上文的独立 Redis 安装步骤和 Chart 默认地址属于旧部署配置，
+保留以兼容旧 release，不作为新环境的默认接线。
+
+如需启用 Gov 到 Resource 的实例和计算客户端，设置 `downstream.resource.enabled=true`，
+并填写 `address`、`clusterID`、`caSecret` 和客户端证书 Secret。Resource 服务端证书
+须符合客户端代码使用的 `ani-network-service` 身份，Gov 客户端证书须符合 Resource 的
+调用方身份合同。Chart 只将这些证书挂载到服务容器，不挂载到迁移或初始化 Job。

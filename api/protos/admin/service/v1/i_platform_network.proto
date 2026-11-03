@@ -118,6 +118,10 @@ service PlatformNetworkService {
     option (google.api.http) = { post: "/api/v1/admin/networks/intranet-address-pools" body: "*" response_body: "resource" };
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "CreateIntranetAddressPool" description: "Requires platform user JWT and network:platform:intranet-pool:create. Write acceptance is asynchronous; inspect resource state and last_operation_id. Tenant identities and API keys are denied." };
   }
+  rpc GetIntranetPoolDefaults(catalog.service.v1.GetIntranetPoolDefaultsRequest) returns (catalog.service.v1.GetIntranetPoolDefaultsResponse) {
+    option (google.api.http) = { get: "/api/v1/admin/networks/intranet-address-pool-defaults" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetIntranetPoolDefaults" description: "Requires platform user JWT and network:platform:intranet-pool:get. Returns trusted Provider defaults for creating a basic network; accepts no tenant or cluster override. Tenant identities and API keys are denied." };
+  }
   rpc GetIntranetAddressPool(catalog.service.v1.GetIntranetAddressPoolRequest) returns (catalog.service.v1.GetIntranetAddressPoolResponse) {
     option (google.api.http) = { get: "/api/v1/admin/networks/intranet-address-pools/{pool_id}" response_body: "resource" };
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "GetIntranetAddressPool" description: "Requires platform user JWT and network:platform:intranet-pool:get. Tenant identities and API keys are denied." };
@@ -141,6 +145,10 @@ service PlatformNetworkService {
   rpc SetDefaultIntranetPool(catalog.service.v1.SetDefaultIntranetPoolRequest) returns (catalog.service.v1.SetDefaultIntranetPoolResponse) {
     option (google.api.http) = { post: "/api/v1/admin/networks/intranet-address-pools/{pool_id}/default" body: "*" response_body: "resource" };
     option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "SetDefaultIntranetPool" description: "Requires platform user JWT and network:platform:intranet-pool:default. Write acceptance is asynchronous; inspect resource state and last_operation_id. Tenant identities and API keys are denied." };
+  }
+  rpc SetIntranetPoolAutoAllocationEnabled(catalog.service.v1.SetIntranetPoolAutoAllocationEnabledRequest) returns (catalog.service.v1.SetIntranetPoolAutoAllocationEnabledResponse) {
+    option (google.api.http) = { put: "/api/v1/admin/networks/intranet-address-pools/{pool_id}/auto-allocation" body: "*" response_body: "resource" };
+    option (gnostic.openapi.v3.operation) = { security: [{additional_properties: [{name: "BearerAuth" value: {}}]}] summary: "SetIntranetPoolAutoAllocationEnabled" description: "Requires platform user JWT and network:platform:intranet-pool:auto-allocate. Enable atomically selects the default pool, enables allocation and new VPC base EIP/SNAT provisioning. Disable affects future VPCs only and requires the current default pool. Tenant identities and API keys are denied." };
   }
   rpc GetPlatformNetworkCapabilities(catalog.service.v1.GetPlatformNetworkCapabilitiesRequest) returns (catalog.service.v1.GetPlatformNetworkCapabilitiesResponse) {
     option (google.api.http) = { get: "/api/v1/admin/networks/capabilities" response_body: "capabilities" };

@@ -214,3 +214,14 @@ func modelDevDeliveryAfter(delay time.Duration) entsql.Querier {
 		b.WriteString("statement_timestamp() + ").Arg(delay.Microseconds()).WriteString(" * INTERVAL '1 microsecond'")
 	})
 }
+
+// HasDeliveryLease observes only this publisher's still-active Create leases.
+// A completed RPC with a lost ACK write may retain its lease until expiry.
+func (r *ModelDevAcceptanceRepo) HasDeliveryLease(ctx context.Context, workerID string) (bool, error) {
+	if r == nil || r.entClient == nil || !validModelDevLeaseOwner(workerID) {
+		return false, fmt.Errorf("invalid modeldev delivery worker")
+	}
+	var active bool
+	err := r.entClient.DB().QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM sys_modeldev_acceptances WHERE dispatch_state='DISPATCHING' AND lease_owner=$1 AND lease_until>clock_timestamp())`, workerID).Scan(&active)
+	return active, err
+}

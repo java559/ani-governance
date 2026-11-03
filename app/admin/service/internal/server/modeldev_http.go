@@ -23,6 +23,7 @@ import (
 // The generated request describes the public schema. This route preserves
 // typed parameter presence by passing the shared parsed Intent to service.
 func registerModelDevHTTP(server *http.Server, modeldev *service.ModelDevService) {
+	registerModelDevEnvironmentHTTP(server, modeldev)
 	registerModelDevReadinessHTTP(server, modeldev)
 	registerModelDevStopHTTP(server, modeldev)
 	registerModelDevQueryHTTP(server, modeldev)

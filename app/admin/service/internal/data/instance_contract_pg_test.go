@@ -3,7 +3,9 @@
 package data
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 
@@ -13,6 +15,12 @@ import (
 
 func TestQuotaPostgresInstanceConcurrentAdmissionUsesCurrentContract(t *testing.T) {
 	c := newLedgerPGClient(t)
+	var versionColumnExists bool
+	require.NoError(t, c.DB().QueryRowContext(context.Background(), `SELECT EXISTS (
+ SELECT 1 FROM information_schema.columns WHERE table_schema='public'
+ AND table_name='sys_quota_operations' AND column_name='instance_contract_version'
+)`).Scan(&versionColumnExists))
+	require.False(t, versionColumnExists, "the explicit configuration cutover migration must remove the obsolete storage field")
 	cleanLedger(t, c)
 	repo := newTestRepo(c)
 	tenant, _ := seedTenantPlan(t, c, "instance-contract-race", 8)
@@ -21,7 +29,6 @@ func TestQuotaPostgresInstanceConcurrentAdmissionUsesCurrentContract(t *testing.
 	for i := range inputs {
 		input := occupyInput(c, tenant, "7", key, 1)
 		input.OwnerService, input.Action, input.Items = instanceCPUOwner, instanceCPUCreateAction, nil
-		input.InstanceContractVersion = CurrentInstanceContractVersion
 		input.CanonicalRequest = string(frozenCPUConfiguration(t))
 		input.RequestHash = "current-instance-intent"
 		inputs[i] = input
@@ -46,7 +53,7 @@ func TestQuotaPostgresInstanceConcurrentAdmissionUsesCurrentContract(t *testing.
 	require.NotEqual(t, results[0].Replayed, results[1].Replayed)
 	winner, err := repo.FindIdempotentOperation(context.Background(), tenant, "user", "7", instanceCPUCreateAction, key)
 	require.NoError(t, err)
-	require.EqualValues(t, 2, winner.InstanceContractVersion)
+	require.NotContains(t, winner.CanonicalRequest, "instance_contract_version")
 	require.Equal(t, "current-instance-intent", winner.RequestHash)
 	require.Equal(t, string(frozenCPUConfiguration(t)), winner.CanonicalRequest)
 	require.True(t, AllowsInstanceCPUCommand(winner.OwnerService, winner.Action, winner.CanonicalRequest))
@@ -58,11 +65,11 @@ func TestQuotaPostgresInstanceRejectsRetiredAdmission(t *testing.T) {
 	cleanLedger(t, c)
 	repo := newTestRepo(c)
 	tenant, _ := seedTenantPlan(t, c, "instance-current-contract", 8)
-	for _, version := range []uint32{0, 1, 3} {
+	for _, version := range []uint32{0, 1, 2, 3} {
 		input := occupyInput(c, tenant, "7", uuid.NewString(), 1)
 		input.OwnerService, input.Action, input.Items = instanceCPUOwner, instanceCPUCreateAction, nil
-		input.InstanceContractVersion = version
-		input.CanonicalRequest = string(frozenCPUConfiguration(t))
+		legacy := bytes.Replace(frozenCPUConfiguration(t), []byte("{"), []byte(fmt.Sprintf(`{"instance_contract_version":%d,`, version)), 1)
+		input.CanonicalRequest = string(legacy)
 		result, err := repo.Occupy(context.Background(), input)
 		require.Error(t, err)
 		require.Nil(t, result)

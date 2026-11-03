@@ -142,26 +142,22 @@ func (s *GpuAcceptance) AcceptGpuCreate(ctx context.Context, key string, gpu *ac
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid resource tenant mapping")
 	}
 	actorID := strconv.FormatUint(uint64(p.ID), 10)
-	// Current authorization precedes lookup; only the current instance contract is executable.
+	// Current authorization precedes lookup and replay of the frozen request.
 	old, err := s.ledger.FindIdempotentOperation(ctx, p.TenantID, string(p.Type), actorID, s.binding.CreateAction(), key)
 	if err != nil && !ent.IsNotFound(err) {
 		return nil, err
-	}
-	version := commandcontract.InstanceVersion(s.binding.OwnerService(), s.binding.CreateAction())
-	if old != nil && version != 0 && old.InstanceContractVersion != version {
-		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
 	}
 	publicBusiness := proto.Clone(business)
 	var publicGpu *acc.GpuRequest
 	if gpu != nil {
 		publicGpu = proto.Clone(gpu).(*acc.GpuRequest)
 	}
-	requestHash, err := s.createRequestHash(tenant, string(p.Type), actorID, publicGpu, publicBusiness, version)
+	requestHash, err := s.createRequestHash(tenant, string(p.Type), actorID, publicGpu, publicBusiness)
 	if err != nil {
 		if old != nil {
 			return nil, quotapb.ErrorIdempotencyConflict("%s", "request differs from original acceptance")
 		}
-		if version != 0 {
+		if s.binding.OwnerService() == InstanceOwner && s.binding.CreateAction() == InstanceCreateAction {
 			return nil, instanceBusinessError(err)
 		}
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "invalid business payload")
@@ -264,9 +260,6 @@ func (s *GpuAcceptance) acceptGpuDeleteWithReplay(ctx context.Context, key, reso
 	if !commandcontract.PairedActions(old.OwnerService, old.Action, s.binding.DeleteAction()) {
 		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "resource kind differs from delete action")
 	}
-	if version := commandcontract.InstanceVersion(old.OwnerService, old.Action); version != 0 && old.InstanceContractVersion != version {
-		return nil, quotapb.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
-	}
 	if old.OwnerService == commandcontract.InferenceOwner && commandcontract.IsInferenceCanonical([]byte(old.CanonicalRequest)) {
 		return s.acceptInferenceDelete(ctx, p, key, resource, version, old)
 	}
@@ -290,7 +283,7 @@ func (s *GpuAcceptance) acceptGpuDeleteWithReplay(ctx context.Context, key, reso
 		return nil, lookupErr
 	}
 	if existing != nil {
-		if existing.InstanceContractVersion != data.CurrentInstanceContractVersion || existing.OwnerService != old.OwnerService || existing.ResourceTenantID != old.ResourceTenantID || existing.ResourceID != resource || existing.RequestHash != hash || existing.CreateOperationID == nil || *existing.CreateOperationID != old.OperationID {
+		if existing.OwnerService != old.OwnerService || existing.ResourceTenantID != old.ResourceTenantID || existing.ResourceID != resource || existing.RequestHash != hash || existing.CreateOperationID == nil || *existing.CreateOperationID != old.OperationID {
 			return nil, quotapb.ErrorIdempotencyConflict("%s", "delete request differs from original acceptance")
 		}
 		response := &commandv1.GpuDeleteAcceptance{DeleteOperationId: existing.OperationID, ResourceId: existing.ResourceID, Result: "QUEUED_FOR_OWNER", DispatchOperationId: existing.OperationID}
@@ -424,15 +417,14 @@ func gpuAccountingTerminal(op *ent.QuotaOperation, charges []*ent.QuotaCharge) b
 	return true
 }
 
-// createRequestHash preserves the existing instance-version call shape while
-// delegating the owner intent to its compiled binding.
-func (s *GpuAcceptance) createRequestHash(tenant, actorType, actorID string, gpu *acc.GpuRequest, business proto.Message, version uint32) (string, error) {
-	if commandcontract.InstanceVersion(s.binding.OwnerService(), s.binding.CreateAction()) != 0 {
+// createRequestHash delegates the owner intent to its compiled binding.
+func (s *GpuAcceptance) createRequestHash(tenant, actorType, actorID string, gpu *acc.GpuRequest, business proto.Message) (string, error) {
+	if s.binding.OwnerService() == InstanceOwner && s.binding.CreateAction() == InstanceCreateAction {
 		binding, ok := s.binding.(*InstanceGpuBinding)
 		if !ok {
 			return "", quotapb.ErrorInvalidQuotaRequest("%s", "instance binding unavailable")
 		}
-		return binding.instanceIntentHash(tenant, actorType, actorID, gpu, business, version)
+		return binding.instanceIntentHash(tenant, actorType, actorID, gpu, business)
 	}
 	binding, ok := s.binding.(interface {
 		IntentHash(string, string, string, proto.Message) (string, error)

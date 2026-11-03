@@ -82,15 +82,16 @@ func newComponentLogFixture(t *testing.T, principal *auth.Principal, reader serv
 			}
 		},
 	))
-	RegisterPlatformComponentLogHTTP(server, svc)
-	actual := httptest.NewServer(server)
-	t.Cleanup(actual.Close)
-	return &componentLogFixture{server: actual, handler: &platformComponentLogHTTP{
+	handler := &platformComponentLogHTTP{
 		service:    svc,
 		limits:     svc.LogStreamLimits(),
 		users:      map[uint32]int{},
 		components: map[string]int{},
-	}}
+	}
+	server.Route("/").GET(data.PlatformComponentLogStreamPath, handler.handle)
+	actual := httptest.NewServer(server)
+	t.Cleanup(actual.Close)
+	return &componentLogFixture{server: actual, handler: handler}
 }
 
 // componentLogPlatformPrincipal 构造持有 component:log:read 的平台身份。

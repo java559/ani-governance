@@ -7,6 +7,7 @@ import (
 	entCrud "go-wind-admin/pkg/localdeps/go-crud/entgo"
 )
 
+const InstanceSecurityGroupsPath = "/api/v1/instances/{data.instance_id}/security-groups"
 const InstanceCreatePath = "/api/v1/instances"
 const InstanceDeletePath = "/api/v1/instances/{data.instance_id}"
 const InstanceStartPath = "/api/v1/instances/{data.instance_id}:start"
@@ -32,6 +33,14 @@ const SandboxOperationPath = "/api/v1/sandbox/operations/{operation_id}"
 const SandboxPausePath = "/api/v1/sandbox/{data.sandbox_id}:pause"
 const SandboxResumePath = "/api/v1/sandbox/{data.sandbox_id}:resume"
 const SandboxDeletePath = "/api/v1/sandbox/{data.sandbox_id}"
+const SandboxCodeRunPath = "/api/v1/sandbox/{data.sandbox_id}/code-runs"
+const SandboxCodeRunGetPath = "/api/v1/sandbox/{sandbox_id}/code-runs/{run_id}"
+const SandboxFilesListPath = "/api/v1/sandbox/{sandbox_id}/files"
+const SandboxFilesContentPath = "/api/v1/sandbox/{sandbox_id}/files/content"
+const SandboxFilesMutatePath = "/api/v1/sandbox/{data.sandbox_id}/files"
+const SandboxFilesOperationPath = "/api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}"
+const SandboxTokenCreatePath = "/api/v1/sandbox/{data.sandbox_id}/tokens"
+const SandboxTokenRevokePath = "/api/v1/sandbox/{sandbox_id}/tokens/{token_id}"
 
 // ObservabilityResourceTrendPath 是首页资源趋势路由。按 2026-10-27 定案挂
 // INSTANCE 模块（现有套餐 plan2/plan3 均含 INSTANCE、均无 DASHBOARD），
@@ -63,6 +72,8 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 	switch path {
 	case InstanceCreatePath:
 		allowed = method == "POST" || method == "GET"
+	case InstanceSecurityGroupsPath:
+		allowed = method == "PUT"
 	case InstanceDeletePath:
 		allowed = method == "DELETE"
 	case InstanceStartPath, InstanceStopPath, InstanceRestartPath, InstanceAttachPVCPath, InstanceDetachPVCPath, InstanceExecPath, InstanceMetricsQueryPath:
@@ -73,11 +84,13 @@ func (r *InstanceAuthorizationRepo) Authorize(ctx context.Context, tenant, user 
 		allowed = method == "GET"
 	case SandboxCreatePath:
 		allowed = method == "POST" || method == "GET"
-	case SandboxPausePath, SandboxResumePath:
+	case SandboxPausePath, SandboxResumePath, SandboxCodeRunPath, SandboxTokenCreatePath:
 		allowed = method == "POST"
-	case SandboxDeletePath:
+	case SandboxFilesMutatePath:
+		allowed = method == "POST" || method == "DELETE"
+	case SandboxDeletePath, SandboxTokenRevokePath:
 		allowed = method == "DELETE"
-	case SandboxGetPath, SandboxOperationPath:
+	case SandboxGetPath, SandboxOperationPath, SandboxCodeRunGetPath, SandboxFilesListPath, SandboxFilesContentPath, SandboxFilesOperationPath:
 		allowed = method == "GET"
 	}
 	if !allowed || r == nil || r.current == nil {

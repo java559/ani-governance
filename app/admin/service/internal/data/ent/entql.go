@@ -1159,31 +1159,30 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "QuotaOperation",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			quotaoperation.FieldCreatedAt:               {Type: field.TypeTime, Column: quotaoperation.FieldCreatedAt},
-			quotaoperation.FieldUpdatedAt:               {Type: field.TypeTime, Column: quotaoperation.FieldUpdatedAt},
-			quotaoperation.FieldDeletedAt:               {Type: field.TypeTime, Column: quotaoperation.FieldDeletedAt},
-			quotaoperation.FieldTenantID:                {Type: field.TypeUint32, Column: quotaoperation.FieldTenantID},
-			quotaoperation.FieldOperationID:             {Type: field.TypeString, Column: quotaoperation.FieldOperationID},
-			quotaoperation.FieldResourceTenantID:        {Type: field.TypeString, Column: quotaoperation.FieldResourceTenantID},
-			quotaoperation.FieldResourceID:              {Type: field.TypeString, Column: quotaoperation.FieldResourceID},
-			quotaoperation.FieldCreateOperationID:       {Type: field.TypeString, Column: quotaoperation.FieldCreateOperationID},
-			quotaoperation.FieldActorType:               {Type: field.TypeString, Column: quotaoperation.FieldActorType},
-			quotaoperation.FieldActorID:                 {Type: field.TypeString, Column: quotaoperation.FieldActorID},
-			quotaoperation.FieldOwnerService:            {Type: field.TypeString, Column: quotaoperation.FieldOwnerService},
-			quotaoperation.FieldAction:                  {Type: field.TypeString, Column: quotaoperation.FieldAction},
-			quotaoperation.FieldIdempotencyKey:          {Type: field.TypeString, Column: quotaoperation.FieldIdempotencyKey},
-			quotaoperation.FieldRequestHash:             {Type: field.TypeString, Column: quotaoperation.FieldRequestHash},
-			quotaoperation.FieldInstanceContractVersion: {Type: field.TypeUint32, Column: quotaoperation.FieldInstanceContractVersion},
-			quotaoperation.FieldCanonicalRequest:        {Type: field.TypeString, Column: quotaoperation.FieldCanonicalRequest},
-			quotaoperation.FieldDispatchState:           {Type: field.TypeEnum, Column: quotaoperation.FieldDispatchState},
-			quotaoperation.FieldAttemptCount:            {Type: field.TypeInt, Column: quotaoperation.FieldAttemptCount},
-			quotaoperation.FieldLeaseGeneration:         {Type: field.TypeInt64, Column: quotaoperation.FieldLeaseGeneration},
-			quotaoperation.FieldRetryBlocked:            {Type: field.TypeBool, Column: quotaoperation.FieldRetryBlocked},
-			quotaoperation.FieldLastErrorCode:           {Type: field.TypeString, Column: quotaoperation.FieldLastErrorCode},
-			quotaoperation.FieldNextAttemptAt:           {Type: field.TypeTime, Column: quotaoperation.FieldNextAttemptAt},
-			quotaoperation.FieldLeaseOwner:              {Type: field.TypeString, Column: quotaoperation.FieldLeaseOwner},
-			quotaoperation.FieldLeaseUntil:              {Type: field.TypeTime, Column: quotaoperation.FieldLeaseUntil},
-			quotaoperation.FieldAckJSON:                 {Type: field.TypeString, Column: quotaoperation.FieldAckJSON},
+			quotaoperation.FieldCreatedAt:         {Type: field.TypeTime, Column: quotaoperation.FieldCreatedAt},
+			quotaoperation.FieldUpdatedAt:         {Type: field.TypeTime, Column: quotaoperation.FieldUpdatedAt},
+			quotaoperation.FieldDeletedAt:         {Type: field.TypeTime, Column: quotaoperation.FieldDeletedAt},
+			quotaoperation.FieldTenantID:          {Type: field.TypeUint32, Column: quotaoperation.FieldTenantID},
+			quotaoperation.FieldOperationID:       {Type: field.TypeString, Column: quotaoperation.FieldOperationID},
+			quotaoperation.FieldResourceTenantID:  {Type: field.TypeString, Column: quotaoperation.FieldResourceTenantID},
+			quotaoperation.FieldResourceID:        {Type: field.TypeString, Column: quotaoperation.FieldResourceID},
+			quotaoperation.FieldCreateOperationID: {Type: field.TypeString, Column: quotaoperation.FieldCreateOperationID},
+			quotaoperation.FieldActorType:         {Type: field.TypeString, Column: quotaoperation.FieldActorType},
+			quotaoperation.FieldActorID:           {Type: field.TypeString, Column: quotaoperation.FieldActorID},
+			quotaoperation.FieldOwnerService:      {Type: field.TypeString, Column: quotaoperation.FieldOwnerService},
+			quotaoperation.FieldAction:            {Type: field.TypeString, Column: quotaoperation.FieldAction},
+			quotaoperation.FieldIdempotencyKey:    {Type: field.TypeString, Column: quotaoperation.FieldIdempotencyKey},
+			quotaoperation.FieldRequestHash:       {Type: field.TypeString, Column: quotaoperation.FieldRequestHash},
+			quotaoperation.FieldCanonicalRequest:  {Type: field.TypeString, Column: quotaoperation.FieldCanonicalRequest},
+			quotaoperation.FieldDispatchState:     {Type: field.TypeEnum, Column: quotaoperation.FieldDispatchState},
+			quotaoperation.FieldAttemptCount:      {Type: field.TypeInt, Column: quotaoperation.FieldAttemptCount},
+			quotaoperation.FieldLeaseGeneration:   {Type: field.TypeInt64, Column: quotaoperation.FieldLeaseGeneration},
+			quotaoperation.FieldRetryBlocked:      {Type: field.TypeBool, Column: quotaoperation.FieldRetryBlocked},
+			quotaoperation.FieldLastErrorCode:     {Type: field.TypeString, Column: quotaoperation.FieldLastErrorCode},
+			quotaoperation.FieldNextAttemptAt:     {Type: field.TypeTime, Column: quotaoperation.FieldNextAttemptAt},
+			quotaoperation.FieldLeaseOwner:        {Type: field.TypeString, Column: quotaoperation.FieldLeaseOwner},
+			quotaoperation.FieldLeaseUntil:        {Type: field.TypeTime, Column: quotaoperation.FieldLeaseUntil},
+			quotaoperation.FieldAckJSON:           {Type: field.TypeString, Column: quotaoperation.FieldAckJSON},
 		},
 	}
 	graph.Nodes[40] = &sqlgraph.Node{
@@ -1396,28 +1395,34 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "Tenant",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			tenant.FieldCreatedAt:        {Type: field.TypeTime, Column: tenant.FieldCreatedAt},
-			tenant.FieldUpdatedAt:        {Type: field.TypeTime, Column: tenant.FieldUpdatedAt},
-			tenant.FieldDeletedAt:        {Type: field.TypeTime, Column: tenant.FieldDeletedAt},
-			tenant.FieldCreatedBy:        {Type: field.TypeUint32, Column: tenant.FieldCreatedBy},
-			tenant.FieldUpdatedBy:        {Type: field.TypeUint32, Column: tenant.FieldUpdatedBy},
-			tenant.FieldDeletedBy:        {Type: field.TypeUint32, Column: tenant.FieldDeletedBy},
-			tenant.FieldRemark:           {Type: field.TypeString, Column: tenant.FieldRemark},
-			tenant.FieldResourceTenantID: {Type: field.TypeString, Column: tenant.FieldResourceTenantID},
-			tenant.FieldName:             {Type: field.TypeString, Column: tenant.FieldName},
-			tenant.FieldCode:             {Type: field.TypeString, Column: tenant.FieldCode},
-			tenant.FieldLogoURL:          {Type: field.TypeString, Column: tenant.FieldLogoURL},
-			tenant.FieldDomain:           {Type: field.TypeString, Column: tenant.FieldDomain},
-			tenant.FieldIndustry:         {Type: field.TypeString, Column: tenant.FieldIndustry},
-			tenant.FieldAdminUserID:      {Type: field.TypeUint32, Column: tenant.FieldAdminUserID},
-			tenant.FieldStatus:           {Type: field.TypeEnum, Column: tenant.FieldStatus},
-			tenant.FieldType:             {Type: field.TypeEnum, Column: tenant.FieldType},
-			tenant.FieldAuditStatus:      {Type: field.TypeEnum, Column: tenant.FieldAuditStatus},
-			tenant.FieldSubscriptionAt:   {Type: field.TypeTime, Column: tenant.FieldSubscriptionAt},
-			tenant.FieldUnsubscribeAt:    {Type: field.TypeTime, Column: tenant.FieldUnsubscribeAt},
-			tenant.FieldPlanID:           {Type: field.TypeUint32, Column: tenant.FieldPlanID},
-			tenant.FieldSubscriptionPlan: {Type: field.TypeString, Column: tenant.FieldSubscriptionPlan},
-			tenant.FieldExpiredAt:        {Type: field.TypeTime, Column: tenant.FieldExpiredAt},
+			tenant.FieldCreatedAt:                  {Type: field.TypeTime, Column: tenant.FieldCreatedAt},
+			tenant.FieldUpdatedAt:                  {Type: field.TypeTime, Column: tenant.FieldUpdatedAt},
+			tenant.FieldDeletedAt:                  {Type: field.TypeTime, Column: tenant.FieldDeletedAt},
+			tenant.FieldCreatedBy:                  {Type: field.TypeUint32, Column: tenant.FieldCreatedBy},
+			tenant.FieldUpdatedBy:                  {Type: field.TypeUint32, Column: tenant.FieldUpdatedBy},
+			tenant.FieldDeletedBy:                  {Type: field.TypeUint32, Column: tenant.FieldDeletedBy},
+			tenant.FieldRemark:                     {Type: field.TypeString, Column: tenant.FieldRemark},
+			tenant.FieldResourceTenantID:           {Type: field.TypeString, Column: tenant.FieldResourceTenantID},
+			tenant.FieldTenantSpaceState:           {Type: field.TypeEnum, Column: tenant.FieldTenantSpaceState},
+			tenant.FieldTenantSpaceOperationID:     {Type: field.TypeString, Column: tenant.FieldTenantSpaceOperationID},
+			tenant.FieldTenantSpaceLeaseGeneration: {Type: field.TypeInt64, Column: tenant.FieldTenantSpaceLeaseGeneration},
+			tenant.FieldTenantSpaceLeaseOwner:      {Type: field.TypeString, Column: tenant.FieldTenantSpaceLeaseOwner},
+			tenant.FieldTenantSpaceLeaseUntil:      {Type: field.TypeTime, Column: tenant.FieldTenantSpaceLeaseUntil},
+			tenant.FieldTenantSpaceNextAttemptAt:   {Type: field.TypeTime, Column: tenant.FieldTenantSpaceNextAttemptAt},
+			tenant.FieldName:                       {Type: field.TypeString, Column: tenant.FieldName},
+			tenant.FieldCode:                       {Type: field.TypeString, Column: tenant.FieldCode},
+			tenant.FieldLogoURL:                    {Type: field.TypeString, Column: tenant.FieldLogoURL},
+			tenant.FieldDomain:                     {Type: field.TypeString, Column: tenant.FieldDomain},
+			tenant.FieldIndustry:                   {Type: field.TypeString, Column: tenant.FieldIndustry},
+			tenant.FieldAdminUserID:                {Type: field.TypeUint32, Column: tenant.FieldAdminUserID},
+			tenant.FieldStatus:                     {Type: field.TypeEnum, Column: tenant.FieldStatus},
+			tenant.FieldType:                       {Type: field.TypeEnum, Column: tenant.FieldType},
+			tenant.FieldAuditStatus:                {Type: field.TypeEnum, Column: tenant.FieldAuditStatus},
+			tenant.FieldSubscriptionAt:             {Type: field.TypeTime, Column: tenant.FieldSubscriptionAt},
+			tenant.FieldUnsubscribeAt:              {Type: field.TypeTime, Column: tenant.FieldUnsubscribeAt},
+			tenant.FieldPlanID:                     {Type: field.TypeUint32, Column: tenant.FieldPlanID},
+			tenant.FieldSubscriptionPlan:           {Type: field.TypeString, Column: tenant.FieldSubscriptionPlan},
+			tenant.FieldExpiredAt:                  {Type: field.TypeTime, Column: tenant.FieldExpiredAt},
 		},
 	}
 	graph.Nodes[49] = &sqlgraph.Node{
@@ -6539,11 +6544,6 @@ func (f *QuotaOperationFilter) WhereRequestHash(p entql.StringP) {
 	f.Where(p.Field(quotaoperation.FieldRequestHash))
 }
 
-// WhereInstanceContractVersion applies the entql uint32 predicate on the instance_contract_version field.
-func (f *QuotaOperationFilter) WhereInstanceContractVersion(p entql.Uint32P) {
-	f.Where(p.Field(quotaoperation.FieldInstanceContractVersion))
-}
-
 // WhereCanonicalRequest applies the entql string predicate on the canonical_request field.
 func (f *QuotaOperationFilter) WhereCanonicalRequest(p entql.StringP) {
 	f.Where(p.Field(quotaoperation.FieldCanonicalRequest))
@@ -7467,6 +7467,36 @@ func (f *TenantFilter) WhereRemark(p entql.StringP) {
 // WhereResourceTenantID applies the entql string predicate on the resource_tenant_id field.
 func (f *TenantFilter) WhereResourceTenantID(p entql.StringP) {
 	f.Where(p.Field(tenant.FieldResourceTenantID))
+}
+
+// WhereTenantSpaceState applies the entql string predicate on the tenant_space_state field.
+func (f *TenantFilter) WhereTenantSpaceState(p entql.StringP) {
+	f.Where(p.Field(tenant.FieldTenantSpaceState))
+}
+
+// WhereTenantSpaceOperationID applies the entql string predicate on the tenant_space_operation_id field.
+func (f *TenantFilter) WhereTenantSpaceOperationID(p entql.StringP) {
+	f.Where(p.Field(tenant.FieldTenantSpaceOperationID))
+}
+
+// WhereTenantSpaceLeaseGeneration applies the entql int64 predicate on the tenant_space_lease_generation field.
+func (f *TenantFilter) WhereTenantSpaceLeaseGeneration(p entql.Int64P) {
+	f.Where(p.Field(tenant.FieldTenantSpaceLeaseGeneration))
+}
+
+// WhereTenantSpaceLeaseOwner applies the entql string predicate on the tenant_space_lease_owner field.
+func (f *TenantFilter) WhereTenantSpaceLeaseOwner(p entql.StringP) {
+	f.Where(p.Field(tenant.FieldTenantSpaceLeaseOwner))
+}
+
+// WhereTenantSpaceLeaseUntil applies the entql time.Time predicate on the tenant_space_lease_until field.
+func (f *TenantFilter) WhereTenantSpaceLeaseUntil(p entql.TimeP) {
+	f.Where(p.Field(tenant.FieldTenantSpaceLeaseUntil))
+}
+
+// WhereTenantSpaceNextAttemptAt applies the entql time.Time predicate on the tenant_space_next_attempt_at field.
+func (f *TenantFilter) WhereTenantSpaceNextAttemptAt(p entql.TimeP) {
+	f.Where(p.Field(tenant.FieldTenantSpaceNextAttemptAt))
 }
 
 // WhereName applies the entql string predicate on the name field.

@@ -27,4 +27,31 @@ service SandboxService {
   rpc DeleteSandbox(sandbox.service.v1.DeleteSandboxRequest) returns (sandbox.service.v1.SandboxAcceptance) {
     option (google.api.http) = { delete: "/api/v1/sandbox/{data.sandbox_id}" body: "*" };
   }
+  rpc RunSandboxCode(sandbox.service.v1.RunSandboxCodeRequest) returns (sandbox.service.v1.SandboxCodeRun) {
+    option (google.api.http) = { post: "/api/v1/sandbox/{data.sandbox_id}/code-runs" body: "*" };
+  }
+  rpc GetSandboxCodeRun(sandbox.service.v1.GetSandboxCodeRunRequest) returns (sandbox.service.v1.SandboxCodeRun) {
+    option (google.api.http) = { get: "/api/v1/sandbox/{sandbox_id}/code-runs/{run_id}" };
+  }
+  rpc ListSandboxFiles(sandbox.service.v1.ListSandboxFilesRequest) returns (sandbox.service.v1.SandboxFileResult) {
+    option (google.api.http) = { get: "/api/v1/sandbox/{sandbox_id}/files" };
+  }
+  rpc ReadSandboxFile(sandbox.service.v1.ReadSandboxFileRequest) returns (sandbox.service.v1.SandboxFileResult) {
+    option (google.api.http) = { get: "/api/v1/sandbox/{sandbox_id}/files/content" };
+  }
+  rpc WriteSandboxFile(sandbox.service.v1.WriteSandboxFileRequest) returns (sandbox.service.v1.SandboxFileOperation) {
+    option (google.api.http) = { post: "/api/v1/sandbox/{data.sandbox_id}/files" body: "*" };
+  }
+  rpc DeleteSandboxFile(sandbox.service.v1.DeleteSandboxFileRequest) returns (sandbox.service.v1.SandboxFileOperation) {
+    option (google.api.http) = { delete: "/api/v1/sandbox/{data.sandbox_id}/files" body: "*" };
+  }
+  rpc GetSandboxFileOperation(sandbox.service.v1.GetSandboxFileOperationRequest) returns (sandbox.service.v1.SandboxFileOperation) {
+    option (google.api.http) = { get: "/api/v1/sandbox/{sandbox_id}/file-operations/{operation_id}" };
+  }
+  rpc CreateSandboxToken(sandbox.service.v1.CreateSandboxTokenRequest) returns (sandbox.service.v1.SandboxAccessToken) {
+    option (google.api.http) = { post: "/api/v1/sandbox/{data.sandbox_id}/tokens" body: "*" };
+  }
+  rpc RevokeSandboxToken(sandbox.service.v1.RevokeSandboxTokenRequest) returns (sandbox.service.v1.RevokeSandboxTokenResponse) {
+    option (google.api.http) = { delete: "/api/v1/sandbox/{sandbox_id}/tokens/{token_id}" };
+  }
 }

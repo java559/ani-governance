@@ -18,8 +18,8 @@ const (
 )
 
 var managedActions = [...]ActionDefinition{
-	{InstanceOwner, InstanceCreateAction, ResourceKindInstance, PhaseCreate, "CONTAINER_INSTANCE", "instance-v2"},
-	{InstanceOwner, InstanceDeleteAction, ResourceKindInstance, PhaseDelete, "CONTAINER_INSTANCE", "instance-v2"},
+	{InstanceOwner, InstanceCreateAction, ResourceKindInstance, PhaseCreate, "CONTAINER_INSTANCE", "instance"},
+	{InstanceOwner, InstanceDeleteAction, ResourceKindInstance, PhaseDelete, "CONTAINER_INSTANCE", "instance"},
 	{InstanceOwner, VMCreateAction, ResourceKindVM, PhaseCreate, "VIRTUAL_MACHINE", "vm-v1"},
 	{InstanceOwner, VMDeleteAction, ResourceKindVM, PhaseDelete, "VIRTUAL_MACHINE", "vm-v1"},
 	{InferenceOwner, InferenceCreateAction, ResourceKindInference, PhaseCreate, "INFERENCE", InferenceSchema},
@@ -42,14 +42,6 @@ func Usage(owner, action string) string {
 		return ""
 	}
 	return definition.Usage
-}
-
-func InstanceVersion(owner, action string) uint32 {
-	definition, ok := LookupAction(owner, action)
-	if ok && definition.ResourceKind == ResourceKindInstance {
-		return CurrentInstanceContractVersion
-	}
-	return 0
 }
 
 func PairedActions(owner, create, deletion string) bool {

@@ -1,8 +1,10 @@
 # ANI 服务间调用规则
 
-Governance 当前通过受信 Inference API 客户端提供推理服务管理 BFF。Gov → Inference 使用 TLS 1.3 双向认证、精确 DNS SAN 和登记的 RPC；客户端重建租户与 actor metadata，不透传公网 Authorization 或自报 owner。Sandbox 管理使用同一 Resource mTLS listener 的 `sandbox.v1.SandboxService` 精确八方法白名单，Gov 先完成用户权限、INSTANCE 套餐检查和持久化 `resource_tenant_id` 映射，再重建 `x-ani-tenant-id`、`x-ani-actor`、`x-ani-request-id`。Resource 负责 immutable image、冻结规格、持久幂等和 PostgreSQL/Kubernetes worker。 Sandbox 新创建同时携带公共意图摘要 `create_intent_digest` 与完整冻结命令摘要；Governance 使用 Resource API 模块的 canonical helper，不另建摘要算法。重放先读原 Sandbox 的持久摘要与创建 operation，不依赖当前 preset 或运行配置；仅新请求进入解析/受理。Inference 的 GPU 命令还携带冻结业务摘要、执行/展示快照和操作幂等 ID，Gov 原始 quota_items 仍只保存在 Gov。Model、Resource 与 ACC 的现行合同保持各自范围。
+Governance 当前通过受信 Inference API 客户端提供推理服务管理 BFF。Gov → Inference 使用 TLS 1.3 双向认证、精确 DNS SAN 和登记的 RPC；客户端重建租户与 actor metadata，不透传公网 Authorization 或自报 owner。Sandbox 管理使用同一 Resource mTLS listener 的 `sandbox.v1.SandboxService` 精确方法白名单，Gov 先完成用户权限、INSTANCE 套餐检查和持久化 `resource_tenant_id` 映射，再重建 `x-ani-tenant-id`、`x-ani-actor`、`x-ani-request-id`。Resource 负责 immutable image、冻结规格、持久幂等和 PostgreSQL/Kubernetes worker；文件查询、写删及操作查询也使用该受信 RPC 与独立权限。Sandbox Token 由 Resource 签发并逐请求校验；Gov 保留独立的令牌主体，核对目标、范围、租户状态和签发者当前动作权限，不把令牌主体伪装为用户。 Sandbox 新创建同时携带公共意图摘要 `create_intent_digest` 与完整冻结命令摘要；Governance 使用 Resource API 模块的 canonical helper，不另建摘要算法。重放先读原 Sandbox 的持久摘要与创建 operation，不依赖当前 preset 或运行配置；仅新请求进入解析/受理。Inference 的 GPU 命令还携带冻结业务摘要、执行/展示快照和操作幂等 ID，Gov 原始 quota_items 仍只保存在 Gov。Model、Resource 与 ACC 的现行合同保持各自范围。
 
 适用：Gov → svc、svc → Gov、svc → svc 的内部业务 RPC。本文是新接入及修改服务间调用时必须遵守的统一规范；存量差异须在明确范围的独立迁移中处理，见[当前差异与迁移边界](#current-differences)。规范入仓不表示当前运行实现已全部符合。本文不改变各服务的业务职责、已发布字段或历史验收结论。
+
+租户空间开通的目标调用为 Gov → Resource 同一 mTLS listener 的 `/sandbox.v1.SandboxService/OpenTenantSpace`、`CloseTenantSpace`、`GetTenantSpace`，使用专用后台 actor `governance:tenant-space`、已持久租户 UUID、原开通 operation ID 和新 request ID；Resource 必须按完整方法限制此 actor，不把它当作用户或放行其他业务。`open` 仅为持久受理，`closing` 仍有未确认 Provider 写入，`closed` 仅证明开通栅栏关闭，不证明 namespace 或其他业务资源已删除。后台派发、关闭保护及实际验收状态以 Resource 的执行状态为准，本合同不表示该链已上线。
 
 ## 1. 三种方向，一套规则
 
@@ -38,7 +40,7 @@ Governance 当前通过受信 Inference API 客户端提供推理服务管理 BF
 3. 租户/actor 放在接口已定义的结构化请求或附件中；已有 metadata 合同继续按该合同处理。出站 **重建 metadata**，不透传公网 Authorization、AK/SK、租户、actor 或 owner header。身份字段如出现在多个位置，必须单值且一致；冲突直接拒绝。
 4. svc → svc 转交用户委托，必须在该 RPC 的登记中明确允许，且取自前一步已验证并保存的业务上下文。原 actor 可以用于审计；仅有 `actor=user` 字段不能证明 Gov 已授权。接收方仍检查该服务能否操作这项资源。
 5. 后台同步、退额、完成通知使用服务自己的持久事实，不伪造一个用户 Principal。Gov 从原操作/账本确定 tenant 和 owner，再核验通知；证书属于同一 CA 不足以获得退额权。
-6. `request_id` 用于追踪；`operation_id`、`release_event_id` 用于业务幂等。重试可以有新的追踪 ID，不能换业务幂等 ID。
+6. `request_id` 用于追踪；`operation_id`、`release_event_id` 用于业务幂等。重试可以有新的追踪 ID，不能换业务幂等 ID。Gov → Inference 同步用户请求额外重建 `x-ani-origin-request-id`，取自 Gov 校验后的请求上下文，仅用于日志关联，不参与身份或权限判断。异步派发不持有原 HTTP 上下文，以已持久化的 `operation_id` 关联 Gov 与 Inference 日志。
 
 ## 4. Go 参考代码
 
@@ -273,3 +275,51 @@ Inference 身份不获得该 RPC 权限。查询不产生副作用，不使用�
 ### Sandbox 独立模型切换门禁
 
 新 Gov 不传 Sandbox 的 `instance_id`；Resource 新版本拒绝携带该字段的读取和动作。发布两个版本前必须先停止旧 Gov 的 Sandbox 新建及全部旧投递 worker，并保持停用直到完成协调切换；对目标 Gov 数据库执行只读 [旧创建意图检查](../../scripts/ops/sql/preflight-sandbox-independent.sql)。存在未确认且带旧实例引用的命令时脚本报错，禁止切换，须逐条查明并安全处理。只读检查通过不代表两版本可以混用；升级期间还需限制旧客户端和旧 worker。历史命令保留摘要与原字段，超时或查无对象不证明命令未执行；不得自动清除或重建幂等键。
+
+## Network 安全组用户委托（2026-10-30）
+
+Gov 复用已登记的 Resource TLS 1.3 双向连接和精确 DNS SAN，新增接收面为 `network.v1.NetworkSecurityGroupService`。下表方法均以 `/network.v1.NetworkSecurityGroupService/` 为完整 RPC 前缀；调用者 `ani-governance`，接收者 `ani-resource-service`，只允许用户或 API Key 经当前 Network 权限与 NETWORK 套餐检查后的租户业务委托。`target_tenant_id` 每次覆写为持久映射的 Resource tenant UUID；出站 metadata 整体重建 tenant、actor 和独立 request ID，不透传公网身份。超时沿 `ANI_NETWORK_TIMEOUT`（默认 3 秒），无明文或旧接口 fallback。
+
+| 精确 RPC 短名 | 范围与幂等 |
+| --- | --- |
+| CreateSecurityGroup / UpdateSecurityGroup / DeleteSecurityGroup | 只操作可信当前租户安全组；创建/更新保留客户端业务 idempotency_key，更新检查 expected_version；删除依 Resource 既有受理与重复删除合同。 |
+| GetSecurityGroup / ListSecurityGroups | 可信当前租户只读；前者校验返回 tenant/id，后者保留 Resource 数据库分页及 total；无业务幂等键。 |
+| CreateSecurityGroupRule / UpdateSecurityGroupRule / DeleteSecurityGroupRule | 规则所属安全组与租户由 Resource 检查；创建/更新使用组 expected_version 与业务幂等键，默认规则不可变；删除无客户端 provider ID。 |
+| ListSecurityGroupRules / ListSecurityGroupBindings | 当前租户安全组的规则完整有界快照或绑定页；不跨租户补查、不从 KCN 拼装。 |
+| SetEIPSecurityGroups / GetEIPSecurityGroups | 当前租户 EIP 的期望/已应用安全组配置；写入保留 expected_version 与 idempotency_key；读写均只返回 Resource 公共绑定视图。 |
+| GetSecurityGroupOperation | 当前租户安全组或 EIP 安全组操作；响应 tenant 和 operation_id 必须与请求一致。 |
+
+实例与 VM 的创建字段 `security_group_ids` 进入原冻结意图和 owner 持久幂等。修改分别调用 `/instance.v1.InstanceService/SetSecurityGroups`、`/vm.v1.VMService/SetSecurityGroups`，复用原 INSTANCE / VIRTUAL_MACHINE 用户权限、删除 fence、canonical command 和 `LookupCommandReplay`，action 为 `set-security-groups`，30 秒 unary 超时与原 client metadata 重建合同不变。用户清空必须显式发送空列表；不能用省略或 null 触发解绑。SDK 最终须固定支持这些 RPC 的正式 Resource 模块版本；临时 go.work 联合验证不是正式发布依赖。
+
+## ModelDev Tenant Environment delegation
+
+Gov → `ani-modeldev-service` uses the existing mTLS connection for
+`/ani.modeldev.v1.ModelDevTenantEnvironmentService/EnsureTenantExecutionEnvironment`
+and `/ani.modeldev.v1.ModelDevTenantEnvironmentService/GetTenantExecutionEnvironment`.
+Current-tenant manage/view authorization is checked on every call. Resource UUID
+comes from the current authoritative tenant mapping; actor comes from the user
+Principal. Outgoing metadata is rebuilt with a fresh request UUID, that exact
+full method, and `x-ani-data-scope=tenant-all`. Public metadata is discarded.
+Ensure forwards the canonical Idempotency-Key as operation_id only; no execution
+or quota operation is created. RPC budgets are at most28s/3s and exact HTTP paths
+at most30s/5s, each bounded by the remaining upstream deadline.
+
+The formal ModelDev module supplies request/response/view/ErrorReason38. Unknown
+protobuf fields, invalid enums and incomplete READY are rejected. Get's
+NotFound+ENVIRONMENT_NOT_REGISTERED has its own strict correlated conversion.
+Prepare/Finalize's Unavailable+ENVIRONMENT_NOT_READY permits only
+kind=tenant_environment and one field=environment violation with a frozen finite
+cause; HTTP emits only metadata.environment_reason from that cause. No arbitrary
+upstream text or new target identity is trusted.
+
+For the one-time ModelDev environment cutover, `ANI_MODELDEV_CREATE_PAUSED=true`
+blocks only ModelDev Create admission and its publisher's new Create claims.
+The default is `false`; any other nonempty spelling fails startup. The
+composition root shares the gate with the existing worker. Worker shutdown
+first pauses new work and drains current Create requests/claims for up to 20
+seconds (or the earlier shutdown deadline), including this publisher’s active
+database leases after a lost writeback, then joins the original loop.
+A drain timeout is an error, and uncertain original operations still require
+reconciliation. Stop/close and quota release retain their existing paths;
+close delivery continues while Create is paused. Switch back to `false` and
+restart after reviewed cleanup; this setting does not delete or refund data.

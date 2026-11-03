@@ -9,7 +9,6 @@ import (
 	acc "github.com/zhangzhe-ctrl/ani-accelerator-service/api/gen/go/accelerator/v1"
 	res "github.com/zhangzhe-ctrl/ani-resource-service/api/instance/v1"
 	"go-wind-admin/app/admin/service/internal/commandcontract"
-	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/protobuf/proto"
 )
@@ -22,7 +21,7 @@ func (b *InstanceGpuBinding) PrepareManagedBusiness(ctx context.Context, p *auth
 		return nil, e
 	}
 	business, ok := message.(*res.CreateSpec)
-	if !ok || business == nil || business.InstanceContractVersion != data.CurrentInstanceContractVersion {
+	if !ok || business == nil {
 		return nil, commandcontract.Invalid("invalid instance contract")
 	}
 	if gpu != nil {
@@ -30,7 +29,7 @@ func (b *InstanceGpuBinding) PrepareManagedBusiness(ctx context.Context, p *auth
 			return nil, e
 		}
 	}
-	return &preparedManagedBusiness{gpu: gpu, instanceContractVersion: data.CurrentInstanceContractVersion, freeze: func(_, _, _, _, _ string, plan *acc.ResolvedGpuRequest) ([]byte, error) {
+	return &preparedManagedBusiness{gpu: gpu, freeze: func(_, _, _, _, _ string, plan *acc.ResolvedGpuRequest) ([]byte, error) {
 		frozen := proto.Clone(business).(*res.CreateSpec)
 		if gpu == nil {
 			if plan != nil || frozen.ComputeType != "cpu" || frozen.GpuSelection != nil || frozen.GpuExecution != nil || frozen.GpuDisplay != nil {
@@ -44,7 +43,7 @@ func (b *InstanceGpuBinding) PrepareManagedBusiness(ctx context.Context, p *auth
 			if e != nil {
 				return nil, e
 			}
-			return commandcontract.MarshalInstanceCPUCanonical(&commandcontract.InstanceCPUCanonical{Schema: commandcontract.InstanceCPUCanonicalSchema, InstanceContractVersion: data.CurrentInstanceContractVersion, BusinessPayload: raw, BusinessPayloadDigest: digest})
+			return commandcontract.MarshalInstanceCPUCanonical(&commandcontract.InstanceCPUCanonical{Schema: commandcontract.InstanceCPUCanonicalSchema, BusinessPayload: raw, BusinessPayloadDigest: digest})
 		}
 		item, e := commandcontract.GpuResolvedQuota(plan, gpu)
 		if e != nil {
@@ -64,11 +63,11 @@ func (b *InstanceGpuBinding) PrepareManagedBusiness(ctx context.Context, p *auth
 			return nil, e
 		}
 		sum := sha256.Sum256(raw)
-		return commandcontract.CanonicalJSON(commandcontract.GpuCanonical{SchemaVersion: 3, InstanceContractVersion: data.CurrentInstanceContractVersion, GpuRequest: gpu, BusinessPayload: raw, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: commandcontract.GpuMeteringVersion, QuotaItems: []commandcontract.GpuQuotaItem{{QuotaCode: item.QuotaCode, Units: item.Units}}})
+		return commandcontract.CanonicalJSON(commandcontract.GpuCanonical{SchemaVersion: 3, GpuRequest: gpu, BusinessPayload: raw, BusinessPayloadDigest: hex.EncodeToString(sum[:]), MeteringVersion: commandcontract.GpuMeteringVersion, QuotaItems: []commandcontract.GpuQuotaItem{{QuotaCode: item.QuotaCode, Units: item.Units}}})
 	}}, nil
 }
-func (b *InstanceGpuBinding) instanceIntentHash(tenant, actorType, actorID string, gpu *acc.GpuRequest, business proto.Message, version uint32) (string, error) {
-	raw, e := b.CanonicalGpuBusinessVersion(business, version)
+func (b *InstanceGpuBinding) instanceIntentHash(tenant, actorType, actorID string, gpu *acc.GpuRequest, business proto.Message) (string, error) {
+	raw, e := b.CanonicalGpuBusiness(business)
 	if e != nil {
 		return "", e
 	}
@@ -83,5 +82,5 @@ func (b *InstanceGpuBinding) instanceIntentHash(tenant, actorType, actorID strin
 			return "", e
 		}
 	}
-	return commandcontract.Hash(map[string]any{"schema": "gov-instance-create-v2", "tenant_id": tenant, "actor_type": actorType, "actor_id": actorID, "owner": b.OwnerService(), "action": b.CreateAction(), "gpu_request": gpuObject, "business_type": string(business.ProtoReflect().Descriptor().FullName()), "business": object})
+	return commandcontract.Hash(map[string]any{"schema": "gov-instance-create", "tenant_id": tenant, "actor_type": actorType, "actor_id": actorID, "owner": b.OwnerService(), "action": b.CreateAction(), "gpu_request": gpuObject, "business_type": string(business.ProtoReflect().Descriptor().FullName()), "business": object})
 }

@@ -24,6 +24,11 @@ var (
 	ErrModelDevAuthorizationUnavailable = errors.New("modeldev create authorization unavailable")
 )
 
+const ModelDevManageEnvironmentPermissionCode = "modeldev:manage_environment"
+const ModelDevViewEnvironmentPermissionCode = "modeldev:view_environment"
+const ModelDevEnsureEnvironmentPath = "/api/v1/modeldev/environment:ensure"
+const ModelDevGetEnvironmentPath = "/api/v1/modeldev/environment"
+
 const ModelDevManageInputPermissionCode = "modeldev:manage_input"
 const ModelDevManageExecutionPermissionCode = "modeldev:manage_execution"
 
@@ -51,6 +56,8 @@ const (
 	modelDevResumeRegistrationAction
 	modelDevFinetuningArtifactsAction
 	modelDevFinetuningReadinessAction
+	modelDevEnsureEnvironmentAction
+	modelDevGetEnvironmentAction
 )
 
 const (
@@ -129,6 +136,15 @@ type ModelDevAuthorizationRepo struct {
 
 func NewModelDevAuthorizationRepo(client *entCrud.EntClient[*ent.Client]) *ModelDevAuthorizationRepo {
 	return &ModelDevAuthorizationRepo{entClient: client}
+}
+
+// AuthorizeEnvironment always reads current action grants, including retries.
+func (r *ModelDevAuthorizationRepo) AuthorizeEnvironment(ctx context.Context, tenantID, userID uint32, ensure bool) error {
+	action := modelDevGetEnvironmentAction
+	if ensure {
+		action = modelDevEnsureEnvironmentAction
+	}
+	return r.authorizeCurrent(ctx, tenantID, userID, action)
 }
 
 // AuthorizeCreate requires trusted tenant/user IDs from the verified Principal.
@@ -280,6 +296,10 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 	switch action {
 	case modelDevCreateAction, modelDevGetExecutionAction, modelDevListArtifactsAction, modelDevDownloadArtifactAction, modelDevStopAction, modelDevListExecutionsAction, modelDevGetExecutionLogsAction, modelDevListExecutionPodsAction, modelDevListExecutionEventsAction, modelDevExecutionLogStreamAction, modelDevExecutionMetricsAction, modelDevListImplementationsAction, modelDevGetInputVersionAction, modelDevListInputVersionsAction, modelDevFinetuningExistingModelAction, modelDevFinetuningNewModelAction, modelDevFinetuningArtifactsAction, modelDevFinetuningReadinessAction:
 		// Create retains its permission-to-API check below.
+	case modelDevEnsureEnvironmentAction:
+		permissionQuery.Where(permission.CodeEQ(ModelDevManageEnvironmentPermissionCode))
+	case modelDevGetEnvironmentAction:
+		permissionQuery.Where(permission.CodeEQ(ModelDevViewEnvironmentPermissionCode))
 	case modelDevManageInputAction:
 		permissionQuery.Where(permission.CodeEQ(ModelDevManageInputPermissionCode))
 	case modelDevManageExecutionAction, modelDevResumeRegistrationAction:
@@ -297,6 +317,10 @@ func (r *ModelDevAuthorizationRepo) authorizeCurrent(ctx context.Context, tenant
 	if action != modelDevManageInputAction && action != modelDevManageExecutionAction {
 		path, method := "/api/v1/modeldev/executions", "POST"
 		switch action {
+		case modelDevEnsureEnvironmentAction:
+			path, method = ModelDevEnsureEnvironmentPath, "POST"
+		case modelDevGetEnvironmentAction:
+			path, method = ModelDevGetEnvironmentPath, "GET"
 		case modelDevFinetuningReadinessAction:
 			for _, required := range []string{"/api/v1/model-versions/{model_version_id}", "/api/v1/model-versions/{model_version_id}/download-url"} {
 				if err := authorizeModelDevAPI(ctx, tx, permissionIDs, required, "GET"); err != nil {

@@ -34,6 +34,15 @@ func (Tenant) Fields() []ent.Field {
 	return []ent.Field{
 		// 由治理持久生成，普通更新不提供 setter。 / Persistent immutable resource identity.
 		field.String("resource_tenant_id").NotEmpty().Unique().Immutable().DefaultFunc(uuid.NewString),
+		// The tenant row is also the durable tenant-space provisioning intent.
+		// Existing rows are LEGACY; the tenant creation repository explicitly
+		// records a new QUEUED intent and operation ID in the same transaction.
+		field.Enum("tenant_space_state").Values("LEGACY", "QUEUED", "DISPATCHING", "UNKNOWN", "READY", "CLOSING", "CLOSED").Default("LEGACY"),
+		field.String("tenant_space_operation_id").Optional().Nillable().NotEmpty().Unique().Immutable(),
+		field.Int64("tenant_space_lease_generation").NonNegative().Default(0),
+		field.String("tenant_space_lease_owner").Optional().Nillable().MaxLen(128),
+		field.Time("tenant_space_lease_until").Optional().Nillable(),
+		field.Time("tenant_space_next_attempt_at").Optional().Nillable(),
 		field.String("name").
 			Comment("租户名称").
 			//Unique().

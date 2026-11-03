@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"mime"
 	"net/http"
@@ -29,6 +30,20 @@ type NetworkOperationPolicy struct {
 // NetworkOperations is the complete tenant Network surface. Catalog membership
 // never grants a role: current tenant, NETWORK and Casbin gates still apply.
 var NetworkOperations = map[string]NetworkOperationPolicy{
+	"/admin.service.v1.NetworkService/GetEIPSecurityGroups":      {"GET", "/api/v1/networks/eips/{eip_id}/security-groups", "network:eip:security-groups:get", true},
+	"/admin.service.v1.NetworkService/GetSecurityGroupOperation": {"GET", "/api/v1/networks/security-groups/operations/{operation_id}", "network:security-group:operation:get", true},
+	"/admin.service.v1.NetworkService/CreateSecurityGroup":       {"POST", "/api/v1/networks/security-groups", "network:security-group:create", false},
+	"/admin.service.v1.NetworkService/GetSecurityGroup":          {"GET", "/api/v1/networks/security-groups/{security_group_id}", "network:security-group:get", true},
+	"/admin.service.v1.NetworkService/ListSecurityGroups":        {"GET", "/api/v1/networks/security-groups", "network:security-group:list", true},
+	"/admin.service.v1.NetworkService/UpdateSecurityGroup":       {"PATCH", "/api/v1/networks/security-groups/{security_group_id}", "network:security-group:update", false},
+	"/admin.service.v1.NetworkService/DeleteSecurityGroup":       {"DELETE", "/api/v1/networks/security-groups/{security_group_id}", "network:security-group:delete", false},
+	"/admin.service.v1.NetworkService/ListSecurityGroupRules":    {"GET", "/api/v1/networks/security-groups/{security_group_id}/rules", "network:security-group:rule:list", true},
+	"/admin.service.v1.NetworkService/CreateSecurityGroupRule":   {"POST", "/api/v1/networks/security-groups/{security_group_id}/rules", "network:security-group:rule:create", false},
+	"/admin.service.v1.NetworkService/UpdateSecurityGroupRule":   {"PATCH", "/api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}", "network:security-group:rule:update", false},
+	"/admin.service.v1.NetworkService/DeleteSecurityGroupRule":   {"DELETE", "/api/v1/networks/security-groups/{security_group_id}/rules/{rule_id}", "network:security-group:rule:delete", false},
+	"/admin.service.v1.NetworkService/ListSecurityGroupBindings": {"GET", "/api/v1/networks/security-groups/{security_group_id}/bindings", "network:security-group:binding:list", true},
+	"/admin.service.v1.NetworkService/SetEIPSecurityGroups":      {"PUT", "/api/v1/networks/eips/{eip_id}/security-groups", "network:eip:security-groups:set", false},
+
 	"/admin.service.v1.NetworkService/ListVPCCIDRPresets": {"GET", "/api/v1/networks/vpc-cidr-presets", "network:vpc:presets", true},
 	"/admin.service.v1.NetworkService/CreateVPC":          {"POST", "/api/v1/networks/vpcs", "network:vpc:create", false},
 	VPCReadOperation: {"GET", "/api/v1/networks/vpcs/{vpc_id}", "network:vpc:get", true},
@@ -72,13 +87,16 @@ func IsNetworkPath(path string) bool {
 }
 
 var networkIDPatterns = map[string]*regexp.Regexp{
-	"vpc_id":           regexp.MustCompile(`^vpc_[0-9a-f]{32}$`),
-	"subnet_id":        regexp.MustCompile(`^subnet_[0-9a-f]{32}$`),
-	"eip_id":           regexp.MustCompile(`^eip_[0-9a-f]{32}$`),
-	"public_eip_id":    regexp.MustCompile(`^eip_[0-9a-f]{32}$`),
-	"binding_id":       regexp.MustCompile(`^snat_[0-9a-f]{32}$`),
-	"load_balancer_id": regexp.MustCompile(`^lb_[0-9a-f]{32}$`),
-	"operation_id":     regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`),
+	"security_group_id":  regexp.MustCompile(`^sg_[0-9a-f]{32}$`),
+	"security_group_ids": regexp.MustCompile(`^sg_[0-9a-f]{32}$`),
+	"rule_id":            regexp.MustCompile(`^(sgr_[0-9a-f]{32}|sgr_default_ingress_drop)$`),
+	"vpc_id":             regexp.MustCompile(`^vpc_[0-9a-f]{32}$`),
+	"subnet_id":          regexp.MustCompile(`^subnet_[0-9a-f]{32}$`),
+	"eip_id":             regexp.MustCompile(`^eip_[0-9a-f]{32}$`),
+	"public_eip_id":      regexp.MustCompile(`^eip_[0-9a-f]{32}$`),
+	"binding_id":         regexp.MustCompile(`^snat_[0-9a-f]{32}$`),
+	"load_balancer_id":   regexp.MustCompile(`^lb_[0-9a-f]{32}$`),
+	"operation_id":       regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`),
 }
 
 type networkRequestDigestKey struct{}
@@ -86,6 +104,32 @@ type networkRequestDigest struct{ Operation, Method, Path, Query, Digest string 
 
 func networkRequestMessage(operation string) proto.Message {
 	switch strings.TrimPrefix(operation, "/admin.service.v1.NetworkService/") {
+	case "GetEIPSecurityGroups":
+		return &view.GetEIPSecurityGroupsRequest{}
+	case "GetSecurityGroupOperation":
+		return &view.GetSecurityGroupOperationRequest{}
+	case "CreateSecurityGroup":
+		return &view.CreateSecurityGroupRequest{}
+	case "GetSecurityGroup":
+		return &view.GetSecurityGroupRequest{}
+	case "ListSecurityGroups":
+		return &view.ListSecurityGroupsRequest{}
+	case "UpdateSecurityGroup":
+		return &view.UpdateSecurityGroupRequest{}
+	case "DeleteSecurityGroup":
+		return &view.DeleteSecurityGroupRequest{}
+	case "ListSecurityGroupRules":
+		return &view.ListSecurityGroupRulesRequest{}
+	case "CreateSecurityGroupRule":
+		return &view.CreateSecurityGroupRuleRequest{}
+	case "UpdateSecurityGroupRule":
+		return &view.UpdateSecurityGroupRuleRequest{}
+	case "DeleteSecurityGroupRule":
+		return &view.DeleteSecurityGroupRuleRequest{}
+	case "ListSecurityGroupBindings":
+		return &view.ListSecurityGroupBindingsRequest{}
+	case "SetEIPSecurityGroups":
+		return &view.SetEIPSecurityGroupsRequest{}
 	case "CreateVPC":
 		return &view.CreateVPCRequest{}
 	case "GetVPC":
@@ -148,25 +192,48 @@ func networkHTTPRoute(r *http.Request) (string, proto.Message, string, string) {
 		if policy.Method != r.Method {
 			continue
 		}
-		start := strings.IndexByte(policy.Path, '{')
-		if start < 0 {
-			if policy.Path == r.URL.Path {
-				return operation, networkRequestMessage(operation), "", ""
+		values, ok := networkRouteValues(policy.Path, r.URL.Path)
+		if !ok {
+			continue
+		}
+		field, id := "", ""
+		for _, part := range strings.Split(policy.Path, "/") {
+			if strings.HasPrefix(part, "{") {
+				field = strings.Trim(part, "{}")
+				id = values[field]
+				break
+			}
+		}
+		return operation, networkRequestMessage(operation), field, id
+	}
+	return "", nil, "", ""
+}
+
+// Match each literal and ID segment, including nested security-group rules.
+func networkRouteValues(pattern, path string) (map[string]string, bool) {
+	expected, actual := strings.Split(pattern, "/"), strings.Split(path, "/")
+	if len(expected) != len(actual) {
+		return nil, false
+	}
+	values := map[string]string{}
+	for i, part := range expected {
+		if !strings.HasPrefix(part, "{") {
+			if part != actual[i] {
+				return nil, false
 			}
 			continue
 		}
-		end := strings.IndexByte(policy.Path, '}')
-		prefix, suffix := policy.Path[:start], policy.Path[end+1:]
-		if !strings.HasPrefix(r.URL.Path, prefix) || !strings.HasSuffix(r.URL.Path, suffix) || len(r.URL.Path) < len(prefix)+len(suffix) {
-			continue
+		if !strings.HasSuffix(part, "}") {
+			return nil, false
 		}
-		field := policy.Path[start+1 : end]
-		id := r.URL.Path[len(prefix) : len(r.URL.Path)-len(suffix)]
-		if pattern := networkIDPatterns[field]; pattern != nil && pattern.MatchString(id) {
-			return operation, networkRequestMessage(operation), field, id
+		field := strings.Trim(part, "{}")
+		check := networkIDPatterns[field]
+		if check == nil || !check.MatchString(actual[i]) {
+			return nil, false
 		}
+		values[field] = actual[i]
 	}
-	return "", nil, "", ""
+	return values, true
 }
 
 func networkQueryFields(operation string) map[string]bool {
@@ -175,9 +242,17 @@ func networkQueryFields(operation string) map[string]bool {
 	}
 	fields := map[string]bool{}
 	switch strings.TrimPrefix(operation, "/admin.service.v1.NetworkService/") {
-	case "ListVPCs":
+	case "ListVPCs", "ListSecurityGroups":
 		for _, field := range []string{"name", "state", "page", "pageSize"} {
 			fields[field] = true
+		}
+	case "ListSecurityGroupRules", "ListSecurityGroupBindings":
+		fields["page"], fields["pageSize"] = true, true
+		if strings.HasSuffix(operation, "/ListSecurityGroupRules") {
+			fields["direction"] = true
+		}
+		if strings.HasSuffix(operation, "/ListSecurityGroupBindings") {
+			fields["target_type"] = true
 		}
 	case "ListEIPs":
 		for _, field := range []string{"name", "state", "limit", "cursor"} {
@@ -214,6 +289,12 @@ func validateNetworkQuery(operation string, query url.Values) bool {
 			if err != nil || n == 0 || strconv.FormatUint(n, 10) != value || (field == "pageSize" && n > 100) || (operation == "/admin.service.v1.PlatformNetworkService/ListVirtualSwitches" && n > 2147483647) {
 				return false
 			}
+		}
+		if field == "target_type" && value != "" && value != "container" && value != "vm" && value != "eip" {
+			return false
+		}
+		if field == "direction" && value != "" && value != "ingress" && value != "egress" {
+			return false
 		}
 		if field == "limit" {
 			n, err := strconv.Atoi(value)
@@ -312,7 +393,7 @@ func NetworkHTTPFilter(next http.Handler) http.Handler {
 				return
 			}
 		}
-		if r.Method == "POST" || r.Method == "PATCH" {
+		if r.Method == "POST" || r.Method == "PATCH" || r.Method == "PUT" {
 			media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 			if err != nil || media != "application/json" || len(body) == 0 || len(r.Header.Values("Content-Type")) != 1 {
 				fail()
@@ -322,12 +403,40 @@ func NetworkHTTPFilter(next http.Handler) http.Handler {
 				fail()
 				return
 			}
+			if strings.HasSuffix(operation, "/SetEIPSecurityGroups") {
+				var envelope map[string]json.RawMessage
+				var data map[string]json.RawMessage
+				var ids []string
+				if json.Unmarshal(body, &envelope) != nil || json.Unmarshal(envelope["data"], &data) != nil {
+					fail()
+					return
+				}
+				value, present := data["security_group_ids"]
+				if !present || bytes.Equal(bytes.TrimSpace(value), []byte("null")) || json.Unmarshal(value, &ids) != nil {
+					fail()
+					return
+				}
+			}
 			m := message.ProtoReflect()
 			if !validateNetworkMessage(m) || (IsPlatformNetworkOperation(operation) && !validPlatformNetworkInput(message)) {
 				fail()
 				return
 			}
 			fields := m.Descriptor().Fields()
+			if policy, ok := NetworkOperations[operation]; ok {
+				values, matches := networkRouteValues(policy.Path, r.URL.Path)
+				if !matches {
+					fail()
+					return
+				}
+				for name, value := range values {
+					f := fields.ByName(protoreflect.Name(name))
+					if f == nil || (m.Get(f).String() != "" && m.Get(f).String() != value) {
+						fail()
+						return
+					}
+				}
+			}
 			if pathField != "" {
 				f := fields.ByName(protoreflect.Name(pathField))
 				if f == nil || (m.Get(f).String() != "" && m.Get(f).String() != id) {

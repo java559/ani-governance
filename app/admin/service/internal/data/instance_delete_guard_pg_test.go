@@ -226,7 +226,6 @@ func newInstanceDeletePGFixture(t *testing.T, compute string) *instanceDeletePGF
 	} else {
 		input = occupyInput(c, tenant, "7", uuid.NewString(), 1)
 		input.OwnerService, input.Action, input.Items = instanceCPUOwner, instanceCPUCreateAction, nil
-		input.InstanceContractVersion = CurrentInstanceContractVersion
 		input.CanonicalRequest = string(frozenCPUConfiguration(t))
 		frozen, err := DecodeInstanceCPUCanonical([]byte(input.CanonicalRequest))
 		require.NoError(t, err)

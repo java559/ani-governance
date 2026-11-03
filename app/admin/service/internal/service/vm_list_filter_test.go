@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
+	vm "github.com/zhangzhe-ctrl/ani-resource-service/api/vm/v1"
+	view "go-wind-admin/api/gen/go/vm/service/v1"
 )
 
 func listFilterPtr(v string) *string { return &v }
@@ -32,5 +34,16 @@ func TestVMListFilterNormalizesAndRejects(t *testing.T) {
 	}
 	if _, _, err := vmListFilter(nil, listFilterPtr(strings.Repeat("字", 80))); err != nil {
 		t.Fatalf("80-rune keyword must be accepted: %v", err)
+	}
+}
+
+func TestVMWirePreservesSecurityGroupsAndCreationTime(t *testing.T) {
+	upstream := &vm.VirtualMachine{SecurityGroupIds: []string{"sg_123"}, CreatedAt: "2026-10-30T00:00:00Z"}
+	var result view.VirtualMachine
+	if err := vmWire(upstream, &result); err != nil {
+		t.Fatal(err)
+	}
+	if result.CreatedAt != upstream.CreatedAt || len(result.SecurityGroupIds) != 1 || result.SecurityGroupIds[0] != "sg_123" {
+		t.Fatalf("VM response lost fields: %+v", result)
 	}
 }

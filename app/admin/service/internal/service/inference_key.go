@@ -94,11 +94,19 @@ func (s *InferenceService) ListInferenceKeys(ctx context.Context, in *view.ListI
 	if page < 1 || page > 100 || size < 1 || size > 100 {
 		return nil, view.ErrorInvalidInferenceKeyRequest("page and pageSize must be within 1..100")
 	}
+	var model *string
+	if in.ServedModelName != nil {
+		value := strings.TrimSpace(in.GetServedModelName())
+		if value == "" || strings.ContainsRune(value, '\x00') {
+			return nil, view.ErrorInvalidInferenceKeyRequest("served_model_name must be nonempty")
+		}
+		model = &value
+	}
 	owner, tenant, actor, err := s.inferenceKeyScope(ctx)
 	if err != nil {
 		return nil, err
 	}
-	result, err := owner.ListInferenceKeysTrusted(ctx, tenant, actor, &runtimev1.ListInferenceAccessKeysRequest{Page: page, PageSize: size})
+	result, err := owner.ListInferenceKeysTrusted(ctx, tenant, actor, &runtimev1.ListInferenceAccessKeysRequest{Page: page, PageSize: size, ServedModelName: model})
 	if err != nil {
 		return nil, mapInferenceKeyError(err)
 	}

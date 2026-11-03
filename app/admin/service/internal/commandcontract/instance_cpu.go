@@ -11,7 +11,6 @@ import (
 )
 
 const InstanceCPUCanonicalSchema = "instance-cpu-v1"
-const CurrentInstanceContractVersion uint32 = 2
 const instanceCPUOwner = "ani-resource-service"
 const instanceCPUCreateAction = "/instance.v1.InstanceService/AcceptCreate"
 const instanceCPUDeleteAction = "/instance.v1.InstanceService/AcceptDelete"
@@ -19,11 +18,10 @@ const instanceCPUDeleteAction = "/instance.v1.InstanceService/AcceptDelete"
 // InstanceCPUCanonical freezes an unmetered CPU command. It is deliberately
 // separate from GPU plans and is accepted only for the compiled instance owner.
 type InstanceCPUCanonical struct {
-	Schema                  string          `json:"schema"`
-	InstanceContractVersion uint32          `json:"instance_contract_version"`
-	BusinessPayload         json.RawMessage `json:"business_payload"`
-	BusinessPayloadDigest   string          `json:"business_payload_digest"`
-	DeleteExpectedVersion   int64           `json:"delete_expected_version,omitempty"`
+	Schema                string          `json:"schema"`
+	BusinessPayload       json.RawMessage `json:"business_payload"`
+	BusinessPayloadDigest string          `json:"business_payload_digest"`
+	DeleteExpectedVersion int64           `json:"delete_expected_version,omitempty"`
 }
 
 func IsInstanceCPUCanonical(raw []byte) bool {
@@ -38,7 +36,7 @@ func DecodeInstanceCPUCanonical(raw []byte) (*InstanceCPUCanonical, error) {
 	var c InstanceCPUCanonical
 	d := json.NewDecoder(bytes.NewReader(raw))
 	d.DisallowUnknownFields()
-	if d.Decode(&c) != nil || c.Schema != InstanceCPUCanonicalSchema || c.InstanceContractVersion != CurrentInstanceContractVersion || c.DeleteExpectedVersion < 0 {
+	if d.Decode(&c) != nil || c.Schema != InstanceCPUCanonicalSchema || c.DeleteExpectedVersion < 0 {
 		return nil, invalid
 	}
 	// A byte-for-byte canonical encoding rejects duplicate keys and trailing data.
@@ -50,10 +48,7 @@ func DecodeInstanceCPUCanonical(raw []byte) (*InstanceCPUCanonical, error) {
 	if e != nil || business == nil || business.GpuSelection != nil || business.GpuExecution != nil || business.InstanceKind != "container" || business.ComputeType != "cpu" {
 		return nil, invalid
 	}
-	if business.InstanceContractVersion != CurrentInstanceContractVersion {
-		return nil, invalid
-	}
-	canonical, e := res.CanonicalBusinessPayloadVersion(business, CurrentInstanceContractVersion)
+	canonical, e := res.CanonicalBusinessPayload(business)
 	if e != nil {
 		return nil, invalid
 	}
@@ -75,9 +70,6 @@ func DecodeInstanceCPUCanonical(raw []byte) (*InstanceCPUCanonical, error) {
 func MarshalInstanceCPUCanonical(command *InstanceCPUCanonical) ([]byte, error) {
 	if command == nil {
 		return nil, quota.ErrorInvalidQuotaRequest("%s", "missing frozen CPU instance command")
-	}
-	if command.InstanceContractVersion != CurrentInstanceContractVersion {
-		return nil, quota.ErrorInvalidQuotaRequest("%s", "invalid instance contract")
 	}
 	var encoded bytes.Buffer
 	encoder := json.NewEncoder(&encoded)

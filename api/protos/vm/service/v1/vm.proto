@@ -15,6 +15,7 @@ message CreateVMData {
  VMNetworkSelection network=8; optional bool start_after_create=9;
  CreateGuestInitialization guest_initialization=10;
  VMDNSSelection dns=11;
+ repeated string security_group_ids=12 [json_name="security_group_ids"];
 }
 message CreateGuestInitialization { string username=1; string password=2 [(redact.value).string=""]; string ssh_public_key=3; }
 message CreateVMRequest { CreateVMData data=1; }
@@ -23,6 +24,7 @@ message ChangeVMData {
  bool destructive_confirmation=4; string disk_id=5; bool guest_prepared_confirmation=6;
  string name=7; int64 size_gb=8; string slot=9; string media_key=10; string boot_device=11;
  string snapshot_id=12; string preview_digest=13;
+ repeated string security_group_ids=14 [json_name="security_group_ids"];
 }
 message ChangeVMRequest { ChangeVMData data=1; }
 message GetVMRequest { string vm_id=1 [json_name="vm_id"]; }
@@ -45,8 +47,44 @@ message VirtualMachine {
  string preset_id=16; int64 cpu_millis=17; int64 memory_mib=18;
  int64 system_disk_size_gb=19; string source_kind=20; string media_key=21;
  VMFrozenDNS dns=22;
- string created_at=23 [json_name="createdAt"];
+ repeated string security_group_ids=23 [json_name="security_group_ids"];
+ string created_at=24 [json_name="createdAt"];
+ string preset_name=25; VMHardware hardware=26; VMInitialization initialization=27;
+ VMMedia source_media=28; VMRuntime runtime=29; VMRelations relations=30;
 }
+// Read-only detail projection. Runtime is collected only by GetVM, never by ListVMs.
+message ResourceReference { string id = 1; string name = 2; string state = 3; }
+message VMRelations {
+  ResourceReference vpc = 1; ResourceReference subnet = 2;
+  repeated ResourceReference security_groups = 3;
+}
+message GuestInterface {
+  string name = 1; string guest_name = 2; string mac = 3;
+  repeated string addresses = 4; string info_source = 5;
+}
+message GuestFilesystem {
+  string disk_name = 1; string mount_point = 2; string file_system_type = 3;
+  optional uint64 total_bytes = 4; optional uint64 used_bytes = 5;
+}
+message VMRuntime {
+  // AVAILABLE, NOT_RUNNING, AGENT_NOT_CONNECTED, UNAVAILABLE, or CHANGED.
+  string state = 1; string agent_state = 2; string observed_at = 3;
+  string node_name = 4;
+  // VMI Running phase transition, not guest OS boot time.
+  string started_at = 5; string hostname = 6; string agent_version = 7;
+  string os_name = 8; string os_version = 9; string kernel_release = 10; string kernel_version = 11;
+  repeated GuestInterface interfaces = 12;
+  // AVAILABLE, UNSUPPORTED, UNAVAILABLE, or NOT_QUERIED. Empty AVAILABLE is a successful empty result.
+  string filesystems_state = 13; repeated GuestFilesystem filesystems = 14;
+}
+
+message VMHardware {
+ uint32 sockets=1; uint32 cores=2; uint32 threads=3;
+ string architecture=4; string firmware=5; string root_bus=6; string data_bus=7; string nic_model=8;
+ bool persistent_tpm=9; bool persistent_uefi=10;
+}
+// No password, credential digest, or raw public key is returned.
+message VMInitialization { string method=1; string username=2; string ssh_key_fingerprint=3; }
 message ListVMsResponse { repeated VirtualMachine items=1; int64 total=2; }
 message VMDisk {
  string disk_id=1; string role=2; string name=3; int64 size_gb=4; int64 requested_bytes=5;
@@ -67,6 +105,7 @@ message VMSnapshot {
  string snapshot_id=1; string source_vm_id=2; string source_vm_uid=3; bool ready=4;
  string completeness=5; repeated string included=6; repeated string excluded=7;
  repeated string indications=8; repeated VMDisk disks=9; string observed_at=10; string reason=11;
+ string name=12; string created_at=13;
 }
 message ListSnapshotsResponse { repeated VMSnapshot items=1; }
 message VMRestoreDiskImpact { string disk_id=1; string action=2; string reason=3; }

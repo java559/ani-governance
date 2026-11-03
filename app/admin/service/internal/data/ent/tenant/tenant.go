@@ -30,6 +30,18 @@ const (
 	FieldRemark = "remark"
 	// FieldResourceTenantID holds the string denoting the resource_tenant_id field in the database.
 	FieldResourceTenantID = "resource_tenant_id"
+	// FieldTenantSpaceState holds the string denoting the tenant_space_state field in the database.
+	FieldTenantSpaceState = "tenant_space_state"
+	// FieldTenantSpaceOperationID holds the string denoting the tenant_space_operation_id field in the database.
+	FieldTenantSpaceOperationID = "tenant_space_operation_id"
+	// FieldTenantSpaceLeaseGeneration holds the string denoting the tenant_space_lease_generation field in the database.
+	FieldTenantSpaceLeaseGeneration = "tenant_space_lease_generation"
+	// FieldTenantSpaceLeaseOwner holds the string denoting the tenant_space_lease_owner field in the database.
+	FieldTenantSpaceLeaseOwner = "tenant_space_lease_owner"
+	// FieldTenantSpaceLeaseUntil holds the string denoting the tenant_space_lease_until field in the database.
+	FieldTenantSpaceLeaseUntil = "tenant_space_lease_until"
+	// FieldTenantSpaceNextAttemptAt holds the string denoting the tenant_space_next_attempt_at field in the database.
+	FieldTenantSpaceNextAttemptAt = "tenant_space_next_attempt_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldCode holds the string denoting the code field in the database.
@@ -82,6 +94,12 @@ var Columns = []string{
 	FieldDeletedBy,
 	FieldRemark,
 	FieldResourceTenantID,
+	FieldTenantSpaceState,
+	FieldTenantSpaceOperationID,
+	FieldTenantSpaceLeaseGeneration,
+	FieldTenantSpaceLeaseOwner,
+	FieldTenantSpaceLeaseUntil,
+	FieldTenantSpaceNextAttemptAt,
 	FieldName,
 	FieldCode,
 	FieldLogoURL,
@@ -113,6 +131,14 @@ var (
 	DefaultResourceTenantID func() string
 	// ResourceTenantIDValidator is a validator for the "resource_tenant_id" field. It is called by the builders before save.
 	ResourceTenantIDValidator func(string) error
+	// TenantSpaceOperationIDValidator is a validator for the "tenant_space_operation_id" field. It is called by the builders before save.
+	TenantSpaceOperationIDValidator func(string) error
+	// DefaultTenantSpaceLeaseGeneration holds the default value on creation for the "tenant_space_lease_generation" field.
+	DefaultTenantSpaceLeaseGeneration int64
+	// TenantSpaceLeaseGenerationValidator is a validator for the "tenant_space_lease_generation" field. It is called by the builders before save.
+	TenantSpaceLeaseGenerationValidator func(int64) error
+	// TenantSpaceLeaseOwnerValidator is a validator for the "tenant_space_lease_owner" field. It is called by the builders before save.
+	TenantSpaceLeaseOwnerValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// CodeValidator is a validator for the "code" field. It is called by the builders before save.
@@ -120,6 +146,37 @@ var (
 	// IDValidator is a validator for the "id" field. It is called by the builders before save.
 	IDValidator func(uint32) error
 )
+
+// TenantSpaceState defines the type for the "tenant_space_state" enum field.
+type TenantSpaceState string
+
+// TenantSpaceStateLEGACY is the default value of the TenantSpaceState enum.
+const DefaultTenantSpaceState = TenantSpaceStateLEGACY
+
+// TenantSpaceState values.
+const (
+	TenantSpaceStateLEGACY      TenantSpaceState = "LEGACY"
+	TenantSpaceStateQUEUED      TenantSpaceState = "QUEUED"
+	TenantSpaceStateDISPATCHING TenantSpaceState = "DISPATCHING"
+	TenantSpaceStateUNKNOWN     TenantSpaceState = "UNKNOWN"
+	TenantSpaceStateREADY       TenantSpaceState = "READY"
+	TenantSpaceStateCLOSING     TenantSpaceState = "CLOSING"
+	TenantSpaceStateCLOSED      TenantSpaceState = "CLOSED"
+)
+
+func (tss TenantSpaceState) String() string {
+	return string(tss)
+}
+
+// TenantSpaceStateValidator is a validator for the "tenant_space_state" field enum values. It is called by the builders before save.
+func TenantSpaceStateValidator(tss TenantSpaceState) error {
+	switch tss {
+	case TenantSpaceStateLEGACY, TenantSpaceStateQUEUED, TenantSpaceStateDISPATCHING, TenantSpaceStateUNKNOWN, TenantSpaceStateREADY, TenantSpaceStateCLOSING, TenantSpaceStateCLOSED:
+		return nil
+	default:
+		return fmt.Errorf("tenant: invalid enum value for tenant_space_state field: %q", tss)
+	}
+}
 
 // Status defines the type for the "status" enum field.
 type Status string
@@ -248,6 +305,36 @@ func ByRemark(opts ...sql.OrderTermOption) OrderOption {
 // ByResourceTenantID orders the results by the resource_tenant_id field.
 func ByResourceTenantID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldResourceTenantID, opts...).ToFunc()
+}
+
+// ByTenantSpaceState orders the results by the tenant_space_state field.
+func ByTenantSpaceState(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceState, opts...).ToFunc()
+}
+
+// ByTenantSpaceOperationID orders the results by the tenant_space_operation_id field.
+func ByTenantSpaceOperationID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceOperationID, opts...).ToFunc()
+}
+
+// ByTenantSpaceLeaseGeneration orders the results by the tenant_space_lease_generation field.
+func ByTenantSpaceLeaseGeneration(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceLeaseGeneration, opts...).ToFunc()
+}
+
+// ByTenantSpaceLeaseOwner orders the results by the tenant_space_lease_owner field.
+func ByTenantSpaceLeaseOwner(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceLeaseOwner, opts...).ToFunc()
+}
+
+// ByTenantSpaceLeaseUntil orders the results by the tenant_space_lease_until field.
+func ByTenantSpaceLeaseUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceLeaseUntil, opts...).ToFunc()
+}
+
+// ByTenantSpaceNextAttemptAt orders the results by the tenant_space_next_attempt_at field.
+func ByTenantSpaceNextAttemptAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceNextAttemptAt, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

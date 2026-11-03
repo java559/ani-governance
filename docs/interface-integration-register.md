@@ -22,6 +22,7 @@
 | 平台运营账号管理 | 复用 ACCOUNT-01～ACCOUNT-09、ROLE-01～ROLE-05、AUTH-02/12；AUTH-15～AUTH-18；SESSION-01～SESSION-04；PERM-01～PERM-06、PERMGROUP-01～PERMGROUP-05 | 支持多个平台账号；运营/只读角色模板待 API 接入后再加；自助会话与权限点/权限组接口本轮补登，缺口见 MGMT-08～MGMT-15 | 待指定 |
 | API Key / AK-SK | AK-01～AK-07；AK-IDEM-01（创建幂等，2026-10-10）；AK-ROLE-INFO-01（响应回填角色名称/描述，2026-10-13） | 签名、角色绑定、加密与可信审计已完成，真实 VPC 闭环 PASS；创建幂等已在 ani-system 真实环境实测（HTTP 20/20 PASS + 8 并发 ALL PASS）；AK-ROLE-INFO-01 已在 ani-system 实测 14/14 PASS 且既有三脚本回归不退化 | AKSK-VPC-20260922 已完成本批；幂等与角色信息回填属向后兼容增强，未并入风格批次 |
 | VPC 详情查询的机器调用 | NET-01；复用 AK-* | 必要 vpc-read 接收已整合，双 actor 与真实 mTLS 查询 PASS | AKSK-VPC-20260922 已完成本批 |
+| Network 安全组与实例绑定 | NET-SG-01～NET-SG-15 | 正式 SDK 固定；Fedora 定向测试、构建与 HTTP/mTLS/PG/worker 闭环通过；真实流量验收待执行 | 新接口遵守 data 包装；既有 Network 接口格式保留 |
 | Network 租户面读写对接 | NET-01～NET-25；复用 AK-*、AUTH-* | 当前 25 方法支持 JWT/AK；NET-01～24 的历史三条主链验收和 NET-25 增量结果分批记录 | 当前合同见下方增量与 [AK/SK 合同](contracts/aksk-signature.md)；真实环境按批次验收 |
 | Gov → Resource 调用规范收敛 | S2S-RES-01；复用 NET-01～NET-25 与既有 Image 11 RPC | Network/Image 调用端与 Resource 接收端已修改；隔离真实业务链路通过，生产验收未执行 | 传输与可信上下文即时修复，见下方结果；不调整 HTTP 风格 |
 | Gov → Resource Sandbox 生命周期 | SANDBOX-01～08 | 当前需求为独立 Sandbox：源码调整、跨仓兼容和验收结果见 Resource 唯一状态；旧父实例模型的历史证据不能代表新模型已验收 | Gov 需固定支持独立创建的 Resource 正式版本；升级前执行切换门禁，整体验收待完成 |
@@ -184,6 +185,10 @@ HTTP 方法、字段、签名与请求限制以 [Network 路由输入](../api/pr
 [Network Service](../app/admin/service/internal/service/network_service.go) 从认证主体取得本地租户，经持久 `resource_tenant_id` 映射后调用 [出站客户端](../app/admin/service/internal/data/network_client.go)。客户端整体重建单值 `x-ani-tenant-id/x-ani-actor/x-ani-request-id`，actor 区分 `governance:user:<id>` 与 `governance:access-key:<id>`；不转发公网身份或认证材料。Resource 继续负责真实租户过滤、父子归属、持久幂等、版本、占用和删除约束，Governance 核对返回对象的租户和资源关联。
 
 HTTP 成功表示 Resource 返回了持久资源或受理快照；资源生命周期与 operation 结果分别查询。SNAT 的 `desired_enabled` 与可选 `applied_enabled` 保留期望、实际观测和未知状态，解绑保留独立 EIP。LB 的 `state/configuration_state/data_plane_state` 与 `desired_version/provider_target_version/applied_version`、监听器只读部署事实、观测时间分别保留，不能把受理、配置完成或 operation 成功解释为流量健康；删除结果仍含资源与 operation，并由 Resource 释放关联、保留独立 EIP 和工作负载。公开错误保留 Resource 的领域 reason 和适当 HTTP 码，不暴露下游私有错误详情。
+
+VPC 列表与详情的可选 `public_egress` 来自 Resource 同一读取快照，保留 `binding_id/eip_id/eip_address/binding_state`、绑定生命周期和 `desired_enabled/applied_enabled`，没有关联时为空。公网出口绑定及重新启用不要求先创建或绑定 Intranet 基础出口；已有基础出口的生命周期保持独立。EIP 的 `binding_state` 表示占用关联，`binding_target.id` 仍是绑定 ID，新增 `binding_target.vpc_id` 供跳转到所属 VPC。禁用、应用中和删除中的关联继续展示，不能从 `state=available` 推断未绑定。
+
+NET-08 `CreateEIP` 增加可选 `security_group_ids`，随同一次 Resource 创建命令持久受理，禁止 BFF 创建后再串联设置安全组造成部分成功。创建仍用既有平铺 JSON 对象并保留原幂等键；安全组替换/清空复用 NET-SG 的 `PUT /api/v1/networks/eips/{eip_id}/security-groups`，保留版本、幂等、可信租户、权限和 NETWORK 套餐约束。
 
 平台 Network 27 方法、Attachment 四个方法、ImageRuntime 两个方法和实例 owner 的 GetSubmission 不属于此租户 HTTP/AK 接入范围。
 
@@ -1673,6 +1678,8 @@ Resource 通过新迁移 0013 增加可空 text 列，保留历史迁移与原 c
 <a id="gov-platform-network-01"></a>
 ## GOV-PLATFORM-NETWORK-01：平台网络 BFF
 
+2026-11-03 增加基础网络的新 VPC 自动分配命令，单次受信委托原子选择默认池、开启分配与 `new_vpcs_enabled`，关闭和默认源切换不迁移已有 VPC。独立平台动作权限、请求/响应及部署目录步骤见[平台网络合同](contracts/platform-network.md)。Intranet 列表与详情追加开关状态，租户 VPC 响应追加不含系统资源标识的 `base_connectivity` 摘要。继续使用既有身份、幂等、版本与 Provider 准入；人工 verification 不再是基础连接自动分配前置。不新增租户控制入口、探测或历史补齐；源码验证与目标部署、真实 LB 流量分别确认。
+
 2026-10-30 移除 NodeFacts 网卡发现、独立设备登记/查询及旧登记退出共 5 个公共方法，其专属 DTO、平台客户端、权限映射和目录种子同步删除。平台接口现为 35 个；管理员手工提交网卡名，经 Resource 受理后交给 KCN 接管。正常交换机、二层网络、公网池与默认出口入口保持原合同；历史验证记录不代表这些已移除入口仍可调用。当前合同见[平台网络接入](contracts/platform-network.md)。源码清理、生成/测试和目标部署分别确认，本登记不预先声明通过。
 
 2026-10-27 追加平台默认 VPC 当前出口查询，复用 `network:platform:default-egress:get`；平台 EIP 清单纳入无租户的系统出口地址并保留所属生命周期释放约束。契约见[当前平台默认出口](contracts/platform-network.md#当前平台默认出口)。
@@ -1743,6 +1750,11 @@ mTLS gRPC 请求，不信任客户端提交的租户或 actor。Higress 只承�
 数据面（例如 `/v1/completions`），不得承载下列 `/api/v1/...` 管理路由。ModelScope
 导入仍由 Model Service 创建一次性 Kubernetes Job 完成，文件写入当前 Model Service
 配置的 S3-compatible 存储。
+
+Gov → Inference 同步请求按服务间调用规范附带 `x-ani-origin-request-id`，
+用于将 Gov 的 HTTP request ID 关联到 Inference 日志；它不是身份凭据。
+异步派发使用创建响应中的 `operation_id` 关联 Gov 与 Inference 日志，
+该 ID 不替代每次 RPC 的 `x-ani-request-id` 或链路 trace ID。
 
 ### 2026-10-26 默认镜像目录与拒绝收尾
 
@@ -1971,6 +1983,10 @@ Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_
 
 密码不进入普通 Resource CreateSpec、operation 查询或日志。Gov 使用既有强制副本共享的 AccessKeyCipher 主密钥分别派生凭据意图 HMAC 和 AES-GCM 子密钥；普通 intent 仅含 PasswordSet 与 HMAC，私密 payload 在受理事务内加密进原 outbox canonical，AAD 绑定可信 tenant、actor、原 operation/resource 与冻结 spec digest。进程重开从同一持久记录解密后，仅随 mTLS AcceptCreate 的独立 guest_credentials 参数投递；原键重放保留原 ciphertext 与原结果，改变密码仍是异意图冲突。DELETE 不解密密码。现有主密钥是该持久 outbox 的恢复依赖，不能在仍有待投递记录时丢失或任意替换。
 
+2026-10-30 详情扩展沿用 GET `/api/v1/virtual-machines/{vm_id}`、现有 `vm:read`、VIRTUAL_MACHINE 套餐与受管 Resource `/vm.v1.VMService/GetVM`；没有新路由或额外权限。新增 `createdAt`、`presetName`、`sourceMedia`、`hardware`、`initialization`、`relations`、`runtime`，JSON 字段及完整状态枚举以本节正式 Proto 为准。冻结摘要同时覆盖 owner 尚未接管时的原 CREATE 回显；运行信息只来自 owner 当前读取，不在 Gov 猜测或查询目录回填。
+
+初始化只公开方式、用户名和公钥指纹；不公开原始公钥、密码、密码标志、HMAC、native namespace/PVC。关联名称是当前租户的当前名称，ID 保留原关系；来宾未连接、读取失败、换代与未知容量分别展示。只读快照 DTO 增补 name/createdAt，透传 owner 的真实来源。VM 列表继续只读持久投影，不触发 QGA fanout。Resource SDK 固定为 `v0.0.0-20261030112612-81c625f0532f`，对应本次 Resource 提交 `81c625f0532f1189a50470d6ae01831038c27184`。候选模块由该提交的完整源树通过标准 Go module zip 打包，在仓外文件代理中核验；`GOWORK=off`、不使用 replace。候选验证与向远程发布、部署、真实来宾验收分别确认，提交未推送前其他环境不能从远程拉取该 SDK。
+
 实际 CODE/PG/BOUNDARY/LIVE/GUEST/BROWSER 结果统一见 Resource `docs/execution/status.md#vm-mvp` 及 `docs/execution/records/VM-MVP/`；此登记不是执行通过记录。
 
 组合编译核验发现既有 ModelDev 根 SDK `v0.0.0-20261021184454-44188466290f` 仍引入 Model 根 SDK `v0.0.0-20261013092523-8951c85bc150`，其 `api/model/v1` 与本仓已固定的 Model/api 子模块同路径冲突。Gov 显式将该间接父模块固定到与现有 Model/api 同一提交的 `v0.0.0-20261021113912-a21befaaa5e5`；该提交含 `api/go.mod`，父模块不再导出该子树。不更改 Model/ModelDev 源码，不回退既有 API，也不以本地 replace 作为正式依赖修复。
@@ -1978,6 +1994,10 @@ Linux `DISK_IMAGE` 仅在 Resource 媒体目录 `initializationCapability=CLOUD_
 ## Sandbox 规格目录与权限接入（2026-10-27）
 
 **当前合同更新：** Sandbox 是独立资源，接口及安全边界见[前端 HTTP 合同](contracts/frontend-http-api.md)。以下为历史记录，父实例相关规则已被本次需求取代，历史验收不能证明独立创建已验证。
+
+Sandbox 创建可以传 `image_id` + `image_scope`，也可以传已登记的租户或平台镜像 `image_reference`；两者不可混用。Resource Image 校验登记及权限并冻结不可变引用。修改的实现和实际验收以 Resource 执行状态为准。
+
+二期新增文件、代码执行及 Sandbox Token 路由；请求、响应、作用范围和独立授权以[前端 HTTP 合同](contracts/frontend-http-api.md)及 Proto 为准。目录同步后仍须显式配置权限和套餐关系。
 
 管理入口为 Governance BFF；七条路由以 `api/protos/admin/service/v1/i_sandbox.proto` 为准，写请求保留 `data` 包装。各动作使用独立 `sandbox:create/list/read/operation:read/pause/resume/delete` 权限，均检查当前 INSTANCE 套餐、真实父实例租户归属，再经 mTLS 委托 Resource。新建与重放的父实例删除准入、查询/清理边界及 Pod/PVC/PV 引用响应见[前端 HTTP 合同](contracts/frontend-http-api.md)。映射维护于 `docs/contracts/permission-code-capability-map.tsv`。
 
@@ -2022,6 +2042,9 @@ Contract: [GPU monitoring](contracts/gpu-monitoring.md); authority: [accepted v1
 [推理调用 Key 和策略合同](contracts/inference-keys.md)。所有管理请求由 Governance
 认证并重建租户/actor，mTLS 转发 Inference；Higress 仅处理 `/v1/...`。
 API 目录、权限和套餐关系须按部署流程显式登记，不能仅凭代码生成推断已部署。
+
+AK 列表支持 `served_model_name`，在 Inference 按当前绑定策略的模型精确筛选后
+分页和计数；不传时保留原列表语义。报文和校验见上述合同。
 
 前端页面迁移与请求示例见[推理 AK 与策略前端对接](frontend-inference-ak-policy.md)。
 
@@ -2110,3 +2133,42 @@ Deployment/StatefulSet/DaemonSet），并额外 `must_not` 排除 Pod 名含 `sa
 
 保留期 3 天；一期不含跨连接断点续传、深分页、历史回补、全量导出与日志正文脱敏
 （正文可能含凭据，靠权限授予范围控制，见方案 §4.2 / §14.1）。
+
+## NET-SG-01～NET-SG-15：租户安全组与实例绑定（2026-10-30）
+
+新接口经既有 `NetworkService` 提供 JWT / AK 的 NETWORK 模块入口；容器与 VM 修改经各自 INSTANCE / VIRTUAL_MACHINE 模块及当前用户权限。Resource tenant UUID 和 actor 均由认证上下文与持久租户映射重建，出站复用已验证的 Resource mTLS 连接，公网不能指定租户、actor 或 provider 对象名。Resource 所有权、规则校验、持久化、幂等与 provider 变更由 Resource 承担，Gov 不访问 KCN 或 Resource 数据库。
+
+| 编号 | HTTP | 请求、响应及权限 |
+| --- | --- | --- |
+| NET-SG-01～05 | POST / GET `/api/v1/networks/security-groups`；GET / PATCH / DELETE `/{security_group_id}` | `network:security-group:create/list/get/update/delete`；创建 `{data:{name,description,idempotency_key,rules?}}` 原子提交初始规则。详情直接返回安全组；变更保留 `{security_group,operation}`。metadata PATCH 使用完整 name+description 及 `update_mask:"name,description"`，description 为空表示清空。 |
+| NET-SG-06～09 | GET / POST `/{security_group_id}/rules`；PATCH / DELETE `/{security_group_id}/rules/{rule_id}` | `network:security-group:rule:list/create/update/delete`；写入 `{data:{rule:{direction,protocol,remote_addresses,port_ranges:[{min,max}],action,priority,description},expected_version,idempotency_key}}`；版本属于安全组。DELETE 无 body/query。变更保留 `{security_group,rule?,operation}`。 |
+| NET-SG-10 | GET `/{security_group_id}/bindings` | `network:security-group:binding:list`；项为 target_type/target_id、期望及已应用安全组列表、版本、状态、原因和观测时间。 |
+| NET-SG-11～12 | GET / PUT `/api/v1/networks/eips/{eip_id}/security-groups` | `network:eip:security-groups:get/set`；PUT `{data:{security_group_ids,expected_version,idempotency_key}}`，返回 `{binding,operation?}`。绑定数据独立于既有 EIP 详情 DTO。 |
+| NET-SG-13 | GET `/api/v1/networks/security-groups/operations/{operation_id}` | `network:security-group:operation:get`；直接返回既有 Operation DTO。受理与真正生效分别查询。 |
+| NET-SG-14 | PUT `/api/v1/instances/{data.instance_id}/security-groups` | `instance:security-groups:set`；INSTANCE 当前权限及删除 fence；`{data:{security_group_ids,expected_version,idempotency_key}}`；保留原 command Lookup 与 canonical intent，返回 Acceptance。 |
+| NET-SG-15 | PUT `/api/v1/virtual-machines/{data.vm_id}/security-groups` | `vm:security-groups:set`；VIRTUAL_MACHINE 当前权限及删除 fence；同字段并保持原 command Lookup，返回 VMOperation。 |
+
+所有安全组、规则和绑定列表均用 `page/pageSize`，默认 1/20，pageSize 上限 100，未知/重复/非规范参数拒绝；返回 `items/total`，int64 为十进制字符串。规则支持 `direction=ingress|egress`，Resource 一次返回至多 200 条匹配规则及组 version，Gov 对该同次响应快照切片，因此 total 不受页码影响；不会用多次 RPC 拼凑分页。其他安全组与绑定分页由 Resource 执行。
+
+创建容器和 VM 的既有 data 增加可选 `security_group_ids`，进入原冻结创建意图。详情和容器 configuration 保留当前持久安全组列表。替换接口要求显式 `security_group_ids:[]` 才能解绑全部；省略或 null 拒绝。产品不暴露组内默认互信选项，Resource 显式固定 KCN `allowSameGroupTraffic=false`。安全组不强制归属某一 VPC。每组由 Resource 自动保留一条 `ingress/all/drop/priority=1` 的默认规则，返回 `is_default=true`，客户端不可编辑、删除或伪造；用户规则优先级为 2～4000，数值越大优先级越高。创建 rules 仅传用户规则；出站未匹配流量保持 KCN 默认放行。
+
+权限源为 [权限能力表](contracts/permission-code-capability-map.tsv)，运行目录先 `admin sync-apis --dry-run` 再显式同步，并按 [专项权限脚本](../scripts/ops/sql/register-security-group-permissions.sql) 增量关联权限；该脚本不开放套餐或授予角色。源码与生成、定向测试、部署、真实容器/VM/EIP 新连接放行和拒绝均独立报告，当前不以本登记证明运行验收。
+
+本批源码验证：Fedora Go 1.26.10 的完整 `make api`、auth/data/service/server 定向行为测试、`go test ./pkg/permcode` 均 pass。正式 Resource SDK 固定为 `v0.0.0-20261030064014-84d2cee37810`（提交 `84d2cee378106a4cb7d0fbb3fc765c50e07c4120`）。在 `GOWORK=off` 下，`go mod tidy -diff`、上述受影响测试与完整 `go build -mod=readonly -trimpath ./app/admin/service/cmd/server` 均 pass；发布依赖没有 go.work 或 replace。证据为 Fedora `/home/chabking/task-runs/network-security-groups-20261030/governance-formal-sdk-02.log`。
+
+`TestNetworkJointHTTP/security_groups` 的真实 HTTP/JWT/AK/Casbin/plan/tenant → mTLS Resource → PostgreSQL → 持久 worker 闭环 pass，覆盖默认拒绝规则、规则版本变化、EIP 未绑定等待与绑定后应用、幂等、跨租户拒绝、占用删除拒绝、清空解绑和产品清理。该用例复用隔离联合工作区，仅替身 Kubernetes/KCN 外部边界，证据为同目录 `governance-joint-sg-02.log`；权限目录同步/角色授权、Governance 部署和容器/VM/EIP 真实新连接允许及拒绝不由该替身用例证明，仍独立验收。
+
+### S2S-MODELDEV-TENANT-ENV-01 — explicit current-tenant environment
+
+Gov POST `/api/v1/modeldev/environment:ensure` and GET
+`/api/v1/modeldev/environment` delegate the two formal ModelDev tenant-environment
+RPCs over existing mTLS after current user/tenant/role/ALL scope, independent
+manage_environment/view_environment Permission and exact API grant checks.
+Request shape, response state/optional fields, budgets and strict typed failure
+boundary are defined in [frontend contract](contracts/frontend-http-api.md#modeldev-当前租户执行环境)
+and [service contract](contracts/service-to-service-calls.md#modeldev-tenant-environment-delegation).
+No acceptance/quota/outbox or implicit provisioning is added. After reviewed API
+catalog sync, explicitly apply
+`sql/data/20261101010000_modeldev_environment_permissions.sql` for Permission/API
+links and exact default tenant-manager/template grants; other read-only roles
+require explicit grants. Live A/B acceptance remains pending coordinated cutover.

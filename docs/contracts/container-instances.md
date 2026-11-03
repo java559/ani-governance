@@ -29,11 +29,13 @@ JSON 字段名逐字段遵守 Proto 的 `json_name`，不能对整个对象统�
 | 创建基础字段 | `idempotencyKey/imageId/imageScope/presetId`；也接受其 Proto 原名 `idempotency_key/image_id/image_scope/preset_id`，同一字段不能重复提交两种写法 |
 | 新增创建配置 | 固定使用 `workspace_mount_path/volume_mounts`；挂载项为 `pvc_name/mount_path/read_only`，网络项为 `vpc_id/subnet_id`，其余为 `labels/annotations/env` |
 | 受理、操作和普通实例状态 | 例如 `operationId/resourceId/intentVersion/desiredState/observedState/computeCleaned/workspaceCleaned/quotaReturned`；显式指定的 `instance_kind/compute_type/gpu_summary` 保持 snake_case |
-| PVC 候选和配置查询响应 | 下文列出的 snake_case 名称原样返回；配置版本 `instance_contract_version` 是 JSON 数字，`total` 及其他 int64/uint64 是十进制字符串 |
+| PVC 候选和配置查询响应 | 下文列出的 snake_case 名称原样返回；`total` 及其他 int64/uint64 是十进制字符串 |
 
 ## 工作目录、已有卷与业务配置
 
-创建的 `data` 支持 `workspace_mount_path`、`volume_mounts`、`network`、`labels`、`annotations` 和 `env`。服务器始终解析并保存当前配置合同 2；未提供可选配置时正常解析默认值，工作目录默认为 `/workspace`。公网不能提交 `instance_contract_version`。Gov `ANI_INSTANCE_CONFIG_V2_WRITES` 未设或不为 `true` 时只关闭新的 CREATE，返回 `503 INSTANCE_CREATE_DISABLED`，不会生成旧合同；当前合同的查询、同键重放、启停和删除不受此维护闸门影响。本批按 Resource 的显式迁移与旧执行者退出流程升级，保留现有实例、原 CREATE 和原账；保持新意图关闭，验证正式模块、当前配置初始化证明及恢复门禁后开放对应能力。
+创建的 `data` 支持 `workspace_mount_path`、`volume_mounts`、`network`、`labels`、`annotations` 和 `env`。服务器统一解析和保存容器配置；未提供可选配置时正常解析默认值，工作目录默认为 `/workspace`。请求、解析调用、冻结载荷和配置查询均没有配置版本字段，也没有版本选择或专属写入开关。新的 CREATE 仅受独立维护门禁 `ANI_INSTANCE_NEW_INTENTS_ENABLED` 控制；关闭时返回 `503 INSTANCE_CREATE_DISABLED`，同键重放、查询和最终删除保持原语义。
+
+本次开发环境切换须先停止新的容器受理，按 owner 删除所有既有容器并确认计算、工作盘、网络、借用卷引用和原配额完成释放，再清理其旧容器操作记录。新逻辑不读取旧容器冻结载荷，不提供兼容分支；VM、Inference、Sandbox 和未借用的用户存储不属于清理范围。
 
 ```json
 {"data":{"idempotencyKey":"10000000-0000-4000-8000-000000000001","name":"工作区","imageId":"实际镜像ID","imageScope":"platform","presetId":"实际规格ID","workspace_mount_path":"/work","volume_mounts":[{"pvc_name":"research-data","mount_path":"/datasets","read_only":false},{"pvc_name":"reference-data","mount_path":"/reference","read_only":true}],"labels":{"business.example.com/team":"research"},"annotations":{"business.example.com/purpose":"experiment"},"env":[{"name":"RUN_MODE","value":"  literal value  "},{"name":"OUTPUT_DIR","value":"$(RUN_MODE)"}]}}
@@ -41,7 +43,7 @@ JSON 字段名逐字段遵守 Proto 的 `json_name`，不能对整个对象统�
 
 `volume_mounts` 最多 8 项，只有已有 PVC 名、容器内绝对规范路径及只读方式；不接受 PVC UID、Namespace、任意 volume source 或专属盘身份。Res 在可信租户 Namespace 内解析并冻结原 UID，用户卷以 borrowed 引用保存，停止保留、删除只解除引用。工作盘继续独立创建与回收。挂载路径彼此及与工作目录不能相同或互为父子目录，也不能覆盖系统目录；合法 Pending/WaitForFirstConsumer 由正常调度继续完成。
 
-`env` 最多 64 项、值的 UTF-8 字节总计 16 KiB，名称不能重复或覆盖平台保留变量；数组保序、值不 trim 或展开。用户 labels/annotations 各最多 32 项，两类键和值的 UTF-8 字节合计 16 KiB，受管 ANI、网络、Notebook、调度器控制键均拒绝。HTTP 请求正文最多 64 KiB；未知字段、重复 JSON key、任意新增配置显式 null、空工作路径或 `network:{}` 均拒绝。未提供与空集合表示相同意图；同键改变配置值、env 顺序或挂载方式产生 409 幂等冲突。同一当前请求返回原 operation/resource/原账且不重新 Resolve；缺省或旧版本的持久命令不再执行。
+`env` 最多 64 项、值的 UTF-8 字节总计 16 KiB，名称不能重复或覆盖平台保留变量；数组保序、值不 trim 或展开。用户 labels/annotations 各最多 32 项，两类键和值的 UTF-8 字节合计 16 KiB，受管 ANI、网络、Notebook、调度器控制键均拒绝。HTTP 请求正文最多 64 KiB；未知字段、重复 JSON key、任意新增配置显式 null、空工作路径或 `network:{}` 均拒绝。未提供与空集合表示相同意图；同键改变配置值、env 顺序或挂载方式产生 409 幂等冲突。同一当前请求返回原 operation/resource/原账且不重新 Resolve。
 
 | 方法与路径 | 输入、结果与权限 |
 |---|---|
@@ -56,10 +58,10 @@ PVC 候选项含 `pvc_name/phase/requested_capacity/access_modes/volume_mode/sel
 {"items":[{"pvc_name":"research-data","phase":"Bound","requested_capacity":"1Gi","access_modes":["ReadWriteOnce"],"volume_mode":"Filesystem","selectable":true,"unavailable_reason":""}],"total":"1"}
 ```
 
-配置查询直接返回 `instance_id/instance_contract_version/workspace_mount_path/volume_mounts/network/labels/annotations/env`，没有外层 data。响应的合同版本固定为 2。同租户具有当前实例 read 权限的用户可读取冻结的业务字面 env；这不是系统环境、Secret 或控制面凭据导出接口。列表、详情安全投影、诊断、操作和审计不回显业务配置值；审计对 Instance 请求正文脱敏。响应为 `Cache-Control: no-store`，前端不应将配置值放入 URL、遥测、错误报告或持久缓存。
+配置查询直接返回 `instance_id/workspace_mount_path/volume_mounts/network/labels/annotations/env`，没有外层 data。同租户具有当前实例 read 权限的用户可读取冻结的业务字面 env；这不是系统环境、Secret 或控制面凭据导出接口。列表、详情安全投影、诊断、操作和审计不回显业务配置值；审计对 Instance 请求正文脱敏。响应为 `Cache-Control: no-store`，前端不应将配置值放入 URL、遥测、错误报告或持久缓存。
 
 ```json
-{"instance_id":"30000000-0000-4000-8000-000000000001","instance_contract_version":2,"workspace_mount_path":"/work","volume_mounts":[{"pvc_name":"research-data","mount_path":"/datasets","read_only":false},{"pvc_name":"reference-data","mount_path":"/reference","read_only":true}],"network":null,"labels":{"business.example.com/team":"research"},"annotations":{},"env":[{"name":"RUN_MODE","value":"  synthetic literal  "},{"name":"OUTPUT_DIR","value":"$(RUN_MODE)"}]}
+{"instance_id":"30000000-0000-4000-8000-000000000001","workspace_mount_path":"/work","volume_mounts":[{"pvc_name":"research-data","mount_path":"/datasets","read_only":false},{"pvc_name":"reference-data","mount_path":"/reference","read_only":true}],"network":null,"labels":{"business.example.com/team":"research"},"annotations":{},"env":[{"name":"RUN_MODE","value":"  synthetic literal  "},{"name":"OUTPUT_DIR","value":"$(RUN_MODE)"}]}
 ```
 
 上述 env 均为合成示例；空格和 `$(RUN_MODE)` 在容器环境中保留字面内容。响应不含 PVC UID、Namespace、Attachment、NIC 或控制面引用。
@@ -76,11 +78,11 @@ PVC 候选项含 `pvc_name/phase/requested_capacity/access_modes/volume_mode/sel
 | 422 `INSTANCE_PVC_CATALOG_LIMIT` | PVC 快照扫描超过上限；不能把截断目录展示成完整可选集合 |
 | 503 `INSTANCE_CREATE_DISABLED` / `INSTANCE_NETWORK_NOT_ENABLED` / `INSTANCE_DEPENDENCY_UNAVAILABLE` | 新建维护闸门关闭、网络受理未开放或依赖不可用；保留原键与正文，恢复后查询原 operation 或重试 |
 
-Gov 显式结构迁移 `20261019090000_instance_contract_version.sql` 为操作增加不可变版本；共享配额表中其它动作的默认值不构成实例合同支持。实例新操作只接受显式 2，版本、请求意图摘要、冻结载荷及占额在同一事务保存，同键并发比较当前完整意图。CPU 使用当前规范投影及原 business_payload 字节摘要，不接受旧 envelope 或旧摘要域；GPU 保留唯一冻结 Execution、原始 charges、稳定退额事件与物理释放 fence。迁移由独立身份显式执行，启动迁移保持关闭。
+请求意图摘要、冻结载荷及占额在同一事务保存，同键并发比较完整意图。CPU 使用统一规范投影及原 business_payload 字节摘要；GPU 保留唯一冻结 Execution、原始 charges、稳定退额事件与物理释放 fence。显式迁移 `20261031010000_drop_instance_contract_version.sql` 删除共享操作表中无业务用途的 `instance_contract_version` 及其检查约束；所有 owner 均不再传递、复制或判断该占位字段。其它业务自己的协议版本保持原语义；启动迁移保持关闭。
 
 这些是源码接口合同；正式依赖、Fedora 验证及 CSI/终端/网络/GPU 实测结论见 Resource 本任务唯一执行状态，不能据字段或路由存在认定业务验收通过。
 
-引用、保留键、当前合同 2 摘要及网络生命周期的完整规则以 [Resource 权威设计](https://github.com/zhangzhe-ctrl/ani-resource-service/blob/3cd79a303d710617e513937ce5fc6f93ace8ccd5/docs/specs/instance-configuration-network.md) 为准；本页只维护前端 HTTP 边界，不另建实施状态台账。
+引用、保留键、配置摘要及网络生命周期的完整规则见 [Resource 权威设计](https://github.com/zhangzhe-ctrl/ani-resource-service/blob/main/docs/specs/instance-configuration-network.md)；本页只维护前端 HTTP 边界，不另建实施状态台账。
 
 ## 重启与已有 PVC 挂卸
 
@@ -95,7 +97,7 @@ Gov 显式结构迁移 `20261019090000_instance_contract_version.sql` 为操作�
 
 新动作只有 Resource durable ACK 后才返回 202；响应直接为 `{operationId,resourceId,replayed,result:"ACCEPTED"}`。调用顺序固定为当前身份/动作/INSTANCE 套餐授权、公共 Resource API helper 规范意图、只读 `LookupCommandReplay`，未命中才检查 DELETE 和能力门禁。原键重放保留原版本和正文，不因当前版本变化、PVC 消失或门禁关闭而失效；同键异意图返回 409 `INSTANCE_IDEMPOTENCY_CONFLICT`。Start/Stop 同样采用 Lookup 先行。
 
-Gov 与 Resource 的 `ANI_INSTANCE_NEW_INTENTS_ENABLED` 为维护受理门禁；`ANI_INSTANCE_RESTART_ENABLED` 和 `ANI_INSTANCE_PVC_MUTATIONS_ENABLED` 分别控制新能力，均缺省关闭。CREATE 还要求既有 `ANI_INSTANCE_CONFIG_V2_WRITES=true`。开关不阻止授权的 Lookup/查询/候选、已受理恢复及最终 DELETE。挂卸开放须先完成引用 guard、迁移和初始化证明。
+Gov 与 Resource 的 `ANI_INSTANCE_NEW_INTENTS_ENABLED` 为维护受理门禁；`ANI_INSTANCE_RESTART_ENABLED` 和 `ANI_INSTANCE_PVC_MUTATIONS_ENABLED` 分别控制新能力，均缺省关闭。开关不阻止授权的 Lookup/查询/候选、已受理恢复及最终 DELETE。挂卸开放须先完成引用 guard、迁移和初始化证明。
 
 本批权限登记使用[窄增量脚本](../../scripts/ops/sql/register-instance-restart-pvc-permissions.sql)。先用确切合入 dev 版本的 `admin sync-apis --dry-run` 核对目录并备份，再显式给出脚本要求的已审核租户、套餐和角色身份；脚本缺省只预览，`apply=true` 才补本批缺失关联。既有 ID、启停状态及其他权限关联保留，身份或目录漂移会中止。它不修改套餐额度，也不运行 `SyncPermissions`；应用后刷新全部 Gov 实例的策略再验权。
 
@@ -135,7 +137,7 @@ CPU/GPU DELETE 均持久关闭新意图闸门。只有当前 dispatcher lease、
 `instance:preset:read`/INSTANCE 授权保持，调用新的 `compute.v1.ComputePresetService/ListPresets`，
 服务端固定用途 CONTAINER_INSTANCE；可信 GPU 五元组交集先于最终计数和分页。
 目录与实例创建分别调用各自接口；容器创建仍只调用一次活跃 ResolveCreateSpec，
-不先调用公共 ResolveComputePreset，不改变已冻结的实例 v2 字节与摘要。
+不先调用公共 ResolveComputePreset，持久化后重放继续使用原冻结配置和摘要。
 
 分页独立默认 page=1/pageSize=20，pageSize 1..100；未知、重复、零和非规范正整数参数拒绝。授权、可见性和过滤先于最终计数及分页。HTTP 的 int64/uint64 按 ProtoJSON 为十进制字符串。
 

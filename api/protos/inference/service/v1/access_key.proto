@@ -79,6 +79,7 @@ message InferenceKeyCredentials {
 message ListInferenceKeysRequest {
   optional int32 page = 1;
   optional int32 page_size = 2 [json_name = "pageSize"];
+  optional string served_model_name = 3 [json_name = "served_model_name"];
 }
 message ListInferenceKeysResponse {
   repeated InferenceKey items = 1 [(redact.value).element = { nested: true }];

@@ -19,6 +19,34 @@ message VPC {
  bool observation_stale = 11 [json_name = "observation_stale"];
  string last_operation_id = 12 [json_name = "last_operation_id"];
  int64 subnet_count = 13 [json_name = "subnet_count"];
+ VPCPublicEgress public_egress = 14 [json_name = "public_egress"];
+ VPCBaseConnectivity base_connectivity = 15 [json_name = "base_connectivity"];
+}
+// Read-only system connection summary. Ready describes fresh configuration
+// evidence, not traffic health; internal EIP/SNAT identities stay private.
+message VPCBaseConnectivity {
+ string state = 1 [json_name = "state"];
+ string reason = 2 [json_name = "reason"];
+ google.protobuf.Timestamp observed_at = 3 [json_name = "observed_at"];
+ bool observation_stale = 4 [json_name = "observation_stale"];
+ string reason_message = 5 [json_name = "reason_message"];
+}
+// Persisted public EIP association from the same VPC read snapshot. Lifecycle
+// state and observed applied_enabled remain distinct from binding ownership.
+message VPCPublicEgress {
+ string binding_id = 1 [json_name = "binding_id"];
+ string eip_id = 2 [json_name = "eip_id"];
+ string eip_address = 3 [json_name = "eip_address"];
+ string binding_state = 4 [json_name = "binding_state"];
+ string state = 5 [json_name = "state"];
+ string reason = 6 [json_name = "reason"];
+ string reason_message = 7 [json_name = "reason_message"];
+ bool desired_enabled = 8 [json_name = "desired_enabled"];
+ optional bool applied_enabled = 9 [json_name = "applied_enabled"];
+ google.protobuf.Timestamp observed_at = 10 [json_name = "observed_at"];
+ bool observation_stale = 11 [json_name = "observation_stale"];
+ int64 version = 12 [json_name = "version"];
+ string last_operation_id = 13 [json_name = "last_operation_id"];
 }
 message GetVPCResponse { VPC vpc = 1 [json_name = "vpc"]; }
 
@@ -91,6 +119,7 @@ message EIPBindingTarget {
  string kind = 1 [json_name = "kind"];
  string id = 2 [json_name = "id"];
  string state = 3 [json_name = "state"];
+ string vpc_id = 4 [json_name = "vpc_id"];
 }
 message GetEIPRequest { string eip_id = 1 [json_name = "eip_id"]; }
 message GetEIPResponse { EIP eip = 1 [json_name = "eip"]; }
@@ -111,6 +140,7 @@ message CreateEIPRequest {
  string name = 1 [json_name = "name"];
  string description = 2 [json_name = "description"];
  string idempotency_key = 3 [json_name = "idempotency_key"];
+ repeated string security_group_ids = 4 [json_name = "security_group_ids"];
 }
 message CreateEIPResponse { EIP eip = 1 [json_name = "eip"]; }
 

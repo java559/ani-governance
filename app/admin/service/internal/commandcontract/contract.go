@@ -32,7 +32,6 @@ type ChargeRef struct {
 }
 type StoredCommand struct {
 	Owner, Action, TenantID, ResourceID, OperationID, CreateOperationID, ActorType, ActorID string
-	InstanceContractVersion                                                                 uint32
 	Canonical                                                                               []byte
 	Charges                                                                                 []ChargeRef
 	RequireChargeIDs                                                                        bool
@@ -61,8 +60,8 @@ func ValidateStoredCommand(in StoredCommand) (*Facts, error) {
 	case ResourceKindVM:
 		return validateVMStored(in)
 	case ResourceKindInstance:
-		if (in.Action != InstanceCreateAction && in.Action != InstanceDeleteAction) || in.InstanceContractVersion != CurrentInstanceContractVersion {
-			return nil, Invalid("unsupported instance contract")
+		if in.Action != InstanceCreateAction && in.Action != InstanceDeleteAction {
+			return nil, Invalid("unsupported instance action")
 		}
 		deletion := in.Action == InstanceDeleteAction
 		if deletion != (in.CreateOperationID != "") {

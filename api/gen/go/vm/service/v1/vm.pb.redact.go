@@ -131,6 +131,8 @@ func (x *CreateVMData) Redact() {
 	// Safe field: GuestInitialization
 
 	// Safe field: Dns
+
+	// Safe field: SecurityGroupIds
 }
 
 // Ensure CreateGuestInitialization implements the Redactor interface at compile time.
@@ -196,6 +198,8 @@ func (x *ChangeVMData) Redact() {
 	// Safe field: SnapshotId
 
 	// Safe field: PreviewDigest
+
+	// Safe field: SecurityGroupIds
 }
 
 // Ensure ChangeVMRequest implements the Redactor interface at compile time.
@@ -389,7 +393,177 @@ func (x *VirtualMachine) Redact() {
 
 	// Safe field: Dns
 
+	// Safe field: SecurityGroupIds
+
 	// Safe field: CreatedAt
+
+	// Safe field: PresetName
+
+	// Safe field: Hardware
+
+	// Safe field: Initialization
+
+	// Safe field: SourceMedia
+
+	// Safe field: Runtime
+
+	// Safe field: Relations
+}
+
+// Ensure ResourceReference implements the Redactor interface at compile time.
+var _ redact.Redactor = (*ResourceReference)(nil)
+
+// Redact method implementation for ResourceReference
+func (x *ResourceReference) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Id
+
+	// Safe field: Name
+
+	// Safe field: State
+}
+
+// Ensure VMRelations implements the Redactor interface at compile time.
+var _ redact.Redactor = (*VMRelations)(nil)
+
+// Redact method implementation for VMRelations
+func (x *VMRelations) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Vpc
+
+	// Safe field: Subnet
+
+	// Safe field: SecurityGroups
+}
+
+// Ensure GuestInterface implements the Redactor interface at compile time.
+var _ redact.Redactor = (*GuestInterface)(nil)
+
+// Redact method implementation for GuestInterface
+func (x *GuestInterface) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Name
+
+	// Safe field: GuestName
+
+	// Safe field: Mac
+
+	// Safe field: Addresses
+
+	// Safe field: InfoSource
+}
+
+// Ensure GuestFilesystem implements the Redactor interface at compile time.
+var _ redact.Redactor = (*GuestFilesystem)(nil)
+
+// Redact method implementation for GuestFilesystem
+func (x *GuestFilesystem) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: DiskName
+
+	// Safe field: MountPoint
+
+	// Safe field: FileSystemType
+
+	// Safe field: TotalBytes
+
+	// Safe field: UsedBytes
+}
+
+// Ensure VMRuntime implements the Redactor interface at compile time.
+var _ redact.Redactor = (*VMRuntime)(nil)
+
+// Redact method implementation for VMRuntime
+func (x *VMRuntime) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: State
+
+	// Safe field: AgentState
+
+	// Safe field: ObservedAt
+
+	// Safe field: NodeName
+
+	// Safe field: StartedAt
+
+	// Safe field: Hostname
+
+	// Safe field: AgentVersion
+
+	// Safe field: OsName
+
+	// Safe field: OsVersion
+
+	// Safe field: KernelRelease
+
+	// Safe field: KernelVersion
+
+	// Safe field: Interfaces
+
+	// Safe field: FilesystemsState
+
+	// Safe field: Filesystems
+}
+
+// Ensure VMHardware implements the Redactor interface at compile time.
+var _ redact.Redactor = (*VMHardware)(nil)
+
+// Redact method implementation for VMHardware
+func (x *VMHardware) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Sockets
+
+	// Safe field: Cores
+
+	// Safe field: Threads
+
+	// Safe field: Architecture
+
+	// Safe field: Firmware
+
+	// Safe field: RootBus
+
+	// Safe field: DataBus
+
+	// Safe field: NicModel
+
+	// Safe field: PersistentTpm
+
+	// Safe field: PersistentUefi
+}
+
+// Ensure VMInitialization implements the Redactor interface at compile time.
+var _ redact.Redactor = (*VMInitialization)(nil)
+
+// Redact method implementation for VMInitialization
+func (x *VMInitialization) Redact() {
+	if x == nil {
+		return
+	}
+
+	// Safe field: Method
+
+	// Safe field: Username
+
+	// Safe field: SshKeyFingerprint
 }
 
 // Ensure ListVMsResponse implements the Redactor interface at compile time.
@@ -554,6 +728,10 @@ func (x *VMSnapshot) Redact() {
 	// Safe field: ObservedAt
 
 	// Safe field: Reason
+
+	// Safe field: Name
+
+	// Safe field: CreatedAt
 }
 
 // Ensure ListSnapshotsResponse implements the Redactor interface at compile time.

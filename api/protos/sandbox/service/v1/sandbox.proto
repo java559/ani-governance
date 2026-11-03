@@ -2,6 +2,88 @@ syntax = "proto3";
 package sandbox.service.v1;
 
 import "google/protobuf/timestamp.proto";
+import "redact/v1/redact.proto";
+
+message RunSandboxCodeData {
+  string sandbox_id = 1 [json_name = "sandbox_id"];
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  string language = 3;
+  string code = 4 [(redact.value).string = ""];
+  string stdin = 5 [(redact.value).string = ""];
+  int32 timeout_seconds = 6 [json_name = "timeout_seconds"];
+  int64 expected_version = 7 [json_name = "expected_version"];
+}
+message RunSandboxCodeRequest { RunSandboxCodeData data = 1 [(redact.value).message = { apply: true }]; }
+message GetSandboxCodeRunRequest {
+  string sandbox_id = 1 [json_name = "sandbox_id"];
+  string run_id = 2 [json_name = "run_id"];
+}
+message SandboxCodeRun {
+  string run_id = 1 [json_name = "run_id"];
+  string sandbox_id = 2 [json_name = "sandbox_id"];
+  string state = 3;
+  string stdout = 4 [(redact.value).string = ""];
+  string stderr = 5 [(redact.value).string = ""];
+  optional int32 exit_code = 6 [json_name = "exit_code"];
+  bool truncated = 7;
+  bool replayed = 8;
+  string reason = 9;
+}
+
+message SandboxFileEntry {
+  string path = 1;
+  string kind = 2;
+  int64 size_bytes = 3 [json_name = "size_bytes"];
+  int64 updated_at_ns = 4 [json_name = "updated_at_ns"];
+  string updated_at = 5 [json_name = "updated_at"];
+}
+message SandboxFileResult {
+  string path = 1;
+  string kind = 2;
+  int64 size_bytes = 3 [json_name = "size_bytes"];
+  string content_base64 = 4 [(redact.value).string = "", json_name = "content_base64"];
+  repeated SandboxFileEntry items = 5;
+  int64 total = 6;
+  string next_cursor = 7 [json_name = "next_cursor"];
+}
+message ListSandboxFilesRequest { string sandbox_id = 1 [json_name = "sandbox_id"]; string path = 2; uint32 limit = 3; string cursor = 4; }
+message ReadSandboxFileRequest { string sandbox_id = 1 [json_name = "sandbox_id"]; string path = 2; }
+message MutateSandboxFileData {
+  string sandbox_id = 1 [json_name = "sandbox_id"];
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  int64 expected_version = 3 [json_name = "expected_version"];
+  string path = 4;
+  string content_base64 = 5 [(redact.value).string = "", json_name = "content_base64"];
+  bool overwrite = 6;
+}
+message WriteSandboxFileRequest { MutateSandboxFileData data = 1 [(redact.value).message = { apply: true }]; }
+message DeleteSandboxFileRequest { MutateSandboxFileData data = 1 [(redact.value).message = { apply: true }]; }
+message GetSandboxFileOperationRequest { string sandbox_id = 1 [json_name = "sandbox_id"]; string operation_id = 2 [json_name = "operation_id"]; }
+message SandboxFileOperation {
+  string operation_id = 1 [json_name = "operation_id"];
+  string sandbox_id = 2 [json_name = "sandbox_id"];
+  string state = 3;
+  string reason = 4;
+  bool replayed = 5;
+  SandboxFileResult result = 6 [(redact.value).message = { apply: true }];
+}
+
+message CreateSandboxTokenData {
+  string sandbox_id = 1 [json_name = "sandbox_id"];
+  string idempotency_key = 2 [json_name = "idempotency_key"];
+  string expires_in = 3 [json_name = "expires_in"];
+  repeated string scopes = 4;
+}
+message CreateSandboxTokenRequest { CreateSandboxTokenData data = 1; }
+message SandboxAccessToken {
+  string token_id = 1 [json_name = "token_id"];
+  string token = 2 [(redact.value).string = ""];
+  google.protobuf.Timestamp expires_at = 3 [json_name = "expires_at"];
+  repeated string scopes = 4;
+  bool replayed = 5;
+}
+message RevokeSandboxTokenRequest { string sandbox_id = 1 [json_name = "sandbox_id"]; string token_id = 2 [json_name = "token_id"]; }
+message RevokeSandboxTokenResponse { bool revoked = 1; }
 
 message CreateSandboxData {
   string idempotency_key = 1 [json_name = "idempotency_key"];
@@ -10,6 +92,8 @@ message CreateSandboxData {
   string preset_id = 4 [json_name = "preset_id"];
   string workspace_size = 5 [json_name = "workspace_size"];
   string instance_id = 6 [json_name = "instance_id", deprecated = true];
+  string image_id = 7 [json_name = "image_id"];
+  string image_scope = 8 [json_name = "image_scope"];
 }
 message CreateSandboxRequest { CreateSandboxData data = 1; }
 message SandboxAcceptance {
@@ -53,6 +137,8 @@ message SandboxSnapshot {
   string preset_name = 13 [json_name = "preset_name"];
   string spec_digest = 14 [json_name = "spec_digest"];
   WorkspaceSpec workspace = 15;
+  string image_id = 16 [json_name = "image_id"];
+  string image_scope = 17 [json_name = "image_scope"];
 }
 message WorkspaceSpec {
   string mount_path = 1 [json_name = "mount_path"];

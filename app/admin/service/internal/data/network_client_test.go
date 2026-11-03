@@ -142,6 +142,32 @@ func (p *networkTenantRPCProbe) CreateVPC(ctx context.Context, in *networkv1.Cre
 	p.capture(ctx, in.TenantId, "CreateVPC", in)
 	return &networkv1.CreateVPCResponse{}, nil
 }
+func (p *networkTenantRPCProbe) CreateEIP(ctx context.Context, in *networkv1.CreateEIPRequest, _ ...grpc.CallOption) (*networkv1.CreateEIPResponse, error) {
+	p.capture(ctx, in.TargetTenantId, "CreateEIP", in)
+	return &networkv1.CreateEIPResponse{}, nil
+}
+
+func TestNetworkClientCreateEIPRetainsInitialGroupsAndTrustedScope(t *testing.T) {
+	p := &networkTenantRPCProbe{t: t, requests: make(map[string]proto.Message)}
+	c := &NetworkClient{client: p, egress: p, timeout: time.Second}
+	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs("authorization", "private", "x-ani-tenant-id", "forged", "x-ani-actor", "governance:user:999"))
+	groups := []string{"sg_11111111111111111111111111111111"}
+	tenant, actor := "11111111-1111-4111-8111-111111111111", "governance:access-key:42"
+	if _, err := c.CreateEIP(ctx, tenant, "governance:user:0", "public", "desc", "eip-key", groups); err == nil || len(p.requests) != 0 {
+		t.Fatal("invalid actor reached create")
+	}
+	if _, err := c.CreateEIP(ctx, tenant, actor, "public", "desc", "eip-key", groups); err != nil {
+		t.Fatal(err)
+	}
+	in := p.requests["CreateEIP"].(*networkv1.CreateEIPRequest)
+	if in.Name != "public" || in.Description != "desc" || in.IdempotencyKey != "eip-key" || len(in.SecurityGroupIds) != 1 || in.SecurityGroupIds[0] != groups[0] {
+		t.Fatalf("atomic initial groups create intent lost: %v", in)
+	}
+	in.SecurityGroupIds[0] = "changed"
+	if groups[0] == "changed" {
+		t.Fatal("request aliases caller's groups")
+	}
+}
 func (p *networkTenantRPCProbe) CreateSubnet(ctx context.Context, in *networkv1.CreateSubnetRequest, _ ...grpc.CallOption) (*networkv1.CreateSubnetResponse, error) {
 	p.capture(ctx, in.TenantId, "CreateSubnet", in)
 	return &networkv1.CreateSubnetResponse{}, nil

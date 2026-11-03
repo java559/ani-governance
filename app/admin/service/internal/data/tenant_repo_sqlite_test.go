@@ -73,6 +73,10 @@ func TestTenantRepoSqlite_Create(t *testing.T) {
 	rows, err := repo.entClient.Client().Tenant.Query().All(ctx)
 	require.NoError(t, err)
 	require.Len(t, rows, 1, "SQLite 中应有 1 条 tenant 记录")
+	require.Equal(t, tenant.TenantSpaceStateQUEUED, rows[0].TenantSpaceState)
+	require.NotNil(t, rows[0].TenantSpaceOperationID)
+	_, err = uuid.Parse(*rows[0].TenantSpaceOperationID)
+	require.NoError(t, err)
 	require.Equal(t, "sqlite测试租户A", *rows[0].Name, "name 应按 Create 载荷落库")
 	require.Equal(t, fmt.Sprintf("TENANT_SQLITE_%d", 1001), *rows[0].Code, "code 应按 Create 载荷落库")
 	require.NotNil(t, rows[0].Status, "status 枚举应经转换器落库")
@@ -81,6 +85,24 @@ func TestTenantRepoSqlite_Create(t *testing.T) {
 	require.Equal(t, tenant.TypeTrial, *rows[0].Type, "proto Tenant_TRIAL 应映射为 ent TypeTrial")
 	require.NotNil(t, rows[0].AuditStatus, "audit_status 枚举应经转换器落库")
 	require.Equal(t, tenant.AuditStatusPending, *rows[0].AuditStatus, "proto Tenant_PENDING 应映射为 ent AuditStatusPending")
+}
+
+func TestTenantSpaceIntentRollsBackWithTenant(t *testing.T) {
+	repo := newTenantRepoSqlite(t)
+	ctx := testutil.NewSystemViewerCtx(context.Background())
+	tx, err := repo.entClient.Client().Tx(ctx)
+	require.NoError(t, err)
+	_, err = repo.CreateWithTx(ctx, tx, &identityV1.Tenant{Name: trans.Ptr("rollback"), Code: trans.Ptr("space-rollback")})
+	require.NoError(t, err)
+	rows, err := tx.Tenant.Query().All(ctx)
+	require.NoError(t, err)
+	require.Len(t, rows, 1)
+	require.Equal(t, tenant.TenantSpaceStateQUEUED, rows[0].TenantSpaceState)
+	require.NotNil(t, rows[0].TenantSpaceOperationID)
+	require.NoError(t, tx.Rollback())
+	count, err := repo.entClient.Client().Tenant.Query().Count(ctx)
+	require.NoError(t, err)
+	require.Zero(t, count)
 }
 
 // TestTenantRepoSqlite_List 验证 TenantRepo.List 的分页列表与
@@ -274,6 +296,13 @@ func TestTenantRepoSqlite_Delete(t *testing.T) {
 	require.Len(t, rows, 1)
 	createdID := uint32(rows[0].ID)
 
+	err = repo.Delete(ctx, &identityV1.DeleteTenantRequest{QueryBy: &identityV1.DeleteTenantRequest_Id{Id: createdID}})
+	require.Error(t, err, "空间关闭前必须阻止物理删除")
+	row, err := repo.entClient.Client().Tenant.Get(ctx, createdID)
+	require.NoError(t, err)
+	require.Equal(t, tenant.TenantSpaceStateCLOSING, row.TenantSpaceState)
+	// A real deployment receives this acknowledgement from Resource.
+	require.NoError(t, repo.entClient.Client().Tenant.UpdateOneID(createdID).SetTenantSpaceState(tenant.TenantSpaceStateCLOSED).Exec(ctx))
 	require.NoError(t, repo.Delete(ctx, &identityV1.DeleteTenantRequest{
 		QueryBy: &identityV1.DeleteTenantRequest_Id{Id: createdID},
 	}), "删除已存在记录应成功")

@@ -71,7 +71,7 @@ func (s *InstanceService) GetInstanceConfiguration(ctx context.Context, request 
 	if err != nil {
 		return nil, err
 	}
-	if result == nil || result.InstanceId != request.InstanceId || result.InstanceContractVersion != data.CurrentInstanceContractVersion {
+	if result == nil || result.InstanceId != request.InstanceId {
 		return nil, quota.ErrorInvalidQuotaRequest("%s", "invalid instance configuration")
 	}
 	raw, err := protojson.Marshal(result)

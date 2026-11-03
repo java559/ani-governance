@@ -124,7 +124,7 @@ func (b *VMBinding) PrepareManagedBusiness(ctx context.Context, p *auth.Principa
 		return nil, err
 	}
 	var frozenCredentialsCommand, frozenCredentialBinding []byte
-	return &preparedManagedBusiness{instanceContractVersion: 0, freeze: func(tenant, actorType, actorID, operationID, resourceID string, plan *acc.ResolvedGpuRequest) ([]byte, error) {
+	return &preparedManagedBusiness{freeze: func(tenant, actorType, actorID, operationID, resourceID string, plan *acc.ResolvedGpuRequest) ([]byte, error) {
 		if plan != nil {
 			return nil, commandcontract.Invalid("unexpected VM charge plan")
 		}

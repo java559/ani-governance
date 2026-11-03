@@ -53,14 +53,13 @@ type InstanceGpuBinding struct {
 	authorization       InstanceActionAuthorizer
 	clusterID           string
 	scheduling          *InstanceSchedulingPolicy
-	newCreateEnabled    bool
 	newIntentsEnabled   bool
 	restartEnabled      bool
 	pvcMutationsEnabled bool
 }
 
 func NewInstanceGpuBinding(c InstanceOwnerClient, a InstanceActionAuthorizer, clusterID string, policies ...*InstanceSchedulingPolicy) *InstanceGpuBinding {
-	b := &InstanceGpuBinding{client: c, authorization: a, clusterID: clusterID, newCreateEnabled: os.Getenv("ANI_INSTANCE_CONFIG_V2_WRITES") == "true", newIntentsEnabled: os.Getenv("ANI_INSTANCE_NEW_INTENTS_ENABLED") == "true", restartEnabled: os.Getenv("ANI_INSTANCE_RESTART_ENABLED") == "true", pvcMutationsEnabled: os.Getenv("ANI_INSTANCE_PVC_MUTATIONS_ENABLED") == "true"}
+	b := &InstanceGpuBinding{client: c, authorization: a, clusterID: clusterID, newIntentsEnabled: os.Getenv("ANI_INSTANCE_NEW_INTENTS_ENABLED") == "true", restartEnabled: os.Getenv("ANI_INSTANCE_RESTART_ENABLED") == "true", pvcMutationsEnabled: os.Getenv("ANI_INSTANCE_PVC_MUTATIONS_ENABLED") == "true"}
 	if len(policies) > 0 {
 		b.scheduling = policies[0]
 	}
@@ -68,7 +67,7 @@ func NewInstanceGpuBinding(c InstanceOwnerClient, a InstanceActionAuthorizer, cl
 }
 func (*InstanceGpuBinding) OwnerService() string { return InstanceOwner }
 func (b *InstanceGpuBinding) NewCreateEnabled() bool {
-	return b != nil && b.newCreateEnabled && b.newIntentsEnabled
+	return b != nil && b.newIntentsEnabled
 }
 func (*InstanceGpuBinding) CreateAction() string { return InstanceCreateAction }
 func (*InstanceGpuBinding) DeleteAction() string { return InstanceDeleteAction }
@@ -99,14 +98,8 @@ func instanceAuthorizationError(e error) error {
 	}
 	return e
 }
-func (*InstanceGpuBinding) CanonicalGpuBusinessVersion(m proto.Message, version uint32) ([]byte, error) {
-	if version != data.CurrentInstanceContractVersion {
-		return nil, quota.ErrorInvalidQuotaRequest("%s", "unsupported instance contract")
-	}
-	return res.CanonicalBusinessPayloadVersion(m, version)
-}
 func (*InstanceGpuBinding) CanonicalGpuBusiness(m proto.Message) ([]byte, error) {
-	return res.CanonicalBusinessPayloadVersion(m, data.CurrentInstanceContractVersion)
+	return res.CanonicalBusinessPayload(m)
 }
 func (b *InstanceGpuBinding) ResolveGpuBusiness(ctx context.Context, p *auth.Principal, tenant string, m proto.Message) (*acc.GpuRequest, proto.Message, error) {
 	in, ok := m.(*res.CreateInstanceData)
@@ -288,7 +281,7 @@ func (s *InstanceService) CreateInstance(ctx context.Context, r *view.CreateInst
 			scheduling.PodPlacement = &value
 		}
 	}
-	business := &res.CreateInstanceData{Name: d.Name, ImageId: d.ImageId, ImageScope: d.ImageScope, PresetId: d.PresetId, Scheduling: scheduling, WorkspaceMountPath: d.WorkspaceMountPath, Labels: d.Labels, Annotations: d.Annotations}
+	business := &res.CreateInstanceData{Name: d.Name, ImageId: d.ImageId, ImageScope: d.ImageScope, PresetId: d.PresetId, Scheduling: scheduling, WorkspaceMountPath: d.WorkspaceMountPath, Labels: d.Labels, Annotations: d.Annotations, SecurityGroupIds: append([]string(nil), d.SecurityGroupIds...)}
 	for _, mount := range d.VolumeMounts {
 		if mount == nil {
 			return nil, quota.ErrorInvalidQuotaRequest("%s", "invalid volume mount")

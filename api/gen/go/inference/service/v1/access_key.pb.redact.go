@@ -275,6 +275,8 @@ func (x *ListInferenceKeysRequest) Redact() {
 	// Safe field: Page
 
 	// Safe field: PageSize
+
+	// Safe field: ServedModelName
 }
 
 // Ensure ListInferenceKeysResponse implements the Redactor interface at compile time.

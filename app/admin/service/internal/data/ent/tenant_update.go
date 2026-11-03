@@ -171,6 +171,101 @@ func (_u *TenantUpdate) ClearRemark() *TenantUpdate {
 	return _u
 }
 
+// SetTenantSpaceState sets the "tenant_space_state" field.
+func (_u *TenantUpdate) SetTenantSpaceState(v tenant.TenantSpaceState) *TenantUpdate {
+	_u.mutation.SetTenantSpaceState(v)
+	return _u
+}
+
+// SetNillableTenantSpaceState sets the "tenant_space_state" field if the given value is not nil.
+func (_u *TenantUpdate) SetNillableTenantSpaceState(v *tenant.TenantSpaceState) *TenantUpdate {
+	if v != nil {
+		_u.SetTenantSpaceState(*v)
+	}
+	return _u
+}
+
+// SetTenantSpaceLeaseGeneration sets the "tenant_space_lease_generation" field.
+func (_u *TenantUpdate) SetTenantSpaceLeaseGeneration(v int64) *TenantUpdate {
+	_u.mutation.ResetTenantSpaceLeaseGeneration()
+	_u.mutation.SetTenantSpaceLeaseGeneration(v)
+	return _u
+}
+
+// SetNillableTenantSpaceLeaseGeneration sets the "tenant_space_lease_generation" field if the given value is not nil.
+func (_u *TenantUpdate) SetNillableTenantSpaceLeaseGeneration(v *int64) *TenantUpdate {
+	if v != nil {
+		_u.SetTenantSpaceLeaseGeneration(*v)
+	}
+	return _u
+}
+
+// AddTenantSpaceLeaseGeneration adds value to the "tenant_space_lease_generation" field.
+func (_u *TenantUpdate) AddTenantSpaceLeaseGeneration(v int64) *TenantUpdate {
+	_u.mutation.AddTenantSpaceLeaseGeneration(v)
+	return _u
+}
+
+// SetTenantSpaceLeaseOwner sets the "tenant_space_lease_owner" field.
+func (_u *TenantUpdate) SetTenantSpaceLeaseOwner(v string) *TenantUpdate {
+	_u.mutation.SetTenantSpaceLeaseOwner(v)
+	return _u
+}
+
+// SetNillableTenantSpaceLeaseOwner sets the "tenant_space_lease_owner" field if the given value is not nil.
+func (_u *TenantUpdate) SetNillableTenantSpaceLeaseOwner(v *string) *TenantUpdate {
+	if v != nil {
+		_u.SetTenantSpaceLeaseOwner(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceLeaseOwner clears the value of the "tenant_space_lease_owner" field.
+func (_u *TenantUpdate) ClearTenantSpaceLeaseOwner() *TenantUpdate {
+	_u.mutation.ClearTenantSpaceLeaseOwner()
+	return _u
+}
+
+// SetTenantSpaceLeaseUntil sets the "tenant_space_lease_until" field.
+func (_u *TenantUpdate) SetTenantSpaceLeaseUntil(v time.Time) *TenantUpdate {
+	_u.mutation.SetTenantSpaceLeaseUntil(v)
+	return _u
+}
+
+// SetNillableTenantSpaceLeaseUntil sets the "tenant_space_lease_until" field if the given value is not nil.
+func (_u *TenantUpdate) SetNillableTenantSpaceLeaseUntil(v *time.Time) *TenantUpdate {
+	if v != nil {
+		_u.SetTenantSpaceLeaseUntil(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceLeaseUntil clears the value of the "tenant_space_lease_until" field.
+func (_u *TenantUpdate) ClearTenantSpaceLeaseUntil() *TenantUpdate {
+	_u.mutation.ClearTenantSpaceLeaseUntil()
+	return _u
+}
+
+// SetTenantSpaceNextAttemptAt sets the "tenant_space_next_attempt_at" field.
+func (_u *TenantUpdate) SetTenantSpaceNextAttemptAt(v time.Time) *TenantUpdate {
+	_u.mutation.SetTenantSpaceNextAttemptAt(v)
+	return _u
+}
+
+// SetNillableTenantSpaceNextAttemptAt sets the "tenant_space_next_attempt_at" field if the given value is not nil.
+func (_u *TenantUpdate) SetNillableTenantSpaceNextAttemptAt(v *time.Time) *TenantUpdate {
+	if v != nil {
+		_u.SetTenantSpaceNextAttemptAt(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceNextAttemptAt clears the value of the "tenant_space_next_attempt_at" field.
+func (_u *TenantUpdate) ClearTenantSpaceNextAttemptAt() *TenantUpdate {
+	_u.mutation.ClearTenantSpaceNextAttemptAt()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *TenantUpdate) SetName(v string) *TenantUpdate {
 	_u.mutation.SetName(v)
@@ -503,6 +598,21 @@ func (_u *TenantUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *TenantUpdate) check() error {
+	if v, ok := _u.mutation.TenantSpaceState(); ok {
+		if err := tenant.TenantSpaceStateValidator(v); err != nil {
+			return &ValidationError{Name: "tenant_space_state", err: fmt.Errorf(`ent: validator failed for field "Tenant.tenant_space_state": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.TenantSpaceLeaseGeneration(); ok {
+		if err := tenant.TenantSpaceLeaseGenerationValidator(v); err != nil {
+			return &ValidationError{Name: "tenant_space_lease_generation", err: fmt.Errorf(`ent: validator failed for field "Tenant.tenant_space_lease_generation": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.TenantSpaceLeaseOwner(); ok {
+		if err := tenant.TenantSpaceLeaseOwnerValidator(v); err != nil {
+			return &ValidationError{Name: "tenant_space_lease_owner", err: fmt.Errorf(`ent: validator failed for field "Tenant.tenant_space_lease_owner": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := tenant.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tenant.name": %w`, err)}
@@ -596,6 +706,36 @@ func (_u *TenantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.RemarkCleared() {
 		_spec.ClearField(tenant.FieldRemark, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceState(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceState, field.TypeEnum, value)
+	}
+	if _u.mutation.TenantSpaceOperationIDCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceOperationID, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceLeaseGeneration(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceLeaseGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTenantSpaceLeaseGeneration(); ok {
+		_spec.AddField(tenant.FieldTenantSpaceLeaseGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.TenantSpaceLeaseOwner(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceLeaseOwner, field.TypeString, value)
+	}
+	if _u.mutation.TenantSpaceLeaseOwnerCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceLeaseOwner, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceLeaseUntil(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceLeaseUntil, field.TypeTime, value)
+	}
+	if _u.mutation.TenantSpaceLeaseUntilCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceLeaseUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TenantSpaceNextAttemptAt(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceNextAttemptAt, field.TypeTime, value)
+	}
+	if _u.mutation.TenantSpaceNextAttemptAtCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceNextAttemptAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(tenant.FieldName, field.TypeString, value)
@@ -867,6 +1007,101 @@ func (_u *TenantUpdateOne) SetNillableRemark(v *string) *TenantUpdateOne {
 // ClearRemark clears the value of the "remark" field.
 func (_u *TenantUpdateOne) ClearRemark() *TenantUpdateOne {
 	_u.mutation.ClearRemark()
+	return _u
+}
+
+// SetTenantSpaceState sets the "tenant_space_state" field.
+func (_u *TenantUpdateOne) SetTenantSpaceState(v tenant.TenantSpaceState) *TenantUpdateOne {
+	_u.mutation.SetTenantSpaceState(v)
+	return _u
+}
+
+// SetNillableTenantSpaceState sets the "tenant_space_state" field if the given value is not nil.
+func (_u *TenantUpdateOne) SetNillableTenantSpaceState(v *tenant.TenantSpaceState) *TenantUpdateOne {
+	if v != nil {
+		_u.SetTenantSpaceState(*v)
+	}
+	return _u
+}
+
+// SetTenantSpaceLeaseGeneration sets the "tenant_space_lease_generation" field.
+func (_u *TenantUpdateOne) SetTenantSpaceLeaseGeneration(v int64) *TenantUpdateOne {
+	_u.mutation.ResetTenantSpaceLeaseGeneration()
+	_u.mutation.SetTenantSpaceLeaseGeneration(v)
+	return _u
+}
+
+// SetNillableTenantSpaceLeaseGeneration sets the "tenant_space_lease_generation" field if the given value is not nil.
+func (_u *TenantUpdateOne) SetNillableTenantSpaceLeaseGeneration(v *int64) *TenantUpdateOne {
+	if v != nil {
+		_u.SetTenantSpaceLeaseGeneration(*v)
+	}
+	return _u
+}
+
+// AddTenantSpaceLeaseGeneration adds value to the "tenant_space_lease_generation" field.
+func (_u *TenantUpdateOne) AddTenantSpaceLeaseGeneration(v int64) *TenantUpdateOne {
+	_u.mutation.AddTenantSpaceLeaseGeneration(v)
+	return _u
+}
+
+// SetTenantSpaceLeaseOwner sets the "tenant_space_lease_owner" field.
+func (_u *TenantUpdateOne) SetTenantSpaceLeaseOwner(v string) *TenantUpdateOne {
+	_u.mutation.SetTenantSpaceLeaseOwner(v)
+	return _u
+}
+
+// SetNillableTenantSpaceLeaseOwner sets the "tenant_space_lease_owner" field if the given value is not nil.
+func (_u *TenantUpdateOne) SetNillableTenantSpaceLeaseOwner(v *string) *TenantUpdateOne {
+	if v != nil {
+		_u.SetTenantSpaceLeaseOwner(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceLeaseOwner clears the value of the "tenant_space_lease_owner" field.
+func (_u *TenantUpdateOne) ClearTenantSpaceLeaseOwner() *TenantUpdateOne {
+	_u.mutation.ClearTenantSpaceLeaseOwner()
+	return _u
+}
+
+// SetTenantSpaceLeaseUntil sets the "tenant_space_lease_until" field.
+func (_u *TenantUpdateOne) SetTenantSpaceLeaseUntil(v time.Time) *TenantUpdateOne {
+	_u.mutation.SetTenantSpaceLeaseUntil(v)
+	return _u
+}
+
+// SetNillableTenantSpaceLeaseUntil sets the "tenant_space_lease_until" field if the given value is not nil.
+func (_u *TenantUpdateOne) SetNillableTenantSpaceLeaseUntil(v *time.Time) *TenantUpdateOne {
+	if v != nil {
+		_u.SetTenantSpaceLeaseUntil(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceLeaseUntil clears the value of the "tenant_space_lease_until" field.
+func (_u *TenantUpdateOne) ClearTenantSpaceLeaseUntil() *TenantUpdateOne {
+	_u.mutation.ClearTenantSpaceLeaseUntil()
+	return _u
+}
+
+// SetTenantSpaceNextAttemptAt sets the "tenant_space_next_attempt_at" field.
+func (_u *TenantUpdateOne) SetTenantSpaceNextAttemptAt(v time.Time) *TenantUpdateOne {
+	_u.mutation.SetTenantSpaceNextAttemptAt(v)
+	return _u
+}
+
+// SetNillableTenantSpaceNextAttemptAt sets the "tenant_space_next_attempt_at" field if the given value is not nil.
+func (_u *TenantUpdateOne) SetNillableTenantSpaceNextAttemptAt(v *time.Time) *TenantUpdateOne {
+	if v != nil {
+		_u.SetTenantSpaceNextAttemptAt(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceNextAttemptAt clears the value of the "tenant_space_next_attempt_at" field.
+func (_u *TenantUpdateOne) ClearTenantSpaceNextAttemptAt() *TenantUpdateOne {
+	_u.mutation.ClearTenantSpaceNextAttemptAt()
 	return _u
 }
 
@@ -1215,6 +1450,21 @@ func (_u *TenantUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *TenantUpdateOne) check() error {
+	if v, ok := _u.mutation.TenantSpaceState(); ok {
+		if err := tenant.TenantSpaceStateValidator(v); err != nil {
+			return &ValidationError{Name: "tenant_space_state", err: fmt.Errorf(`ent: validator failed for field "Tenant.tenant_space_state": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.TenantSpaceLeaseGeneration(); ok {
+		if err := tenant.TenantSpaceLeaseGenerationValidator(v); err != nil {
+			return &ValidationError{Name: "tenant_space_lease_generation", err: fmt.Errorf(`ent: validator failed for field "Tenant.tenant_space_lease_generation": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.TenantSpaceLeaseOwner(); ok {
+		if err := tenant.TenantSpaceLeaseOwnerValidator(v); err != nil {
+			return &ValidationError{Name: "tenant_space_lease_owner", err: fmt.Errorf(`ent: validator failed for field "Tenant.tenant_space_lease_owner": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Name(); ok {
 		if err := tenant.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Tenant.name": %w`, err)}
@@ -1325,6 +1575,36 @@ func (_u *TenantUpdateOne) sqlSave(ctx context.Context) (_node *Tenant, err erro
 	}
 	if _u.mutation.RemarkCleared() {
 		_spec.ClearField(tenant.FieldRemark, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceState(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceState, field.TypeEnum, value)
+	}
+	if _u.mutation.TenantSpaceOperationIDCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceOperationID, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceLeaseGeneration(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceLeaseGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedTenantSpaceLeaseGeneration(); ok {
+		_spec.AddField(tenant.FieldTenantSpaceLeaseGeneration, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.TenantSpaceLeaseOwner(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceLeaseOwner, field.TypeString, value)
+	}
+	if _u.mutation.TenantSpaceLeaseOwnerCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceLeaseOwner, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceLeaseUntil(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceLeaseUntil, field.TypeTime, value)
+	}
+	if _u.mutation.TenantSpaceLeaseUntilCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceLeaseUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TenantSpaceNextAttemptAt(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceNextAttemptAt, field.TypeTime, value)
+	}
+	if _u.mutation.TenantSpaceNextAttemptAtCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceNextAttemptAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(tenant.FieldName, field.TypeString, value)

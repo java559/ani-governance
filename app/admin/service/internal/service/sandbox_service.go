@@ -11,6 +11,7 @@ import (
 	admin "go-wind-admin/api/gen/go/admin/service/v1"
 	view "go-wind-admin/api/gen/go/sandbox/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/pkg/middleware/auth"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -77,8 +78,16 @@ func stableSandboxID(tenant, key, kind string) string {
 }
 
 func (s *SandboxService) CreateSandbox(ctx context.Context, r *view.CreateSandboxRequest) (*view.SandboxAcceptance, error) {
-	if r == nil || r.Data == nil || r.Data.Name == "" || r.Data.ImageReference == "" || r.Data.PresetId == "" {
+	if r == nil || r.Data == nil || r.Data.Name == "" || r.Data.PresetId == "" {
 		return nil, kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "sandbox data is required")
+	}
+	// Accept either a registered image reference or an image ID and scope.
+	if r.Data.ImageId != "" || r.Data.ImageScope != "" {
+		if r.Data.ImageId == "" || (r.Data.ImageScope != "platform" && r.Data.ImageScope != "tenant") || r.Data.ImageReference != "" {
+			return nil, kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "image_id and image_scope must identify one registered image")
+		}
+	} else if r.Data.ImageReference == "" {
+		return nil, kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "image_id and image_scope are required")
 	}
 	if err := sandboxKey(r.Data.IdempotencyKey); err != nil {
 		return nil, err
@@ -89,7 +98,7 @@ func (s *SandboxService) CreateSandbox(ctx context.Context, r *view.CreateSandbo
 	}
 	resourceID := stableSandboxID(tenant, r.Data.IdempotencyKey, "resource")
 	operationID := stableSandboxID(tenant, r.Data.IdempotencyKey, "operation")
-	input := &res.CreateSandboxData{Name: r.Data.Name, ImageReference: r.Data.ImageReference, PresetId: r.Data.PresetId, WorkspaceSize: r.Data.WorkspaceSize}
+	input := &res.CreateSandboxData{Name: r.Data.Name, ImageId: r.Data.ImageId, ImageScope: r.Data.ImageScope, ImageReference: r.Data.ImageReference, PresetId: r.Data.PresetId, WorkspaceSize: r.Data.WorkspaceSize}
 	intentDigest, err := res.CreateIntentDigest("", input)
 	if err != nil {
 		return nil, kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "invalid sandbox create intent")
@@ -419,4 +428,60 @@ func (s *SandboxService) DeleteSandbox(ctx context.Context, r *view.DeleteSandbo
 		}
 		return out.Ack, nil
 	})
+}
+
+// sandboxDataScope accepts a validated Sandbox capability only for its own
+// target and one exact data-plane operation. The issuing user's current route
+// grant and tenant mapping are rechecked on every request.
+func (s *SandboxService) sandboxDataScope(ctx context.Context, path, method, sandboxID string) (string, string, error) {
+	principal, err := auth.PrincipalFromContext(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	if principal.Type != auth.SubjectSandbox {
+		return s.scope(ctx, path, method)
+	}
+	if principal.SandboxExpiresAt <= time.Now().Unix() {
+		return "", "", kratoserrors.Unauthorized("SANDBOX_TOKEN_EXPIRED", "sandbox token expired")
+	}
+	required := ""
+	switch path {
+	case data.SandboxCodeRunPath:
+		if method == "POST" {
+			required = "exec"
+		}
+	case data.SandboxCodeRunGetPath:
+		if method == "GET" {
+			required = "exec"
+		}
+	case data.SandboxFilesListPath, data.SandboxFilesContentPath, data.SandboxFilesOperationPath:
+		if method == "GET" {
+			required = "files"
+		}
+	case data.SandboxFilesMutatePath:
+		if method == "POST" || method == "DELETE" {
+			required = "files"
+		}
+	}
+	if required == "" || !auth.SandboxTokenMatches(principal, sandboxID, required) || s.authorization == nil || s.tenants == nil || s.client == nil {
+		return "", "", kratoserrors.Forbidden("SANDBOX_TOKEN_SCOPE_DENIED", "sandbox token scope denied")
+	}
+	if err = instanceAuthorizationError(s.authorization.Authorize(ctx, principal.TenantID, principal.IssuerID, path, method)); err != nil {
+		return "", "", err
+	}
+	tenant, err := s.tenants.ResourceTenantID(ctx, principal.TenantID)
+	if err != nil {
+		return "", "", err
+	}
+	if tenant != principal.ResourceTenantID {
+		return "", "", kratoserrors.Forbidden("SANDBOX_TOKEN_SCOPE_DENIED", "sandbox tenant mismatch")
+	}
+	if principal.SandboxExpiresAt <= time.Now().Unix() {
+		return "", "", kratoserrors.Unauthorized("SANDBOX_TOKEN_EXPIRED", "sandbox token expired")
+	}
+	actor, err := principal.Actor()
+	if err != nil {
+		return "", "", err
+	}
+	return tenant, actor, nil
 }

@@ -35,6 +35,18 @@ type Tenant struct {
 	Remark *string `json:"remark,omitempty"`
 	// ResourceTenantID holds the value of the "resource_tenant_id" field.
 	ResourceTenantID string `json:"resource_tenant_id,omitempty"`
+	// TenantSpaceState holds the value of the "tenant_space_state" field.
+	TenantSpaceState tenant.TenantSpaceState `json:"tenant_space_state,omitempty"`
+	// TenantSpaceOperationID holds the value of the "tenant_space_operation_id" field.
+	TenantSpaceOperationID *string `json:"tenant_space_operation_id,omitempty"`
+	// TenantSpaceLeaseGeneration holds the value of the "tenant_space_lease_generation" field.
+	TenantSpaceLeaseGeneration int64 `json:"tenant_space_lease_generation,omitempty"`
+	// TenantSpaceLeaseOwner holds the value of the "tenant_space_lease_owner" field.
+	TenantSpaceLeaseOwner *string `json:"tenant_space_lease_owner,omitempty"`
+	// TenantSpaceLeaseUntil holds the value of the "tenant_space_lease_until" field.
+	TenantSpaceLeaseUntil *time.Time `json:"tenant_space_lease_until,omitempty"`
+	// TenantSpaceNextAttemptAt holds the value of the "tenant_space_next_attempt_at" field.
+	TenantSpaceNextAttemptAt *time.Time `json:"tenant_space_next_attempt_at,omitempty"`
 	// 租户名称
 	Name *string `json:"name,omitempty"`
 	// 租户编号
@@ -94,11 +106,11 @@ func (*Tenant) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case tenant.FieldID, tenant.FieldCreatedBy, tenant.FieldUpdatedBy, tenant.FieldDeletedBy, tenant.FieldAdminUserID, tenant.FieldPlanID:
+		case tenant.FieldID, tenant.FieldCreatedBy, tenant.FieldUpdatedBy, tenant.FieldDeletedBy, tenant.FieldTenantSpaceLeaseGeneration, tenant.FieldAdminUserID, tenant.FieldPlanID:
 			values[i] = new(sql.NullInt64)
-		case tenant.FieldRemark, tenant.FieldResourceTenantID, tenant.FieldName, tenant.FieldCode, tenant.FieldLogoURL, tenant.FieldDomain, tenant.FieldIndustry, tenant.FieldStatus, tenant.FieldType, tenant.FieldAuditStatus, tenant.FieldSubscriptionPlan:
+		case tenant.FieldRemark, tenant.FieldResourceTenantID, tenant.FieldTenantSpaceState, tenant.FieldTenantSpaceOperationID, tenant.FieldTenantSpaceLeaseOwner, tenant.FieldName, tenant.FieldCode, tenant.FieldLogoURL, tenant.FieldDomain, tenant.FieldIndustry, tenant.FieldStatus, tenant.FieldType, tenant.FieldAuditStatus, tenant.FieldSubscriptionPlan:
 			values[i] = new(sql.NullString)
-		case tenant.FieldCreatedAt, tenant.FieldUpdatedAt, tenant.FieldDeletedAt, tenant.FieldSubscriptionAt, tenant.FieldUnsubscribeAt, tenant.FieldExpiredAt:
+		case tenant.FieldCreatedAt, tenant.FieldUpdatedAt, tenant.FieldDeletedAt, tenant.FieldTenantSpaceLeaseUntil, tenant.FieldTenantSpaceNextAttemptAt, tenant.FieldSubscriptionAt, tenant.FieldUnsubscribeAt, tenant.FieldExpiredAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -175,6 +187,46 @@ func (_m *Tenant) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field resource_tenant_id", values[i])
 			} else if value.Valid {
 				_m.ResourceTenantID = value.String
+			}
+		case tenant.FieldTenantSpaceState:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_state", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceState = tenant.TenantSpaceState(value.String)
+			}
+		case tenant.FieldTenantSpaceOperationID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_operation_id", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceOperationID = new(string)
+				*_m.TenantSpaceOperationID = value.String
+			}
+		case tenant.FieldTenantSpaceLeaseGeneration:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_lease_generation", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceLeaseGeneration = value.Int64
+			}
+		case tenant.FieldTenantSpaceLeaseOwner:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_lease_owner", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceLeaseOwner = new(string)
+				*_m.TenantSpaceLeaseOwner = value.String
+			}
+		case tenant.FieldTenantSpaceLeaseUntil:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_lease_until", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceLeaseUntil = new(time.Time)
+				*_m.TenantSpaceLeaseUntil = value.Time
+			}
+		case tenant.FieldTenantSpaceNextAttemptAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_next_attempt_at", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceNextAttemptAt = new(time.Time)
+				*_m.TenantSpaceNextAttemptAt = value.Time
 			}
 		case tenant.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -352,6 +404,32 @@ func (_m *Tenant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("resource_tenant_id=")
 	builder.WriteString(_m.ResourceTenantID)
+	builder.WriteString(", ")
+	builder.WriteString("tenant_space_state=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TenantSpaceState))
+	builder.WriteString(", ")
+	if v := _m.TenantSpaceOperationID; v != nil {
+		builder.WriteString("tenant_space_operation_id=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("tenant_space_lease_generation=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TenantSpaceLeaseGeneration))
+	builder.WriteString(", ")
+	if v := _m.TenantSpaceLeaseOwner; v != nil {
+		builder.WriteString("tenant_space_lease_owner=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.TenantSpaceLeaseUntil; v != nil {
+		builder.WriteString("tenant_space_lease_until=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TenantSpaceNextAttemptAt; v != nil {
+		builder.WriteString("tenant_space_next_attempt_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	if v := _m.Name; v != nil {
 		builder.WriteString("name=")

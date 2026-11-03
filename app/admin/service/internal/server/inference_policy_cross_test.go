@@ -158,7 +158,7 @@ func TestInferencePolicyCrossBackend(t *testing.T) {
 	bff := service.NewInferenceServiceWithOwner(nil, owner, data.NewTenantRepo(bctx, c))
 	authzEngine, err := casbin.NewEngine(context.Background())
 	require.NoError(t, err)
-	routes := []struct{ method, path string }{{"POST", "/api/v1/inference-policies"}, {"GET", "/api/v1/inference-policies/{policy_id}"}, {"PUT", "/api/v1/inference-policies/{policy_id}"}, {"DELETE", "/api/v1/inference-policies/{policy_id}"}, {"POST", "/api/v1/inference-keys"}, {"POST", "/api/v1/inference-keys/{key_id}:bind-policy"}}
+	routes := []struct{ method, path string }{{"POST", "/api/v1/inference-policies"}, {"GET", "/api/v1/inference-policies/{policy_id}"}, {"PUT", "/api/v1/inference-policies/{policy_id}"}, {"DELETE", "/api/v1/inference-policies/{policy_id}"}, {"POST", "/api/v1/inference-keys"}, {"GET", "/api/v1/inference-keys"}, {"POST", "/api/v1/inference-keys/{key_id}:bind-policy"}}
 	var rules []casbin.PolicyRule
 	for _, r := range routes {
 		grant, e := permcode.Resolve(r.method, r.path)
@@ -201,6 +201,15 @@ func TestInferencePolicyCrossBackend(t *testing.T) {
 		return fire("POST", "/api/v1/inference-keys", fmt.Sprintf(`{"data":{"name":%q,"policy_id":%q,"idempotency_key":%q}}`, name, policyID, name), "owner", 200)
 	}
 	key1, key2 := createKey("app-1"), createKey("app-2")
+	modelList := "/api/v1/inference-keys?served_model_name=" + model
+	page := fire("GET", modelList+"&pageSize=1", "", "owner", 200)
+	require.Equal(t, "2", page["total"])
+	require.Len(t, page["items"], 1)
+	foreign := fire("GET", modelList, "", "other", 200)
+	require.Equal(t, "0", foreign["total"])
+	require.Empty(t, foreign["items"])
+	unmatched := fire("GET", modelList+"-partial", "", "owner", 200)
+	require.Equal(t, "0", unmatched["total"])
 	gatewayPair, err := tls.LoadX509KeyPair(gatewayCert, gatewayKey)
 	require.NoError(t, err)
 	roots := x509.NewCertPool()
@@ -233,6 +242,7 @@ func TestInferencePolicyCrossBackend(t *testing.T) {
 	fire("GET", "/api/v1/inference-policies/"+policyID, "", "other", 404)
 	fire("DELETE", "/api/v1/inference-policies/"+policyID, "", "owner", 409)
 	fire("PUT", "/api/v1/inference-policies/"+policyID, `{"data":{"name":"policy","allowed_model_names":[]}}`, "owner", 200)
+	require.Equal(t, "0", fire("GET", modelList, "", "owner", 200)["total"])
 	check(key2, "scope_denied")
 	secondPolicy := fire("POST", "/api/v1/inference-policies", fmt.Sprintf(`{"data":{"name":"new-policy","allowed_model_names":[%q]}}`, model), "owner", 200)
 	secondPolicyID := secondPolicy["id"].(string)
@@ -241,6 +251,7 @@ func TestInferencePolicyCrossBackend(t *testing.T) {
 	fire("POST", "/api/v1/inference-keys/"+keyID+":bind-policy", bindBody, "other", 404)
 	bound := fire("POST", "/api/v1/inference-keys/"+keyID+":bind-policy", bindBody, "owner", 200)
 	require.Equal(t, secondPolicyID, bound["policy_id"])
+	require.Equal(t, "1", fire("GET", modelList, "", "owner", 200)["total"])
 	check(key1, "")
 	check(key2, "scope_denied")
 }

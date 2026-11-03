@@ -969,11 +969,12 @@ func (x *InferenceKeyCredentials) GetReplayed() bool {
 }
 
 type ListInferenceKeysRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          *int32                 `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
-	PageSize      *int32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Page            *int32                 `protobuf:"varint,1,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize        *int32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	ServedModelName *string                `protobuf:"bytes,3,opt,name=served_model_name,proto3,oneof" json:"served_model_name,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ListInferenceKeysRequest) Reset() {
@@ -1018,6 +1019,13 @@ func (x *ListInferenceKeysRequest) GetPageSize() int32 {
 		return *x.PageSize
 	}
 	return 0
+}
+
+func (x *ListInferenceKeysRequest) GetServedModelName() string {
+	if x != nil && x.ServedModelName != nil {
+		return *x.ServedModelName
+	}
+	return ""
 }
 
 type ListInferenceKeysResponse struct {
@@ -1335,13 +1343,15 @@ const file_inference_service_v1_access_key_proto_rawDesc = "" +
 	"\x17InferenceKeyCredentials\x12?\n" +
 	"\x03key\x18\x01 \x01(\v2\".inference.service.v1.InferenceKeyB\tڶ\x1a\x05\x9a\x01\x02 \x01R\x03key\x12\x1e\n" +
 	"\x06secret\x18\x02 \x01(\tB\x06ڶ\x1a\x02z\x00R\x06secret\x12\x1a\n" +
-	"\breplayed\x18\x03 \x01(\bR\breplayed\"l\n" +
+	"\breplayed\x18\x03 \x01(\bR\breplayed\"\xb5\x01\n" +
 	"\x18ListInferenceKeysRequest\x12\x17\n" +
 	"\x04page\x18\x01 \x01(\x05H\x00R\x04page\x88\x01\x01\x12 \n" +
-	"\tpage_size\x18\x02 \x01(\x05H\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\tpage_size\x18\x02 \x01(\x05H\x01R\bpageSize\x88\x01\x01\x121\n" +
+	"\x11served_model_name\x18\x03 \x01(\tH\x02R\x11served_model_name\x88\x01\x01B\a\n" +
 	"\x05_pageB\f\n" +
 	"\n" +
-	"_page_size\"v\n" +
+	"_page_sizeB\x14\n" +
+	"\x12_served_model_name\"v\n" +
 	"\x19ListInferenceKeysResponse\x12C\n" +
 	"\x05items\x18\x01 \x03(\v2\".inference.service.v1.InferenceKeyB\tڶ\x1a\x05\xa2\x01\x02\x10\x01R\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"0\n" +

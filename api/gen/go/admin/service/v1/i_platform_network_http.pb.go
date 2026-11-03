@@ -36,6 +36,7 @@ const OperationPlatformNetworkServiceGetCurrentDefaultVPCEgress = "/admin.servic
 const OperationPlatformNetworkServiceGetDefaultVPCEgress = "/admin.service.v1.PlatformNetworkService/GetDefaultVPCEgress"
 const OperationPlatformNetworkServiceGetEgressGateway = "/admin.service.v1.PlatformNetworkService/GetEgressGateway"
 const OperationPlatformNetworkServiceGetIntranetAddressPool = "/admin.service.v1.PlatformNetworkService/GetIntranetAddressPool"
+const OperationPlatformNetworkServiceGetIntranetPoolDefaults = "/admin.service.v1.PlatformNetworkService/GetIntranetPoolDefaults"
 const OperationPlatformNetworkServiceGetPlatformEIP = "/admin.service.v1.PlatformNetworkService/GetPlatformEIP"
 const OperationPlatformNetworkServiceGetPlatformNetworkCapabilities = "/admin.service.v1.PlatformNetworkService/GetPlatformNetworkCapabilities"
 const OperationPlatformNetworkServiceGetPlatformOperation = "/admin.service.v1.PlatformNetworkService/GetPlatformOperation"
@@ -54,6 +55,7 @@ const OperationPlatformNetworkServiceReleasePlatformEIP = "/admin.service.v1.Pla
 const OperationPlatformNetworkServiceSetDefaultIntranetPool = "/admin.service.v1.PlatformNetworkService/SetDefaultIntranetPool"
 const OperationPlatformNetworkServiceSetDefaultPublicPool = "/admin.service.v1.PlatformNetworkService/SetDefaultPublicPool"
 const OperationPlatformNetworkServiceSetIntranetPoolAllocationEnabled = "/admin.service.v1.PlatformNetworkService/SetIntranetPoolAllocationEnabled"
+const OperationPlatformNetworkServiceSetIntranetPoolAutoAllocationEnabled = "/admin.service.v1.PlatformNetworkService/SetIntranetPoolAutoAllocationEnabled"
 const OperationPlatformNetworkServiceSetPublicPoolAllocationEnabled = "/admin.service.v1.PlatformNetworkService/SetPublicPoolAllocationEnabled"
 
 type PlatformNetworkServiceHTTPServer interface {
@@ -73,6 +75,7 @@ type PlatformNetworkServiceHTTPServer interface {
 	GetDefaultVPCEgress(context.Context, *v1.GetDefaultVPCEgressRequest) (*v1.GetDefaultVPCEgressResponse, error)
 	GetEgressGateway(context.Context, *v1.GetEgressGatewayRequest) (*v1.GetEgressGatewayResponse, error)
 	GetIntranetAddressPool(context.Context, *v1.GetIntranetAddressPoolRequest) (*v1.GetIntranetAddressPoolResponse, error)
+	GetIntranetPoolDefaults(context.Context, *v1.GetIntranetPoolDefaultsRequest) (*v1.GetIntranetPoolDefaultsResponse, error)
 	GetPlatformEIP(context.Context, *v1.GetPlatformEIPRequest) (*v1.GetPlatformEIPResponse, error)
 	GetPlatformNetworkCapabilities(context.Context, *v1.GetPlatformNetworkCapabilitiesRequest) (*v1.GetPlatformNetworkCapabilitiesResponse, error)
 	GetPlatformOperation(context.Context, *v1.GetPlatformOperationRequest) (*v1.GetPlatformOperationResponse, error)
@@ -91,6 +94,7 @@ type PlatformNetworkServiceHTTPServer interface {
 	SetDefaultIntranetPool(context.Context, *v1.SetDefaultIntranetPoolRequest) (*v1.SetDefaultIntranetPoolResponse, error)
 	SetDefaultPublicPool(context.Context, *v1.SetDefaultPublicPoolRequest) (*v1.SetDefaultPublicPoolResponse, error)
 	SetIntranetPoolAllocationEnabled(context.Context, *v1.SetIntranetPoolAllocationEnabledRequest) (*v1.SetIntranetPoolAllocationEnabledResponse, error)
+	SetIntranetPoolAutoAllocationEnabled(context.Context, *v1.SetIntranetPoolAutoAllocationEnabledRequest) (*v1.SetIntranetPoolAutoAllocationEnabledResponse, error)
 	SetPublicPoolAllocationEnabled(context.Context, *v1.SetPublicPoolAllocationEnabledRequest) (*v1.SetPublicPoolAllocationEnabledResponse, error)
 }
 
@@ -123,12 +127,14 @@ func RegisterPlatformNetworkServiceHTTPServer(s *http.Server, srv PlatformNetwor
 	r.PATCH("/api/v1/admin/networks/public-address-pools/{pool_id}/allocation", _PlatformNetworkService_SetPublicPoolAllocationEnabled0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/networks/public-address-pools/{pool_id}/default", _PlatformNetworkService_SetDefaultPublicPool0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/networks/intranet-address-pools", _PlatformNetworkService_CreateIntranetAddressPool0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/networks/intranet-address-pool-defaults", _PlatformNetworkService_GetIntranetPoolDefaults0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/intranet-address-pools/{pool_id}", _PlatformNetworkService_GetIntranetAddressPool0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/intranet-address-pools", _PlatformNetworkService_ListIntranetAddressPools0_HTTP_Handler(srv))
 	r.DELETE("/api/v1/admin/networks/intranet-address-pools/{pool_id}", _PlatformNetworkService_DeleteIntranetAddressPool0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/networks/intranet-address-pools/{pool_id}/verification", _PlatformNetworkService_RecordIntranetPoolVerification0_HTTP_Handler(srv))
 	r.PATCH("/api/v1/admin/networks/intranet-address-pools/{pool_id}/allocation", _PlatformNetworkService_SetIntranetPoolAllocationEnabled0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/networks/intranet-address-pools/{pool_id}/default", _PlatformNetworkService_SetDefaultIntranetPool0_HTTP_Handler(srv))
+	r.PUT("/api/v1/admin/networks/intranet-address-pools/{pool_id}/auto-allocation", _PlatformNetworkService_SetIntranetPoolAutoAllocationEnabled0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/capabilities", _PlatformNetworkService_GetPlatformNetworkCapabilities0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/networks/operations/{operation_id}", _PlatformNetworkService_GetPlatformOperation0_HTTP_Handler(srv))
 }
@@ -718,6 +724,25 @@ func _PlatformNetworkService_CreateIntranetAddressPool0_HTTP_Handler(srv Platfor
 	}
 }
 
+func _PlatformNetworkService_GetIntranetPoolDefaults0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetIntranetPoolDefaultsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceGetIntranetPoolDefaults)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetIntranetPoolDefaults(ctx, req.(*v1.GetIntranetPoolDefaultsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.GetIntranetPoolDefaultsResponse)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _PlatformNetworkService_GetIntranetAddressPool0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in v1.GetIntranetAddressPoolRequest
@@ -856,6 +881,31 @@ func _PlatformNetworkService_SetDefaultIntranetPool0_HTTP_Handler(srv PlatformNe
 	}
 }
 
+func _PlatformNetworkService_SetIntranetPoolAutoAllocationEnabled0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.SetIntranetPoolAutoAllocationEnabledRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationPlatformNetworkServiceSetIntranetPoolAutoAllocationEnabled)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetIntranetPoolAutoAllocationEnabled(ctx, req.(*v1.SetIntranetPoolAutoAllocationEnabledRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.SetIntranetPoolAutoAllocationEnabledResponse)
+		return ctx.Result(200, reply.Resource)
+	}
+}
+
 func _PlatformNetworkService_GetPlatformNetworkCapabilities0_HTTP_Handler(srv PlatformNetworkServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in v1.GetPlatformNetworkCapabilitiesRequest
@@ -914,6 +964,7 @@ type PlatformNetworkServiceHTTPClient interface {
 	GetDefaultVPCEgress(ctx context.Context, req *v1.GetDefaultVPCEgressRequest, opts ...http.CallOption) (rsp *v1.GetDefaultVPCEgressResponse, err error)
 	GetEgressGateway(ctx context.Context, req *v1.GetEgressGatewayRequest, opts ...http.CallOption) (rsp *v1.GetEgressGatewayResponse, err error)
 	GetIntranetAddressPool(ctx context.Context, req *v1.GetIntranetAddressPoolRequest, opts ...http.CallOption) (rsp *v1.GetIntranetAddressPoolResponse, err error)
+	GetIntranetPoolDefaults(ctx context.Context, req *v1.GetIntranetPoolDefaultsRequest, opts ...http.CallOption) (rsp *v1.GetIntranetPoolDefaultsResponse, err error)
 	GetPlatformEIP(ctx context.Context, req *v1.GetPlatformEIPRequest, opts ...http.CallOption) (rsp *v1.GetPlatformEIPResponse, err error)
 	GetPlatformNetworkCapabilities(ctx context.Context, req *v1.GetPlatformNetworkCapabilitiesRequest, opts ...http.CallOption) (rsp *v1.GetPlatformNetworkCapabilitiesResponse, err error)
 	GetPlatformOperation(ctx context.Context, req *v1.GetPlatformOperationRequest, opts ...http.CallOption) (rsp *v1.GetPlatformOperationResponse, err error)
@@ -932,6 +983,7 @@ type PlatformNetworkServiceHTTPClient interface {
 	SetDefaultIntranetPool(ctx context.Context, req *v1.SetDefaultIntranetPoolRequest, opts ...http.CallOption) (rsp *v1.SetDefaultIntranetPoolResponse, err error)
 	SetDefaultPublicPool(ctx context.Context, req *v1.SetDefaultPublicPoolRequest, opts ...http.CallOption) (rsp *v1.SetDefaultPublicPoolResponse, err error)
 	SetIntranetPoolAllocationEnabled(ctx context.Context, req *v1.SetIntranetPoolAllocationEnabledRequest, opts ...http.CallOption) (rsp *v1.SetIntranetPoolAllocationEnabledResponse, err error)
+	SetIntranetPoolAutoAllocationEnabled(ctx context.Context, req *v1.SetIntranetPoolAutoAllocationEnabledRequest, opts ...http.CallOption) (rsp *v1.SetIntranetPoolAutoAllocationEnabledResponse, err error)
 	SetPublicPoolAllocationEnabled(ctx context.Context, req *v1.SetPublicPoolAllocationEnabledRequest, opts ...http.CallOption) (rsp *v1.SetPublicPoolAllocationEnabledResponse, err error)
 }
 
@@ -1145,6 +1197,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) GetIntranetAddressPool(ctx contex
 	opts = append(opts, http.Operation(OperationPlatformNetworkServiceGetIntranetAddressPool))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PlatformNetworkServiceHTTPClientImpl) GetIntranetPoolDefaults(ctx context.Context, in *v1.GetIntranetPoolDefaultsRequest, opts ...http.CallOption) (*v1.GetIntranetPoolDefaultsResponse, error) {
+	var out v1.GetIntranetPoolDefaultsResponse
+	pattern := "/api/v1/admin/networks/intranet-address-pool-defaults"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceGetIntranetPoolDefaults))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1379,6 +1444,19 @@ func (c *PlatformNetworkServiceHTTPClientImpl) SetIntranetPoolAllocationEnabled(
 	opts = append(opts, http.Operation(OperationPlatformNetworkServiceSetIntranetPoolAllocationEnabled))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "PATCH", path, in, &out.Resource, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *PlatformNetworkServiceHTTPClientImpl) SetIntranetPoolAutoAllocationEnabled(ctx context.Context, in *v1.SetIntranetPoolAutoAllocationEnabledRequest, opts ...http.CallOption) (*v1.SetIntranetPoolAutoAllocationEnabledResponse, error) {
+	var out v1.SetIntranetPoolAutoAllocationEnabledResponse
+	pattern := "/api/v1/admin/networks/intranet-address-pools/{pool_id}/auto-allocation"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationPlatformNetworkServiceSetIntranetPoolAutoAllocationEnabled))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out.Resource, opts...)
 	if err != nil {
 		return nil, err
 	}

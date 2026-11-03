@@ -9,12 +9,20 @@ import (
 
 	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/stretchr/testify/require"
+	adminV1 "go-wind-admin/api/gen/go/admin/service/v1"
 	auditV1 "go-wind-admin/api/gen/go/audit/service/v1"
 	"go-wind-admin/pkg/middleware/auth"
 )
 
 func TestNetworkAuditRedactsRawRequestForEveryTenantOperation(t *testing.T) {
-	require.Len(t, auth.NetworkOperations, 25)
+	contract := adminV1.File_admin_service_v1_i_network_proto.Services().ByName("NetworkService")
+	require.NotNil(t, contract)
+	methods := contract.Methods()
+	require.Len(t, auth.NetworkOperations, methods.Len())
+	for index := 0; index < methods.Len(); index++ {
+		operation := "/" + string(contract.FullName()) + "/" + string(methods.Get(index).Name())
+		require.Contains(t, auth.NetworkOperations, operation, "every released Network RPC must retain audit redaction")
+	}
 	for operation, policy := range auth.NetworkOperations {
 		t.Run(operation, func(t *testing.T) {
 			var record *auditV1.ApiAuditLog

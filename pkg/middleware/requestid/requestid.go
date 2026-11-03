@@ -136,7 +136,7 @@ func Server() middleware.Middleware {
 
 			reply, err := handler(ctx, req)
 			if err != nil {
-				attachToError(err, requestID)
+				err = attachToError(err, requestID)
 			}
 			return reply, err
 		}
@@ -145,22 +145,16 @@ func Server() middleware.Middleware {
 
 // attachToError 把 request id 挂到 Kratos 错误的 metadata 上。
 //
-// 只挂 metadata、不替换错误本身，因此不改变 HTTP 状态码、reason 与 message，
-// 前端按现有错误体形状做的切面无需调整。错误已自带同键 metadata 时不覆盖
-// （读取 nil map 在 Go 中是安全的，无需先判空）。
-func attachToError(err error, requestID string) {
+// 每次复制错误，避免修改认证中间件复用的包级错误和并发请求的 metadata。
+func attachToError(err error, requestID string) error {
 	if err == nil || requestID == "" {
-		return
+		return err
 	}
 	se := errors.FromError(err)
 	if se == nil {
-		return
+		return err
 	}
-	if _, exists := se.Metadata[MetadataKey]; exists {
-		return
-	}
-	if se.Metadata == nil {
-		se.Metadata = make(map[string]string, 1)
-	}
-	se.Metadata[MetadataKey] = requestID
+	copy := errors.Clone(se).WithCause(err)
+	copy.Metadata[MetadataKey] = requestID
+	return copy
 }

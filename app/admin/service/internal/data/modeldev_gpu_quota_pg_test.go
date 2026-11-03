@@ -33,6 +33,7 @@ func modelDevQuotaFrozenFixture(t *testing.T, scope ModelDevAdmissionScope, gpu 
 	_, hash, err := cpup01.CanonicalIntent(intent)
 	require.NoError(t, err)
 	s.IdentityRef.TenantID, s.IdentityRef.Actor, s.IdentityRef.IntentHash = scope.ResourceTenantID, scope.Actor, hash
+	bindModelDevFixtureScope(t, &s)
 	accepted := time.Now().UTC().Truncate(time.Microsecond)
 	s.Timing.AcceptedAt, s.Timing.ExecutionDeadlineAt = accepted, accepted.Add(time.Duration(s.Timing.ExecutionTimeoutSeconds)*time.Second)
 	s.DeadlineAt = s.Timing.ExecutionDeadlineAt

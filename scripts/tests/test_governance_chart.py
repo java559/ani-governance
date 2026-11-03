@@ -99,7 +99,7 @@ class GovernanceChartTests(unittest.TestCase):
         cls.helm = os.environ["ANI_CHART_HELM"]
         subprocess.run([cls.helm, "version", "--short"], check=True, capture_output=True)
 
-    def render(self, *, chart=CHART, present=None, upgrade=False, values=()):
+    def render(self, *, chart=CHART, present=None, upgrade=False, values=(), files=()):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             # This explicit fixture kubeconfig also protects client-only
@@ -113,6 +113,8 @@ class GovernanceChartTests(unittest.TestCase):
                     args.append("--dry-run=server")
                 if upgrade:
                     args.append("--is-upgrade")
+                for file in files:
+                    args.extend(["-f", str(file)])
                 for value in values:
                     args.extend(["--set", value])
                 completed = subprocess.run(args, capture_output=True, text=True, timeout=30)
@@ -132,7 +134,8 @@ class GovernanceChartTests(unittest.TestCase):
     def assert_rbac(self, rendered, config):
         resources = {kind: text for (kind, _), text in rendered.items() if kind in RBAC_KINDS}
         self.assertEqual(set(resources), {"ClusterRole", "ClusterRoleBinding"} | ({"Role", "RoleBinding"} if config else set()))
-        self.assertEqual(resources["ClusterRole"].split("\nrules:\n", 1)[1], '  - apiGroups: ["scheduling.k8s.io"]\n    resources: ["priorityclasses"]\n    verbs: ["get"]\n  - apiGroups: ["scheduling.volcano.sh"]\n    resources: ["podgroups"]\n    verbs: ["get"]')
+        cluster_rules = re.sub(r"(?m)^  #.*\n", "", resources["ClusterRole"].split("\nrules:\n", 1)[1])
+        self.assertEqual(cluster_rules, '  - apiGroups: ["scheduling.k8s.io"]\n    resources: ["priorityclasses"]\n    verbs: ["get"]\n  - apiGroups: ["scheduling.volcano.sh"]\n    resources: ["podgroups"]\n    verbs: ["get"]\n  - apiGroups: ["apps"]\n    resources: ["deployments", "statefulsets", "daemonsets"]\n    verbs: ["list"]')
         if config:
             self.assertIn("\n  namespace: volcano-system\n", resources["Role"])
             self.assertEqual(resources["Role"].split("\nrules:\n", 1)[1], '  - apiGroups: [""]\n    resources: ["configmaps"]\n    resourceNames: ["ani-volcano-scheduler-configmap"]\n    verbs: ["get", "update"]')
@@ -175,6 +178,48 @@ class GovernanceChartTests(unittest.TestCase):
         for job in jobs:
             self.assertIn("automountServiceAccountToken: false", job)
             self.assertNotIn("/service-identity/inference", job)
+
+    def test_resource_client_requires_endpoint_cluster_and_ca(self):
+        with self.assertRaisesRegex(AssertionError, "downstream.resource.address is required"):
+            self.render(values=("downstream.resource.enabled=true",))
+        with self.assertRaisesRegex(AssertionError, "downstream.resource.clusterID is required"):
+            self.render(values=("downstream.resource.enabled=true", "downstream.resource.address=resource.fixture:19090"))
+        with self.assertRaisesRegex(AssertionError, "downstream.resource.caSecret is required"):
+            self.render(values=("downstream.resource.enabled=true", "downstream.resource.address=resource.fixture:19090", "downstream.resource.clusterID=cluster-one"))
+        rendered = self.render(values=("downstream.resource.enabled=true", "downstream.resource.address=resource.fixture:19090", "downstream.resource.clusterID=cluster-one", "downstream.resource.caSecret=resource-ca"))
+        deployment = next(text for (kind, _), text in rendered.items() if kind == "Deployment")
+        for expected in ("name: ANI_INSTANCE_ADDR", 'value: "resource.fixture:19090"',
+                         "name: ANI_INSTANCE_CLUSTER_ID", 'value: "cluster-one"',
+                         "mountPath: /service-identity/resource", "name: resource-ca",
+                         "name: governance-client-tls"):
+            self.assertIn(expected, deployment)
+        for (kind, _), job in rendered.items():
+            if kind == "Job":
+                self.assertNotIn("/service-identity/resource", job)
+
+    def test_offline_example_uses_external_model_identity_and_separate_db_credentials(self):
+        rendered = self.render(files=(CHART / "values-offline.example.yaml",))
+        deployment = next(text for (kind, _), text in rendered.items() if kind == "Deployment")
+        service = next(text for (kind, _), text in rendered.items() if kind == "Service")
+        self.assertIn("type: ClusterIP", service)
+        self.assertNotIn("nodePort:", service)
+        self.assertIn('value: "ani-model-grpc.ani-system.svc.cluster.local:19090"', deployment)
+        self.assertIn('value: "ani-model.ani.internal"', deployment)
+        self.assertIn("name: governance-client-tls", deployment)
+        self.assertIn("name: ani-model-server-tls", deployment)
+        self.assertNotIn("ani-governance-migration", deployment)
+        self.assertFalse(any(kind == "Certificate" for kind, _ in rendered))
+        config = next(text for (kind, _), text in rendered.items() if kind == "ConfigMap")
+        self.assertIn("migrate: false", config)
+        self.assertIn('"valkey.ani-platform.svc.cluster.local:6379"', config)
+        secret_template = (CHART / "secrets.example.yaml").read_text()
+        self.assertIn("redis://:REPLACE_WITH_URLENCODED_VALKEY_PASSWORD@valkey.ani-platform.svc.cluster.local:6379/1", secret_template)
+        self.assertNotIn("ani-governance-redis", secret_template)
+        jobs = [text for (kind, _), text in rendered.items() if kind == "Job"]
+        self.assertEqual(len(jobs), 2)
+        for job in jobs:
+            self.assertIn("name: ani-governance-migration", job)
+            self.assertIn("automountServiceAccountToken: false", job)
 
     def test_fixed_main_render_diff_contains_only_expected_changes(self):
         baseline = os.environ.get("ANI_CHART_BASELINE")

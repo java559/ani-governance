@@ -39,6 +39,8 @@ func sandboxHTTPError(err error) error {
 		code, reason = 404, "SANDBOX_NOT_FOUND"
 	case codes.AlreadyExists, codes.Aborted, codes.FailedPrecondition:
 		code, reason = 409, "SANDBOX_CONFLICT"
+	case codes.ResourceExhausted:
+		code, reason = 413, "SANDBOX_FILE_TOO_LARGE"
 	case codes.Unimplemented:
 		code, reason = 501, "SANDBOX_UNSUPPORTED"
 	case codes.Canceled:
@@ -66,21 +68,48 @@ func decodeSandboxQuery(r *nethttp.Request, message proto.Message) error {
 	if err != nil {
 		return invalid
 	}
-	target, list := message.(*view.ListSandboxesRequest)
-	for field, values := range values {
-		if !list || field != "page" && field != "pageSize" || len(values) != 1 {
+	for field, entries := range values {
+		if len(entries) != 1 {
 			return invalid
 		}
-		value := values[0]
-		n, err := strconv.ParseUint(value, 10, 32)
-		if err != nil || n == 0 || strconv.FormatUint(n, 10) != value || field == "pageSize" && n > 100 {
+		value := entries[0]
+		switch target := message.(type) {
+		case *view.ListSandboxesRequest:
+			if field != "page" && field != "pageSize" {
+				return invalid
+			}
+			n, err := strconv.ParseUint(value, 10, 32)
+			if err != nil || n == 0 || strconv.FormatUint(n, 10) != value || field == "pageSize" && n > 100 {
+				return invalid
+			}
+			number := uint32(n)
+			if field == "page" {
+				target.Page = &number
+			} else {
+				target.PageSize = &number
+			}
+		case *view.ListSandboxFilesRequest:
+			switch field {
+			case "path":
+				target.Path = value
+			case "cursor":
+				target.Cursor = value
+			case "limit":
+				n, err := strconv.ParseUint(value, 10, 32)
+				if err != nil || n == 0 || n > 500 || strconv.FormatUint(n, 10) != value {
+					return invalid
+				}
+				target.Limit = uint32(n)
+			default:
+				return invalid
+			}
+		case *view.ReadSandboxFileRequest:
+			if field != "path" {
+				return invalid
+			}
+			target.Path = value
+		default:
 			return invalid
-		}
-		number := uint32(n)
-		if field == "page" {
-			target.Page = &number
-		} else {
-			target.PageSize = &number
 		}
 	}
 	return nil
@@ -106,6 +135,30 @@ func bindSandboxPath(request, bound proto.Message) error {
 		return bind(in.Data, bound.(*view.ResumeSandboxRequest).Data)
 	case *view.DeleteSandboxRequest:
 		return bind(in.Data, bound.(*view.DeleteSandboxRequest).Data)
+	case *view.CreateSandboxTokenRequest:
+		path := bound.(*view.CreateSandboxTokenRequest).Data
+		if in.Data == nil || path == nil || in.Data.SandboxId != "" && in.Data.SandboxId != path.SandboxId {
+			return invalid
+		}
+		in.Data.SandboxId = path.SandboxId
+	case *view.WriteSandboxFileRequest:
+		path := bound.(*view.WriteSandboxFileRequest).Data
+		if in.Data == nil || path == nil || in.Data.SandboxId != "" && in.Data.SandboxId != path.SandboxId {
+			return invalid
+		}
+		in.Data.SandboxId = path.SandboxId
+	case *view.DeleteSandboxFileRequest:
+		path := bound.(*view.DeleteSandboxFileRequest).Data
+		if in.Data == nil || path == nil || in.Data.SandboxId != "" && in.Data.SandboxId != path.SandboxId {
+			return invalid
+		}
+		in.Data.SandboxId = path.SandboxId
+	case *view.RunSandboxCodeRequest:
+		path := bound.(*view.RunSandboxCodeRequest).Data
+		if in.Data == nil || path == nil || in.Data.SandboxId != "" && in.Data.SandboxId != path.SandboxId {
+			return invalid
+		}
+		in.Data.SandboxId = path.SandboxId
 	default:
 		proto.Merge(request, bound)
 	}
@@ -142,27 +195,75 @@ func RegisterSandboxHTTPServer(server *http.Server, s admin.SandboxServiceHTTPSe
 		{"DELETE", data.SandboxDeletePath, admin.OperationSandboxServiceDeleteSandbox, func() proto.Message { return new(view.DeleteSandboxRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
 			return s.DeleteSandbox(c, r.(*view.DeleteSandboxRequest))
 		}},
+		{"POST", data.SandboxTokenCreatePath, admin.OperationSandboxServiceCreateSandboxToken, func() proto.Message { return new(view.CreateSandboxTokenRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.CreateSandboxToken(c, r.(*view.CreateSandboxTokenRequest))
+		}},
+		{"DELETE", data.SandboxTokenRevokePath, admin.OperationSandboxServiceRevokeSandboxToken, func() proto.Message { return new(view.RevokeSandboxTokenRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.RevokeSandboxToken(c, r.(*view.RevokeSandboxTokenRequest))
+		}},
+		{"GET", data.SandboxFilesListPath, admin.OperationSandboxServiceListSandboxFiles, func() proto.Message { return new(view.ListSandboxFilesRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.ListSandboxFiles(c, r.(*view.ListSandboxFilesRequest))
+		}},
+		{"GET", data.SandboxFilesContentPath, admin.OperationSandboxServiceReadSandboxFile, func() proto.Message { return new(view.ReadSandboxFileRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.ReadSandboxFile(c, r.(*view.ReadSandboxFileRequest))
+		}},
+		{"POST", data.SandboxFilesMutatePath, admin.OperationSandboxServiceWriteSandboxFile, func() proto.Message { return new(view.WriteSandboxFileRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.WriteSandboxFile(c, r.(*view.WriteSandboxFileRequest))
+		}},
+		{"DELETE", data.SandboxFilesMutatePath, admin.OperationSandboxServiceDeleteSandboxFile, func() proto.Message { return new(view.DeleteSandboxFileRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.DeleteSandboxFile(c, r.(*view.DeleteSandboxFileRequest))
+		}},
+		{"GET", data.SandboxFilesOperationPath, admin.OperationSandboxServiceGetSandboxFileOperation, func() proto.Message { return new(view.GetSandboxFileOperationRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.GetSandboxFileOperation(c, r.(*view.GetSandboxFileOperationRequest))
+		}},
+		{"POST", data.SandboxCodeRunPath, admin.OperationSandboxServiceRunSandboxCode, func() proto.Message { return new(view.RunSandboxCodeRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.RunSandboxCode(c, r.(*view.RunSandboxCodeRequest))
+		}},
+		{"GET", data.SandboxCodeRunGetPath, admin.OperationSandboxServiceGetSandboxCodeRun, func() proto.Message { return new(view.GetSandboxCodeRunRequest) }, func(c context.Context, r proto.Message) (proto.Message, error) {
+			return s.GetSandboxCodeRun(c, r.(*view.GetSandboxCodeRunRequest))
+		}},
 	}
 	for _, route := range routes {
 		r := route
 		handler := func(ctx http.Context) error {
 			http.SetOperation(ctx, r.operation)
 			request := r.request()
-			if r.method == "GET" {
-				if err := decodeSandboxQuery(ctx.Request(), request); err != nil {
+			bindRequest := func() error {
+				if r.method == "GET" || r.operation == admin.OperationSandboxServiceRevokeSandboxToken {
+					if err := decodeSandboxQuery(ctx.Request(), request); err != nil {
+						return err
+					}
+				} else {
+					limit := int64(65536)
+					if r.operation == admin.OperationSandboxServiceRunSandboxCode || r.operation == admin.OperationSandboxServiceWriteSandboxFile {
+						limit = 7 << 20
+					}
+					if err := decodeStrictJSONHTTPWithLimit(ctx.Request(), request, limit); err != nil {
+						return kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "invalid sandbox request")
+					}
+				}
+				bound := r.request()
+				if err := ctx.BindVars(bound); err != nil {
+					return kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "invalid sandbox path")
+				}
+				return bindSandboxPath(request, bound)
+			}
+			// Code-run accepts a larger body. Authenticate via middleware before
+			// reading it; other Sandbox routes retain their existing ordering.
+			codeRun := r.operation == admin.OperationSandboxServiceRunSandboxCode || r.operation == admin.OperationSandboxServiceWriteSandboxFile
+			if !codeRun {
+				if err := bindRequest(); err != nil {
 					return err
 				}
-			} else if err := decodeStrictJSONHTTP(ctx.Request(), request); err != nil {
-				return kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "invalid sandbox request")
 			}
-			bound := r.request()
-			if err := ctx.BindVars(bound); err != nil {
-				return kratoserrors.BadRequest("INVALID_SANDBOX_REQUEST", "invalid sandbox path")
-			}
-			if err := bindSandboxPath(request, bound); err != nil {
-				return err
-			}
-			result, err := ctx.Middleware(func(c context.Context, in any) (any, error) { return r.invoke(c, in.(proto.Message)) })(ctx, request)
+			result, err := ctx.Middleware(func(c context.Context, in any) (any, error) {
+				if codeRun {
+					if err := bindRequest(); err != nil {
+						return nil, err
+					}
+				}
+				return r.invoke(c, in.(proto.Message))
+			})(ctx, request)
 			if err != nil {
 				return sandboxHTTPError(err)
 			}

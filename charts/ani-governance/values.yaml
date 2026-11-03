@@ -131,6 +131,15 @@ bootstrap:
 # API 增量同步按 docs/deployment.md 显式预览、执行，不随升级自动授权。
 
 downstream:
+  resource:
+    # Shared Resource/Compute listener. Its registered TLS server identity is
+    # the literal DNS SAN ani-network-service; the Gov client SAN is ani-governance.
+    enabled: false
+    address: ""
+    clusterID: ""
+    caSecret: ""
+    caKey: ca.crt
+    clientCertificateSecret: governance-client-tls
   inference:
     # Optional management diagnostics. Never expose Prometheus to the browser.
     prometheusURL: ""

@@ -3107,6 +3107,12 @@ CREATE TABLE "sys_tenants" (
   "deleted_by" bigint NULL,
   "remark" character varying NULL,
   "resource_tenant_id" character varying NOT NULL,
+  "tenant_space_state" character varying NOT NULL DEFAULT 'LEGACY',
+  "tenant_space_operation_id" character varying NULL,
+  "tenant_space_lease_generation" bigint NOT NULL DEFAULT 0,
+  "tenant_space_lease_owner" character varying NULL,
+  "tenant_space_lease_until" timestamptz NULL,
+  "tenant_space_next_attempt_at" timestamptz NULL,
   "name" character varying NULL,
   "code" character varying NULL,
   "logo_url" character varying NULL,
@@ -3126,6 +3132,8 @@ CREATE TABLE "sys_tenants" (
 );
 -- Create index "sys_tenants_resource_tenant_id_key" to table: "sys_tenants"
 CREATE UNIQUE INDEX "sys_tenants_resource_tenant_id_key" ON "sys_tenants" ("resource_tenant_id");
+-- Create index "sys_tenants_tenant_space_operation_id_key" to table: "sys_tenants"
+CREATE UNIQUE INDEX "sys_tenants_tenant_space_operation_id_key" ON "sys_tenants" ("tenant_space_operation_id");
 -- Create index "sys_tenants_code_key" to table: "sys_tenants"
 CREATE UNIQUE INDEX "sys_tenants_code_key" ON "sys_tenants" ("code");
 -- Create index "uix_sys_tenants_id_resource_tenant" to table: "sys_tenants"
@@ -3211,7 +3219,6 @@ CREATE TABLE "sys_quota_operations" (
   "action" character varying NOT NULL,
   "idempotency_key" character varying NOT NULL,
   "request_hash" character varying NOT NULL,
-  "instance_contract_version" bigint NOT NULL DEFAULT 1,
   "canonical_request" text NOT NULL,
   "dispatch_state" character varying NOT NULL DEFAULT 'QUEUED',
   "attempt_count" bigint NOT NULL DEFAULT 0,
@@ -3225,7 +3232,6 @@ CREATE TABLE "sys_quota_operations" (
   PRIMARY KEY ("id"),
   CONSTRAINT "sys_quota_operations_tenant_resource_mapping_fkey" FOREIGN KEY ("tenant_id", "resource_tenant_id") REFERENCES "sys_tenants" ("id", "resource_tenant_id") ON DELETE RESTRICT,
   CONSTRAINT "sys_quota_operations_tenant_fkey" FOREIGN KEY ("tenant_id") REFERENCES "sys_tenants" ("id") ON DELETE RESTRICT,
-  CONSTRAINT "sys_quota_operations_instance_contract_version_ck" CHECK (instance_contract_version IN (1, 2)),
   CONSTRAINT "sys_quota_operations_tenant_positive_ck" CHECK (tenant_id > 0)
 );
 -- Create index "sys_quota_operations_operation_id_key" to table: "sys_quota_operations"

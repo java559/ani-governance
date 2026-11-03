@@ -39,7 +39,7 @@ type NetworkTenantClient interface {
 	GetOperation(context.Context, string, string, string) (*networkv1.GetOperationResponse, error)
 	GetEIP(context.Context, string, string, string) (*networkv1.GetEIPResponse, error)
 	ListEIPs(context.Context, string, string, string, string, int32, string) (*networkv1.ListEIPsResponse, error)
-	CreateEIP(context.Context, string, string, string, string, string) (*networkv1.CreateEIPResponse, error)
+	CreateEIP(context.Context, string, string, string, string, string, []string) (*networkv1.CreateEIPResponse, error)
 	DeleteEIP(context.Context, string, string, string) (*networkv1.DeleteEIPResponse, error)
 	GetVPCSnat(context.Context, string, string, string) (*networkv1.GetVPCSnatResponse, error)
 	BindVPCSnat(context.Context, string, string, string, string, string) (*networkv1.BindVPCSnatResponse, error)
@@ -137,10 +137,21 @@ func actorOf(ctx context.Context) (string, error) {
 }
 
 func wireVPC(v *networkv1.VPC) *catalogv1.VPC {
-	return &catalogv1.VPC{Id: v.Id, Name: v.Name, Description: v.Description, Cidr: v.Cidr,
+	out := &catalogv1.VPC{Id: v.Id, Name: v.Name, Description: v.Description, Cidr: v.Cidr,
 		State: strings.ToLower(strings.TrimPrefix(v.State.String(), "RESOURCE_STATE_")), Reason: v.Reason,
 		CreatedAt: v.CreatedAt, UpdatedAt: v.UpdatedAt, Version: v.Version, ObservedAt: v.ObservedAt,
 		ObservationStale: v.ObservationStale, LastOperationId: v.LastOperationId, SubnetCount: v.SubnetCount}
+	if base := v.BaseConnectivity; base != nil {
+		out.BaseConnectivity = &catalogv1.VPCBaseConnectivity{State: base.State, Reason: base.Reason,
+			ObservedAt: base.ObservedAt, ObservationStale: base.ObservationStale, ReasonMessage: base.ReasonMessage}
+	}
+	if e := v.PublicEgress; e != nil {
+		out.PublicEgress = &catalogv1.VPCPublicEgress{BindingId: e.BindingId, EipId: e.EipId, EipAddress: e.EipAddress,
+			BindingState: e.BindingState, State: strings.ToLower(strings.TrimPrefix(e.State.String(), "RESOURCE_STATE_")),
+			Reason: e.Reason, ReasonMessage: e.ReasonMessage, DesiredEnabled: e.DesiredEnabled, AppliedEnabled: e.AppliedEnabled,
+			ObservedAt: e.ObservedAt, ObservationStale: e.ObservationStale, Version: e.Version, LastOperationId: e.LastOperationId}
+	}
+	return out
 }
 
 func wireEIP(v *networkv1.EIP) *catalogv1.EIP {
@@ -150,7 +161,7 @@ func wireEIP(v *networkv1.EIP) *catalogv1.EIP {
 		ObservationStale: v.ObservationStale, LastOperationId: v.LastOperationId, Address: v.Address,
 		BindingId: v.BindingId, BindingState: v.BindingState, Scope: v.Scope, ManagedBy: v.ManagedBy}
 	if v.BindingTarget != nil {
-		r.BindingTarget = &catalogv1.EIPBindingTarget{Kind: v.BindingTarget.Kind, Id: v.BindingTarget.Id, State: v.BindingTarget.State}
+		r.BindingTarget = &catalogv1.EIPBindingTarget{Kind: v.BindingTarget.Kind, Id: v.BindingTarget.Id, State: v.BindingTarget.State, VpcId: v.BindingTarget.VpcId}
 	}
 	return r
 }
@@ -318,6 +329,9 @@ func (s *NetworkService) ListEIPs(ctx context.Context, req *catalogv1.ListEIPsRe
 }
 
 func (s *NetworkService) CreateEIP(ctx context.Context, req *catalogv1.CreateEIPRequest) (*catalogv1.CreateEIPResponse, error) {
+	if req == nil {
+		return nil, errors.BadRequest("INVALID_NETWORK_REQUEST", "request required")
+	}
 	_, tenant, err := trustedOperator(ctx, s)
 	if err != nil {
 		return nil, err
@@ -326,7 +340,7 @@ func (s *NetworkService) CreateEIP(ctx context.Context, req *catalogv1.CreateEIP
 	if err != nil {
 		return nil, err
 	}
-	reply, err := s.client.CreateEIP(ctx, tenant, actor, req.GetName(), req.GetDescription(), req.GetIdempotencyKey())
+	reply, err := s.client.CreateEIP(ctx, tenant, actor, req.GetName(), req.GetDescription(), req.GetIdempotencyKey(), append([]string(nil), req.GetSecurityGroupIds()...))
 	if err != nil {
 		return nil, mapNetworkError(err)
 	}

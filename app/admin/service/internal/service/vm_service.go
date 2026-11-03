@@ -13,6 +13,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
+	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -107,13 +108,35 @@ func vmSummary(spec *vm.CreateSpec, out *view.VirtualMachine) {
 	}
 	if spec.Compute != nil {
 		out.PresetId = spec.Compute.PresetId
+		out.PresetName = spec.Compute.Name
 		out.CpuMillis = spec.Compute.CpuMillis
 		out.MemoryMib = spec.Compute.MemoryMib
 	}
 	if spec.Dns != nil {
 		out.Dns = &view.VMFrozenDNS{Mode: spec.Dns.Mode, Nameservers: append([]string(nil), spec.Dns.Nameservers...)}
 	}
+	out.Hardware = &view.VMHardware{Sockets: spec.Sockets, Cores: spec.Cores, Threads: spec.Threads}
+	if spec.Media != nil {
+		m := spec.Media
+		out.SourceMedia = &view.VMMedia{MediaKey: m.MediaKey, Name: m.Name, Kind: m.Kind, OsFamily: m.OsFamily, OsVersion: m.OsVersion, Architecture: m.Architecture, Firmware: m.Firmware, RootBus: m.RootBus, DataBus: m.DataBus, NicModel: m.NicModel, PersistentTpm: m.PersistentTpm, PersistentUefi: m.PersistentUefi, DriverMediaKey: m.DriverMediaKey, VirtualCapacityBytes: m.VirtualCapacityBytes, InitializationCapability: m.InitializationCapability, InitializationVerified: m.InitializationVerified}
+		out.Hardware.Architecture, out.Hardware.Firmware = m.Architecture, m.Firmware
+		out.Hardware.RootBus, out.Hardware.DataBus, out.Hardware.NicModel = m.RootBus, m.DataBus, m.NicModel
+		out.Hardware.PersistentTpm, out.Hardware.PersistentUefi = m.PersistentTpm, m.PersistentUefi
+	}
+	if out.Relations == nil && spec.Network != nil {
+		out.Relations = &view.VMRelations{Vpc: &view.ResourceReference{Id: spec.Network.VpcId, State: "NOT_QUERIED"}, Subnet: &view.ResourceReference{Id: spec.Network.SubnetId, State: "NOT_QUERIED"}}
+		for _, id := range out.SecurityGroupIds {
+			out.Relations.SecurityGroups = append(out.Relations.SecurityGroups, &view.ResourceReference{Id: id, State: "NOT_QUERIED"})
+		}
+	}
 	if spec.Intent != nil {
+		out.Initialization = &view.VMInitialization{Method: "NONE"}
+		if init := spec.Intent.GuestInitialization; init != nil {
+			out.Initialization = &view.VMInitialization{Method: init.Method, Username: init.Username}
+			if key, _, _, _, err := ssh.ParseAuthorizedKey([]byte(init.SshPublicKey)); err == nil {
+				out.Initialization.SshKeyFingerprint = ssh.FingerprintSHA256(key)
+			}
+		}
 		out.SystemDiskSizeGb = spec.Intent.SystemDiskSizeGb
 		out.SourceKind = spec.Intent.SourceKind
 		out.MediaKey = spec.Intent.MediaKey
@@ -124,7 +147,7 @@ func (s *VMService) CreateVM(ctx context.Context, r *view.CreateVMRequest) (*vie
 		return nil, vmInvalid()
 	}
 	d := r.Data
-	intent := &vm.CreateVMData{Name: d.Name, PresetId: d.PresetId, SourceKind: d.SourceKind, MediaKey: d.MediaKey, SystemDiskSizeGb: d.SystemDiskSizeGb, StartAfterCreate: d.StartAfterCreate}
+	intent := &vm.CreateVMData{Name: d.Name, PresetId: d.PresetId, SourceKind: d.SourceKind, MediaKey: d.MediaKey, SystemDiskSizeGb: d.SystemDiskSizeGb, StartAfterCreate: d.StartAfterCreate, SecurityGroupIds: append([]string(nil), d.SecurityGroupIds...)}
 	if d.Dns != nil {
 		var err error
 		intent.Dns, err = vm.NormalizeDNSSelection(&vm.DNSSelection{Mode: d.Dns.Mode, Nameservers: d.Dns.Nameservers})
@@ -217,7 +240,7 @@ func (s *VMService) GetVM(ctx context.Context, r *view.GetVMRequest) (*view.Virt
 		if original.LastErrorCode != nil {
 			reason = *original.LastErrorCode
 		}
-		out := &view.VirtualMachine{Id: r.VmId, Name: spec.Intent.Name, OsFamily: spec.Media.OsFamily, OsVersion: spec.Media.OsVersion, ObservedState: "unknown", DesiredState: "pending", Reason: reason, LastOperationId: original.OperationID, Closing: deleting}
+		out := &view.VirtualMachine{Id: r.VmId, Name: spec.Intent.Name, OsFamily: spec.Media.OsFamily, OsVersion: spec.Media.OsVersion, ObservedState: "unknown", DesiredState: "pending", SecurityGroupIds: append([]string(nil), spec.SecurityGroupIds...), Reason: reason, LastOperationId: original.OperationID, Closing: deleting}
 		if original.DispatchState == quotaoperation.DispatchStateCanceledUnsent {
 			out.DesiredState = "deleted"
 			out.ObservedState = "canceled"
@@ -335,6 +358,9 @@ func validVMChange(d *view.ChangeVMData, action string) bool {
 	if d == nil || !canonicalCatalogUUID(d.VmId) || !canonicalCatalogUUID(d.IdempotencyKey) || d.ExpectedVersion < 1 {
 		return false
 	}
+	if len(d.SecurityGroupIds) != 0 && action != "set-security-groups" {
+		return false
+	}
 	if d.DestructiveConfirmation && action != "force-stop" && action != "restore-snapshot" {
 		return false
 	}
@@ -370,6 +396,8 @@ func validVMChange(d *view.ChangeVMData, action string) bool {
 func vmChangeIntent(tenant, action string, d *view.ChangeVMData) proto.Message {
 	base := &vm.ChangeVMRequest{TenantId: tenant, VmId: d.VmId, IdempotencyKey: d.IdempotencyKey, ExpectedVersion: d.ExpectedVersion}
 	switch action {
+	case "set-security-groups":
+		return &vm.SetSecurityGroupsRequest{TenantId: tenant, VmId: d.VmId, IdempotencyKey: d.IdempotencyKey, ExpectedVersion: d.ExpectedVersion, SecurityGroupIds: append([]string(nil), d.SecurityGroupIds...)}
 	case "start", "stop", "restart":
 		return base
 	case "force-stop":
@@ -430,6 +458,9 @@ func (s *VMService) change(ctx context.Context, r *view.ChangeVMRequest, action 
 	out := new(view.VMOperation)
 	err = vmWire(result, out)
 	return out, err
+}
+func (s *VMService) SetVMSecurityGroups(c context.Context, r *view.ChangeVMRequest) (*view.VMOperation, error) {
+	return s.change(c, r, "set-security-groups")
 }
 func (s *VMService) StartVM(c context.Context, r *view.ChangeVMRequest) (*view.VMOperation, error) {
 	return s.change(c, r, "start")

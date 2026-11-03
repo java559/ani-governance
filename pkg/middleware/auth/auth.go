@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"github.com/go-kratos/kratos/v2/errors"
+	"strings"
 	"time"
 
 	"github.com/go-kratos/kratos/v2/middleware"
@@ -67,6 +68,39 @@ func Server(opts ...Option) middleware.Middleware {
 			} else {
 				if isHTTP && len(htr.Request().Header.Values("Authorization")) != 1 {
 					return nil, ErrMissingBearerToken
+				}
+				if isHTTP {
+					fields := strings.Fields(htr.Request().Header.Get("Authorization"))
+					if len(fields) == 2 && strings.EqualFold(fields[0], "Bearer") && strings.HasPrefix(fields[1], SandboxTokenPrefix) {
+						if len(fields[1]) > 4096 {
+							return nil, errors.Unauthorized("SANDBOX_TOKEN_INVALID", "invalid sandbox token")
+						}
+						sandboxID, scope, routeErr := sandboxTokenRoute(htr.Request(), tr.Operation())
+						if routeErr != nil {
+							return nil, routeErr
+						}
+						if op.sandboxTokenVerifier == nil || op.tenantAccessChecker == nil {
+							return nil, errors.ServiceUnavailable("SANDBOX_TOKEN_UNAVAILABLE", "sandbox token validation unavailable")
+						}
+						subject, verifyErr := op.sandboxTokenVerifier.VerifySandboxToken(ctx, fields[1], sandboxID, scope)
+						if verifyErr != nil {
+							return nil, verifyErr
+						}
+						if !SandboxTokenMatches(subject, sandboxID, scope) {
+							return nil, errors.Unauthorized("SANDBOX_TOKEN_INVALID", "invalid sandbox token")
+						}
+						ctx = NewPrincipalContext(ctx, subject)
+						// Tenant-only viewer: it carries no user identity or roles.
+						// The handler separately checks the issuer's current grant.
+						if op.injectEnt {
+							ctx = viewer.WithContext(ctx, appViewer.NewUserViewer(0, uint64(subject.TenantID), 0, "", nil))
+						}
+						if err = op.tenantAccessChecker.CheckTenantAccess(ctx, subject.TenantID, htr.PathTemplate(), htr.Request().Method); err != nil {
+							return nil, err
+						}
+						op.log.Infof(ctx, "sandbox token validated tenant=%d sandbox=%s token_id=%s issuer=%d scope=%s", subject.TenantID, subject.SandboxID, subject.SandboxTokenID, subject.IssuerID, scope)
+						return handler(ctx, req)
+					}
 				}
 				token, tokenErr := authnEngine.AuthFromMD(ctx, authnEngine.BearerWord, authnEngine.ContextTypeKratosMetaData)
 				if tokenErr != nil {

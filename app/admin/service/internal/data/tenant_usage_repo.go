@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	kratosErrors "github.com/go-kratos/kratos/v2/errors"
+
 	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
 	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 
@@ -155,6 +157,17 @@ func (r *TenantUsageRepo) CleanupTenantData(ctx context.Context, tenantId uint32
 	if err != nil {
 		r.log.Errorf(ctx, "cleanup tenant %d: start tx failed: %s", tenantId, err.Error())
 		return adminV1.ErrorInternalServerError("start transaction failed")
+	}
+	_, closed, err := beginTenantSpaceClose(sysCtx, tx, tenantId, supportsRowLock(r.entClient))
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if !closed {
+		if err = tx.Commit(); err != nil {
+			return adminV1.ErrorInternalServerError("tenant space close failed")
+		}
+		return kratosErrors.Conflict("TENANT_SPACE_CLOSING", "租户空间正在关闭，请先清理 Sandbox 后重试")
 	}
 
 	// 收集租户用户 ID 列表，用于事务提交后吊销令牌。

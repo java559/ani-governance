@@ -298,7 +298,7 @@ func instancePublicHTTPJoint(t *testing.T, newCommands bool) {
 	require.NoError(t, e)
 	t.Cleanup(closeOwner)
 	// This suite covers the current frozen instance admission contract.
-	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "true")
+	t.Setenv("ANI_INSTANCE_CONFIG_V2_WRITES", "")
 	t.Setenv("ANI_INSTANCE_NEW_INTENTS_ENABLED", "true")
 	t.Setenv("ANI_INSTANCE_RESTART_ENABLED", "true")
 	t.Setenv("ANI_INSTANCE_PVC_MUTATIONS_ENABLED", "true")
