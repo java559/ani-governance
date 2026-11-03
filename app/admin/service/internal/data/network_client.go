@@ -133,6 +133,19 @@ func (c *NetworkClient) ListVPCs(ctx context.Context, tenant, actor string, name
 	})
 }
 
+// ListNetworkInstances reads one network scope's consumers. Exactly one of
+// vpcID/subnetID is non-empty: the BFF resolves the scope from the path, and
+// Resource rejects an unscoped request instead of scanning the tenant.
+func (c *NetworkClient) ListNetworkInstances(ctx context.Context, tenant, actor string, vpcID, subnetID string, page, pageSize uint32) (*networkv1.ListNetworkInstancesResponse, error) {
+	tc, err := c.trusted(tenant, actor)
+	if err != nil {
+		return nil, err
+	}
+	return outCall(c, ctx, tc, func(ctx context.Context) (*networkv1.ListNetworkInstancesResponse, error) {
+		return c.client.ListNetworkInstances(ctx, &networkv1.ListNetworkInstancesRequest{TenantId: tc.tenant, VpcId: vpcID, SubnetId: subnetID, Page: &page, PageSize: &pageSize})
+	})
+}
+
 func (c *NetworkClient) CreateVPC(ctx context.Context, tenant, actor string, name, cidr, description, idempotencyKey string) (*networkv1.CreateVPCResponse, error) {
 	tc, err := c.trusted(tenant, actor)
 	if err != nil {

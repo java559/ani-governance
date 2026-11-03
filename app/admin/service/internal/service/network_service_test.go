@@ -13,7 +13,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"testing"
+	"time"
 )
 
 type vpcProbe struct {
@@ -29,6 +31,12 @@ type vpcProbe struct {
 	snatVersion                     int64
 	snatKey                         string
 	vpcPage, vpcPageSize            uint32
+	associatedVPCID                 string
+	associatedSubnetID              string
+	associatedPage                  uint32
+	associatedPageSize              uint32
+	associatedItems                 []*networkv1.AssociatedInstance
+	associatedTotal                 int64
 	eipSecurityGroupIDs             []string
 	eipName, eipDescription, eipKey string
 }
@@ -64,6 +72,38 @@ func (p *vpcProbe) ListVPCs(_ context.Context, tenant, actor string, _ string, _
 	panicTenant(tenant, actor)
 	p.vpcPage, p.vpcPageSize = page, pageSize
 	return &networkv1.ListVPCsResponse{Total: 37, Items: []*networkv1.VPC{{Id: "vpc_11111111111111111111111111111111", TenantId: tenant, State: networkv1.ResourceState_RESOURCE_STATE_AVAILABLE}}}, p.err
+}
+
+func (p *vpcProbe) ListNetworkInstances(_ context.Context, tenant, actor, vpcID, subnetID string, page, pageSize uint32) (*networkv1.ListNetworkInstancesResponse, error) {
+	p.calls++
+	panicTenant(tenant, actor)
+	if (vpcID == "") == (subnetID == "") {
+		panic("network scope must be exactly one")
+	}
+	p.associatedVPCID, p.associatedSubnetID, p.associatedPage, p.associatedPageSize = vpcID, subnetID, page, pageSize
+	items := p.associatedItems
+	if items == nil {
+		itemSubnet := subnetID
+		if itemSubnet == "" {
+			itemSubnet = "subnet_11111111111111111111111111111111"
+		}
+		scopeTenant := tenant
+		if p.wrong {
+			scopeTenant = "other"
+		}
+		items = []*networkv1.AssociatedInstance{{
+			TenantId: scopeTenant, ConsumerType: "container_instance", ConsumerId: "3f0c9a2e-7d1b-4c58-a6e0-f1b2c3d4e5f6",
+			ConsumerName: "demo-1", ConsumerState: "running", SubnetId: itemSubnet, SubnetName: "test", Slot: "primary",
+			AttachmentId: "att_0123456789abcdef0123456789abcdef", AttachmentState: "attached",
+			ObservedAt: timestamppb.New(time.Unix(1774941611, 0)),
+			Addresses:  []*networkv1.NetworkAddress{{NicName: "default", Address: "10.42.1.15"}},
+		}}
+	}
+	total := p.associatedTotal
+	if total == 0 {
+		total = int64(len(items))
+	}
+	return &networkv1.ListNetworkInstancesResponse{Total: total, Items: items}, p.err
 }
 
 func (p *vpcProbe) CreateVPC(_ context.Context, tenant, actor string, _, _, _, _ string) (*networkv1.CreateVPCResponse, error) {
@@ -533,5 +573,98 @@ func TestVPCPageDefaultsAndValidationBeforeCall(t *testing.T) {
 		if errors.Code(err) != 400 || p.calls != 0 {
 			t.Fatalf("invalid window reached downstream: %v calls=%d", err, p.calls)
 		}
+	}
+}
+
+func TestNetworkAssociatedInstancesPassRecordedFactsThrough(t *testing.T) {
+	ctx := auth.NewContext(context.Background(), &authv1.UserTokenPayload{TenantId: trans.Ptr(uint32(5)), UserId: 7})
+	const vpcID = "vpc_11111111111111111111111111111111"
+	const subnetID = "subnet_22222222222222222222222222222222"
+	trustedTenant := "11111111-1111-4111-8111-111111111111"
+	p := &vpcProbe{associatedTotal: 5, associatedItems: []*networkv1.AssociatedInstance{{
+		TenantId: trustedTenant, ConsumerType: "unknown", ConsumerId: "3f0c9a2e-7d1b-4c58-a6e0-f1b2c3d4e5f6",
+		ConsumerState: "unknown", SubnetId: subnetID, SubnetName: "old", Slot: "primary",
+		AttachmentId: "att_0123456789abcdef0123456789abcdef", AttachmentState: "released",
+		AttachmentReason: "ATTACHMENT_PROTOCOL_VIOLATION", ObservationStale: true,
+	}}}
+	out, err := NewNetworkService(p, &tenantProbe{}).ListVPCAssociatedInstances(ctx, &catalogv1.ListVPCAssociatedInstancesRequest{VpcId: vpcID})
+	if err != nil {
+		t.Fatalf("vpc entry: %v", err)
+	}
+	if p.associatedVPCID != vpcID || p.associatedSubnetID != "" || p.associatedPage != 1 || p.associatedPageSize != 20 {
+		t.Fatalf("scope/page = %q %q %d %d", p.associatedVPCID, p.associatedSubnetID, p.associatedPage, p.associatedPageSize)
+	}
+	if out.GetTotal() != 5 || len(out.GetItems()) != 1 {
+		t.Fatalf("page = total %d items %d", out.GetTotal(), len(out.GetItems()))
+	}
+	// 未登记类型、释放异常与过期观测必须原样到达前端：在这里改名等于掩盖问题。
+	item := out.GetItems()[0]
+	if item.GetConsumerType() != "unknown" || item.GetConsumerState() != "unknown" || item.GetAttachmentState() != "released" ||
+		item.GetAttachmentReason() != "ATTACHMENT_PROTOCOL_VIOLATION" || !item.GetObservationStale() ||
+		item.GetObservedAt() != nil || len(item.GetAddresses()) != 0 {
+		t.Fatalf("legacy row = %+v", item)
+	}
+
+	subnet, err := NewNetworkService(&vpcProbe{}, &tenantProbe{}).ListSubnetAssociatedInstances(ctx, &catalogv1.ListSubnetAssociatedInstancesRequest{SubnetId: subnetID, Page: proto.Uint32(2), PageSize: proto.Uint32(7)})
+	if err != nil {
+		t.Fatalf("subnet entry: %v", err)
+	}
+	first := subnet.GetItems()[0]
+	if first.GetSubnetId() != subnetID || first.GetConsumerType() != "container_instance" || first.GetConsumerState() != "running" ||
+		first.GetAttachmentState() != "attached" || first.GetObservedAt() == nil || first.GetObservedAt().AsTime().Unix() != 1774941611 ||
+		len(first.GetAddresses()) != 1 || first.GetAddresses()[0].GetNicName() != "default" || first.GetAddresses()[0].GetAddress() != "10.42.1.15" {
+		t.Fatalf("subnet row = %+v", first)
+	}
+}
+
+func TestNetworkAssociatedInstancesRejectsInvalidRequestsAndBrokenResponses(t *testing.T) {
+	ctx := auth.NewContext(context.Background(), &authv1.UserTokenPayload{TenantId: trans.Ptr(uint32(5)), UserId: 7})
+	const trustedTenant = "11111111-1111-4111-8111-111111111111"
+	const subnetID = "subnet_22222222222222222222222222222222"
+	foreignSubnet := func() []*networkv1.AssociatedInstance {
+		return []*networkv1.AssociatedInstance{{TenantId: trustedTenant, SubnetId: "subnet_33333333333333333333333333333333", ConsumerType: "unknown", ConsumerState: "unknown", AttachmentState: "attached"}}
+	}
+	cases := []struct {
+		name           string
+		probe          *vpcProbe
+		subnet         bool
+		id             string
+		page, pageSize *uint32
+		items          []*networkv1.AssociatedInstance
+		want           int
+		called         bool
+	}{
+		{"missing vpc id", &vpcProbe{}, false, "", nil, nil, nil, 400, false},
+		{"uppercase vpc id", &vpcProbe{}, false, "vpc_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", nil, nil, nil, 400, false},
+		{"path shaped like parent", &vpcProbe{}, false, "vpc_1111111111111111111111111111111/../x", nil, nil, nil, 400, false},
+		{"pageSize over hundred", &vpcProbe{}, false, "vpc_11111111111111111111111111111111", proto.Uint32(1), proto.Uint32(101), nil, 400, false},
+		{"zero page", &vpcProbe{}, true, subnetID, proto.Uint32(0), nil, nil, 400, false},
+		{"network not found", &vpcProbe{err: status.Error(codes.NotFound, "vpc not found")}, false, "vpc_11111111111111111111111111111111", nil, nil, nil, 404, true},
+		{"dependency unavailable", &vpcProbe{err: status.Error(codes.Unavailable, "database detail")}, false, "vpc_11111111111111111111111111111111", nil, nil, nil, 503, true},
+		{"foreign tenant row", &vpcProbe{wrong: true}, false, "vpc_11111111111111111111111111111111", nil, nil, nil, 503, true},
+		{"row outside requested subnet", &vpcProbe{}, true, subnetID, nil, nil, foreignSubnet(), 503, true},
+		{"invented consumer type", &vpcProbe{}, true, subnetID, nil, nil, []*networkv1.AssociatedInstance{{TenantId: trustedTenant, SubnetId: subnetID, ConsumerType: "notebook", AttachmentState: "attached"}}, 503, true},
+		{"unknown attachment state", &vpcProbe{}, true, subnetID, nil, nil, []*networkv1.AssociatedInstance{{TenantId: trustedTenant, SubnetId: subnetID, ConsumerType: "unknown", AttachmentState: "active"}}, 503, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := tc.probe
+			if tc.items != nil {
+				p.associatedItems = tc.items
+			}
+			s := NewNetworkService(p, &tenantProbe{})
+			var err error
+			if tc.subnet {
+				_, err = s.ListSubnetAssociatedInstances(ctx, &catalogv1.ListSubnetAssociatedInstancesRequest{SubnetId: tc.id, Page: tc.page, PageSize: tc.pageSize})
+			} else {
+				_, err = s.ListVPCAssociatedInstances(ctx, &catalogv1.ListVPCAssociatedInstancesRequest{VpcId: tc.id, Page: tc.page, PageSize: tc.pageSize})
+			}
+			if got := errors.Code(err); got != tc.want {
+				t.Fatalf("code = %d want %d (%v)", got, tc.want, err)
+			}
+			if called := p.calls > 0; called != tc.called {
+				t.Fatalf("downstream called = %v want %v", called, tc.called)
+			}
+		})
 	}
 }

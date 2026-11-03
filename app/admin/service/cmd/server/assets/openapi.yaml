@@ -11514,6 +11514,53 @@ paths:
                 - AccessKeyAuth: []
                   SignatureAuth: []
                   SignatureTime: []
+    /api/v1/networks/subnets/{subnet_id}/associated-instances:
+        get:
+            tags:
+                - NetworkService
+            summary: List compute consumers attached to a subnet
+            description: 'Requires user JWT or ANI HMAC-SHA256 signature, NETWORK subscription and the same network:subnet:get permission as the subnet detail page. subnet_id must be subnet_ followed by 32 lowercase hex digits. Only page and pageSize are accepted as query parameters (page defaults to 1, pageSize to 20, size 1..100); body and any other parameter is rejected with 400. Rows use the same contract as the VPC entry point, so consumer and attachment facts stay independent and unguessable. A subnet deleted from its network keeps listing the attachments still held on it, because those are the records that need attention. A subnet absent from this tenant is 404; a subnet with no consumer is an empty page. Read-only: no lifecycle or data-plane action is performed.'
+            operationId: NetworkService_ListSubnetAssociatedInstances
+            parameters:
+                - name: subnet_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListAssociatedInstancesResponse'
+                "400":
+                    description: Invalid subnet ID, page or pageSize
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "404":
+                    description: Subnet not found in this tenant
+                "503":
+                    description: Network dependency or trusted identity unavailable
+                "504":
+                    description: Connected Network call timed out
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
     /api/v1/networks/vpc-cidr-presets:
         get:
             tags:
@@ -11673,6 +11720,53 @@ paths:
                                 $ref: '#/components/schemas/VPC'
                 "400":
                     description: Invalid VPC ID
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "404":
+                    description: VPC not found in this tenant
+                "503":
+                    description: Network dependency or trusted identity unavailable
+                "504":
+                    description: Connected Network call timed out
+            security:
+                - BearerAuth: []
+                - AccessKeyAuth: []
+                  SignatureAuth: []
+                  SignatureTime: []
+    /api/v1/networks/vpcs/{vpc_id}/associated-instances:
+        get:
+            tags:
+                - NetworkService
+            summary: List compute consumers attached to a VPC
+            description: 'Requires user JWT or ANI HMAC-SHA256 signature, NETWORK subscription and the same network:vpc:get permission as the VPC detail page. vpc_id must be vpc_ followed by 32 lowercase hex digits. Only page and pageSize are accepted as query parameters (page defaults to 1, pageSize to 20, size 1..100); body and any other parameter is rejected with 400. Each row is one active attachment and covers container instances and virtual machines only. consumer_type, consumer_state, attachment_state and attachment_reason are independent facts passed through unchanged: a type recorded before consumer typing exists is reported as unknown and never guessed, and a consumer whose resource record is gone keeps its row. addresses carries only Network''s own fresh observation, so an empty array never means unattached. A VPC absent from this tenant is 404; a VPC with no consumer is an empty page. Read-only: no lifecycle or data-plane action is performed.'
+            operationId: NetworkService_ListVPCAssociatedInstances
+            parameters:
+                - name: vpc_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListAssociatedInstancesResponse'
+                "400":
+                    description: Invalid VPC ID, page or pageSize
                 "401":
                     description: Missing, invalid, expired or revoked credentials
                 "403":
@@ -14673,6 +14767,42 @@ components:
                     type: string
                 verified_at:
                     type: string
+        AssociatedInstance:
+            type: object
+            properties:
+                consumer_type:
+                    type: string
+                consumer_id:
+                    type: string
+                consumer_name:
+                    type: string
+                consumer_state:
+                    type: string
+                subnet_id:
+                    type: string
+                subnet_name:
+                    type: string
+                slot:
+                    type: string
+                attachment_id:
+                    type: string
+                attachment_state:
+                    type: string
+                attachment_reason:
+                    type: string
+                observation_stale:
+                    type: boolean
+                observed_at:
+                    type: string
+                    format: date-time
+                addresses:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/NetworkAddress'
+            description: |-
+                Compute consumers holding a slot in one VPC or subnet. Resource run state and
+                 attachment state stay independent facts: a running instance can still be
+                 reserved, and a released attachment can still be listed when blocked.
         AttachInstancePVCData:
             type: object
             properties:
@@ -19526,6 +19656,15 @@ components:
                 total:
                     type: string
             description: 查询列表 - 回应
+        ListAssociatedInstancesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AssociatedInstance'
+                total:
+                    type: string
         ListBucketsResponse:
             type: object
             properties:
@@ -21421,6 +21560,14 @@ components:
                         - $ref: '#/components/schemas/StringArray'
                     description: Mapped value
             description: Automatically-generated message used to represent maps of StringArray as ordered (name,value) pairs.
+        NetworkAddress:
+            type: object
+            properties:
+                nic_name:
+                    type: string
+                address:
+                    type: string
+            description: Empty addresses means Network has no eligible observation, never "unattached".
         NetworkSelection:
             type: object
             properties:

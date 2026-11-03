@@ -9654,3 +9654,663 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ListVPCCIDRPresetsResponseValidationError{}
+
+// Validate checks the field values on AssociatedInstance with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *AssociatedInstance) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on AssociatedInstance with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// AssociatedInstanceMultiError, or nil if none found.
+func (m *AssociatedInstance) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *AssociatedInstance) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for ConsumerType
+
+	// no validation rules for ConsumerId
+
+	// no validation rules for ConsumerName
+
+	// no validation rules for ConsumerState
+
+	// no validation rules for SubnetId
+
+	// no validation rules for SubnetName
+
+	// no validation rules for Slot
+
+	// no validation rules for AttachmentId
+
+	// no validation rules for AttachmentState
+
+	// no validation rules for AttachmentReason
+
+	// no validation rules for ObservationStale
+
+	if all {
+		switch v := interface{}(m.GetObservedAt()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AssociatedInstanceValidationError{
+					field:  "ObservedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AssociatedInstanceValidationError{
+					field:  "ObservedAt",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetObservedAt()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AssociatedInstanceValidationError{
+				field:  "ObservedAt",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	for idx, item := range m.GetAddresses() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, AssociatedInstanceValidationError{
+						field:  fmt.Sprintf("Addresses[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, AssociatedInstanceValidationError{
+						field:  fmt.Sprintf("Addresses[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return AssociatedInstanceValidationError{
+					field:  fmt.Sprintf("Addresses[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return AssociatedInstanceMultiError(errors)
+	}
+
+	return nil
+}
+
+// AssociatedInstanceMultiError is an error wrapping multiple validation errors
+// returned by AssociatedInstance.ValidateAll() if the designated constraints
+// aren't met.
+type AssociatedInstanceMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m AssociatedInstanceMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m AssociatedInstanceMultiError) AllErrors() []error { return m }
+
+// AssociatedInstanceValidationError is the validation error returned by
+// AssociatedInstance.Validate if the designated constraints aren't met.
+type AssociatedInstanceValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e AssociatedInstanceValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e AssociatedInstanceValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e AssociatedInstanceValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e AssociatedInstanceValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e AssociatedInstanceValidationError) ErrorName() string {
+	return "AssociatedInstanceValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e AssociatedInstanceValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sAssociatedInstance.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = AssociatedInstanceValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = AssociatedInstanceValidationError{}
+
+// Validate checks the field values on NetworkAddress with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *NetworkAddress) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on NetworkAddress with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in NetworkAddressMultiError,
+// or nil if none found.
+func (m *NetworkAddress) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *NetworkAddress) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for NicName
+
+	// no validation rules for Address
+
+	if len(errors) > 0 {
+		return NetworkAddressMultiError(errors)
+	}
+
+	return nil
+}
+
+// NetworkAddressMultiError is an error wrapping multiple validation errors
+// returned by NetworkAddress.ValidateAll() if the designated constraints
+// aren't met.
+type NetworkAddressMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m NetworkAddressMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m NetworkAddressMultiError) AllErrors() []error { return m }
+
+// NetworkAddressValidationError is the validation error returned by
+// NetworkAddress.Validate if the designated constraints aren't met.
+type NetworkAddressValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e NetworkAddressValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e NetworkAddressValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e NetworkAddressValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e NetworkAddressValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e NetworkAddressValidationError) ErrorName() string { return "NetworkAddressValidationError" }
+
+// Error satisfies the builtin error interface
+func (e NetworkAddressValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sNetworkAddress.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = NetworkAddressValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = NetworkAddressValidationError{}
+
+// Validate checks the field values on ListVPCAssociatedInstancesRequest with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *ListVPCAssociatedInstancesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListVPCAssociatedInstancesRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// ListVPCAssociatedInstancesRequestMultiError, or nil if none found.
+func (m *ListVPCAssociatedInstancesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListVPCAssociatedInstancesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for VpcId
+
+	if m.Page != nil {
+		// no validation rules for Page
+	}
+
+	if m.PageSize != nil {
+		// no validation rules for PageSize
+	}
+
+	if len(errors) > 0 {
+		return ListVPCAssociatedInstancesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListVPCAssociatedInstancesRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// ListVPCAssociatedInstancesRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ListVPCAssociatedInstancesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListVPCAssociatedInstancesRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListVPCAssociatedInstancesRequestMultiError) AllErrors() []error { return m }
+
+// ListVPCAssociatedInstancesRequestValidationError is the validation error
+// returned by ListVPCAssociatedInstancesRequest.Validate if the designated
+// constraints aren't met.
+type ListVPCAssociatedInstancesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListVPCAssociatedInstancesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListVPCAssociatedInstancesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListVPCAssociatedInstancesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListVPCAssociatedInstancesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListVPCAssociatedInstancesRequestValidationError) ErrorName() string {
+	return "ListVPCAssociatedInstancesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListVPCAssociatedInstancesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListVPCAssociatedInstancesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListVPCAssociatedInstancesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListVPCAssociatedInstancesRequestValidationError{}
+
+// Validate checks the field values on ListSubnetAssociatedInstancesRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *ListSubnetAssociatedInstancesRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListSubnetAssociatedInstancesRequest
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// ListSubnetAssociatedInstancesRequestMultiError, or nil if none found.
+func (m *ListSubnetAssociatedInstancesRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListSubnetAssociatedInstancesRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for SubnetId
+
+	if m.Page != nil {
+		// no validation rules for Page
+	}
+
+	if m.PageSize != nil {
+		// no validation rules for PageSize
+	}
+
+	if len(errors) > 0 {
+		return ListSubnetAssociatedInstancesRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListSubnetAssociatedInstancesRequestMultiError is an error wrapping multiple
+// validation errors returned by
+// ListSubnetAssociatedInstancesRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ListSubnetAssociatedInstancesRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListSubnetAssociatedInstancesRequestMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListSubnetAssociatedInstancesRequestMultiError) AllErrors() []error { return m }
+
+// ListSubnetAssociatedInstancesRequestValidationError is the validation error
+// returned by ListSubnetAssociatedInstancesRequest.Validate if the designated
+// constraints aren't met.
+type ListSubnetAssociatedInstancesRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListSubnetAssociatedInstancesRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListSubnetAssociatedInstancesRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListSubnetAssociatedInstancesRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListSubnetAssociatedInstancesRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListSubnetAssociatedInstancesRequestValidationError) ErrorName() string {
+	return "ListSubnetAssociatedInstancesRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListSubnetAssociatedInstancesRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListSubnetAssociatedInstancesRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListSubnetAssociatedInstancesRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListSubnetAssociatedInstancesRequestValidationError{}
+
+// Validate checks the field values on ListAssociatedInstancesResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListAssociatedInstancesResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListAssociatedInstancesResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// ListAssociatedInstancesResponseMultiError, or nil if none found.
+func (m *ListAssociatedInstancesResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListAssociatedInstancesResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetItems() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListAssociatedInstancesResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListAssociatedInstancesResponseValidationError{
+						field:  fmt.Sprintf("Items[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListAssociatedInstancesResponseValidationError{
+					field:  fmt.Sprintf("Items[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Total
+
+	if len(errors) > 0 {
+		return ListAssociatedInstancesResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListAssociatedInstancesResponseMultiError is an error wrapping multiple
+// validation errors returned by ListAssociatedInstancesResponse.ValidateAll()
+// if the designated constraints aren't met.
+type ListAssociatedInstancesResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListAssociatedInstancesResponseMultiError) Error() string {
+	msgs := make([]string, 0, len(m))
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListAssociatedInstancesResponseMultiError) AllErrors() []error { return m }
+
+// ListAssociatedInstancesResponseValidationError is the validation error
+// returned by ListAssociatedInstancesResponse.Validate if the designated
+// constraints aren't met.
+type ListAssociatedInstancesResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListAssociatedInstancesResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListAssociatedInstancesResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListAssociatedInstancesResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListAssociatedInstancesResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListAssociatedInstancesResponseValidationError) ErrorName() string {
+	return "ListAssociatedInstancesResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListAssociatedInstancesResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListAssociatedInstancesResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListAssociatedInstancesResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListAssociatedInstancesResponseValidationError{}

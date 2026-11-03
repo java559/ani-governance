@@ -5240,6 +5240,374 @@ func (x *ListVPCCIDRPresetsResponse) GetCidrs() []string {
 	return nil
 }
 
+// Compute consumers holding a slot in one VPC or subnet. Resource run state and
+// attachment state stay independent facts: a running instance can still be
+// reserved, and a released attachment can still be listed when blocked.
+type AssociatedInstance struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	ConsumerType     string                 `protobuf:"bytes,1,opt,name=consumer_type,proto3" json:"consumer_type,omitempty"`
+	ConsumerId       string                 `protobuf:"bytes,2,opt,name=consumer_id,proto3" json:"consumer_id,omitempty"`
+	ConsumerName     string                 `protobuf:"bytes,3,opt,name=consumer_name,proto3" json:"consumer_name,omitempty"`
+	ConsumerState    string                 `protobuf:"bytes,4,opt,name=consumer_state,proto3" json:"consumer_state,omitempty"`
+	SubnetId         string                 `protobuf:"bytes,5,opt,name=subnet_id,proto3" json:"subnet_id,omitempty"`
+	SubnetName       string                 `protobuf:"bytes,6,opt,name=subnet_name,proto3" json:"subnet_name,omitempty"`
+	Slot             string                 `protobuf:"bytes,7,opt,name=slot,proto3" json:"slot,omitempty"`
+	AttachmentId     string                 `protobuf:"bytes,8,opt,name=attachment_id,proto3" json:"attachment_id,omitempty"`
+	AttachmentState  string                 `protobuf:"bytes,9,opt,name=attachment_state,proto3" json:"attachment_state,omitempty"`
+	AttachmentReason string                 `protobuf:"bytes,10,opt,name=attachment_reason,proto3" json:"attachment_reason,omitempty"`
+	ObservationStale bool                   `protobuf:"varint,11,opt,name=observation_stale,proto3" json:"observation_stale,omitempty"`
+	ObservedAt       *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=observed_at,proto3" json:"observed_at,omitempty"`
+	Addresses        []*NetworkAddress      `protobuf:"bytes,13,rep,name=addresses,proto3" json:"addresses,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *AssociatedInstance) Reset() {
+	*x = AssociatedInstance{}
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AssociatedInstance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AssociatedInstance) ProtoMessage() {}
+
+func (x *AssociatedInstance) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AssociatedInstance.ProtoReflect.Descriptor instead.
+func (*AssociatedInstance) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_vpc_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *AssociatedInstance) GetConsumerType() string {
+	if x != nil {
+		return x.ConsumerType
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetConsumerId() string {
+	if x != nil {
+		return x.ConsumerId
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetConsumerName() string {
+	if x != nil {
+		return x.ConsumerName
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetConsumerState() string {
+	if x != nil {
+		return x.ConsumerState
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetSubnetId() string {
+	if x != nil {
+		return x.SubnetId
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetSubnetName() string {
+	if x != nil {
+		return x.SubnetName
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetSlot() string {
+	if x != nil {
+		return x.Slot
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetAttachmentId() string {
+	if x != nil {
+		return x.AttachmentId
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetAttachmentState() string {
+	if x != nil {
+		return x.AttachmentState
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetAttachmentReason() string {
+	if x != nil {
+		return x.AttachmentReason
+	}
+	return ""
+}
+
+func (x *AssociatedInstance) GetObservationStale() bool {
+	if x != nil {
+		return x.ObservationStale
+	}
+	return false
+}
+
+func (x *AssociatedInstance) GetObservedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ObservedAt
+	}
+	return nil
+}
+
+func (x *AssociatedInstance) GetAddresses() []*NetworkAddress {
+	if x != nil {
+		return x.Addresses
+	}
+	return nil
+}
+
+// Empty addresses means Network has no eligible observation, never "unattached".
+type NetworkAddress struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NicName       string                 `protobuf:"bytes,1,opt,name=nic_name,proto3" json:"nic_name,omitempty"`
+	Address       string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *NetworkAddress) Reset() {
+	*x = NetworkAddress{}
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NetworkAddress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NetworkAddress) ProtoMessage() {}
+
+func (x *NetworkAddress) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NetworkAddress.ProtoReflect.Descriptor instead.
+func (*NetworkAddress) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_vpc_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *NetworkAddress) GetNicName() string {
+	if x != nil {
+		return x.NicName
+	}
+	return ""
+}
+
+func (x *NetworkAddress) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+type ListVPCAssociatedInstancesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	VpcId         string                 `protobuf:"bytes,1,opt,name=vpc_id,proto3" json:"vpc_id,omitempty"`
+	Page          *uint32                `protobuf:"varint,2,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *uint32                `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVPCAssociatedInstancesRequest) Reset() {
+	*x = ListVPCAssociatedInstancesRequest{}
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVPCAssociatedInstancesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVPCAssociatedInstancesRequest) ProtoMessage() {}
+
+func (x *ListVPCAssociatedInstancesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVPCAssociatedInstancesRequest.ProtoReflect.Descriptor instead.
+func (*ListVPCAssociatedInstancesRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_vpc_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *ListVPCAssociatedInstancesRequest) GetVpcId() string {
+	if x != nil {
+		return x.VpcId
+	}
+	return ""
+}
+
+func (x *ListVPCAssociatedInstancesRequest) GetPage() uint32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
+	}
+	return 0
+}
+
+func (x *ListVPCAssociatedInstancesRequest) GetPageSize() uint32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
+	}
+	return 0
+}
+
+type ListSubnetAssociatedInstancesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SubnetId      string                 `protobuf:"bytes,1,opt,name=subnet_id,proto3" json:"subnet_id,omitempty"`
+	Page          *uint32                `protobuf:"varint,2,opt,name=page,proto3,oneof" json:"page,omitempty"`
+	PageSize      *uint32                `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSubnetAssociatedInstancesRequest) Reset() {
+	*x = ListSubnetAssociatedInstancesRequest{}
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSubnetAssociatedInstancesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSubnetAssociatedInstancesRequest) ProtoMessage() {}
+
+func (x *ListSubnetAssociatedInstancesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSubnetAssociatedInstancesRequest.ProtoReflect.Descriptor instead.
+func (*ListSubnetAssociatedInstancesRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_vpc_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *ListSubnetAssociatedInstancesRequest) GetSubnetId() string {
+	if x != nil {
+		return x.SubnetId
+	}
+	return ""
+}
+
+func (x *ListSubnetAssociatedInstancesRequest) GetPage() uint32 {
+	if x != nil && x.Page != nil {
+		return *x.Page
+	}
+	return 0
+}
+
+func (x *ListSubnetAssociatedInstancesRequest) GetPageSize() uint32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
+	}
+	return 0
+}
+
+type ListAssociatedInstancesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*AssociatedInstance  `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAssociatedInstancesResponse) Reset() {
+	*x = ListAssociatedInstancesResponse{}
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAssociatedInstancesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAssociatedInstancesResponse) ProtoMessage() {}
+
+func (x *ListAssociatedInstancesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_service_v1_vpc_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAssociatedInstancesResponse.ProtoReflect.Descriptor instead.
+func (*ListAssociatedInstancesResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_service_v1_vpc_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *ListAssociatedInstancesResponse) GetItems() []*AssociatedInstance {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListAssociatedInstancesResponse) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_catalog_service_v1_vpc_proto protoreflect.FileDescriptor
 
 const file_catalog_service_v1_vpc_proto_rawDesc = "" +
@@ -5679,7 +6047,42 @@ const file_catalog_service_v1_vpc_proto_rawDesc = "" +
 	"\tlisteners\x18\x03 \x01(\v2+.catalog.service.v1.LoadBalancerListenerSetR\tlisteners\"\x1b\n" +
 	"\x19ListVPCCIDRPresetsRequest\"2\n" +
 	"\x1aListVPCCIDRPresetsResponse\x12\x14\n" +
-	"\x05cidrs\x18\x01 \x03(\tR\x05cidrs*\xb0\x01\n" +
+	"\x05cidrs\x18\x01 \x03(\tR\x05cidrs\"\xac\x04\n" +
+	"\x12AssociatedInstance\x12$\n" +
+	"\rconsumer_type\x18\x01 \x01(\tR\rconsumer_type\x12 \n" +
+	"\vconsumer_id\x18\x02 \x01(\tR\vconsumer_id\x12$\n" +
+	"\rconsumer_name\x18\x03 \x01(\tR\rconsumer_name\x12&\n" +
+	"\x0econsumer_state\x18\x04 \x01(\tR\x0econsumer_state\x12\x1c\n" +
+	"\tsubnet_id\x18\x05 \x01(\tR\tsubnet_id\x12 \n" +
+	"\vsubnet_name\x18\x06 \x01(\tR\vsubnet_name\x12\x12\n" +
+	"\x04slot\x18\a \x01(\tR\x04slot\x12$\n" +
+	"\rattachment_id\x18\b \x01(\tR\rattachment_id\x12*\n" +
+	"\x10attachment_state\x18\t \x01(\tR\x10attachment_state\x12,\n" +
+	"\x11attachment_reason\x18\n" +
+	" \x01(\tR\x11attachment_reason\x12,\n" +
+	"\x11observation_stale\x18\v \x01(\bR\x11observation_stale\x12<\n" +
+	"\vobserved_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\vobserved_at\x12@\n" +
+	"\taddresses\x18\r \x03(\v2\".catalog.service.v1.NetworkAddressR\taddresses\"F\n" +
+	"\x0eNetworkAddress\x12\x1a\n" +
+	"\bnic_name\x18\x01 \x01(\tR\bnic_name\x12\x18\n" +
+	"\aaddress\x18\x02 \x01(\tR\aaddress\"\x8d\x01\n" +
+	"!ListVPCAssociatedInstancesRequest\x12\x16\n" +
+	"\x06vpc_id\x18\x01 \x01(\tR\x06vpc_id\x12\x17\n" +
+	"\x04page\x18\x02 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x03 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_size\"\x96\x01\n" +
+	"$ListSubnetAssociatedInstancesRequest\x12\x1c\n" +
+	"\tsubnet_id\x18\x01 \x01(\tR\tsubnet_id\x12\x17\n" +
+	"\x04page\x18\x02 \x01(\rH\x00R\x04page\x88\x01\x01\x12 \n" +
+	"\tpage_size\x18\x03 \x01(\rH\x01R\bpageSize\x88\x01\x01B\a\n" +
+	"\x05_pageB\f\n" +
+	"\n" +
+	"_page_size\"u\n" +
+	"\x1fListAssociatedInstancesResponse\x12<\n" +
+	"\x05items\x18\x01 \x03(\v2&.catalog.service.v1.AssociatedInstanceR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total*\xb0\x01\n" +
 	"\x14LoadBalancerExposure\x12&\n" +
 	"\"LOAD_BALANCER_EXPOSURE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eLOAD_BALANCER_EXPOSURE_PRIVATE\x10\x01\x12!\n" +
@@ -5734,119 +6137,124 @@ func file_catalog_service_v1_vpc_proto_rawDescGZIP() []byte {
 }
 
 var file_catalog_service_v1_vpc_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_catalog_service_v1_vpc_proto_msgTypes = make([]protoimpl.MessageInfo, 68)
+var file_catalog_service_v1_vpc_proto_msgTypes = make([]protoimpl.MessageInfo, 73)
 var file_catalog_service_v1_vpc_proto_goTypes = []any{
-	(LoadBalancerExposure)(0),                // 0: catalog.service.v1.LoadBalancerExposure
-	(LoadBalancerListenerProtocol)(0),        // 1: catalog.service.v1.LoadBalancerListenerProtocol
-	(LoadBalancerAlgorithm)(0),               // 2: catalog.service.v1.LoadBalancerAlgorithm
-	(LoadBalancerHealthCheckProtocol)(0),     // 3: catalog.service.v1.LoadBalancerHealthCheckProtocol
-	(LoadBalancerConfigurationState)(0),      // 4: catalog.service.v1.LoadBalancerConfigurationState
-	(LoadBalancerDataPlaneState)(0),          // 5: catalog.service.v1.LoadBalancerDataPlaneState
-	(LoadBalancerSessionMode)(0),             // 6: catalog.service.v1.LoadBalancerSessionMode
-	(*GetVPCRequest)(nil),                    // 7: catalog.service.v1.GetVPCRequest
-	(*VPC)(nil),                              // 8: catalog.service.v1.VPC
-	(*VPCBaseConnectivity)(nil),              // 9: catalog.service.v1.VPCBaseConnectivity
-	(*VPCPublicEgress)(nil),                  // 10: catalog.service.v1.VPCPublicEgress
-	(*GetVPCResponse)(nil),                   // 11: catalog.service.v1.GetVPCResponse
-	(*ListVPCsRequest)(nil),                  // 12: catalog.service.v1.ListVPCsRequest
-	(*ListVPCsResponse)(nil),                 // 13: catalog.service.v1.ListVPCsResponse
-	(*CreateVPCRequest)(nil),                 // 14: catalog.service.v1.CreateVPCRequest
-	(*CreateVPCResponse)(nil),                // 15: catalog.service.v1.CreateVPCResponse
-	(*DeleteVPCRequest)(nil),                 // 16: catalog.service.v1.DeleteVPCRequest
-	(*DeleteVPCResponse)(nil),                // 17: catalog.service.v1.DeleteVPCResponse
-	(*GetOperationRequest)(nil),              // 18: catalog.service.v1.GetOperationRequest
-	(*Operation)(nil),                        // 19: catalog.service.v1.Operation
-	(*GetOperationResponse)(nil),             // 20: catalog.service.v1.GetOperationResponse
-	(*EIP)(nil),                              // 21: catalog.service.v1.EIP
-	(*EIPBindingTarget)(nil),                 // 22: catalog.service.v1.EIPBindingTarget
-	(*GetEIPRequest)(nil),                    // 23: catalog.service.v1.GetEIPRequest
-	(*GetEIPResponse)(nil),                   // 24: catalog.service.v1.GetEIPResponse
-	(*ListEIPsRequest)(nil),                  // 25: catalog.service.v1.ListEIPsRequest
-	(*ListEIPsResponse)(nil),                 // 26: catalog.service.v1.ListEIPsResponse
-	(*CreateEIPRequest)(nil),                 // 27: catalog.service.v1.CreateEIPRequest
-	(*CreateEIPResponse)(nil),                // 28: catalog.service.v1.CreateEIPResponse
-	(*DeleteEIPRequest)(nil),                 // 29: catalog.service.v1.DeleteEIPRequest
-	(*DeleteEIPResponse)(nil),                // 30: catalog.service.v1.DeleteEIPResponse
-	(*GetVPCSnatRequest)(nil),                // 31: catalog.service.v1.GetVPCSnatRequest
-	(*VPCSnat)(nil),                          // 32: catalog.service.v1.VPCSnat
-	(*GetVPCSnatResponse)(nil),               // 33: catalog.service.v1.GetVPCSnatResponse
-	(*BindVPCSnatRequest)(nil),               // 34: catalog.service.v1.BindVPCSnatRequest
-	(*BindVPCSnatResponse)(nil),              // 35: catalog.service.v1.BindVPCSnatResponse
-	(*Subnet)(nil),                           // 36: catalog.service.v1.Subnet
-	(*CreateSubnetRequest)(nil),              // 37: catalog.service.v1.CreateSubnetRequest
-	(*CreateSubnetResponse)(nil),             // 38: catalog.service.v1.CreateSubnetResponse
-	(*GetSubnetRequest)(nil),                 // 39: catalog.service.v1.GetSubnetRequest
-	(*GetSubnetResponse)(nil),                // 40: catalog.service.v1.GetSubnetResponse
-	(*ListSubnetsRequest)(nil),               // 41: catalog.service.v1.ListSubnetsRequest
-	(*ListSubnetsResponse)(nil),              // 42: catalog.service.v1.ListSubnetsResponse
-	(*DeleteSubnetRequest)(nil),              // 43: catalog.service.v1.DeleteSubnetRequest
-	(*DeleteSubnetResponse)(nil),             // 44: catalog.service.v1.DeleteSubnetResponse
-	(*GetVPCSnatBindingRequest)(nil),         // 45: catalog.service.v1.GetVPCSnatBindingRequest
-	(*GetVPCSnatBindingResponse)(nil),        // 46: catalog.service.v1.GetVPCSnatBindingResponse
-	(*SetVPCSnatEnabledRequest)(nil),         // 47: catalog.service.v1.SetVPCSnatEnabledRequest
-	(*SetVPCSnatEnabledResponse)(nil),        // 48: catalog.service.v1.SetVPCSnatEnabledResponse
-	(*DeleteVPCSnatBindingRequest)(nil),      // 49: catalog.service.v1.DeleteVPCSnatBindingRequest
-	(*DeleteVPCSnatBindingResponse)(nil),     // 50: catalog.service.v1.DeleteVPCSnatBindingResponse
-	(*LoadBalancerCertificateRef)(nil),       // 51: catalog.service.v1.LoadBalancerCertificateRef
-	(*LoadBalancerSessionPersistence)(nil),   // 52: catalog.service.v1.LoadBalancerSessionPersistence
-	(*LoadBalancerListenerInput)(nil),        // 53: catalog.service.v1.LoadBalancerListenerInput
-	(*LoadBalancerListener)(nil),             // 54: catalog.service.v1.LoadBalancerListener
-	(*LoadBalancerBackendInput)(nil),         // 55: catalog.service.v1.LoadBalancerBackendInput
-	(*LoadBalancerBackendMember)(nil),        // 56: catalog.service.v1.LoadBalancerBackendMember
-	(*LoadBalancerHealthCheck)(nil),          // 57: catalog.service.v1.LoadBalancerHealthCheck
-	(*LoadBalancer)(nil),                     // 58: catalog.service.v1.LoadBalancer
-	(*CreateLoadBalancerRequest)(nil),        // 59: catalog.service.v1.CreateLoadBalancerRequest
-	(*CreateLoadBalancerResponse)(nil),       // 60: catalog.service.v1.CreateLoadBalancerResponse
-	(*GetLoadBalancerRequest)(nil),           // 61: catalog.service.v1.GetLoadBalancerRequest
-	(*GetLoadBalancerResponse)(nil),          // 62: catalog.service.v1.GetLoadBalancerResponse
-	(*ListLoadBalancersRequest)(nil),         // 63: catalog.service.v1.ListLoadBalancersRequest
-	(*ListLoadBalancersResponse)(nil),        // 64: catalog.service.v1.ListLoadBalancersResponse
-	(*UpdateLoadBalancerRequest)(nil),        // 65: catalog.service.v1.UpdateLoadBalancerRequest
-	(*UpdateLoadBalancerResponse)(nil),       // 66: catalog.service.v1.UpdateLoadBalancerResponse
-	(*DeleteLoadBalancerRequest)(nil),        // 67: catalog.service.v1.DeleteLoadBalancerRequest
-	(*DeleteLoadBalancerResponse)(nil),       // 68: catalog.service.v1.DeleteLoadBalancerResponse
-	(*GetLoadBalancerOperationRequest)(nil),  // 69: catalog.service.v1.GetLoadBalancerOperationRequest
-	(*GetLoadBalancerOperationResponse)(nil), // 70: catalog.service.v1.GetLoadBalancerOperationResponse
-	(*LoadBalancerListenerSet)(nil),          // 71: catalog.service.v1.LoadBalancerListenerSet
-	(*LoadBalancerMutableData)(nil),          // 72: catalog.service.v1.LoadBalancerMutableData
-	(*ListVPCCIDRPresetsRequest)(nil),        // 73: catalog.service.v1.ListVPCCIDRPresetsRequest
-	(*ListVPCCIDRPresetsResponse)(nil),       // 74: catalog.service.v1.ListVPCCIDRPresetsResponse
-	(*timestamppb.Timestamp)(nil),            // 75: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),            // 76: google.protobuf.FieldMask
+	(LoadBalancerExposure)(0),                    // 0: catalog.service.v1.LoadBalancerExposure
+	(LoadBalancerListenerProtocol)(0),            // 1: catalog.service.v1.LoadBalancerListenerProtocol
+	(LoadBalancerAlgorithm)(0),                   // 2: catalog.service.v1.LoadBalancerAlgorithm
+	(LoadBalancerHealthCheckProtocol)(0),         // 3: catalog.service.v1.LoadBalancerHealthCheckProtocol
+	(LoadBalancerConfigurationState)(0),          // 4: catalog.service.v1.LoadBalancerConfigurationState
+	(LoadBalancerDataPlaneState)(0),              // 5: catalog.service.v1.LoadBalancerDataPlaneState
+	(LoadBalancerSessionMode)(0),                 // 6: catalog.service.v1.LoadBalancerSessionMode
+	(*GetVPCRequest)(nil),                        // 7: catalog.service.v1.GetVPCRequest
+	(*VPC)(nil),                                  // 8: catalog.service.v1.VPC
+	(*VPCBaseConnectivity)(nil),                  // 9: catalog.service.v1.VPCBaseConnectivity
+	(*VPCPublicEgress)(nil),                      // 10: catalog.service.v1.VPCPublicEgress
+	(*GetVPCResponse)(nil),                       // 11: catalog.service.v1.GetVPCResponse
+	(*ListVPCsRequest)(nil),                      // 12: catalog.service.v1.ListVPCsRequest
+	(*ListVPCsResponse)(nil),                     // 13: catalog.service.v1.ListVPCsResponse
+	(*CreateVPCRequest)(nil),                     // 14: catalog.service.v1.CreateVPCRequest
+	(*CreateVPCResponse)(nil),                    // 15: catalog.service.v1.CreateVPCResponse
+	(*DeleteVPCRequest)(nil),                     // 16: catalog.service.v1.DeleteVPCRequest
+	(*DeleteVPCResponse)(nil),                    // 17: catalog.service.v1.DeleteVPCResponse
+	(*GetOperationRequest)(nil),                  // 18: catalog.service.v1.GetOperationRequest
+	(*Operation)(nil),                            // 19: catalog.service.v1.Operation
+	(*GetOperationResponse)(nil),                 // 20: catalog.service.v1.GetOperationResponse
+	(*EIP)(nil),                                  // 21: catalog.service.v1.EIP
+	(*EIPBindingTarget)(nil),                     // 22: catalog.service.v1.EIPBindingTarget
+	(*GetEIPRequest)(nil),                        // 23: catalog.service.v1.GetEIPRequest
+	(*GetEIPResponse)(nil),                       // 24: catalog.service.v1.GetEIPResponse
+	(*ListEIPsRequest)(nil),                      // 25: catalog.service.v1.ListEIPsRequest
+	(*ListEIPsResponse)(nil),                     // 26: catalog.service.v1.ListEIPsResponse
+	(*CreateEIPRequest)(nil),                     // 27: catalog.service.v1.CreateEIPRequest
+	(*CreateEIPResponse)(nil),                    // 28: catalog.service.v1.CreateEIPResponse
+	(*DeleteEIPRequest)(nil),                     // 29: catalog.service.v1.DeleteEIPRequest
+	(*DeleteEIPResponse)(nil),                    // 30: catalog.service.v1.DeleteEIPResponse
+	(*GetVPCSnatRequest)(nil),                    // 31: catalog.service.v1.GetVPCSnatRequest
+	(*VPCSnat)(nil),                              // 32: catalog.service.v1.VPCSnat
+	(*GetVPCSnatResponse)(nil),                   // 33: catalog.service.v1.GetVPCSnatResponse
+	(*BindVPCSnatRequest)(nil),                   // 34: catalog.service.v1.BindVPCSnatRequest
+	(*BindVPCSnatResponse)(nil),                  // 35: catalog.service.v1.BindVPCSnatResponse
+	(*Subnet)(nil),                               // 36: catalog.service.v1.Subnet
+	(*CreateSubnetRequest)(nil),                  // 37: catalog.service.v1.CreateSubnetRequest
+	(*CreateSubnetResponse)(nil),                 // 38: catalog.service.v1.CreateSubnetResponse
+	(*GetSubnetRequest)(nil),                     // 39: catalog.service.v1.GetSubnetRequest
+	(*GetSubnetResponse)(nil),                    // 40: catalog.service.v1.GetSubnetResponse
+	(*ListSubnetsRequest)(nil),                   // 41: catalog.service.v1.ListSubnetsRequest
+	(*ListSubnetsResponse)(nil),                  // 42: catalog.service.v1.ListSubnetsResponse
+	(*DeleteSubnetRequest)(nil),                  // 43: catalog.service.v1.DeleteSubnetRequest
+	(*DeleteSubnetResponse)(nil),                 // 44: catalog.service.v1.DeleteSubnetResponse
+	(*GetVPCSnatBindingRequest)(nil),             // 45: catalog.service.v1.GetVPCSnatBindingRequest
+	(*GetVPCSnatBindingResponse)(nil),            // 46: catalog.service.v1.GetVPCSnatBindingResponse
+	(*SetVPCSnatEnabledRequest)(nil),             // 47: catalog.service.v1.SetVPCSnatEnabledRequest
+	(*SetVPCSnatEnabledResponse)(nil),            // 48: catalog.service.v1.SetVPCSnatEnabledResponse
+	(*DeleteVPCSnatBindingRequest)(nil),          // 49: catalog.service.v1.DeleteVPCSnatBindingRequest
+	(*DeleteVPCSnatBindingResponse)(nil),         // 50: catalog.service.v1.DeleteVPCSnatBindingResponse
+	(*LoadBalancerCertificateRef)(nil),           // 51: catalog.service.v1.LoadBalancerCertificateRef
+	(*LoadBalancerSessionPersistence)(nil),       // 52: catalog.service.v1.LoadBalancerSessionPersistence
+	(*LoadBalancerListenerInput)(nil),            // 53: catalog.service.v1.LoadBalancerListenerInput
+	(*LoadBalancerListener)(nil),                 // 54: catalog.service.v1.LoadBalancerListener
+	(*LoadBalancerBackendInput)(nil),             // 55: catalog.service.v1.LoadBalancerBackendInput
+	(*LoadBalancerBackendMember)(nil),            // 56: catalog.service.v1.LoadBalancerBackendMember
+	(*LoadBalancerHealthCheck)(nil),              // 57: catalog.service.v1.LoadBalancerHealthCheck
+	(*LoadBalancer)(nil),                         // 58: catalog.service.v1.LoadBalancer
+	(*CreateLoadBalancerRequest)(nil),            // 59: catalog.service.v1.CreateLoadBalancerRequest
+	(*CreateLoadBalancerResponse)(nil),           // 60: catalog.service.v1.CreateLoadBalancerResponse
+	(*GetLoadBalancerRequest)(nil),               // 61: catalog.service.v1.GetLoadBalancerRequest
+	(*GetLoadBalancerResponse)(nil),              // 62: catalog.service.v1.GetLoadBalancerResponse
+	(*ListLoadBalancersRequest)(nil),             // 63: catalog.service.v1.ListLoadBalancersRequest
+	(*ListLoadBalancersResponse)(nil),            // 64: catalog.service.v1.ListLoadBalancersResponse
+	(*UpdateLoadBalancerRequest)(nil),            // 65: catalog.service.v1.UpdateLoadBalancerRequest
+	(*UpdateLoadBalancerResponse)(nil),           // 66: catalog.service.v1.UpdateLoadBalancerResponse
+	(*DeleteLoadBalancerRequest)(nil),            // 67: catalog.service.v1.DeleteLoadBalancerRequest
+	(*DeleteLoadBalancerResponse)(nil),           // 68: catalog.service.v1.DeleteLoadBalancerResponse
+	(*GetLoadBalancerOperationRequest)(nil),      // 69: catalog.service.v1.GetLoadBalancerOperationRequest
+	(*GetLoadBalancerOperationResponse)(nil),     // 70: catalog.service.v1.GetLoadBalancerOperationResponse
+	(*LoadBalancerListenerSet)(nil),              // 71: catalog.service.v1.LoadBalancerListenerSet
+	(*LoadBalancerMutableData)(nil),              // 72: catalog.service.v1.LoadBalancerMutableData
+	(*ListVPCCIDRPresetsRequest)(nil),            // 73: catalog.service.v1.ListVPCCIDRPresetsRequest
+	(*ListVPCCIDRPresetsResponse)(nil),           // 74: catalog.service.v1.ListVPCCIDRPresetsResponse
+	(*AssociatedInstance)(nil),                   // 75: catalog.service.v1.AssociatedInstance
+	(*NetworkAddress)(nil),                       // 76: catalog.service.v1.NetworkAddress
+	(*ListVPCAssociatedInstancesRequest)(nil),    // 77: catalog.service.v1.ListVPCAssociatedInstancesRequest
+	(*ListSubnetAssociatedInstancesRequest)(nil), // 78: catalog.service.v1.ListSubnetAssociatedInstancesRequest
+	(*ListAssociatedInstancesResponse)(nil),      // 79: catalog.service.v1.ListAssociatedInstancesResponse
+	(*timestamppb.Timestamp)(nil),                // 80: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),                // 81: google.protobuf.FieldMask
 }
 var file_catalog_service_v1_vpc_proto_depIdxs = []int32{
-	75, // 0: catalog.service.v1.VPC.created_at:type_name -> google.protobuf.Timestamp
-	75, // 1: catalog.service.v1.VPC.updated_at:type_name -> google.protobuf.Timestamp
-	75, // 2: catalog.service.v1.VPC.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 0: catalog.service.v1.VPC.created_at:type_name -> google.protobuf.Timestamp
+	80, // 1: catalog.service.v1.VPC.updated_at:type_name -> google.protobuf.Timestamp
+	80, // 2: catalog.service.v1.VPC.observed_at:type_name -> google.protobuf.Timestamp
 	10, // 3: catalog.service.v1.VPC.public_egress:type_name -> catalog.service.v1.VPCPublicEgress
 	9,  // 4: catalog.service.v1.VPC.base_connectivity:type_name -> catalog.service.v1.VPCBaseConnectivity
-	75, // 5: catalog.service.v1.VPCBaseConnectivity.observed_at:type_name -> google.protobuf.Timestamp
-	75, // 6: catalog.service.v1.VPCPublicEgress.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 5: catalog.service.v1.VPCBaseConnectivity.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 6: catalog.service.v1.VPCPublicEgress.observed_at:type_name -> google.protobuf.Timestamp
 	8,  // 7: catalog.service.v1.GetVPCResponse.vpc:type_name -> catalog.service.v1.VPC
 	8,  // 8: catalog.service.v1.ListVPCsResponse.items:type_name -> catalog.service.v1.VPC
 	8,  // 9: catalog.service.v1.CreateVPCResponse.vpc:type_name -> catalog.service.v1.VPC
 	8,  // 10: catalog.service.v1.DeleteVPCResponse.vpc:type_name -> catalog.service.v1.VPC
-	75, // 11: catalog.service.v1.Operation.created_at:type_name -> google.protobuf.Timestamp
-	75, // 12: catalog.service.v1.Operation.updated_at:type_name -> google.protobuf.Timestamp
-	75, // 13: catalog.service.v1.Operation.completed_at:type_name -> google.protobuf.Timestamp
-	75, // 14: catalog.service.v1.Operation.next_attempt_at:type_name -> google.protobuf.Timestamp
+	80, // 11: catalog.service.v1.Operation.created_at:type_name -> google.protobuf.Timestamp
+	80, // 12: catalog.service.v1.Operation.updated_at:type_name -> google.protobuf.Timestamp
+	80, // 13: catalog.service.v1.Operation.completed_at:type_name -> google.protobuf.Timestamp
+	80, // 14: catalog.service.v1.Operation.next_attempt_at:type_name -> google.protobuf.Timestamp
 	19, // 15: catalog.service.v1.GetOperationResponse.operation:type_name -> catalog.service.v1.Operation
-	75, // 16: catalog.service.v1.EIP.created_at:type_name -> google.protobuf.Timestamp
-	75, // 17: catalog.service.v1.EIP.updated_at:type_name -> google.protobuf.Timestamp
-	75, // 18: catalog.service.v1.EIP.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 16: catalog.service.v1.EIP.created_at:type_name -> google.protobuf.Timestamp
+	80, // 17: catalog.service.v1.EIP.updated_at:type_name -> google.protobuf.Timestamp
+	80, // 18: catalog.service.v1.EIP.observed_at:type_name -> google.protobuf.Timestamp
 	22, // 19: catalog.service.v1.EIP.binding_target:type_name -> catalog.service.v1.EIPBindingTarget
 	21, // 20: catalog.service.v1.GetEIPResponse.eip:type_name -> catalog.service.v1.EIP
 	21, // 21: catalog.service.v1.ListEIPsResponse.items:type_name -> catalog.service.v1.EIP
 	21, // 22: catalog.service.v1.CreateEIPResponse.eip:type_name -> catalog.service.v1.EIP
 	21, // 23: catalog.service.v1.DeleteEIPResponse.eip:type_name -> catalog.service.v1.EIP
-	75, // 24: catalog.service.v1.VPCSnat.created_at:type_name -> google.protobuf.Timestamp
-	75, // 25: catalog.service.v1.VPCSnat.updated_at:type_name -> google.protobuf.Timestamp
-	75, // 26: catalog.service.v1.VPCSnat.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 24: catalog.service.v1.VPCSnat.created_at:type_name -> google.protobuf.Timestamp
+	80, // 25: catalog.service.v1.VPCSnat.updated_at:type_name -> google.protobuf.Timestamp
+	80, // 26: catalog.service.v1.VPCSnat.observed_at:type_name -> google.protobuf.Timestamp
 	32, // 27: catalog.service.v1.GetVPCSnatResponse.snat:type_name -> catalog.service.v1.VPCSnat
 	32, // 28: catalog.service.v1.BindVPCSnatResponse.snat:type_name -> catalog.service.v1.VPCSnat
-	75, // 29: catalog.service.v1.Subnet.created_at:type_name -> google.protobuf.Timestamp
-	75, // 30: catalog.service.v1.Subnet.updated_at:type_name -> google.protobuf.Timestamp
-	75, // 31: catalog.service.v1.Subnet.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 29: catalog.service.v1.Subnet.created_at:type_name -> google.protobuf.Timestamp
+	80, // 30: catalog.service.v1.Subnet.updated_at:type_name -> google.protobuf.Timestamp
+	80, // 31: catalog.service.v1.Subnet.observed_at:type_name -> google.protobuf.Timestamp
 	36, // 32: catalog.service.v1.CreateSubnetResponse.subnet:type_name -> catalog.service.v1.Subnet
 	36, // 33: catalog.service.v1.GetSubnetResponse.subnet:type_name -> catalog.service.v1.Subnet
 	36, // 34: catalog.service.v1.ListSubnetsResponse.items:type_name -> catalog.service.v1.Subnet
@@ -5867,7 +6275,7 @@ var file_catalog_service_v1_vpc_proto_depIdxs = []int32{
 	51, // 49: catalog.service.v1.LoadBalancerListener.certificate_ref:type_name -> catalog.service.v1.LoadBalancerCertificateRef
 	2,  // 50: catalog.service.v1.LoadBalancerListener.algorithm:type_name -> catalog.service.v1.LoadBalancerAlgorithm
 	52, // 51: catalog.service.v1.LoadBalancerListener.session_persistence:type_name -> catalog.service.v1.LoadBalancerSessionPersistence
-	75, // 52: catalog.service.v1.LoadBalancerBackendMember.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 52: catalog.service.v1.LoadBalancerBackendMember.observed_at:type_name -> google.protobuf.Timestamp
 	3,  // 53: catalog.service.v1.LoadBalancerHealthCheck.protocol:type_name -> catalog.service.v1.LoadBalancerHealthCheckProtocol
 	0,  // 54: catalog.service.v1.LoadBalancer.exposure:type_name -> catalog.service.v1.LoadBalancerExposure
 	54, // 55: catalog.service.v1.LoadBalancer.listener:type_name -> catalog.service.v1.LoadBalancerListener
@@ -5876,10 +6284,10 @@ var file_catalog_service_v1_vpc_proto_depIdxs = []int32{
 	2,  // 58: catalog.service.v1.LoadBalancer.algorithm:type_name -> catalog.service.v1.LoadBalancerAlgorithm
 	4,  // 59: catalog.service.v1.LoadBalancer.configuration_state:type_name -> catalog.service.v1.LoadBalancerConfigurationState
 	5,  // 60: catalog.service.v1.LoadBalancer.data_plane_state:type_name -> catalog.service.v1.LoadBalancerDataPlaneState
-	75, // 61: catalog.service.v1.LoadBalancer.observed_at:type_name -> google.protobuf.Timestamp
-	75, // 62: catalog.service.v1.LoadBalancer.created_at:type_name -> google.protobuf.Timestamp
-	75, // 63: catalog.service.v1.LoadBalancer.updated_at:type_name -> google.protobuf.Timestamp
-	75, // 64: catalog.service.v1.LoadBalancer.data_plane_observed_at:type_name -> google.protobuf.Timestamp
+	80, // 61: catalog.service.v1.LoadBalancer.observed_at:type_name -> google.protobuf.Timestamp
+	80, // 62: catalog.service.v1.LoadBalancer.created_at:type_name -> google.protobuf.Timestamp
+	80, // 63: catalog.service.v1.LoadBalancer.updated_at:type_name -> google.protobuf.Timestamp
+	80, // 64: catalog.service.v1.LoadBalancer.data_plane_observed_at:type_name -> google.protobuf.Timestamp
 	54, // 65: catalog.service.v1.LoadBalancer.listeners:type_name -> catalog.service.v1.LoadBalancerListener
 	0,  // 66: catalog.service.v1.CreateLoadBalancerRequest.exposure:type_name -> catalog.service.v1.LoadBalancerExposure
 	53, // 67: catalog.service.v1.CreateLoadBalancerRequest.listener:type_name -> catalog.service.v1.LoadBalancerListenerInput
@@ -5894,7 +6302,7 @@ var file_catalog_service_v1_vpc_proto_depIdxs = []int32{
 	55, // 76: catalog.service.v1.UpdateLoadBalancerRequest.backends:type_name -> catalog.service.v1.LoadBalancerBackendInput
 	57, // 77: catalog.service.v1.UpdateLoadBalancerRequest.health_check:type_name -> catalog.service.v1.LoadBalancerHealthCheck
 	71, // 78: catalog.service.v1.UpdateLoadBalancerRequest.listeners:type_name -> catalog.service.v1.LoadBalancerListenerSet
-	76, // 79: catalog.service.v1.UpdateLoadBalancerRequest.update_mask:type_name -> google.protobuf.FieldMask
+	81, // 79: catalog.service.v1.UpdateLoadBalancerRequest.update_mask:type_name -> google.protobuf.FieldMask
 	72, // 80: catalog.service.v1.UpdateLoadBalancerRequest.data:type_name -> catalog.service.v1.LoadBalancerMutableData
 	58, // 81: catalog.service.v1.UpdateLoadBalancerResponse.load_balancer:type_name -> catalog.service.v1.LoadBalancer
 	19, // 82: catalog.service.v1.UpdateLoadBalancerResponse.operation:type_name -> catalog.service.v1.Operation
@@ -5903,11 +6311,14 @@ var file_catalog_service_v1_vpc_proto_depIdxs = []int32{
 	19, // 85: catalog.service.v1.GetLoadBalancerOperationResponse.operation:type_name -> catalog.service.v1.Operation
 	53, // 86: catalog.service.v1.LoadBalancerListenerSet.items:type_name -> catalog.service.v1.LoadBalancerListenerInput
 	71, // 87: catalog.service.v1.LoadBalancerMutableData.listeners:type_name -> catalog.service.v1.LoadBalancerListenerSet
-	88, // [88:88] is the sub-list for method output_type
-	88, // [88:88] is the sub-list for method input_type
-	88, // [88:88] is the sub-list for extension type_name
-	88, // [88:88] is the sub-list for extension extendee
-	0,  // [0:88] is the sub-list for field type_name
+	80, // 88: catalog.service.v1.AssociatedInstance.observed_at:type_name -> google.protobuf.Timestamp
+	76, // 89: catalog.service.v1.AssociatedInstance.addresses:type_name -> catalog.service.v1.NetworkAddress
+	75, // 90: catalog.service.v1.ListAssociatedInstancesResponse.items:type_name -> catalog.service.v1.AssociatedInstance
+	91, // [91:91] is the sub-list for method output_type
+	91, // [91:91] is the sub-list for method input_type
+	91, // [91:91] is the sub-list for extension type_name
+	91, // [91:91] is the sub-list for extension extendee
+	0,  // [0:91] is the sub-list for field type_name
 }
 
 func init() { file_catalog_service_v1_vpc_proto_init() }
@@ -5924,13 +6335,15 @@ func file_catalog_service_v1_vpc_proto_init() {
 	file_catalog_service_v1_vpc_proto_msgTypes[47].OneofWrappers = []any{}
 	file_catalog_service_v1_vpc_proto_msgTypes[48].OneofWrappers = []any{}
 	file_catalog_service_v1_vpc_proto_msgTypes[50].OneofWrappers = []any{}
+	file_catalog_service_v1_vpc_proto_msgTypes[70].OneofWrappers = []any{}
+	file_catalog_service_v1_vpc_proto_msgTypes[71].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_service_v1_vpc_proto_rawDesc), len(file_catalog_service_v1_vpc_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   68,
+			NumMessages:   73,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

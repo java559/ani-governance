@@ -23,7 +23,7 @@
 | API Key / AK-SK | AK-01～AK-07；AK-IDEM-01（创建幂等，2026-10-10）；AK-ROLE-INFO-01（响应回填角色名称/描述，2026-10-13） | 签名、角色绑定、加密与可信审计已完成，真实 VPC 闭环 PASS；创建幂等已在 ani-system 真实环境实测（HTTP 20/20 PASS + 8 并发 ALL PASS）；AK-ROLE-INFO-01 已在 ani-system 实测 14/14 PASS 且既有三脚本回归不退化 | AKSK-VPC-20260922 已完成本批；幂等与角色信息回填属向后兼容增强，未并入风格批次 |
 | VPC 详情查询的机器调用 | NET-01；复用 AK-* | 必要 vpc-read 接收已整合，双 actor 与真实 mTLS 查询 PASS | AKSK-VPC-20260922 已完成本批 |
 | Network 安全组与实例绑定 | NET-SG-01～NET-SG-15 | 正式 SDK 固定；Fedora 定向测试、构建与 HTTP/mTLS/PG/worker 闭环通过；真实流量验收待执行 | 新接口遵守 data 包装；既有 Network 接口格式保留 |
-| Network 租户面读写对接 | NET-01～NET-25；复用 AK-*、AUTH-* | 当前 25 方法支持 JWT/AK；NET-01～24 的历史三条主链验收和 NET-25 增量结果分批记录 | 当前合同见下方增量与 [AK/SK 合同](contracts/aksk-signature.md)；真实环境按批次验收 |
+| Network 租户面读写对接 | NET-01～NET-27；复用 AK-*、AUTH-* | 当前 27 方法支持 JWT/AK；NET-01～24 的历史三条主链验收、NET-25 与 NET-26～27 增量结果分批记录 | 当前合同见下方增量与 [AK/SK 合同](contracts/aksk-signature.md)；真实环境按批次验收 |
 | Gov → Resource 调用规范收敛 | S2S-RES-01；复用 NET-01～NET-25 与既有 Image 11 RPC | Network/Image 调用端与 Resource 接收端已修改；隔离真实业务链路通过，生产验收未执行 | 传输与可信上下文即时修复，见下方结果；不调整 HTTP 风格 |
 | Gov → Resource Sandbox 生命周期 | SANDBOX-01～08 | 当前需求为独立 Sandbox：源码调整、跨仓兼容和验收结果见 Resource 唯一状态；旧父实例模型的历史证据不能代表新模型已验收 | Gov 需固定支持独立创建的 Resource 正式版本；升级前执行切换门禁，整体验收待完成 |
 | 通用配额、GPU 实例与 Inference 接入 | QUOTA-01～03；INF-01/02；QUOTA-LAB-01～04；复用 PLAN-11～14、TENANT-04/08 | 保留 ACC 目录与 Resource 实例执行/释放合同；Inference 管理由 Governance BFF 接入并通过受信 mTLS 客户端投递；旧模拟 owner 入口退役 | 当前合同见 [GPU owner 指南](contracts/gpu-owner-integration-guide.md)；源码、部署与真实 GPU 验收分别记录 |
@@ -39,6 +39,21 @@
 历史 **GOV-RESOURCE-20260922** 对接了 NET-01～NET-11 共 11 个租户接口；“17/17”是该批场景数，不是 Resource 租户 RPC 全量覆盖。该批 AK 实际只支持 GetVPC，其余接口的机器访问在 2026-10-09 增补。历史计划、证据及部署保持各自时点；当前覆盖与响应合同以下方本轮小节和源码为准。
 
 <a id="vpc-page-r01"></a>
+
+## 2026-11-03：VPC / 子网关联实例（NET-26～NET-27）
+
+组长要求删除 VPC 详情页原「算力关联」表，改为 VPC 汇总页与子网详情页各挂一个「关联资源」表。本批只做后端只读查询，资源范围限容器实例与虚拟机；Sandbox、换网待重启与多网卡不在本批，也不聚合子网/LB/EIP。
+
+| 编号 | RPC | HTTP 方法与路径 | 权限码 | HTTP 响应 |
+| --- | --- | --- | --- | --- |
+| NET-26 | ListNetworkInstances | `GET /api/v1/networks/vpcs/{vpc_id}/associated-instances` | `network:vpc:get`（复用） | items / total |
+| NET-27 | ListNetworkInstances | `GET /api/v1/networks/subnets/{subnet_id}/associated-instances` | `network:subnet:get`（复用） | items / total |
+
+两个入口共用 Resource 的 `ListNetworkInstances`，只接受 `page`/`pageSize`（默认 1/20，上限 100），其余 query、重复参数与 body 一律 400；`vpc_id`/`subnet_id` 沿用 `networkIDPatterns`。响应行的 `consumer_type`、`consumer_state`、`attachment_state`、`attachment_reason` 是相互独立的既成事实并原样透出：`unknown` 只用于历史上未登记类型的行；资源记录已被清理时保留整行而不是删掉；`addresses` 只来自 Network 自己的持久观测，空数组不等于「未接网」，`observation_stale` 与 `observed_at` 分开表达。网络不存在返回 404，存在但没有关联返回空页。
+
+复用权限码不等于减少登记：两条新 `(method, path)` 仍须进入 `NetworkOperations`、能力映射附录与 `sys_apis`，并在 `sys_permission_apis` 关联到复用的详情码，`CapabilityCount`/`AllKeys` 基线各加 2。因此只持 `network:vpc:get` 或 `network:subnet:get` 的既有角色在目录关联后即可看到该表，无需重新授权；若上线漏做关联，表现是「能进详情、关联实例 403」，属部署缺项而非代码缺陷。
+
+Resource 侧同步新增 `network_attachments.consumer_type`（迁移 0028 只回填 `plan->>'WorkloadMode'` 能确证的两类，其余保持空值），并把 `ConsumerType` 排除出 `PrepareAttachment` 的意图指纹，使存量 attachment 的重放不因新列变成幂等冲突。
 
 ## 2026-10-15：VPC R01 页码参考实现
 

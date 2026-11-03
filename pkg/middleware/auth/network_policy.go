@@ -48,10 +48,12 @@ var NetworkOperations = map[string]NetworkOperationPolicy{
 	"/admin.service.v1.NetworkService/CreateVPC":          {"POST", "/api/v1/networks/vpcs", "network:vpc:create", false},
 	VPCReadOperation: {"GET", "/api/v1/networks/vpcs/{vpc_id}", "network:vpc:get", true},
 	"/admin.service.v1.NetworkService/ListVPCs":                 {"GET", "/api/v1/networks/vpcs", "network:vpc:list", true},
+	"/admin.service.v1.NetworkService/ListVPCAssociatedInstances": {"GET", "/api/v1/networks/vpcs/{vpc_id}/associated-instances", "network:vpc:get", true},
 	"/admin.service.v1.NetworkService/DeleteVPC":                {"DELETE", "/api/v1/networks/vpcs/{vpc_id}", "network:vpc:delete", false},
 	"/admin.service.v1.NetworkService/GetOperation":             {"GET", "/api/v1/networks/operations/{operation_id}", "network:operation:get", true},
 	"/admin.service.v1.NetworkService/CreateSubnet":             {"POST", "/api/v1/networks/subnets", "network:subnet:create", false},
 	"/admin.service.v1.NetworkService/GetSubnet":                {"GET", "/api/v1/networks/subnets/{subnet_id}", "network:subnet:get", true},
+	"/admin.service.v1.NetworkService/ListSubnetAssociatedInstances": {"GET", "/api/v1/networks/subnets/{subnet_id}/associated-instances", "network:subnet:get", true},
 	"/admin.service.v1.NetworkService/ListSubnets":              {"GET", "/api/v1/networks/subnets", "network:subnet:list", true},
 	"/admin.service.v1.NetworkService/DeleteSubnet":             {"DELETE", "/api/v1/networks/subnets/{subnet_id}", "network:subnet:delete", false},
 	"/admin.service.v1.NetworkService/CreateEIP":                {"POST", "/api/v1/networks/eips", "network:eip:create", false},
@@ -138,6 +140,10 @@ func networkRequestMessage(operation string) proto.Message {
 		return &view.ListVPCCIDRPresetsRequest{}
 	case "ListVPCs":
 		return &view.ListVPCsRequest{}
+	case "ListVPCAssociatedInstances":
+		return &view.ListVPCAssociatedInstancesRequest{}
+	case "ListSubnetAssociatedInstances":
+		return &view.ListSubnetAssociatedInstancesRequest{}
 	case "DeleteVPC":
 		return &view.DeleteVPCRequest{}
 	case "GetOperation":
@@ -246,6 +252,8 @@ func networkQueryFields(operation string) map[string]bool {
 		for _, field := range []string{"name", "state", "page", "pageSize"} {
 			fields[field] = true
 		}
+	case "ListVPCAssociatedInstances", "ListSubnetAssociatedInstances":
+		fields["page"], fields["pageSize"] = true, true
 	case "ListSecurityGroupRules", "ListSecurityGroupBindings":
 		fields["page"], fields["pageSize"] = true, true
 		if strings.HasSuffix(operation, "/ListSecurityGroupRules") {

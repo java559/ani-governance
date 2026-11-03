@@ -34,6 +34,7 @@ type NetworkTenantClient interface {
 	ListVPCCIDRPresets(context.Context, string, string) (*networkv1.ListVPCCIDRPresetsResponse, error)
 	VPCGetter
 	ListVPCs(context.Context, string, string, string, string, uint32, uint32) (*networkv1.ListVPCsResponse, error)
+	ListNetworkInstances(context.Context, string, string, string, string, uint32, uint32) (*networkv1.ListNetworkInstancesResponse, error)
 	CreateVPC(context.Context, string, string, string, string, string, string) (*networkv1.CreateVPCResponse, error)
 	DeleteVPC(context.Context, string, string, string) (*networkv1.DeleteVPCResponse, error)
 	GetOperation(context.Context, string, string, string) (*networkv1.GetOperationResponse, error)
@@ -215,6 +216,80 @@ func (s *NetworkService) ListVPCs(ctx context.Context, req *catalogv1.ListVPCsRe
 		out.Items = append(out.Items, wireVPC(v))
 	}
 	return out, nil
+}
+
+// ListVPCAssociatedInstances and ListSubnetAssociatedInstances answer which
+// compute consumers hold a slot in one network. Every row is re-checked against
+// the trusted tenant and, for a subnet entry point, the requested subnet; the
+// recorded consumer type, states and reason are passed through unchanged.
+// Guessing a type or re-labelling a release failure would turn a read-only page
+// into a claim the platform cannot support.
+func (s *NetworkService) ListVPCAssociatedInstances(ctx context.Context, req *catalogv1.ListVPCAssociatedInstancesRequest) (*catalogv1.ListAssociatedInstancesResponse, error) {
+	if req == nil || !vpcIDPattern.MatchString(req.GetVpcId()) {
+		return nil, errors.BadRequest("INVALID_NETWORK_REQUEST", "invalid VPC ID")
+	}
+	return s.listAssociatedInstances(ctx, req.GetVpcId(), "", req.Page, req.PageSize)
+}
+
+func (s *NetworkService) ListSubnetAssociatedInstances(ctx context.Context, req *catalogv1.ListSubnetAssociatedInstancesRequest) (*catalogv1.ListAssociatedInstancesResponse, error) {
+	if req == nil || !subnetIDPattern.MatchString(req.GetSubnetId()) {
+		return nil, errors.BadRequest("INVALID_NETWORK_REQUEST", "invalid subnet ID")
+	}
+	return s.listAssociatedInstances(ctx, "", req.GetSubnetId(), req.Page, req.PageSize)
+}
+
+func (s *NetworkService) listAssociatedInstances(ctx context.Context, vpcID, subnetID string, page, pageSize *uint32) (*catalogv1.ListAssociatedInstancesResponse, error) {
+	p, size, err := resolveVPCPage(page, pageSize)
+	if err != nil {
+		return nil, err
+	}
+	_, tenant, err := trustedOperator(ctx, s)
+	if err != nil {
+		return nil, err
+	}
+	actor, err := actorOf(ctx)
+	if err != nil {
+		return nil, err
+	}
+	reply, err := s.client.ListNetworkInstances(ctx, tenant, actor, vpcID, subnetID, p, size)
+	if err != nil {
+		return nil, mapNetworkError(err)
+	}
+	if reply == nil || reply.Total < 0 || len(reply.Items) > int(size) || int64(len(reply.Items)) > reply.Total {
+		return nil, errors.ServiceUnavailable("NETWORK_INVALID_RESPONSE", "invalid network page")
+	}
+	out := &catalogv1.ListAssociatedInstancesResponse{Total: reply.GetTotal(), Items: make([]*catalogv1.AssociatedInstance, 0, len(reply.Items))}
+	for _, v := range reply.GetItems() {
+		if v == nil || v.TenantId != tenant || (subnetID != "" && v.SubnetId != subnetID) ||
+			!associatedConsumerTypes[v.ConsumerType] || !associatedAttachmentStates[v.AttachmentState] {
+			return nil, errors.ServiceUnavailable("NETWORK_INVALID_RESPONSE", "invalid network response")
+		}
+		out.Items = append(out.Items, wireAssociatedInstance(v))
+	}
+	return out, nil
+}
+
+// associatedConsumerTypes and associatedAttachmentStates are the closed sets
+// Network records. attachment_reason stays open: reason codes are the downstream
+// contract and this BFF must not rename or drop a new one.
+var associatedConsumerTypes = map[string]bool{"container_instance": true, "virtual_machine": true, "sandbox": true, "unknown": true}
+var associatedAttachmentStates = map[string]bool{"reserved": true, "attached": true, "releasing": true, "released": true}
+
+func wireAssociatedInstance(v *networkv1.AssociatedInstance) *catalogv1.AssociatedInstance {
+	out := &catalogv1.AssociatedInstance{
+		ConsumerType: v.ConsumerType, ConsumerId: v.ConsumerId, ConsumerName: v.ConsumerName, ConsumerState: v.ConsumerState,
+		SubnetId: v.SubnetId, SubnetName: v.SubnetName, Slot: v.Slot, AttachmentId: v.AttachmentId,
+		AttachmentState: v.AttachmentState, AttachmentReason: v.AttachmentReason,
+		ObservationStale: v.ObservationStale, ObservedAt: v.ObservedAt,
+		Addresses: make([]*catalogv1.NetworkAddress, 0, len(v.Addresses)),
+	}
+	for _, address := range v.Addresses {
+		if address == nil {
+			continue
+		}
+		out.Addresses = append(out.Addresses, &catalogv1.NetworkAddress{NicName: address.NicName, Address: address.Address})
+	}
+	return out
 }
 
 func (s *NetworkService) CreateVPC(ctx context.Context, req *catalogv1.CreateVPCRequest) (*catalogv1.CreateVPCResponse, error) {

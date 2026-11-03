@@ -20,44 +20,46 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	NetworkService_GetEIPSecurityGroups_FullMethodName      = "/admin.service.v1.NetworkService/GetEIPSecurityGroups"
-	NetworkService_GetSecurityGroupOperation_FullMethodName = "/admin.service.v1.NetworkService/GetSecurityGroupOperation"
-	NetworkService_CreateSecurityGroup_FullMethodName       = "/admin.service.v1.NetworkService/CreateSecurityGroup"
-	NetworkService_GetSecurityGroup_FullMethodName          = "/admin.service.v1.NetworkService/GetSecurityGroup"
-	NetworkService_ListSecurityGroups_FullMethodName        = "/admin.service.v1.NetworkService/ListSecurityGroups"
-	NetworkService_UpdateSecurityGroup_FullMethodName       = "/admin.service.v1.NetworkService/UpdateSecurityGroup"
-	NetworkService_DeleteSecurityGroup_FullMethodName       = "/admin.service.v1.NetworkService/DeleteSecurityGroup"
-	NetworkService_ListSecurityGroupRules_FullMethodName    = "/admin.service.v1.NetworkService/ListSecurityGroupRules"
-	NetworkService_CreateSecurityGroupRule_FullMethodName   = "/admin.service.v1.NetworkService/CreateSecurityGroupRule"
-	NetworkService_UpdateSecurityGroupRule_FullMethodName   = "/admin.service.v1.NetworkService/UpdateSecurityGroupRule"
-	NetworkService_DeleteSecurityGroupRule_FullMethodName   = "/admin.service.v1.NetworkService/DeleteSecurityGroupRule"
-	NetworkService_ListSecurityGroupBindings_FullMethodName = "/admin.service.v1.NetworkService/ListSecurityGroupBindings"
-	NetworkService_SetEIPSecurityGroups_FullMethodName      = "/admin.service.v1.NetworkService/SetEIPSecurityGroups"
-	NetworkService_ListVPCCIDRPresets_FullMethodName        = "/admin.service.v1.NetworkService/ListVPCCIDRPresets"
-	NetworkService_GetVPC_FullMethodName                    = "/admin.service.v1.NetworkService/GetVPC"
-	NetworkService_ListVPCs_FullMethodName                  = "/admin.service.v1.NetworkService/ListVPCs"
-	NetworkService_CreateVPC_FullMethodName                 = "/admin.service.v1.NetworkService/CreateVPC"
-	NetworkService_DeleteVPC_FullMethodName                 = "/admin.service.v1.NetworkService/DeleteVPC"
-	NetworkService_GetOperation_FullMethodName              = "/admin.service.v1.NetworkService/GetOperation"
-	NetworkService_GetEIP_FullMethodName                    = "/admin.service.v1.NetworkService/GetEIP"
-	NetworkService_ListEIPs_FullMethodName                  = "/admin.service.v1.NetworkService/ListEIPs"
-	NetworkService_CreateEIP_FullMethodName                 = "/admin.service.v1.NetworkService/CreateEIP"
-	NetworkService_DeleteEIP_FullMethodName                 = "/admin.service.v1.NetworkService/DeleteEIP"
-	NetworkService_GetVPCSnat_FullMethodName                = "/admin.service.v1.NetworkService/GetVPCSnat"
-	NetworkService_BindVPCSnat_FullMethodName               = "/admin.service.v1.NetworkService/BindVPCSnat"
-	NetworkService_CreateSubnet_FullMethodName              = "/admin.service.v1.NetworkService/CreateSubnet"
-	NetworkService_GetSubnet_FullMethodName                 = "/admin.service.v1.NetworkService/GetSubnet"
-	NetworkService_ListSubnets_FullMethodName               = "/admin.service.v1.NetworkService/ListSubnets"
-	NetworkService_DeleteSubnet_FullMethodName              = "/admin.service.v1.NetworkService/DeleteSubnet"
-	NetworkService_GetVPCSnatBinding_FullMethodName         = "/admin.service.v1.NetworkService/GetVPCSnatBinding"
-	NetworkService_SetVPCSnatEnabled_FullMethodName         = "/admin.service.v1.NetworkService/SetVPCSnatEnabled"
-	NetworkService_DeleteVPCSnatBinding_FullMethodName      = "/admin.service.v1.NetworkService/DeleteVPCSnatBinding"
-	NetworkService_CreateLoadBalancer_FullMethodName        = "/admin.service.v1.NetworkService/CreateLoadBalancer"
-	NetworkService_GetLoadBalancer_FullMethodName           = "/admin.service.v1.NetworkService/GetLoadBalancer"
-	NetworkService_ListLoadBalancers_FullMethodName         = "/admin.service.v1.NetworkService/ListLoadBalancers"
-	NetworkService_UpdateLoadBalancer_FullMethodName        = "/admin.service.v1.NetworkService/UpdateLoadBalancer"
-	NetworkService_DeleteLoadBalancer_FullMethodName        = "/admin.service.v1.NetworkService/DeleteLoadBalancer"
-	NetworkService_GetLoadBalancerOperation_FullMethodName  = "/admin.service.v1.NetworkService/GetLoadBalancerOperation"
+	NetworkService_GetEIPSecurityGroups_FullMethodName          = "/admin.service.v1.NetworkService/GetEIPSecurityGroups"
+	NetworkService_GetSecurityGroupOperation_FullMethodName     = "/admin.service.v1.NetworkService/GetSecurityGroupOperation"
+	NetworkService_CreateSecurityGroup_FullMethodName           = "/admin.service.v1.NetworkService/CreateSecurityGroup"
+	NetworkService_GetSecurityGroup_FullMethodName              = "/admin.service.v1.NetworkService/GetSecurityGroup"
+	NetworkService_ListSecurityGroups_FullMethodName            = "/admin.service.v1.NetworkService/ListSecurityGroups"
+	NetworkService_UpdateSecurityGroup_FullMethodName           = "/admin.service.v1.NetworkService/UpdateSecurityGroup"
+	NetworkService_DeleteSecurityGroup_FullMethodName           = "/admin.service.v1.NetworkService/DeleteSecurityGroup"
+	NetworkService_ListSecurityGroupRules_FullMethodName        = "/admin.service.v1.NetworkService/ListSecurityGroupRules"
+	NetworkService_CreateSecurityGroupRule_FullMethodName       = "/admin.service.v1.NetworkService/CreateSecurityGroupRule"
+	NetworkService_UpdateSecurityGroupRule_FullMethodName       = "/admin.service.v1.NetworkService/UpdateSecurityGroupRule"
+	NetworkService_DeleteSecurityGroupRule_FullMethodName       = "/admin.service.v1.NetworkService/DeleteSecurityGroupRule"
+	NetworkService_ListSecurityGroupBindings_FullMethodName     = "/admin.service.v1.NetworkService/ListSecurityGroupBindings"
+	NetworkService_SetEIPSecurityGroups_FullMethodName          = "/admin.service.v1.NetworkService/SetEIPSecurityGroups"
+	NetworkService_ListVPCCIDRPresets_FullMethodName            = "/admin.service.v1.NetworkService/ListVPCCIDRPresets"
+	NetworkService_GetVPC_FullMethodName                        = "/admin.service.v1.NetworkService/GetVPC"
+	NetworkService_ListVPCs_FullMethodName                      = "/admin.service.v1.NetworkService/ListVPCs"
+	NetworkService_CreateVPC_FullMethodName                     = "/admin.service.v1.NetworkService/CreateVPC"
+	NetworkService_DeleteVPC_FullMethodName                     = "/admin.service.v1.NetworkService/DeleteVPC"
+	NetworkService_ListVPCAssociatedInstances_FullMethodName    = "/admin.service.v1.NetworkService/ListVPCAssociatedInstances"
+	NetworkService_GetOperation_FullMethodName                  = "/admin.service.v1.NetworkService/GetOperation"
+	NetworkService_GetEIP_FullMethodName                        = "/admin.service.v1.NetworkService/GetEIP"
+	NetworkService_ListEIPs_FullMethodName                      = "/admin.service.v1.NetworkService/ListEIPs"
+	NetworkService_CreateEIP_FullMethodName                     = "/admin.service.v1.NetworkService/CreateEIP"
+	NetworkService_DeleteEIP_FullMethodName                     = "/admin.service.v1.NetworkService/DeleteEIP"
+	NetworkService_GetVPCSnat_FullMethodName                    = "/admin.service.v1.NetworkService/GetVPCSnat"
+	NetworkService_BindVPCSnat_FullMethodName                   = "/admin.service.v1.NetworkService/BindVPCSnat"
+	NetworkService_CreateSubnet_FullMethodName                  = "/admin.service.v1.NetworkService/CreateSubnet"
+	NetworkService_GetSubnet_FullMethodName                     = "/admin.service.v1.NetworkService/GetSubnet"
+	NetworkService_ListSubnets_FullMethodName                   = "/admin.service.v1.NetworkService/ListSubnets"
+	NetworkService_DeleteSubnet_FullMethodName                  = "/admin.service.v1.NetworkService/DeleteSubnet"
+	NetworkService_ListSubnetAssociatedInstances_FullMethodName = "/admin.service.v1.NetworkService/ListSubnetAssociatedInstances"
+	NetworkService_GetVPCSnatBinding_FullMethodName             = "/admin.service.v1.NetworkService/GetVPCSnatBinding"
+	NetworkService_SetVPCSnatEnabled_FullMethodName             = "/admin.service.v1.NetworkService/SetVPCSnatEnabled"
+	NetworkService_DeleteVPCSnatBinding_FullMethodName          = "/admin.service.v1.NetworkService/DeleteVPCSnatBinding"
+	NetworkService_CreateLoadBalancer_FullMethodName            = "/admin.service.v1.NetworkService/CreateLoadBalancer"
+	NetworkService_GetLoadBalancer_FullMethodName               = "/admin.service.v1.NetworkService/GetLoadBalancer"
+	NetworkService_ListLoadBalancers_FullMethodName             = "/admin.service.v1.NetworkService/ListLoadBalancers"
+	NetworkService_UpdateLoadBalancer_FullMethodName            = "/admin.service.v1.NetworkService/UpdateLoadBalancer"
+	NetworkService_DeleteLoadBalancer_FullMethodName            = "/admin.service.v1.NetworkService/DeleteLoadBalancer"
+	NetworkService_GetLoadBalancerOperation_FullMethodName      = "/admin.service.v1.NetworkService/GetLoadBalancerOperation"
 )
 
 // NetworkServiceClient is the client API for NetworkService service.
@@ -82,6 +84,7 @@ type NetworkServiceClient interface {
 	ListVPCs(ctx context.Context, in *v1.ListVPCsRequest, opts ...grpc.CallOption) (*v1.ListVPCsResponse, error)
 	CreateVPC(ctx context.Context, in *v1.CreateVPCRequest, opts ...grpc.CallOption) (*v1.CreateVPCResponse, error)
 	DeleteVPC(ctx context.Context, in *v1.DeleteVPCRequest, opts ...grpc.CallOption) (*v1.DeleteVPCResponse, error)
+	ListVPCAssociatedInstances(ctx context.Context, in *v1.ListVPCAssociatedInstancesRequest, opts ...grpc.CallOption) (*v1.ListAssociatedInstancesResponse, error)
 	GetOperation(ctx context.Context, in *v1.GetOperationRequest, opts ...grpc.CallOption) (*v1.GetOperationResponse, error)
 	GetEIP(ctx context.Context, in *v1.GetEIPRequest, opts ...grpc.CallOption) (*v1.GetEIPResponse, error)
 	ListEIPs(ctx context.Context, in *v1.ListEIPsRequest, opts ...grpc.CallOption) (*v1.ListEIPsResponse, error)
@@ -93,6 +96,7 @@ type NetworkServiceClient interface {
 	GetSubnet(ctx context.Context, in *v1.GetSubnetRequest, opts ...grpc.CallOption) (*v1.GetSubnetResponse, error)
 	ListSubnets(ctx context.Context, in *v1.ListSubnetsRequest, opts ...grpc.CallOption) (*v1.ListSubnetsResponse, error)
 	DeleteSubnet(ctx context.Context, in *v1.DeleteSubnetRequest, opts ...grpc.CallOption) (*v1.DeleteSubnetResponse, error)
+	ListSubnetAssociatedInstances(ctx context.Context, in *v1.ListSubnetAssociatedInstancesRequest, opts ...grpc.CallOption) (*v1.ListAssociatedInstancesResponse, error)
 	GetVPCSnatBinding(ctx context.Context, in *v1.GetVPCSnatBindingRequest, opts ...grpc.CallOption) (*v1.GetVPCSnatBindingResponse, error)
 	SetVPCSnatEnabled(ctx context.Context, in *v1.SetVPCSnatEnabledRequest, opts ...grpc.CallOption) (*v1.SetVPCSnatEnabledResponse, error)
 	DeleteVPCSnatBinding(ctx context.Context, in *v1.DeleteVPCSnatBindingRequest, opts ...grpc.CallOption) (*v1.DeleteVPCSnatBindingResponse, error)
@@ -292,6 +296,16 @@ func (c *networkServiceClient) DeleteVPC(ctx context.Context, in *v1.DeleteVPCRe
 	return out, nil
 }
 
+func (c *networkServiceClient) ListVPCAssociatedInstances(ctx context.Context, in *v1.ListVPCAssociatedInstancesRequest, opts ...grpc.CallOption) (*v1.ListAssociatedInstancesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListAssociatedInstancesResponse)
+	err := c.cc.Invoke(ctx, NetworkService_ListVPCAssociatedInstances_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *networkServiceClient) GetOperation(ctx context.Context, in *v1.GetOperationRequest, opts ...grpc.CallOption) (*v1.GetOperationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.GetOperationResponse)
@@ -396,6 +410,16 @@ func (c *networkServiceClient) DeleteSubnet(ctx context.Context, in *v1.DeleteSu
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.DeleteSubnetResponse)
 	err := c.cc.Invoke(ctx, NetworkService_DeleteSubnet_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServiceClient) ListSubnetAssociatedInstances(ctx context.Context, in *v1.ListSubnetAssociatedInstancesRequest, opts ...grpc.CallOption) (*v1.ListAssociatedInstancesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListAssociatedInstancesResponse)
+	err := c.cc.Invoke(ctx, NetworkService_ListSubnetAssociatedInstances_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -514,6 +538,7 @@ type NetworkServiceServer interface {
 	ListVPCs(context.Context, *v1.ListVPCsRequest) (*v1.ListVPCsResponse, error)
 	CreateVPC(context.Context, *v1.CreateVPCRequest) (*v1.CreateVPCResponse, error)
 	DeleteVPC(context.Context, *v1.DeleteVPCRequest) (*v1.DeleteVPCResponse, error)
+	ListVPCAssociatedInstances(context.Context, *v1.ListVPCAssociatedInstancesRequest) (*v1.ListAssociatedInstancesResponse, error)
 	GetOperation(context.Context, *v1.GetOperationRequest) (*v1.GetOperationResponse, error)
 	GetEIP(context.Context, *v1.GetEIPRequest) (*v1.GetEIPResponse, error)
 	ListEIPs(context.Context, *v1.ListEIPsRequest) (*v1.ListEIPsResponse, error)
@@ -525,6 +550,7 @@ type NetworkServiceServer interface {
 	GetSubnet(context.Context, *v1.GetSubnetRequest) (*v1.GetSubnetResponse, error)
 	ListSubnets(context.Context, *v1.ListSubnetsRequest) (*v1.ListSubnetsResponse, error)
 	DeleteSubnet(context.Context, *v1.DeleteSubnetRequest) (*v1.DeleteSubnetResponse, error)
+	ListSubnetAssociatedInstances(context.Context, *v1.ListSubnetAssociatedInstancesRequest) (*v1.ListAssociatedInstancesResponse, error)
 	GetVPCSnatBinding(context.Context, *v1.GetVPCSnatBindingRequest) (*v1.GetVPCSnatBindingResponse, error)
 	SetVPCSnatEnabled(context.Context, *v1.SetVPCSnatEnabledRequest) (*v1.SetVPCSnatEnabledResponse, error)
 	DeleteVPCSnatBinding(context.Context, *v1.DeleteVPCSnatBindingRequest) (*v1.DeleteVPCSnatBindingResponse, error)
@@ -598,6 +624,9 @@ func (UnimplementedNetworkServiceServer) CreateVPC(context.Context, *v1.CreateVP
 func (UnimplementedNetworkServiceServer) DeleteVPC(context.Context, *v1.DeleteVPCRequest) (*v1.DeleteVPCResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteVPC not implemented")
 }
+func (UnimplementedNetworkServiceServer) ListVPCAssociatedInstances(context.Context, *v1.ListVPCAssociatedInstancesRequest) (*v1.ListAssociatedInstancesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListVPCAssociatedInstances not implemented")
+}
 func (UnimplementedNetworkServiceServer) GetOperation(context.Context, *v1.GetOperationRequest) (*v1.GetOperationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOperation not implemented")
 }
@@ -630,6 +659,9 @@ func (UnimplementedNetworkServiceServer) ListSubnets(context.Context, *v1.ListSu
 }
 func (UnimplementedNetworkServiceServer) DeleteSubnet(context.Context, *v1.DeleteSubnetRequest) (*v1.DeleteSubnetResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteSubnet not implemented")
+}
+func (UnimplementedNetworkServiceServer) ListSubnetAssociatedInstances(context.Context, *v1.ListSubnetAssociatedInstancesRequest) (*v1.ListAssociatedInstancesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSubnetAssociatedInstances not implemented")
 }
 func (UnimplementedNetworkServiceServer) GetVPCSnatBinding(context.Context, *v1.GetVPCSnatBindingRequest) (*v1.GetVPCSnatBindingResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetVPCSnatBinding not implemented")
@@ -1003,6 +1035,24 @@ func _NetworkService_DeleteVPC_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NetworkService_ListVPCAssociatedInstances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListVPCAssociatedInstancesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).ListVPCAssociatedInstances(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_ListVPCAssociatedInstances_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).ListVPCAssociatedInstances(ctx, req.(*v1.ListVPCAssociatedInstancesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _NetworkService_GetOperation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(v1.GetOperationRequest)
 	if err := dec(in); err != nil {
@@ -1197,6 +1247,24 @@ func _NetworkService_DeleteSubnet_Handler(srv interface{}, ctx context.Context, 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NetworkServiceServer).DeleteSubnet(ctx, req.(*v1.DeleteSubnetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkService_ListSubnetAssociatedInstances_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListSubnetAssociatedInstancesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServiceServer).ListSubnetAssociatedInstances(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NetworkService_ListSubnetAssociatedInstances_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServiceServer).ListSubnetAssociatedInstances(ctx, req.(*v1.ListSubnetAssociatedInstancesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1443,6 +1511,10 @@ var NetworkService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _NetworkService_DeleteVPC_Handler,
 		},
 		{
+			MethodName: "ListVPCAssociatedInstances",
+			Handler:    _NetworkService_ListVPCAssociatedInstances_Handler,
+		},
+		{
 			MethodName: "GetOperation",
 			Handler:    _NetworkService_GetOperation_Handler,
 		},
@@ -1485,6 +1557,10 @@ var NetworkService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteSubnet",
 			Handler:    _NetworkService_DeleteSubnet_Handler,
+		},
+		{
+			MethodName: "ListSubnetAssociatedInstances",
+			Handler:    _NetworkService_ListSubnetAssociatedInstances_Handler,
 		},
 		{
 			MethodName: "GetVPCSnatBinding",
