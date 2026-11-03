@@ -12728,6 +12728,246 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/DNSDefaults'
+    /api/v1/virtual-machine-images:
+        get:
+            tags:
+                - VMImageService
+            summary: List the authenticated tenant's images
+            description: Requires vm:read and the VIRTUAL_MACHINE subscription. Tenant comes from the authenticated context and is never a query parameter. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero page values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. total counts the same filter under the same tenant. Deleted tombstones are hidden unless state=DELETED.
+            operationId: VMImageService_ListVMImages
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: kind
+                  in: query
+                  schema:
+                    type: string
+                - name: state
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListVMImagesResponse'
+                "400":
+                    description: Invalid page, kind, state or keyword
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+        post:
+            tags:
+                - VMImageService
+            summary: Register an image upload target
+            description: 'Requires vm:image:upload and the VIRTUAL_MACHINE subscription. Returns 202 with the durable record: image_id is assigned by the backend and media_key is derived from it, so a client can never choose or reuse a key. This only registers the target; no bytes have been transferred and the record starts in PREPARING. Repeating the same idempotency_key with the same content replays the first result, and the same key with different content or another target returns 409. File bytes are uploaded separately through an upload session.'
+            operationId: VMImageService_CreateVMImage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateVMImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMImage'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMImage'
+                "400":
+                    description: Invalid kind, format, size or os profile
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "409":
+                    description: Idempotency conflict
+                "503":
+                    description: Image upload is disabled or the backend is unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/virtual-machine-images/{image_id}:
+        get:
+            tags:
+                - VMImageService
+            summary: Read one image in the authenticated tenant
+            description: 'Requires vm:read and the VIRTUAL_MACHINE subscription. A missing image and another tenant''s image are indistinguishable: both return 404 and carry no native object identity.'
+            operationId: VMImageService_GetVMImage
+            parameters:
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMImage'
+                "400":
+                    description: Invalid image id
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "404":
+                    description: Image not found in this tenant
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+        delete:
+            tags:
+                - VMImageService
+            summary: Delete an image and its source objects
+            description: Requires vm:image:delete with expected_version and idempotency_key in the body. Returns 202 with the record in DELETING. While any VM still holds a pin on this source the request returns 409 VM_IMAGE_IN_USE and the state does not change; deleting a source never affects an already cloned system disk or a retained media copy. Repeating the accepted request replays the same result.
+            operationId: VMImageService_DeleteVMImage
+            parameters:
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DeleteVMImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMImage'
+                "202":
+                    description: Accepted
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMImage'
+                "400":
+                    description: Invalid image id, version or idempotency key
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "404":
+                    description: Image not found in this tenant
+                "409":
+                    description: Image is in use, or version/idempotency conflict
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+        patch:
+            tags:
+                - VMImageService
+            summary: Rename or re-describe an image
+            description: Requires vm:image:update. update_mask is a comma-separated string and only name and description are accepted; an empty, wildcard, unknown or repeated path is rejected with 400. description present with an empty string clears it, while an omitted field is preserved. kind, format, every capacity measure, source_sha256, media_key, state and created_by are immutable. A stale expected_version returns 409 VERSION_CONFLICT.
+            operationId: VMImageService_UpdateVMImage
+            parameters:
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateVMImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMImage'
+                "400":
+                    description: Invalid mask or mutable field value
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "404":
+                    description: Image not found in this tenant
+                "409":
+                    description: Version conflict or idempotency conflict
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/virtual-machine-images/{image_id}/upload-sessions:
+        post:
+            tags:
+                - VMImageService
+            summary: Issue a short-lived raw upload ticket
+            description: 'Requires vm:image:upload. Returned only for a target that can still accept bytes, and never for READY. The response is Cache-Control: no-store; the browser must send exactly the returned method, url and headers to the upload entrypoint, using the raw File body, and must not attach the platform JWT, FormData or an extra content type. The ticket is single-use, expires on its own and is never persisted by any service.'
+            operationId: VMImageService_CreateVMImageUploadSession
+            parameters:
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateVMImageUploadSessionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/VMImageUploadSession'
+                "400":
+                    description: Invalid image id or idempotency key
+                "401":
+                    description: Missing, invalid, expired or revoked credentials
+                "403":
+                    description: Tenant, permission or subscription denied
+                "404":
+                    description: Image not found in this tenant
+                "409":
+                    description: Target cannot accept an upload
+                "503":
+                    description: Image upload is disabled or the backend is unavailable
+            security:
+                - BearerAuth: []
     /api/v1/virtual-machine-media:
         get:
             tags:
@@ -16047,6 +16287,43 @@ components:
                     type: array
                     items:
                         type: string
+        CreateVMImageData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                kind:
+                    type: string
+                format:
+                    type: string
+                source_capacity_gb:
+                    type: string
+                os:
+                    $ref: '#/components/schemas/VMImageOS'
+        CreateVMImageRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/CreateVMImageData'
+        CreateVMImageUploadSessionData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+            description: |-
+                The image id travels in the path. Nothing else is accepted: tenant, namespace,
+                 PVC, UID, storage class and upload origin are all derived by the backend.
+        CreateVMImageUploadSessionRequest:
+            type: object
+            properties:
+                image_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/CreateVMImageUploadSessionData'
         CreateVMRequest:
             type: object
             properties:
@@ -16518,6 +16795,20 @@ components:
             properties:
                 subnet:
                     $ref: '#/components/schemas/Subnet'
+        DeleteVMImageData:
+            type: object
+            properties:
+                expected_version:
+                    type: string
+                idempotency_key:
+                    type: string
+        DeleteVMImageRequest:
+            type: object
+            properties:
+                image_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/DeleteVMImageData'
         DeleteVPCResponse:
             type: object
             properties:
@@ -20376,6 +20667,15 @@ components:
                     type: string
                     description: 下一页游标：有下一页时返回，末页为空。客户端原样回传，不得解析或修改。
             description: 获取用户列表 - 答复
+        ListVMImagesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/VMImage'
+                total:
+                    type: string
         ListVMsResponse:
             type: object
             properties:
@@ -25845,6 +26145,28 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新用户 - 请求
+        UpdateVMImageData:
+            type: object
+            properties:
+                name:
+                    type: string
+                description:
+                    type: string
+                expected_version:
+                    type: string
+                idempotency_key:
+                    type: string
+        UpdateVMImageRequest:
+            type: object
+            properties:
+                image_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/UpdateVMImageData'
+                update_mask:
+                    type: string
+                    description: Comma-separated snake_case paths, e.g. name,description. Only name and description are mutable.
+                    format: field-mask
         UpdateVolumeData:
             type: object
             properties:
@@ -26152,6 +26474,102 @@ components:
                     type: boolean
                 persistentUefi:
                     type: boolean
+        VMImage:
+            type: object
+            properties:
+                image_id:
+                    type: string
+                media_key:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                kind:
+                    type: string
+                    description: DISK_IMAGE or INSTALL_ISO.
+                format:
+                    type: string
+                    description: qcow2 or iso, bound to kind by the backend.
+                state:
+                    type: string
+                    description: PREPARING, IMPORTING, VERIFYING, READY, FAILED, UNAVAILABLE, DELETING, DELETED.
+                reason:
+                    type: string
+                    description: Stable platform reason code. Never a Kubernetes status string.
+                cleanup_state:
+                    type: string
+                    description: NONE, PENDING, RUNNING, COMPLETE, BLOCKED.
+                source_capacity_gb:
+                    type: string
+                    description: Declared DataVolume input size, in GiB.
+                source_requested_bytes:
+                    type: string
+                    description: Final PVC request produced by the backend.
+                observed_source_capacity_bytes:
+                    type: string
+                    description: Capacity the cluster actually reports for the source volume.
+                source_checksum_bytes:
+                    type: string
+                    description: Number of bytes the checksum covers; differs from the uploaded file length.
+                source_sha256:
+                    type: string
+                    description: SHA-256 of the backend-processed source, published only at READY.
+                os:
+                    $ref: '#/components/schemas/VMImageOS'
+                version:
+                    type: string
+                upload_deadline:
+                    type: string
+                created_by:
+                    type: string
+                    description: Audit only. It is never a filter, an authorization input or an owner.
+                created_at:
+                    type: string
+                updated_at:
+                    type: string
+        VMImageOS:
+            type: object
+            properties:
+                os_family:
+                    type: string
+                os_version:
+                    type: string
+                architecture:
+                    type: string
+                firmware:
+                    type: string
+                root_bus:
+                    type: string
+                data_bus:
+                    type: string
+                nic_model:
+                    type: string
+            description: |-
+                Tenant-owned image. `media_key` is the value later submitted to VM creation or
+                 SetVMMedia; it is derived from image_id and is never user-assigned.
+        VMImageUploadSession:
+            type: object
+            properties:
+                image_id:
+                    type: string
+                upload_session_id:
+                    type: string
+                method:
+                    type: string
+                upload_url:
+                    type: string
+                bearer_token:
+                    type: string
+                expires_at:
+                    type: string
+                content_type:
+                    type: string
+                max_file_bytes:
+                    type: string
+            description: |-
+                Short-lived single-use ticket for the raw PUT. The token is redacted from every
+                 log, trace and error report and is never stored by any service.
         VMInitialization:
             type: object
             properties:
@@ -26998,4 +27416,9 @@ tags:
       description: 用户个人资料服务
     - name: UserService
       description: 用户管理服务
+    - name: VMImageService
+      description: |-
+        Tenant self-service VM images. File bytes never pass through this BFF: the
+         browser uploads them straight to the platform upload entrypoint with a
+         short-lived ticket, so only small control requests appear here.
     - name: VMService
