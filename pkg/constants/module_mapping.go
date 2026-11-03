@@ -15,6 +15,8 @@ var ServiceTagToBusinessModule = map[string]identityV1.Module{
 	"OverviewService":             identityV1.Module_INSTANCE,
 	"StorageService":              identityV1.Module_STORAGE,
 	"VMService":                   identityV1.Module_VIRTUAL_MACHINE,
+	// 租户镜像目录与 VM 同属一个套餐模块：能用 VM 的租户才应该能列/传镜像。
+	"VMImageService":              identityV1.Module_VIRTUAL_MACHINE,
 	"SandboxService":              identityV1.Module_SANDBOX,
 	"ComputePresetService":        identityV1.Module_SYSTEM,
 	"AcceleratorAdminService":     identityV1.Module_ACCELERATOR,
