@@ -251,6 +251,13 @@ func TestCountsAndKeys(t *testing.T) {
 		"POST /api/v1/storage/buckets/{data.bucket_id}/objects:upload-url": {Code: "storage:object:upload", Source: storageWriteSource, BusinessModule: "STORAGE", ScopeKind: "tenant"},
 		"POST /api/v1/storage/buckets/{data.bucket_id}/objects:delete":     {Code: "storage:object:delete", Source: storageWriteSource, BusinessModule: "STORAGE", ScopeKind: "tenant"},
 	}
+	// Associated-instance reads reuse the detail codes of the network they
+	// describe, so each new (method, path) still needs its own capability row.
+	const networkAssociatedInstances = 2
+	networkAssociatedInstanceReads := map[string]expectation{
+		"GET /api/v1/networks/vpcs/{vpc_id}/associated-instances":     {Code: "network:vpc:get", Source: "sql/data/20261009_network_permissions.sql ; pkg/middleware/auth/network_policy.go", BusinessModule: "NETWORK", ScopeKind: "tenant"},
+		"GET /api/v1/networks/subnets/{subnet_id}/associated-instances": {Code: "network:subnet:get", Source: "sql/data/20261009_network_permissions.sql ; pkg/middleware/auth/network_policy.go", BusinessModule: "NETWORK", ScopeKind: "tenant"},
+	}
 	if want := 227; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
@@ -259,11 +266,11 @@ func TestCountsAndKeys(t *testing.T) {
 	const sandboxPhaseTwoCapabilities = 9
 	const vmLogCapabilities = 1
 	const modelDevEnvironmentCapabilities = 2
-	if want := 204 - 3 + len(platformComponentReads) + len(platformComponentLogStreams) + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities; CapabilityCount() != want {
+	if want := 204 - 3 + len(platformComponentReads) + len(platformComponentLogStreams) + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances; CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities; len(keys) != want {
+	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + networkAssociatedInstances; len(keys) != want {
 		t.Errorf("AllKeys() = %d, want %d", len(keys), want)
 	}
 	keySet := make(map[string]bool, len(keys))
@@ -329,6 +336,19 @@ func TestCountsAndKeys(t *testing.T) {
 		got, ok := capabilityOperations[key]
 		if !ok || got != want {
 			t.Errorf("instance restart/pvc capability %q = %+v (ok=%v), want %+v", key, got, ok, want)
+		}
+		if !keySet[key] {
+			t.Errorf("AllKeys() missing %q", key)
+		}
+	}
+	// 关联实例读接口逐键对拍：复用详情码不等于可以不登记路由。
+	for key, want := range networkAssociatedInstanceReads {
+		got, ok := capabilityOperations[key]
+		if !ok || got != want {
+			t.Errorf("network associated-instance capability %q = %+v (ok=%v), want %+v", key, got, ok, want)
+		}
+		if exp, err := Resolve("GET", key[len("GET "):]); err != nil || exp == nil || exp.Code != want.Code {
+			t.Errorf("Resolve(%q) = %+v, %v; want code %q", key, exp, err, want.Code)
 		}
 		if !keySet[key] {
 			t.Errorf("AllKeys() missing %q", key)

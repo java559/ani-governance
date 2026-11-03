@@ -125,6 +125,29 @@ service NetworkService {
      ] }
    };
  }
+ rpc ListVPCAssociatedInstances(catalog.service.v1.ListVPCAssociatedInstancesRequest) returns (catalog.service.v1.ListAssociatedInstancesResponse) {
+   option (google.api.http) = { get: "/api/v1/networks/vpcs/{vpc_id}/associated-instances" };
+   option (gnostic.openapi.v3.operation) = {
+     security: [
+       { additional_properties: [{ name: "BearerAuth" value: {} }] },
+       { additional_properties: [
+         { name: "AccessKeyAuth" value: {} },
+         { name: "SignatureAuth" value: {} },
+         { name: "SignatureTime" value: {} }
+       ] }
+     ]
+     summary: "List compute consumers attached to a VPC"
+     description: "Requires user JWT or ANI HMAC-SHA256 signature, NETWORK subscription and the same network:vpc:get permission as the VPC detail page. vpc_id must be vpc_ followed by 32 lowercase hex digits. Only page and pageSize are accepted as query parameters (page defaults to 1, pageSize to 20, size 1..100); body and any other parameter is rejected with 400. Each row is one active attachment and covers container instances and virtual machines only. consumer_type, consumer_state, attachment_state and attachment_reason are independent facts passed through unchanged: a type recorded before consumer typing exists is reported as unknown and never guessed, and a consumer whose resource record is gone keeps its row. addresses carries only Network's own fresh observation, so an empty array never means unattached. A VPC absent from this tenant is 404; a VPC with no consumer is an empty page. Read-only: no lifecycle or data-plane action is performed."
+     responses: { response_or_reference: [
+       { name: "400" value: { response: { description: "Invalid VPC ID, page or pageSize" } } },
+       { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+       { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+       { name: "404" value: { response: { description: "VPC not found in this tenant" } } },
+       { name: "503" value: { response: { description: "Network dependency or trusted identity unavailable" } } },
+       { name: "504" value: { response: { description: "Connected Network call timed out" } } }
+     ] }
+   };
+ }
  rpc GetOperation(catalog.service.v1.GetOperationRequest) returns (catalog.service.v1.GetOperationResponse) {
    option (google.api.http) = { get: "/api/v1/networks/operations/{operation_id}" response_body: "operation" };
    option (gnostic.openapi.v3.operation) = {
@@ -390,6 +413,29 @@ service NetworkService {
        { name: "412" value: { response: { description: "Version, lifecycle, ownership or occupied-resource precondition failed" } } },
        { name: "503" value: { response: { description: "Network dependency or trusted identity unavailable" } } },
        { name: "504" value: { response: { description: "Connected network call timed out" } } }
+     ] }
+   };
+ }
+ rpc ListSubnetAssociatedInstances(catalog.service.v1.ListSubnetAssociatedInstancesRequest) returns (catalog.service.v1.ListAssociatedInstancesResponse) {
+   option (google.api.http) = { get: "/api/v1/networks/subnets/{subnet_id}/associated-instances" };
+   option (gnostic.openapi.v3.operation) = {
+     security: [
+       { additional_properties: [{ name: "BearerAuth" value: {} }] },
+       { additional_properties: [
+         { name: "AccessKeyAuth" value: {} },
+         { name: "SignatureAuth" value: {} },
+         { name: "SignatureTime" value: {} }
+       ] }
+     ]
+     summary: "List compute consumers attached to a subnet"
+     description: "Requires user JWT or ANI HMAC-SHA256 signature, NETWORK subscription and the same network:subnet:get permission as the subnet detail page. subnet_id must be subnet_ followed by 32 lowercase hex digits. Only page and pageSize are accepted as query parameters (page defaults to 1, pageSize to 20, size 1..100); body and any other parameter is rejected with 400. Rows use the same contract as the VPC entry point, so consumer and attachment facts stay independent and unguessable. A subnet deleted from its network keeps listing the attachments still held on it, because those are the records that need attention. A subnet absent from this tenant is 404; a subnet with no consumer is an empty page. Read-only: no lifecycle or data-plane action is performed."
+     responses: { response_or_reference: [
+       { name: "400" value: { response: { description: "Invalid subnet ID, page or pageSize" } } },
+       { name: "401" value: { response: { description: "Missing, invalid, expired or revoked credentials" } } },
+       { name: "403" value: { response: { description: "Tenant, permission or subscription denied" } } },
+       { name: "404" value: { response: { description: "Subnet not found in this tenant" } } },
+       { name: "503" value: { response: { description: "Network dependency or trusted identity unavailable" } } },
+       { name: "504" value: { response: { description: "Connected Network call timed out" } } }
      ] }
    };
  }
