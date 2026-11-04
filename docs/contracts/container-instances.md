@@ -50,7 +50,9 @@ JSON 字段名逐字段遵守 Proto 的 `json_name`，不能对整个对象统�
 | GET `/api/v1/instances/mountable-pvcs` | `page/pageSize/name`，`{items,total}`；当前 `instance:create` 与 INSTANCE 套餐权限 |
 | GET `/api/v1/instances/{instance_id}/configuration` | 当前权威配置及应用版本、待变更状态；当前实例 `instance:read` 与 INSTANCE 套餐权限；响应 `Cache-Control: no-store` |
 
-PVC 候选项含 `pvc_name/phase/requested_capacity/access_modes/volume_mode/selectable/unavailable_reason`，容量为 quantity 字符串，分页默认 page=1/pageSize=20、pageSize 最多 100。只接受 `page/pageSize/name`，不接受 `page_size`、cursor、排序或任意 label selector；未知、重复及非规范正整数查询参数返回 400。`name` 是区分大小写的名称子串，最长 253 字节；先过滤，再按 PVC 名升序计算 total 和分页。未选中的候选也可能以 `selectable=false` 返回，界面以该值控制可选性并展示安全的 `unavailable_reason`。合法 Pending/WaitForFirstConsumer 不等于不可选择。完整快照最多扫描租户 Namespace 的 2000 个 PVC，超过上限返回 422；name 过滤不绕过该扫描上限。目录不能替代创建时重查。
+PVC 候选项含 `pvc_name/phase/requested_capacity/access_modes/volume_mode/selectable/unavailable_reason`，容量为 quantity 字符串，分页默认 page=1/pageSize=20、pageSize 最多 100。只接受 `page/pageSize/name`，不接受 `page_size`、cursor、排序或任意 label selector；未知、重复及非规范正整数查询参数返回 400。`name` 是区分大小写的名称子串，最长 253 字节；先过滤，再按 PVC 名升序计算 total 和分页。
+
+候选范围与块存储页面 `/api/v1/storage/volumes` 的受管卷口径一致：只返回带 `storage.ani.io/managed-by=ani-resource-service` 且 `storage.ani.io/tenant-id=<当前租户>` 标签的 PVC；手工创建的非受管盘不出现在候选，直接引用返回 404 `INSTANCE_PVC_NOT_FOUND`。同一块卷同一时刻只能被一个实例绑定：已被实例引用（挂载中/使用中/卸载中，含停止态实例）的卷以 `selectable=false`、`unavailable_reason=PVC_IN_USE` 返回；Storage 删除流程中为 `PVC_DELETION_IN_PROGRESS`；裸 `Block` 盘置灰 `PVC_FILESYSTEM_REQUIRED`；合法 Pending/WaitForFirstConsumer 且未被占用仍可选。界面以 `selectable` 控制可选性并展示安全的 `unavailable_reason`。完整快照最多扫描租户 Namespace 的 2000 个受管 PVC，超过上限返回 422；name 过滤不绕过该扫描上限。候选是观测值，不能替代创建/挂载时服务端的权威校验。
 
 候选响应形状示例（资源名须替换为真实目录项）：
 
@@ -99,6 +101,8 @@ PVC 候选项含 `pvc_name/phase/requested_capacity/access_modes/volume_mode/sel
 
 Gov 与 Resource 的 `ANI_INSTANCE_NEW_INTENTS_ENABLED` 为维护受理门禁；`ANI_INSTANCE_RESTART_ENABLED` 和 `ANI_INSTANCE_PVC_MUTATIONS_ENABLED` 分别控制新能力，均缺省关闭。开关不阻止授权的 Lookup/查询/候选、已受理恢复及最终 DELETE。挂卸开放须先完成引用 guard、迁移和初始化证明。
 
+挂载目标必须同时满足：Storage 受管卷（`storage.ani.io/managed-by=ani-resource-service` + `storage.ani.io/tenant-id=<租户>`）、同实例 placement（同集群同 Namespace）、`Filesystem` 模式、未被任何实例引用（`pending/active/retiring`，停止态仍算占用）。不满足时创建与挂载在 Resource 受理事务内原子拒绝：非受管/不存在返回 404 `INSTANCE_PVC_NOT_FOUND`，占用返回 409 `INSTANCE_PVC_IN_USE`（候选过期或并发抢占时刷新候选与配置后重试，不自动换幂等键重发）。卸载完成后引用 `released`，该卷才可被重新挂载。
+
 本批权限登记使用[窄增量脚本](../../scripts/ops/sql/register-instance-restart-pvc-permissions.sql)。先用确切合入 dev 版本的 `admin sync-apis --dry-run` 核对目录并备份，再显式给出脚本要求的已审核租户、套餐和角色身份；脚本缺省只预览，`apply=true` 才补本批缺失关联。既有 ID、启停状态及其他权限关联保留，身份或目录漂移会中止。它不修改套餐额度，也不运行 `SyncPermissions`；应用后刷新全部 Gov 实例的策略再验权。
 
 实例新增 `activeOperationId/executionRunState/appliedMountVersion`。configuration 的 `version/applied_mount_version/pending_change` 展示当前权威挂载，原 CREATE 不变。`pending_change` 内固定 `operation_id/intent_version/phase/target_configuration`；operation 新增 `phase/target_configuration/final_run_state/applied_mount_version/completion_scope/failure_reason`。所有 int64 为十进制字符串。无目标变更时 `target_configuration:null`；卸空时为 `{"volume_mounts":[]}`，CurrentMounts 空集合不会回退 CREATE。配置应用和运行完成分别由 `template_applied/runtime_verified` 表示。
@@ -107,7 +111,7 @@ Gov 与 Resource 的 `ANI_INSTANCE_NEW_INTENTS_ENABLED` 为维护受理门禁；
 
 CPU/GPU DELETE 均持久关闭新意图闸门。只有当前 dispatcher lease、DISPATCHING、从未 ACK 且 owner 明确 FailedPrecondition/`INSTANCE_VERSION_CONFLICT` 时标 REJECTED 并解闸，不退额。超时/未知继续保闸。同键重放拒绝返回原 operation、`replayed:true/result:"REJECTED_VERSION_CONFLICT"`；该本地 operation 查询为 `action:"delete",intentVersion:"0",state:"failed",reason:"INSTANCE_VERSION_CONFLICT"`，避免查询不存在的 Resource 操作。已 ACK DELETE 仍查询 Resource。其他 owner/VM 语义保持原合同。
 
-错误沿用 code/reason/message/metadata 封装；新格式错误 400、缺对象 404、业务状态/版本/互斥/DELETE/PVC guard 冲突 409、依赖或能力未开放 503。已受理后通过 operation 查询执行失败，HTTP 200 只表示查询成功。
+错误沿用 code/reason/message/metadata 封装；新格式错误 400、缺对象 404、业务状态/版本/互斥/DELETE/PVC guard/卷占用冲突 409、依赖或能力未开放 503。已受理后通过 operation 查询执行失败，HTTP 200 只表示查询成功。
 
 本批正式 HTTP 验收入口为 [container-restart-pvc-acceptance.py](../../scripts/ops/container-restart-pvc-acceptance.py)，在授权驱动主机显式给出 `--base-url`、`--credentials-file`、`--evidence-dir`。凭据文件必须归调用者所有且权限为 `0600`，格式和正常租户/平台登录合同见脚本说明；没有默认账号或目标。证据目录为 `0700`，只保存原键、版本、请求正文摘要和白名单状态，不保存配置 env、密码、token 或 cookie；结束注销自己的会话。
 
