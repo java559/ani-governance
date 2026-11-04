@@ -151,8 +151,8 @@ var vmImageStatusCode = map[string]int{
 	"VM_IMAGE_NOT_FOUND":        404,
 	"VM_SCOPE_DENIED":           403,
 	"VM_VERSION_CONFLICT":       409, "VM_IDEMPOTENCY_CONFLICT": 409, "VM_IMAGE_NOT_READY": 409,
-	"VM_IMAGE_NOT_UPLOADABLE":   409, "VM_IMAGE_IN_USE": 409, "VM_IMAGE_KIND_MISMATCH": 409,
-	"VM_IMAGE_UPLOAD_DISABLED":  409, "VM_IMAGE_NATIVE_IDENTITY_CHANGED": 409,
+	"VM_IMAGE_NOT_UPLOADABLE": 409, "VM_IMAGE_IN_USE": 409, "VM_IMAGE_KIND_MISMATCH": 409,
+	"VM_IMAGE_UPLOAD_DISABLED": 409, "VM_IMAGE_NATIVE_IDENTITY_CHANGED": 409,
 	"VM_IMAGE_DEPENDENCY_UNAVAILABLE": 503, "VM_ADAPTER_UNAVAILABLE": 503,
 }
 
@@ -188,7 +188,14 @@ func vmImageHTTPError(err error) error {
 	switch status.Code(err) {
 	case codes.InvalidArgument:
 		code, reason = 400, "VM_IMAGE_INVALID_ARGUMENT"
-	case codes.Unauthenticated, codes.PermissionDenied:
+	case codes.Unauthenticated:
+		// DEV-B33: the console reads 401 as "the session expired" and re-authenticates,
+		// exactly like every other route in this process, whose mapper sends 401 for this
+		// code. Folding it into 403 VM_SCOPE_DENIED left the image routes the only ones
+		// that could never reach the re-login path. The message stays our own fixed
+		// string, so an upstream auth detail cannot reach a browser.
+		code, reason = 401, "UNAUTHORIZED"
+	case codes.PermissionDenied:
 		code, reason = 403, "VM_SCOPE_DENIED"
 	case codes.NotFound:
 		code, reason = 404, "VM_IMAGE_NOT_FOUND"

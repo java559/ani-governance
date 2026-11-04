@@ -42,3 +42,28 @@ func TestVMImageHTTPErrorCarriesContractStatusCodes(t *testing.T) {
 		require.NotContains(t, result.Error(), "10.16.")
 	}
 }
+
+// TestVMImageHTTPErrorKeepsAuthenticationFailuresUnauthenticated is the DEV-B33 guard.
+// The console decides "the session expired, re-login" from a 401, and every other route in
+// this process answers a missing credential with 401 UNAUTHORIZED: vmHTTPError passes the
+// auth error through and maps Unauthenticated to 401. The image mapper folded
+// Unauthenticated together with PermissionDenied into 403 VM_SCOPE_DENIED, which left the
+// six image routes the only ones that could never trigger the re-login path.
+func TestVMImageHTTPErrorKeepsAuthenticationFailuresUnauthenticated(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		err  error
+	}{
+		{"platform middleware", kratoserrors.Unauthorized("UNAUTHORIZED", "missing bearer token")},
+		{"transport status", status.Error(codes.Unauthenticated, "missing bearer token")},
+	} {
+		result := vmImageHTTPError(test.err)
+		require.Equalf(t, 401, kratoserrors.Code(result), "%s: %v", test.name, result)
+		require.Equalf(t, "UNAUTHORIZED", kratoserrors.Reason(result), "%s: %v", test.name, result)
+	}
+
+	// A refused permission stays 403, so the two classes are not merged back together.
+	refused := vmImageHTTPError(status.Error(codes.PermissionDenied, "VM_SCOPE_DENIED"))
+	require.Equal(t, 403, kratoserrors.Code(refused))
+	require.Equal(t, "VM_SCOPE_DENIED", kratoserrors.Reason(refused))
+}
