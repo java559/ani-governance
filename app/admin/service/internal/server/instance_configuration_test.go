@@ -75,3 +75,18 @@ func TestInstanceHTTPConfigurationErrorCodeAndReason(t *testing.T) {
 		})
 	}
 }
+
+// 挂载占用冲突以 Resource FailedPrecondition 透传为 409 + 具体 reason。
+func TestInstanceHTTPMountConflictKeepsReason(t *testing.T) {
+	for _, test := range []struct{ upstream, reason string }{
+		{"INSTANCE_PVC_IN_USE", "INSTANCE_PVC_IN_USE"},
+		{"INSTANCE_PVC_DELETION_IN_PROGRESS", "INSTANCE_PVC_DELETION_IN_PROGRESS"},
+		{"INSTANCE_MOUNT_PATH_IN_USE", "INSTANCE_MOUNT_PATH_IN_USE"},
+	} {
+		t.Run(test.upstream, func(t *testing.T) {
+			actual := kratoserrors.FromError(instanceHTTPError(status.Error(codes.FailedPrecondition, test.upstream)))
+			require.Equal(t, int32(409), actual.Code)
+			require.Equal(t, test.reason, actual.Reason)
+		})
+	}
+}

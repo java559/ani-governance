@@ -1734,6 +1734,8 @@ main 发布使用 Resource `e7b5a8a3435996181bff62e025a21224c97d2464`，Gov 依�
 
 2026-10-30 本编号增加列表 `id` 子串过滤，并明确列表在不传 `observedState` 时排除 `deleted` 墓碑；当前参数、长度与交集规则见[容器实例 HTTP 合同](contracts/container-instances.md#规格与列表)。Resource 侧过滤先于计数和分页，Gov 只做参数校验与透传；本批含 kcn 测试环境换镜像实测与回滚，前端 ID 选项放开由 Console 另行排期。
 
+2026-11-04 本编号收紧容器实例卷挂载口径：候选与挂载统一限定 Storage 受管卷（`storage.ani.io/managed-by` + `storage.ani.io/tenant-id` 标签），未被任何实例引用（`pending/active/retiring`，停止态仍算占用）的卷才可选可挂；受理在 Resource 事务内对 `borrowed_pvc_guards` 行锁 + 引用台账做原子预占，冲突返回 409 `INSTANCE_PVC_IN_USE`，候选新增 `unavailable_reason=PVC_IN_USE`。非受管盘返回 404 `INSTANCE_PVC_NOT_FOUND`。Gov 无功能代码改动（错误透传沿用既有 reason 白名单），规则、错误与前端处理见[容器实例 HTTP 合同](contracts/container-instances.md#工作目录已有卷与业务配置)；Resource 实现与验收状态见 Resource 仓执行状态，不以本登记表示现场通过。
+
 ## MODELDEV-09：产物列表分页参数校验对齐（2026-10-13）
 
 前端联调时提出 `next_page_token` 是否为分页参数、能否与其他 ModelDev 列表对齐。当时四个列表统一使用 `page_size` + `page_token` / `next_page_token`，`presets`、`input-versions`（含 `state` 过滤，`state` 非分页参数）本就一致。
