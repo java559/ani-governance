@@ -297,7 +297,7 @@ NET-08 `CreateEIP` 增加可选 `security_group_ids`，随同一次 Resource 创
 | AUTH-13 | `GET /api/v1/auth/captcha` | 独立获取图形验证码 | 登录不再使用；接口是否删除待指定 |
 | AUTH-14 | `POST /api/v1/auth/captcha/verify` | 独立验证图形验证码 | 登录不再使用；接口是否删除待指定 |
 | AUTH-15 | `PUT /api/v1/admin/me` | 本人资料自助更新；直接落 `userRepo.Update`，**绕过 `UserService` 的角色类型/租户校验**，携带 `roleIds`+`role_ids`　掩码可能自改角色（见 MGMT-11） | 已接线但此前未登记，本轮补登；路径/字段待指定 |
-| AUTH-16 | `POST /api/v1/admin/me/password` | 本人自助改密；`oldPassword`/`newPassword` 走 AES 密文（与登录直接提交明文密码不同）；成功后吊销本人全部客户端令牌 | 已接线但此前未登记，本轮补登；协议/路径待指定 |
+| AUTH-16 | `POST /api/v1/admin/me/password` | 本人自助改密；`oldPassword`/`newPassword` 走 AES 密文（与登录直接提交明文密码不同）；成功后吊销本人全部客户端令牌 | 已接线但此前未登记，本轮补登；协议/路径待指定。凭证定位自 2026-11-05 起按操作人租户收敛，平台账号与他租户同名时不再 500 |
 | AUTH-17 | `POST /api/v1/admin/me/contact` | 向本人待绑定邮箱发送验证码；当前只支持 EMAIL，不支持手机号。与 AUTH-18 配合建立邮箱凭证，可用于找回密码；邀请接受流程会自行建立邮箱凭证，不以本接口为前置 | 已接线；2026-09-22 前端交接复核更正用途；待指定 |
 | AUTH-18 | `POST /api/v1/admin/me/contact/verify` | 校验本人联系方式验证码，与 AUTH-17 成对 | 已接线但此前未登记，本轮补登；待指定 |
 
@@ -447,7 +447,7 @@ Cookie 现状：`refresh_token` 为 HttpOnly，Path=`/api/v1/auth/refresh`、Sam
 | ACCOUNT-04 | `PUT /api/v1/admin/users/{id}` | `data`、`updateMask`，可另传 `password`；当前 Service 即使只改资料/状态也要求传有效角色 |
 | ACCOUNT-05 | `DELETE /api/v1/admin/users/{id}` | 删除用户；拒绝删除默认平台管理员或操作者本人 |
 | ACCOUNT-06 | `GET /api/v1/admin/users:exists` | `id` / `username` 二选一，返回 `exist`；用户名查重仅支持当前租户，平台身份按用户名调用会拒绝，不能额外传 `tenantId` 指定目标；平台页面改用 ACCOUNT-01 按目标租户＋用户名精确过滤 |
-| ACCOUNT-07 | `POST /api/v1/admin/users/{user_id}/password` | `newPassword`；当前仍要求 AES 编码，与登录不同；路径目录问题见 MGMT-05 |
+| ACCOUNT-07 | `POST /api/v1/admin/users/{user_id}/password` | `newPassword`；当前仍要求 AES 编码，与登录不同；路径目录问题见 MGMT-05。同名账号跨租户时曾返回 500 `query one data failed`（凭证按 identifier 定位且平台身份不带租户范围），2026-11-05 起按目标用户租户定位，成功 200 `{}`；仅当同一租户内出现重复 identifier 脏数据时返回 409 `CONFLICT`，不再出现 500 |
 | ACCOUNT-08 | `GET /api/v1/admin/users/username/{username}` | 用户名读取别名；同名账号可能跨租户，平台管理优先使用 ID |
 | ACCOUNT-09 | `DELETE /api/v1/admin/users/username/{username}` | 已注册的旧别名；Service 删除保护按 ID 查目标，不能据路由存在认定此别名可用，见 MGMT-06 |
 | ROLE-01 | `GET /api/v1/admin/roles` | 按租户与 `type` 读取角色 |
@@ -754,8 +754,8 @@ const url = `${BASE_URL}/api/v1/admin/users?${params.toString()}`;
 | 接口 / 操作 | 暂缓原因或接入前置 |
 | --- | --- |
 | AUTH-15 `PUT /api/v1/admin/me` | 直接进入通用用户更新，可写角色；必须先由后端限定自助字段（MGMT-11）。页面隐藏字段无法消除已暴露接口的风险，正式开放给真实用户前需处理 |
-| ACCOUNT-07 `POST /api/v1/admin/users/{user_id}/password` | 仍要求 AES+Base64，且 HTTP 路径模板与 API 目录不一致（MGMT-05）；建议本批先不开放重置密码按钮 |
-| ACCOUNT-04 顶层 password、AUTH-16 `POST /api/v1/admin/me/password` | 同样仍是旧 AES 协议；不能复用创建/登录明文提交，也不以普通 PUT 夹带密码绕过前述问题 |
+| ACCOUNT-07 `POST /api/v1/admin/users/{user_id}/password` | 仍要求 AES+Base64，且 HTTP 路径模板与 API 目录不一致（MGMT-05）；跨租户同名账号必现的 500 `query one data failed` 已于 2026-11-05 修复（凭证按目标用户租户定位）并在 ani-system 真机复验，重置按钮不再因此缺陷暂缓 |
+| ACCOUNT-04 顶层 password、AUTH-16 `POST /api/v1/admin/me/password` | 同样仍是旧 AES 协议；不能复用创建/登录明文提交，也不以普通 PUT 夹带密码绕过前述问题。两者与 ACCOUNT-07 共用凭证定位，跨租户同名 500 已在 2026-11-05 同批修复 |
 | ACCOUNT-08/09 用户名详情/删除别名 | 使用 ID 入口；用户名删除有实现缺口，平台同名账号存在跨租户歧义（MGMT-06） |
 | ROLE-03～05、PERM-*、PERMGROUP-* 自定义角色与权限写入 | 四类页面先选择已有角色。运营/只读权限矩阵待定；删除保护不完整（MGMT-10/18）。权限点 PUT 清绑定一条（MGMT-09）已于 2026-10-21 修复，不再构成暂缓理由 |
 | TENANT-05 `DELETE /api/v1/admin/tenants/{id}` | 仅删除租户记录，不等于关联数据及下游资源清理；首批普通管理流程不开放 |
