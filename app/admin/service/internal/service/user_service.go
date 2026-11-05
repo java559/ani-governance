@@ -559,45 +559,37 @@ func (s *UserService) Update(ctx context.Context, req *identityV1.UpdateUserRequ
 	}
 
 	if len(req.GetPassword()) > 0 {
+		// 目标用户一律按 id 从库中取：既校验存在，也保证重置目标与请求 id 严格一致
+		// （避免 id=甲 + username=乙 的参数错位实际重置了乙），并以其真实租户限定凭证定位。
+		targetUser, gerr := s.userRepo.Get(ctx, &identityV1.GetUserRequest{
+			QueryBy: &identityV1.GetUserRequest_Id{Id: req.GetId()},
+		})
+		if gerr != nil {
+			return nil, gerr
+		}
+
 		// 跨租户防护：不具备"重置他人密码"能力权限的操作者，重置前必须校验目标用户真实租户。
 		// 判据由 IsPlatformAdmin 布尔改为能力权限：多平台角色下布尔无法表达能力差异，
 		// 例如"平台只读"不应能重置他人密码，而"平台运维"可以。
 		// 注意：此处不能用 req.Data.GetTenantId()，因为上方已将其覆盖为操作者租户
-		var targetUsername string
-		if !hasPermission(operator, constants.SystemResetOthersCredentialPermissionCode) {
-			targetUser, gerr := s.userRepo.Get(ctx, &identityV1.GetUserRequest{
-				QueryBy: &identityV1.GetUserRequest_Id{Id: req.GetId()},
-			})
-			if gerr != nil {
-				return nil, gerr
-			}
-			if targetUser.GetTenantId() != operator.GetTenantId() {
-				s.log.Errorf(ctx, "operator [%d] (tenant %d) has no permission to reset password of cross-tenant user [%d] (tenant %d)",
-					operator.GetUserId(), operator.GetTenantId(), targetUser.GetId(), targetUser.GetTenantId())
-				return nil, adminV1.ErrorForbidden("no permission to reset password of user in other tenant")
-			}
-			// 防 IDOR：必须用 DB 中已校验租户的目标用户名，而非请求体里可伪造的 username。
-			// 否则攻击者可用 id=本租户用户 + username=他租户用户 绕过上面的租户校验。
-			targetUsername = targetUser.GetUsername()
-		} else {
-			// 平台管理员：无跨租户限制，但仍按 id 从 DB 取 username——
-			// 既校验目标用户存在，也保证重置目标与请求 id 严格一致
-			// （避免 id=甲 + username=乙 的参数错位实际重置了乙）
-			targetUser, gerr := s.userRepo.Get(ctx, &identityV1.GetUserRequest{
-				QueryBy: &identityV1.GetUserRequest_Id{Id: req.GetId()},
-			})
-			if gerr != nil {
-				return nil, gerr
-			}
-			targetUsername = targetUser.GetUsername()
+		if !hasPermission(operator, constants.SystemResetOthersCredentialPermissionCode) &&
+			targetUser.GetTenantId() != operator.GetTenantId() {
+			s.log.Errorf(ctx, "operator [%d] (tenant %d) has no permission to reset password of cross-tenant user [%d] (tenant %d)",
+				operator.GetUserId(), operator.GetTenantId(), targetUser.GetId(), targetUser.GetTenantId())
+			return nil, adminV1.ErrorForbidden("no permission to reset password of user in other tenant")
 		}
 
-		if err = s.userCredentialRepo.ResetCredential(ctx, &authenticationV1.ResetCredentialRequest{
+		// 防 IDOR：必须用 DB 中已校验的目标用户名，而非请求体里可伪造的 username。
+		// 否则攻击者可用 id=本租户用户 + username=他租户用户 绕过上面的租户校验。
+		// 凭证再按目标租户限定：平台身份（viewer 租户 0）不限定租户时，
+		// 与他租户同名的账号会让凭证定位命中多行。
+		targetTenantID := targetUser.GetTenantId()
+		if err = s.userCredentialRepo.ResetCredentialForTarget(ctx, &authenticationV1.ResetCredentialRequest{
 			IdentityType:  authenticationV1.UserCredential_USERNAME,
-			Identifier:    targetUsername,
+			Identifier:    targetUser.GetUsername(),
 			NewCredential: req.GetPassword(),
 			NeedDecrypt:   true, // 前端 AES 密文传输，解密后才走复杂度/哈希
-		}); err != nil {
+		}, &targetTenantID); err != nil {
 			return nil, err
 		}
 
@@ -694,12 +686,16 @@ func (s *UserService) EditUserPassword(ctx context.Context, req *identityV1.Edit
 		return nil, adminV1.ErrorForbidden("no permission to reset password of user in other tenant")
 	}
 
-	if err = s.userCredentialRepo.ResetCredential(ctx, &authenticationV1.ResetCredentialRequest{
+	// 凭证按目标用户所在租户定位：平台身份（viewer 租户 0）不限定租户时，
+	// 与他租户同名的账号（如 POC 里平台 admin 与租户 admin 同名）会让定位命中多行。
+	// 租户取自库中读出的目标用户，不信请求体。
+	targetTenantID := u.GetTenantId()
+	if err = s.userCredentialRepo.ResetCredentialForTarget(ctx, &authenticationV1.ResetCredentialRequest{
 		IdentityType:  authenticationV1.UserCredential_USERNAME,
 		Identifier:    u.GetUsername(),
 		NewCredential: req.GetNewPassword(),
 		NeedDecrypt:   true, // 前端 AES 密文传输，解密后才走复杂度/哈希
-	}); err != nil {
+	}, &targetTenantID); err != nil {
 		s.log.Errorf(ctx, "reset user password err: %v", err)
 		return nil, err
 	}

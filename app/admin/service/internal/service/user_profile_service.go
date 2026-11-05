@@ -104,13 +104,16 @@ func (s *UserProfileService) ChangePassword(ctx context.Context, req *identityV1
 
 	// 前端与登录/注册一致走 AES 密文传输，必须解密后再校验/哈希——
 	// 此前漏设 NeedDecrypt，密文串被当明文哈希入库（改完即锁号）且绕过复杂度校验。
-	err = s.userCredentialRepo.ChangeCredential(ctx, &authenticationV1.ChangeCredentialRequest{
+	// 自助改密按本人租户定位凭证：平台身份（tenant 0）不限定租户时，
+	// 与他租户同名的账号会让凭证定位命中多行。
+	operatorTenantID := operator.GetTenantId()
+	err = s.userCredentialRepo.ChangeCredentialForTarget(ctx, &authenticationV1.ChangeCredentialRequest{
 		IdentityType:  authenticationV1.UserCredential_USERNAME,
 		Identifier:    operator.GetUsername(),
 		OldCredential: req.GetOldPassword(),
 		NewCredential: req.GetNewPassword(),
 		NeedDecrypt:   true,
-	})
+	}, &operatorTenantID)
 	if err != nil {
 		return nil, err
 	}

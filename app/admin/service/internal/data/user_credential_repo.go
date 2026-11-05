@@ -359,26 +359,60 @@ func maybeTenantFromViewer(ctx context.Context) (tenantID uint32, hasTenant bool
 	return uint32(tid), true
 }
 
+// credentialScope 构造凭证行的定位条件，查询与更新共用同一份，避免只收紧查询。
+//
+// 凭证表的唯一索引是 (tenant_id, user_id, identity_type, identifier)，而 sys_users 只在
+// (tenant_id, username) 上唯一：跨租户允许同名账号。平台/系统身份的 viewer 租户是 0，
+// 沿用操作者租户等于不加租户条件，此时按 (identity_type, identifier) 定位会命中多行，
+// Ent 的 Only() 抛 not singular。targetTenantID 传入目标用户所在租户后定位必然唯一。
+// targetTenantID 为 nil 时保持原行为（按 viewer 租户限定），租户管理员路径不受影响。
+func (r *UserCredentialRepo) credentialScope(
+	ctx context.Context,
+	identityType authenticationV1.UserCredential_IdentityType,
+	identifier string,
+	targetTenantID *uint32,
+) []predicate.UserCredential {
+	scope := []predicate.UserCredential{
+		usercredential.IdentityTypeEQ(*r.identityTypeConverter.ToEntity(trans.Ptr(identityType))),
+		usercredential.IdentifierEQ(identifier),
+	}
+	if targetTenantID != nil {
+		return append(scope, usercredential.TenantIDEQ(*targetTenantID))
+	}
+	if tid, hasTenant := maybeTenantFromViewer(ctx); hasTenant {
+		return append(scope, usercredential.TenantIDEQ(tid))
+	}
+	return scope
+}
+
+// maybeAmbiguousCredential 把 Only() 的多行错误收敛成可读冲突：既不能兜底成 500，
+// 也绝不退回"任选一行"——更新谓词与查询谓词同源，任选一行等于跨租户改写他人口令。
+func (r *UserCredentialRepo) maybeAmbiguousCredential(
+	ctx context.Context,
+	identityType authenticationV1.UserCredential_IdentityType,
+	identifier string,
+	err error,
+) error {
+	if err == nil || !ent.IsNotSingular(err) {
+		return nil
+	}
+	r.log.Errorf(ctx, "credential identifier %q (type %v) is ambiguous in this scope: %s",
+		identifier, identityType, err.Error())
+	return authenticationV1.ErrorConflict("credential identifier is not unique in this scope, target the user by id")
+}
+
 func (r *UserCredentialRepo) GetByIdentifier(ctx context.Context, req *authenticationV1.GetUserCredentialByIdentifierRequest) (*authenticationV1.UserCredential, error) {
 	builder := r.entClient.Client().UserCredential.Query()
 
-	var whereConds []predicate.UserCredential
-	whereConds = append(whereConds,
-		usercredential.IdentityTypeEQ(*r.identityTypeConverter.ToEntity(trans.Ptr(req.GetIdentityType()))),
-		usercredential.IdentifierEQ(req.GetIdentifier()),
-	)
-
-	// 租户范围过滤（平台管理员 tenant_id=0 不限定）
-	if tid, hasTenant := maybeTenantFromViewer(ctx); hasTenant {
-		whereConds = append(whereConds, usercredential.TenantIDEQ(tid))
-	}
-
-	builder.Where(whereConds...)
+	builder.Where(r.credentialScope(ctx, req.GetIdentityType(), req.GetIdentifier(), nil)...)
 
 	entity, err := builder.Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, authenticationV1.ErrorNotFound("user credential not found")
+		}
+		if ambiguous := r.maybeAmbiguousCredential(ctx, req.GetIdentityType(), req.GetIdentifier(), err); ambiguous != nil {
+			return nil, ambiguous
 		}
 
 		r.log.Errorf(ctx, "query one data failed: %s", err.Error())
@@ -523,8 +557,19 @@ func (r *UserCredentialRepo) prepareCredential(ctx context.Context, credentialTy
 	return newCredential, nil
 }
 
-// ChangeCredential 修改认证信息
+// ChangeCredential 修改认证信息（按操作者租户定位凭证）
 func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenticationV1.ChangeCredentialRequest) error {
+	return r.ChangeCredentialForTarget(ctx, req, nil)
+}
+
+// ChangeCredentialForTarget 校验旧口令后轮换凭证。
+// targetTenantID 须由调用方按库中读出的目标用户给出（不信任请求体），用于在平台/系统
+// 身份下把跨租户同名账号收敛到目标租户；为 nil 时沿用操作者（viewer）租户。
+func (r *UserCredentialRepo) ChangeCredentialForTarget(
+	ctx context.Context,
+	req *authenticationV1.ChangeCredentialRequest,
+	targetTenantID *uint32,
+) error {
 	if req.GetNeedDecrypt() {
 		// 解密旧密码
 		oldBytes, err := base64.StdEncoding.DecodeString(req.GetOldCredential())
@@ -554,14 +599,8 @@ func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenti
 		req.NewCredential = string(newPlain)
 	}
 
-	// 租户范围 where 条件（平台管理员 tenant_id=0 不限定）
-	tenantWhere := []predicate.UserCredential{
-		usercredential.IdentityTypeEQ(*r.identityTypeConverter.ToEntity(trans.Ptr(req.GetIdentityType()))),
-		usercredential.IdentifierEQ(req.GetIdentifier()),
-	}
-	if tid, hasTenant := maybeTenantFromViewer(ctx); hasTenant {
-		tenantWhere = append(tenantWhere, usercredential.TenantIDEQ(tid))
-	}
+	// 凭证定位条件（查询与更新共用同一份）
+	credentialWhere := r.credentialScope(ctx, req.GetIdentityType(), req.GetIdentifier(), targetTenantID)
 
 	entity, err := r.entClient.Client().UserCredential.
 		Query().
@@ -570,11 +609,14 @@ func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenti
 			usercredential.FieldCredential,
 			usercredential.FieldExtraInfo,
 		).
-		Where(tenantWhere...).
+		Where(credentialWhere...).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return authenticationV1.ErrorNotFound("user credential not found")
+		}
+		if ambiguous := r.maybeAmbiguousCredential(ctx, req.GetIdentityType(), req.GetIdentifier(), err); ambiguous != nil {
+			return ambiguous
 		}
 		r.log.Errorf(ctx, "query one data failed: %s", err.Error())
 		return authenticationV1.ErrorInternalServerError("query one data failed")
@@ -610,7 +652,7 @@ func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenti
 		r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount))
 
 	builder := r.entClient.Client().UserCredential.Update()
-	builder.Where(tenantWhere...)
+	builder.Where(credentialWhere...)
 	builder.
 		SetCredential(newCredential).
 		SetNillableExtraInfo(extraInfo).
@@ -623,8 +665,19 @@ func (r *UserCredentialRepo) ChangeCredential(ctx context.Context, req *authenti
 	return nil
 }
 
-// ResetCredential 修改认证信息
+// ResetCredential 修改认证信息（按操作者租户定位凭证）
 func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authenticationV1.ResetCredentialRequest) error {
+	return r.ResetCredentialForTarget(ctx, req, nil)
+}
+
+// ResetCredentialForTarget 跳过旧口令校验直接轮换凭证（管理员重置/免鉴权验证码重置）。
+// targetTenantID 须由调用方按库中读出的目标用户给出（不信任请求体），用于在平台/系统
+// 身份下把跨租户同名账号收敛到目标租户；为 nil 时沿用操作者（viewer）租户。
+func (r *UserCredentialRepo) ResetCredentialForTarget(
+	ctx context.Context,
+	req *authenticationV1.ResetCredentialRequest,
+	targetTenantID *uint32,
+) error {
 	if req.GetNeedDecrypt() {
 		// 解密新密码（base64/AES 错误不可吞：吞错会把空串/垃圾串哈希存为新口令）
 		bytesPass, err := base64.StdEncoding.DecodeString(req.GetNewCredential())
@@ -640,14 +693,8 @@ func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authentic
 		req.NewCredential = string(plainPassword)
 	}
 
-	// 租户范围 where 条件（平台管理员 tenant_id=0 不限定）
-	tenantWhere := []predicate.UserCredential{
-		usercredential.IdentityTypeEQ(*r.identityTypeConverter.ToEntity(trans.Ptr(req.GetIdentityType()))),
-		usercredential.IdentifierEQ(req.GetIdentifier()),
-	}
-	if tid, hasTenant := maybeTenantFromViewer(ctx); hasTenant {
-		tenantWhere = append(tenantWhere, usercredential.TenantIDEQ(tid))
-	}
+	// 凭证定位条件（查询与更新共用同一份）
+	credentialWhere := r.credentialScope(ctx, req.GetIdentityType(), req.GetIdentifier(), targetTenantID)
 
 	entity, err := r.entClient.Client().UserCredential.
 		Query().
@@ -656,11 +703,14 @@ func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authentic
 			usercredential.FieldCredential,
 			usercredential.FieldExtraInfo,
 		).
-		Where(tenantWhere...).
+		Where(credentialWhere...).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return authenticationV1.ErrorNotFound("user credential not found")
+		}
+		if ambiguous := r.maybeAmbiguousCredential(ctx, req.GetIdentityType(), req.GetIdentifier(), err); ambiguous != nil {
+			return ambiguous
 		}
 		r.log.Errorf(ctx, "query one data failed: %s", err.Error())
 		return authenticationV1.ErrorInternalServerError("query one data failed")
@@ -691,7 +741,7 @@ func (r *UserCredentialRepo) ResetCredential(ctx context.Context, req *authentic
 		r.configRepo.GetConfigInt(ctx, passwordPolicy.ConfigKeyHistoryCount, passwordPolicy.DefaultHistoryCount))
 
 	builder := r.entClient.Client().UserCredential.Update()
-	builder.Where(tenantWhere...)
+	builder.Where(credentialWhere...)
 	builder.
 		SetCredential(newCredential).
 		SetNillableExtraInfo(extraInfo).

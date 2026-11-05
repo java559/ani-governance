@@ -100,12 +100,15 @@ func (s *AuthenticationService) ResetPasswordByCode(ctx context.Context, req *au
 		return nil, err
 	}
 
-	if err = s.userCredentialRepo.ResetCredential(ctx, &authenticationV1.ResetCredentialRequest{
+	// 凭证按该用户所在租户定位：此处是 system viewer（租户 0），不限定租户时
+	// 跨租户同名账号会让凭证定位命中多行。租户取自上一步已校验的用户行，不信请求体。
+	targetTenantID := user.GetTenantId()
+	if err = s.userCredentialRepo.ResetCredentialForTarget(ctx, &authenticationV1.ResetCredentialRequest{
 		IdentityType:  authenticationV1.UserCredential_USERNAME,
 		Identifier:    user.GetUsername(),
 		NewCredential: newPassword,
 		NeedDecrypt:   true,
-	}); err != nil {
+	}, &targetTenantID); err != nil {
 		s.log.Errorf(ctx, "reset password by code failed for user [%d]: %s", userId, err.Error())
 		return nil, err
 	}

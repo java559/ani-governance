@@ -690,6 +690,54 @@ func TestUserServiceSqlite_EditUserPassword(t *testing.T) {
 	require.True(t, authenticationV1.IsInvalidPassword(ferr), "旧密码应失效")
 }
 
+// TestUserServiceSqlite_EditUserPassword_CrossTenantSameUsername 覆盖 POC 现网形态：
+// 平台管理员（tenant 0）与他租户管理员同名（POC 里是两个 admin）。EditUserPassword 以
+// 目标用户行的用户名定位凭证，不限定租户时命中多行，修复前返回 500 "query one data failed"。
+// 期望：两个同名账号都能被平台身份重置成功，且每次只轮换目标租户那一行。
+func TestUserServiceSqlite_EditUserPassword_CrossTenantSameUsername(t *testing.T) {
+	e := newUserServiceForTest(t)
+	tenantA := e.seedUserSvcTenant(t, "同名改密租户甲", "USERSVC_DUP_TENANT_A")
+
+	const sharedName = "dup-admin-svc"
+	e.seedUserSvcCredential(t, nil, 10801, sharedName)
+	e.seedUserSvcCredential(t, trans.Ptr(tenantA), 10802, sharedName)
+	e.stub.usersByID[10801] = &identityV1.User{Id: trans.Ptr(uint32(10801)), Username: trans.Ptr(sharedName)}
+	e.stub.usersByID[10802] = &identityV1.User{
+		Id: trans.Ptr(uint32(10802)), TenantId: trans.Ptr(tenantA), Username: trans.Ptr(sharedName),
+	}
+
+	e.registerOperator(9021)
+	// 平台管理员令牌带"重置他人凭证"能力码（POC 现网 admin 的 pms 里即
+	// sys:reset_others_credential），跨租户重置才不会被 403 拦住。
+	platformOp := auth.NewContext(e.ctx, &authenticationV1.UserTokenPayload{
+		UserId:          9021,
+		IsPlatformAdmin: trans.Ptr(true),
+		Permissions:     []string{constants.SystemResetOthersCredentialPermissionCode},
+	})
+
+	_, err := e.svc.EditUserPassword(platformOp, &identityV1.EditUserPasswordRequest{
+		UserId:      10801,
+		NewPassword: encryptLoginPassword(t, "PlatformP@ss66"),
+	})
+	require.NoError(t, err, "平台身份重置与他租户同名的本人账号不应因凭证定位多行而失败")
+	_, ferr := e.findCred(t, 0, sharedName, "PlatformP@ss66")
+	require.NoError(t, ferr, "目标行新口令应生效")
+	_, ferr = e.findCred(t, 0, sharedName, constants.DefaultUserPassword)
+	require.True(t, authenticationV1.IsInvalidPassword(ferr), "目标行旧口令应失效")
+	_, ferr = e.findCred(t, tenantA, sharedName, constants.DefaultUserPassword)
+	require.NoError(t, ferr, "他租户同名账号的口令必须保持原值")
+
+	_, err = e.svc.EditUserPassword(platformOp, &identityV1.EditUserPasswordRequest{
+		UserId:      10802,
+		NewPassword: encryptLoginPassword(t, "TenantP@ss55"),
+	})
+	require.NoError(t, err, "平台身份重置他租户同名账号同样应成功")
+	_, ferr = e.findCred(t, tenantA, sharedName, "TenantP@ss55")
+	require.NoError(t, ferr, "目标租户行新口令应生效")
+	_, ferr = e.findCred(t, 0, sharedName, "PlatformP@ss66")
+	require.NoError(t, ferr, "上一步重置的平台行不应被这次重置连带改写")
+}
+
 // TestUserServiceSqlite_DeleteGuards 验证 Delete 的守卫与正常路径：
 // 无操作人 401；操作人/目标用户行缺失透传；id=1 与"平台 admin 用户名+租户0"
 // 双条件默认管理员保护；自删保护；正常目标删除被记录。

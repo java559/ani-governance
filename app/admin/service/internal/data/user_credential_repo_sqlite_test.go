@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
+	kratosErrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/stretchr/testify/require"
 	"go-wind-admin/pkg/localdeps/go-utils/crypto"
 	"go-wind-admin/pkg/localdeps/go-utils/mapper"
@@ -865,4 +867,72 @@ func TestUserCredentialRepoSqlite_Delete(t *testing.T) {
 	remain, err = repo.entClient.Client().UserCredential.Query().Count(ctx)
 	require.NoError(t, err)
 	require.Zero(t, remain, "删除后表内应归零")
+}
+
+// TestUserCredentialRepoSqlite_ResetCredential_CrossTenantSameUsername 复现 boss 重置密码
+// 500 的根因：平台/系统身份（viewer 租户 0）下凭证按 (identity_type, identifier) 定位时
+// 不追加租户范围，而 sys_user_credentials 的唯一索引是
+// (tenant_id, user_id, identity_type, identifier)，跨租户同名账号必然命中多行，
+// Ent 的 Only() 抛 not singular 后被兜底成 500 "query one data failed"（POC 现网即此：
+// admin/tenant0 与 admin/tenant1 同时存在，重置哪一个都 500）。
+// 期望：① 歧义返回可读的 409 冲突而非 500；② 歧义路径一行都不能写。
+func TestUserCredentialRepoSqlite_ResetCredential_CrossTenantSameUsername(t *testing.T) {
+	repo := newUserCredentialRepoSqlite(t)
+	ctx := testutil.NewSystemViewerCtx(context.Background())
+
+	const identifier = "dup_admin_cross_tenant"
+	oldPlain, newPlain := "0ld!Passw0rd#01", "N3w!Passw0rd#02"
+	oldHash, err := repo.passwordCrypto.Encrypt(oldPlain)
+	require.NoError(t, err)
+
+	seedDup := func(tenantID, userID uint32) *ent.UserCredential {
+		return repo.entClient.Client().UserCredential.Create().
+			SetTenantID(tenantID).
+			SetUserID(userID).
+			SetIdentityType(entUserCredential.IdentityTypeUsername).
+			SetIdentifier(identifier).
+			SetCredentialType(entUserCredential.CredentialTypePasswordHash).
+			SetCredential(oldHash).
+			SetStatus(entUserCredential.StatusEnabled).
+			SetCreatedAt(time.Now()).
+			SaveX(ctx)
+	}
+	platformRow := seedDup(0, 101)
+	tenantRow := seedDup(37, 202)
+
+	err = repo.ResetCredential(ctx, &authenticationV1.ResetCredentialRequest{
+		IdentityType:  authenticationV1.UserCredential_USERNAME,
+		Identifier:    identifier,
+		NewCredential: newPlain,
+	})
+	require.Error(t, err, "跨租户同名时按用户名定位凭证必须失败，不得任选一行改写")
+	kerr := kratosErrors.FromError(err)
+	require.Equal(t, 409, int(kerr.GetCode()),
+		"同名歧义应是可提示的 409 冲突，不是 500 内部错误（reason=%s message=%s）", kerr.GetReason(), kerr.GetMessage())
+
+	for _, row := range []*ent.UserCredential{platformRow, tenantRow} {
+		got, qerr := repo.entClient.Client().UserCredential.Get(ctx, row.ID)
+		require.NoError(t, qerr)
+		require.Equal(t, oldHash, *got.Credential, "tenant %d 的凭证哈希不应被歧义路径改写", got.TenantID)
+	}
+
+	// 带目标租户定位：唯一命中，轮换成功
+	require.NoError(t, repo.ResetCredentialForTarget(ctx, &authenticationV1.ResetCredentialRequest{
+		IdentityType:  authenticationV1.UserCredential_USERNAME,
+		Identifier:    identifier,
+		NewCredential: newPlain,
+	}, trans.Ptr(uint32(37))), "限定目标租户后应唯一命中并轮换成功")
+
+	tenantAfter, err := repo.entClient.Client().UserCredential.Get(ctx, tenantRow.ID)
+	require.NoError(t, err)
+	require.NotEqual(t, oldHash, *tenantAfter.Credential, "目标行哈希应已轮换")
+	matched, verr := repo.passwordCrypto.Verify(newPlain, *tenantAfter.Credential)
+	require.NoError(t, verr)
+	require.True(t, matched, "目标行应可用新口令校验")
+	require.NotEmpty(t, tenantAfter.ExtraInfo, "旧哈希应进入目标行的 password_history")
+
+	platformAfter, err := repo.entClient.Client().UserCredential.Get(ctx, platformRow.ID)
+	require.NoError(t, err)
+	require.Equal(t, oldHash, *platformAfter.Credential, "他租户同名行的哈希必须保持原值")
+	require.Equal(t, platformRow.ExtraInfo, platformAfter.ExtraInfo, "他租户同名行的 extra_info 必须保持原值")
 }
