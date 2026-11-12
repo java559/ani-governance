@@ -20,6 +20,8 @@ type TenantSpaceClaim struct {
 	TenantID                                  uint32
 	ResourceTenantID, OperationID, LeaseOwner string
 	LeaseGeneration                           int64
+	// TelemetryJSON is the open-side telemetry captured at tenant creation.
+	TelemetryJSON []byte
 }
 
 // ClaimTenantSpace locates a bounded set of due tenants, then locks and
@@ -50,7 +52,7 @@ func (r *TenantRepo) ClaimTenantSpace(ctx context.Context, owner string, lease t
 					SetTenantSpaceLeaseGeneration(generation).SetTenantSpaceLeaseOwner(owner).ClearTenantSpaceNextAttemptAt().
 					Modify(func(u *entsql.UpdateBuilder) { u.Set(tenant.FieldTenantSpaceLeaseUntil, tenantSpaceAfter(lease)) }).Save(ctx)
 				if err == nil {
-					claim = &TenantSpaceClaim{TenantID: row.ID, ResourceTenantID: row.ResourceTenantID, OperationID: *row.TenantSpaceOperationID, LeaseOwner: owner, LeaseGeneration: generation}
+					claim = &TenantSpaceClaim{TenantID: row.ID, ResourceTenantID: row.ResourceTenantID, OperationID: *row.TenantSpaceOperationID, LeaseOwner: owner, LeaseGeneration: generation, TelemetryJSON: []byte(tenantTelemetryValue(row.TenantSpaceTelemetryContext))}
 				}
 			}
 		}

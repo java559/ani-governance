@@ -80,6 +80,10 @@ const (
 	FieldCloseLastErrorCode = "close_last_error_code"
 	// FieldCloseReceiptCanonical holds the string denoting the close_receipt_canonical field in the database.
 	FieldCloseReceiptCanonical = "close_receipt_canonical"
+	// FieldTelemetryContext holds the string denoting the telemetry_context field in the database.
+	FieldTelemetryContext = "telemetry_context"
+	// FieldCloseTelemetryContext holds the string denoting the close_telemetry_context field in the database.
+	FieldCloseTelemetryContext = "close_telemetry_context"
 	// Table holds the table name of the modeldevacceptance in the database.
 	Table = "sys_modeldev_acceptances"
 )
@@ -120,6 +124,8 @@ var Columns = []string{
 	FieldCloseRetryBlocked,
 	FieldCloseLastErrorCode,
 	FieldCloseReceiptCanonical,
+	FieldTelemetryContext,
+	FieldCloseTelemetryContext,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -404,4 +410,14 @@ func ByCloseRetryBlocked(opts ...sql.OrderTermOption) OrderOption {
 // ByCloseLastErrorCode orders the results by the close_last_error_code field.
 func ByCloseLastErrorCode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCloseLastErrorCode, opts...).ToFunc()
+}
+
+// ByTelemetryContext orders the results by the telemetry_context field.
+func ByTelemetryContext(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTelemetryContext, opts...).ToFunc()
+}
+
+// ByCloseTelemetryContext orders the results by the close_telemetry_context field.
+func ByCloseTelemetryContext(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCloseTelemetryContext, opts...).ToFunc()
 }

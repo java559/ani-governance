@@ -14,6 +14,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"go-wind-admin/app/admin/service/internal/data/ent/modeldevacceptance"
+
+	"go-wind-admin/pkg/telemetry"
 )
 
 func TestModelDevStopRejectsRetiredCreationCodec(t *testing.T) {
@@ -28,7 +30,7 @@ func TestModelDevStopRejectsRetiredCreationCodec(t *testing.T) {
 			observer := newModelDevDeliveryObserver(t, ctx)
 			repo := NewModelDevAcceptanceRepo(client)
 			if queuedStop {
-				_, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+				_, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 				require.NoError(t, err)
 			}
 			// Matching bytes and digests do not make a retired creation codec valid
@@ -62,7 +64,7 @@ func TestModelDevStopRejectsRetiredCreationCodec(t *testing.T) {
 			require.True(t, before.Blocked)
 			require.Equal(t, "INVALID_COMMAND", before.Failure.String)
 
-			intent, replayed, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+			intent, replayed, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 			require.Error(t, err, "MODELDEV_STOP_CURRENT_CODEC: Stop must reject a retired creation codec even with matching byte digests")
 			require.Nil(t, intent)
 			require.False(t, replayed)
@@ -91,7 +93,7 @@ func TestModelDevStopRejectsCorruptAcceptedIdentity(t *testing.T) {
 				WHERE tenant_id=$1 AND resource_tenant_id=$2 AND execution_id=$3`,
 				scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, test.value)
 			require.NoError(t, err)
-			intent, replayed, err := NewModelDevAcceptanceRepo(client).AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+			intent, replayed, err := NewModelDevAcceptanceRepo(client).AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 			require.Error(t, err, "independent close must not accept a corrupt original identity or digest")
 			require.Nil(t, intent)
 			require.False(t, replayed)
@@ -124,7 +126,7 @@ func TestModelDevCloseDeliveryRejectsChangedStopIdentity(t *testing.T) {
 			ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
 			accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 			repo := NewModelDevAcceptanceRepo(client)
-			intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+			intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 			require.NoError(t, err)
 			claim, err := repo.ClaimCloseDelivery(ctx, "original-close-worker", time.Minute)
 			require.NoError(t, err)
@@ -159,12 +161,12 @@ func TestModelDevCloseDeliveryForClaimsOnlyOriginalStop(t *testing.T) {
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
 	first := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
-	_, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, first.ExecutionID, "governance:user:8")
+	_, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, first.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 	require.NoError(t, err)
 	scope.IdempotencyKey = uuid.NewString()
 	candidate.OperationID, candidate.ExecutionID = uuid.NewString(), uuid.NewString()
 	target := acceptModelDevDelivery(t, ctx, client, scope, candidate)
-	intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, target.ExecutionID, "governance:user:8")
+	intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, target.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 	require.NoError(t, err)
 	foreign := *intent
 	foreign.ExecutionSpecHash = strings.Repeat("0", 64)
@@ -195,7 +197,7 @@ func TestModelDevCloseDeliveryRecoversOriginalAndFencesExpiredWorker(t *testing.
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
 	accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
-	intent, replayed, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+	intent, replayed, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 	require.NoError(t, err)
 	require.False(t, replayed)
 	claim, err := repo.ClaimCloseDelivery(ctx, "close-original", time.Minute)
@@ -249,7 +251,7 @@ func TestModelDevCloseDeliveryRecoversOriginalAndFencesExpiredWorker(t *testing.
 	require.NoError(t, err)
 	require.NotNil(t, create, "the original admission still reaches its owner after the durable tombstone")
 	require.Equal(t, accepted.ExecutionID, create.Acceptance.ExecutionID)
-	_, replayed, err = restarted.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:9")
+	_, replayed, err = restarted.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:9", telemetry.TelemetryContext{})
 	require.NoError(t, err)
 	require.True(t, replayed)
 	next, err := restarted.ClaimCloseDelivery(ctx, "after-ack", time.Minute)
@@ -261,7 +263,7 @@ func TestModelDevCloseDeliveryRetainsUnknownAndRetriesAfterRestart(t *testing.T)
 	ctx, client, scope, candidate := newModelDevAcceptanceFixture(t)
 	accepted := acceptModelDevDelivery(t, ctx, client, scope, candidate)
 	repo := NewModelDevAcceptanceRepo(client)
-	intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8")
+	intent, _, err := repo.AcceptStop(ctx, scope.TenantID, scope.ResourceTenantID, accepted.ExecutionID, "governance:user:8", telemetry.TelemetryContext{})
 	require.NoError(t, err)
 	claim, err := repo.ClaimCloseDelivery(ctx, "close-timeout", time.Minute)
 	require.NoError(t, err, "CPU10_CLOSE_DELIVERY_NOT_IMPLEMENTED")

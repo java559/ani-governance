@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/peer"
@@ -25,6 +26,7 @@ import (
 
 	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"go-wind-admin/app/admin/service/internal/data"
+	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 )
 
 // QuotaInternalServerConfig 内部退额 listener 配置（§9.3）。
@@ -191,6 +193,8 @@ func NewQuotaInternalServer(cfg QuotaInternalServerConfig, ledger *data.QuotaLed
 	}
 	srv.grpcServer = grpc.NewServer(
 		grpc.Creds(credentials.NewTLS(tlsCfg)),
+		grpc.StatsHandler(newQuotaStatsHandler(otelgrpc.NewServerHandler(), bLogger.GetLogger())),
+		grpc.UnknownServiceHandler(unknownQuotaMethod),
 		grpc.ChainUnaryInterceptor(srv.authInterceptor),
 	)
 	quotapb.RegisterQuotaReleaseServiceServer(srv.grpcServer, srv)

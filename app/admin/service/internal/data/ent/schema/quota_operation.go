@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
@@ -152,6 +153,17 @@ func (QuotaOperation) Fields() []ent.Field {
 		// 下游 ACK 响应原文（审计用）。
 		field.Text("ack_json").
 			Comment("ACK 响应（JSON）").
+			Optional().
+			Nillable(),
+		// telemetry_context 只承载日志关联的 TelemetryContext（traceparent/
+		// tracestate/origin_trace_id）。独立 jsonb 列，绝不进入 canonical_request、
+		// request_hash、幂等键或冻结规格。按原始字节读写，坏值不影响业务扫描。
+		field.String("telemetry_context").
+			Comment("日志关联上下文（TelemetryContext JSONB）").
+			SchemaType(map[string]string{
+				dialect.MySQL:    "json",
+				dialect.Postgres: "jsonb",
+			}).
 			Optional().
 			Nillable(),
 	}

@@ -209,6 +209,16 @@ func CloseReceiptCanonical(v []byte) predicate.ModelDevAcceptance {
 	return predicate.ModelDevAcceptance(sql.FieldEQ(FieldCloseReceiptCanonical, v))
 }
 
+// TelemetryContext applies equality check predicate on the "telemetry_context" field. It's identical to TelemetryContextEQ.
+func TelemetryContext(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldEQ(FieldTelemetryContext, v))
+}
+
+// CloseTelemetryContext applies equality check predicate on the "close_telemetry_context" field. It's identical to CloseTelemetryContextEQ.
+func CloseTelemetryContext(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldEQ(FieldCloseTelemetryContext, v))
+}
+
 // TenantIDEQ applies the EQ predicate on the "tenant_id" field.
 func TenantIDEQ(v uint32) predicate.ModelDevAcceptance {
 	return predicate.ModelDevAcceptance(sql.FieldEQ(FieldTenantID, v))
@@ -1872,6 +1882,156 @@ func CloseReceiptCanonicalIsNil() predicate.ModelDevAcceptance {
 // CloseReceiptCanonicalNotNil applies the NotNil predicate on the "close_receipt_canonical" field.
 func CloseReceiptCanonicalNotNil() predicate.ModelDevAcceptance {
 	return predicate.ModelDevAcceptance(sql.FieldNotNull(FieldCloseReceiptCanonical))
+}
+
+// TelemetryContextEQ applies the EQ predicate on the "telemetry_context" field.
+func TelemetryContextEQ(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldEQ(FieldTelemetryContext, v))
+}
+
+// TelemetryContextNEQ applies the NEQ predicate on the "telemetry_context" field.
+func TelemetryContextNEQ(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldNEQ(FieldTelemetryContext, v))
+}
+
+// TelemetryContextIn applies the In predicate on the "telemetry_context" field.
+func TelemetryContextIn(vs ...string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldIn(FieldTelemetryContext, vs...))
+}
+
+// TelemetryContextNotIn applies the NotIn predicate on the "telemetry_context" field.
+func TelemetryContextNotIn(vs ...string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldNotIn(FieldTelemetryContext, vs...))
+}
+
+// TelemetryContextGT applies the GT predicate on the "telemetry_context" field.
+func TelemetryContextGT(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldGT(FieldTelemetryContext, v))
+}
+
+// TelemetryContextGTE applies the GTE predicate on the "telemetry_context" field.
+func TelemetryContextGTE(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldGTE(FieldTelemetryContext, v))
+}
+
+// TelemetryContextLT applies the LT predicate on the "telemetry_context" field.
+func TelemetryContextLT(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldLT(FieldTelemetryContext, v))
+}
+
+// TelemetryContextLTE applies the LTE predicate on the "telemetry_context" field.
+func TelemetryContextLTE(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldLTE(FieldTelemetryContext, v))
+}
+
+// TelemetryContextContains applies the Contains predicate on the "telemetry_context" field.
+func TelemetryContextContains(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldContains(FieldTelemetryContext, v))
+}
+
+// TelemetryContextHasPrefix applies the HasPrefix predicate on the "telemetry_context" field.
+func TelemetryContextHasPrefix(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldHasPrefix(FieldTelemetryContext, v))
+}
+
+// TelemetryContextHasSuffix applies the HasSuffix predicate on the "telemetry_context" field.
+func TelemetryContextHasSuffix(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldHasSuffix(FieldTelemetryContext, v))
+}
+
+// TelemetryContextIsNil applies the IsNil predicate on the "telemetry_context" field.
+func TelemetryContextIsNil() predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldIsNull(FieldTelemetryContext))
+}
+
+// TelemetryContextNotNil applies the NotNil predicate on the "telemetry_context" field.
+func TelemetryContextNotNil() predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldNotNull(FieldTelemetryContext))
+}
+
+// TelemetryContextEqualFold applies the EqualFold predicate on the "telemetry_context" field.
+func TelemetryContextEqualFold(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldEqualFold(FieldTelemetryContext, v))
+}
+
+// TelemetryContextContainsFold applies the ContainsFold predicate on the "telemetry_context" field.
+func TelemetryContextContainsFold(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldContainsFold(FieldTelemetryContext, v))
+}
+
+// CloseTelemetryContextEQ applies the EQ predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextEQ(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldEQ(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextNEQ applies the NEQ predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextNEQ(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldNEQ(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextIn applies the In predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextIn(vs ...string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldIn(FieldCloseTelemetryContext, vs...))
+}
+
+// CloseTelemetryContextNotIn applies the NotIn predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextNotIn(vs ...string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldNotIn(FieldCloseTelemetryContext, vs...))
+}
+
+// CloseTelemetryContextGT applies the GT predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextGT(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldGT(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextGTE applies the GTE predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextGTE(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldGTE(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextLT applies the LT predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextLT(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldLT(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextLTE applies the LTE predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextLTE(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldLTE(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextContains applies the Contains predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextContains(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldContains(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextHasPrefix applies the HasPrefix predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextHasPrefix(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldHasPrefix(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextHasSuffix applies the HasSuffix predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextHasSuffix(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldHasSuffix(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextIsNil applies the IsNil predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextIsNil() predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldIsNull(FieldCloseTelemetryContext))
+}
+
+// CloseTelemetryContextNotNil applies the NotNil predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextNotNil() predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldNotNull(FieldCloseTelemetryContext))
+}
+
+// CloseTelemetryContextEqualFold applies the EqualFold predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextEqualFold(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldEqualFold(FieldCloseTelemetryContext, v))
+}
+
+// CloseTelemetryContextContainsFold applies the ContainsFold predicate on the "close_telemetry_context" field.
+func CloseTelemetryContextContainsFold(v string) predicate.ModelDevAcceptance {
+	return predicate.ModelDevAcceptance(sql.FieldContainsFold(FieldCloseTelemetryContext, v))
 }
 
 // And groups predicates with the AND operator between them.

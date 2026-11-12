@@ -626,3 +626,12 @@ func TestPeriodicTaskRemoveAll(t *testing.T) {
 	assert.Equal(t, periodicAt, rec.count(testPeriodicTask), "the first periodic entry kept firing")
 	assert.Equal(t, taskAt, rec.count(testTask1), "the second periodic entry kept firing")
 }
+
+// TestNewServerSchedulerUsesStructuredLogger pins the scheduler logger default.
+// Leaving SchedulerOpts.Logger nil makes asynq write "asynq: pid=..." plain text
+// to stdout, which breaks the single-line JSON stdout contract.
+func TestNewServerSchedulerUsesStructuredLogger(t *testing.T) {
+	srv := NewServer()
+	require.NotNil(t, srv.schedulerOpts)
+	require.NotNil(t, srv.schedulerOpts.Logger)
+}

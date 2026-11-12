@@ -1380,6 +1380,8 @@ var (
 		{Name: "close_retry_blocked", Type: field.TypeBool, Default: false},
 		{Name: "close_last_error_code", Type: field.TypeString, Nullable: true},
 		{Name: "close_receipt_canonical", Type: field.TypeBytes, Nullable: true},
+		{Name: "telemetry_context", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "json", "postgres": "jsonb"}},
+		{Name: "close_telemetry_context", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"mysql": "json", "postgres": "jsonb"}},
 	}
 	// SysModeldevAcceptancesTable holds the schema information for the "sys_modeldev_acceptances" table.
 	SysModeldevAcceptancesTable = &schema.Table{
@@ -2395,6 +2397,7 @@ var (
 		{Name: "lease_owner", Type: field.TypeString, Nullable: true, Comment: "当前租约持有者"},
 		{Name: "lease_until", Type: field.TypeTime, Nullable: true, Comment: "租约到期时间"},
 		{Name: "ack_json", Type: field.TypeString, Nullable: true, Size: 2147483647, Comment: "ACK 响应（JSON）"},
+		{Name: "telemetry_context", Type: field.TypeString, Nullable: true, Comment: "日志关联上下文（TelemetryContext JSONB）", SchemaType: map[string]string{"mysql": "json", "postgres": "jsonb"}},
 	}
 	// SysQuotaOperationsTable holds the schema information for the "sys_quota_operations" table.
 	SysQuotaOperationsTable = &schema.Table{
@@ -2847,6 +2850,8 @@ var (
 		{Name: "unsubscribe_at", Type: field.TypeTime, Nullable: true, Comment: "取消订阅时间"},
 		{Name: "subscription_plan", Type: field.TypeString, Nullable: true, Comment: "订阅套餐"},
 		{Name: "expired_at", Type: field.TypeTime, Nullable: true, Comment: "租户有效期"},
+		{Name: "tenant_space_telemetry_context", Type: field.TypeString, Nullable: true, Comment: "租户空间 open 受理日志关联上下文（JSONB）", SchemaType: map[string]string{"mysql": "json", "postgres": "jsonb"}},
+		{Name: "tenant_space_close_telemetry_context", Type: field.TypeString, Nullable: true, Comment: "租户空间 close 受理日志关联上下文（JSONB）", SchemaType: map[string]string{"mysql": "json", "postgres": "jsonb"}},
 		{Name: "plan_id", Type: field.TypeUint32, Nullable: true},
 	}
 	// SysTenantsTable holds the schema information for the "sys_tenants" table.
@@ -2858,7 +2863,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sys_tenants_sys_plans_tenants",
-				Columns:    []*schema.Column{SysTenantsColumns[28]},
+				Columns:    []*schema.Column{SysTenantsColumns[30]},
 				RefColumns: []*schema.Column{SysPlansColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

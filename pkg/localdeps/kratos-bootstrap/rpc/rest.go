@@ -31,9 +31,29 @@ func CreateRestServer(cfg *conf.Bootstrap, mds ...middleware.Middleware) (*krato
 // CreateRestServerWithFilters retains the configured server and middleware
 // chain while allowing a service-owned pre-decoding HTTP boundary.
 func CreateRestServerWithFilters(cfg *conf.Bootstrap, extra []kratosRest.FilterFunc, mds ...middleware.Middleware) (*kratosRest.Server, error) {
-	options, err := initRestConfigWithFilters(cfg, extra, mds...)
+	return CreateRestServerWithOuterFilter(cfg, nil, nil, extra, mds...)
+}
+
+// CreateRestServerWithOuterFilter builds the REST server with one outermost
+// HTTP filter that runs before CORS, pre-decoding filters, binding and routing.
+//
+// The filter order is fixed: outer, then CORS, then extra. When errorEncoder is
+// non-nil it is installed in the same option set as the server, so the error
+// path and the successful path share the same outer span and trace ID.
+func CreateRestServerWithOuterFilter(
+	cfg *conf.Bootstrap,
+	outer kratosRest.FilterFunc,
+	errorEncoder func(http.ResponseWriter, *http.Request, error),
+	extra []kratosRest.FilterFunc,
+	mds ...middleware.Middleware,
+) (*kratosRest.Server, error) {
+	options, err := initRestConfigWithOuterFilter(cfg, outer, extra, mds...)
 	if err != nil {
 		return nil, err
+	}
+
+	if errorEncoder != nil {
+		options = append(options, kratosRest.ErrorEncoder(errorEncoder))
 	}
 
 	// Kratos defaults to the process-wide mux for unmatched paths and methods.
@@ -59,6 +79,10 @@ func initRestConfig(cfg *conf.Bootstrap, mds ...middleware.Middleware) ([]kratos
 }
 
 func initRestConfigWithFilters(cfg *conf.Bootstrap, extra []kratosRest.FilterFunc, mds ...middleware.Middleware) ([]kratosRest.ServerOption, error) {
+	return initRestConfigWithOuterFilter(cfg, nil, extra, mds...)
+}
+
+func initRestConfigWithOuterFilter(cfg *conf.Bootstrap, outer kratosRest.FilterFunc, extra []kratosRest.FilterFunc, mds ...middleware.Middleware) ([]kratosRest.ServerOption, error) {
 	if cfg == nil || cfg.Server == nil || cfg.Server.Rest == nil {
 		return nil, nil
 	}
@@ -66,12 +90,18 @@ func initRestConfigWithFilters(cfg *conf.Bootstrap, extra []kratosRest.FilterFun
 	var options []kratosRest.ServerOption
 	var filters []kratosRest.FilterFunc
 
+	// The observability filter must see CORS preflights and rejections too, so
+	// it is prepended before the CORS handler.
+	if outer != nil {
+		filters = append(filters, outer)
+	}
+
 	if cfg.Server.Rest.Cors != nil {
 		corsOptions := []handlers.CORSOption{
 			handlers.AllowedHeaders(cfg.Server.Rest.Cors.Headers),
 			handlers.AllowedMethods(cfg.Server.Rest.Cors.Methods),
 			handlers.AllowedOrigins(cfg.Server.Rest.Cors.Origins),
-			handlers.ExposedHeaders([]string{"X-Request-ID"}),
+			handlers.ExposedHeaders([]string{"X-Request-ID", "X-Trace-ID"}),
 		}
 		// 前端以 HttpOnly Cookie 传 refresh token 时（withCredentials=true），
 		// 浏览器要求预检响应携带 Access-Control-Allow-Credentials: true
@@ -90,7 +120,11 @@ func initRestConfigWithFilters(cfg *conf.Bootstrap, extra []kratosRest.FilterFun
 		if cfg.Server.Rest.Middleware.GetEnableRecovery() {
 			ms = append(ms, recovery.Recovery())
 		}
-		if cfg.Server.Rest.Middleware.GetEnableTracing() {
+		if cfg.Server.Rest.Middleware.GetEnableTracing() && outer == nil {
+			// With the outermost observability filter installed, the request
+			// span already exists; Kratos' tracing.Server would add a second
+			// server span. It is also kept for callers that install no outer
+			// filter, so their behaviour is unchanged.
 			ms = append(ms, tracing.Server())
 		}
 		if cfg.Server.Rest.Middleware.GetEnableValidate() {

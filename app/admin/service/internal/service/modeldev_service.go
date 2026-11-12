@@ -19,6 +19,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/modeldevbudget"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/telemetry"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -190,7 +191,7 @@ func (s *ModelDevService) CreateExecution(ctx context.Context, in ModelDevCreate
 	if err != nil {
 		return nil, modelDevCreateUnavailable()
 	}
-	candidate := data.ModelDevFrozenCandidate{Intent: normalized, OperationID: operationID.String(), ExecutionID: executionID.String(), AcceptedAt: time.Now().UTC().Truncate(time.Microsecond)}
+	candidate := data.ModelDevFrozenCandidate{Intent: normalized, OperationID: operationID.String(), ExecutionID: executionID.String(), AcceptedAt: time.Now().UTC().Truncate(time.Microsecond), TelemetryContext: telemetry.Capture(ctx)}
 	selection, err := s.compute.ResolveComputePreset(preflight, tenant, actor, &compute.ResolveComputePresetRequest{TenantId: tenant, PresetId: normalized.ComputePresetID, Usage: compute.Usage_TRAINING})
 	if err != nil {
 		return nil, modelDevCreateResolutionFailure(err)

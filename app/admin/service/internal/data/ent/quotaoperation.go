@@ -65,8 +65,10 @@ type QuotaOperation struct {
 	// 租约到期时间
 	LeaseUntil *time.Time `json:"lease_until,omitempty"`
 	// ACK 响应（JSON）
-	AckJSON      *string `json:"ack_json,omitempty"`
-	selectValues sql.SelectValues
+	AckJSON *string `json:"ack_json,omitempty"`
+	// 日志关联上下文（TelemetryContext JSONB）
+	TelemetryContext *string `json:"telemetry_context,omitempty"`
+	selectValues     sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -78,7 +80,7 @@ func (*QuotaOperation) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case quotaoperation.FieldID, quotaoperation.FieldTenantID, quotaoperation.FieldAttemptCount, quotaoperation.FieldLeaseGeneration:
 			values[i] = new(sql.NullInt64)
-		case quotaoperation.FieldOperationID, quotaoperation.FieldResourceTenantID, quotaoperation.FieldResourceID, quotaoperation.FieldCreateOperationID, quotaoperation.FieldActorType, quotaoperation.FieldActorID, quotaoperation.FieldOwnerService, quotaoperation.FieldAction, quotaoperation.FieldIdempotencyKey, quotaoperation.FieldRequestHash, quotaoperation.FieldCanonicalRequest, quotaoperation.FieldDispatchState, quotaoperation.FieldLastErrorCode, quotaoperation.FieldLeaseOwner, quotaoperation.FieldAckJSON:
+		case quotaoperation.FieldOperationID, quotaoperation.FieldResourceTenantID, quotaoperation.FieldResourceID, quotaoperation.FieldCreateOperationID, quotaoperation.FieldActorType, quotaoperation.FieldActorID, quotaoperation.FieldOwnerService, quotaoperation.FieldAction, quotaoperation.FieldIdempotencyKey, quotaoperation.FieldRequestHash, quotaoperation.FieldCanonicalRequest, quotaoperation.FieldDispatchState, quotaoperation.FieldLastErrorCode, quotaoperation.FieldLeaseOwner, quotaoperation.FieldAckJSON, quotaoperation.FieldTelemetryContext:
 			values[i] = new(sql.NullString)
 		case quotaoperation.FieldCreatedAt, quotaoperation.FieldUpdatedAt, quotaoperation.FieldDeletedAt, quotaoperation.FieldNextAttemptAt, quotaoperation.FieldLeaseUntil:
 			values[i] = new(sql.NullTime)
@@ -257,6 +259,13 @@ func (_m *QuotaOperation) assignValues(columns []string, values []any) error {
 				_m.AckJSON = new(string)
 				*_m.AckJSON = value.String
 			}
+		case quotaoperation.FieldTelemetryContext:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field telemetry_context", values[i])
+			} else if value.Valid {
+				_m.TelemetryContext = new(string)
+				*_m.TelemetryContext = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -382,6 +391,11 @@ func (_m *QuotaOperation) String() string {
 	builder.WriteString(", ")
 	if v := _m.AckJSON; v != nil {
 		builder.WriteString("ack_json=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.TelemetryContext; v != nil {
+		builder.WriteString("telemetry_context=")
 		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')

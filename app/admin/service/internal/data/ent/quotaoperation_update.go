@@ -239,6 +239,26 @@ func (_u *QuotaOperationUpdate) ClearAckJSON() *QuotaOperationUpdate {
 	return _u
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (_u *QuotaOperationUpdate) SetTelemetryContext(v string) *QuotaOperationUpdate {
+	_u.mutation.SetTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTelemetryContext sets the "telemetry_context" field if the given value is not nil.
+func (_u *QuotaOperationUpdate) SetNillableTelemetryContext(v *string) *QuotaOperationUpdate {
+	if v != nil {
+		_u.SetTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (_u *QuotaOperationUpdate) ClearTelemetryContext() *QuotaOperationUpdate {
+	_u.mutation.ClearTelemetryContext()
+	return _u
+}
+
 // Mutation returns the QuotaOperationMutation object of the builder.
 func (_u *QuotaOperationUpdate) Mutation() *QuotaOperationMutation {
 	return _u.mutation
@@ -377,6 +397,12 @@ func (_u *QuotaOperationUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if _u.mutation.AckJSONCleared() {
 		_spec.ClearField(quotaoperation.FieldAckJSON, field.TypeString)
+	}
+	if value, ok := _u.mutation.TelemetryContext(); ok {
+		_spec.SetField(quotaoperation.FieldTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TelemetryContextCleared() {
+		_spec.ClearField(quotaoperation.FieldTelemetryContext, field.TypeString)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
@@ -610,6 +636,26 @@ func (_u *QuotaOperationUpdateOne) ClearAckJSON() *QuotaOperationUpdateOne {
 	return _u
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (_u *QuotaOperationUpdateOne) SetTelemetryContext(v string) *QuotaOperationUpdateOne {
+	_u.mutation.SetTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTelemetryContext sets the "telemetry_context" field if the given value is not nil.
+func (_u *QuotaOperationUpdateOne) SetNillableTelemetryContext(v *string) *QuotaOperationUpdateOne {
+	if v != nil {
+		_u.SetTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (_u *QuotaOperationUpdateOne) ClearTelemetryContext() *QuotaOperationUpdateOne {
+	_u.mutation.ClearTelemetryContext()
+	return _u
+}
+
 // Mutation returns the QuotaOperationMutation object of the builder.
 func (_u *QuotaOperationUpdateOne) Mutation() *QuotaOperationMutation {
 	return _u.mutation
@@ -778,6 +824,12 @@ func (_u *QuotaOperationUpdateOne) sqlSave(ctx context.Context) (_node *QuotaOpe
 	}
 	if _u.mutation.AckJSONCleared() {
 		_spec.ClearField(quotaoperation.FieldAckJSON, field.TypeString)
+	}
+	if value, ok := _u.mutation.TelemetryContext(); ok {
+		_spec.SetField(quotaoperation.FieldTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TelemetryContextCleared() {
+		_spec.ClearField(quotaoperation.FieldTelemetryContext, field.TypeString)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	_node = &QuotaOperation{config: _u.config}

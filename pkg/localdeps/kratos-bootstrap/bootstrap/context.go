@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 	"sync"
 	"time"
 
@@ -182,13 +181,21 @@ func (c *Context) PrintAppInfo() {
 	if ai == nil {
 		return
 	}
-	ts := time.Now().Format(time.RFC3339)
 	host, _ := os.Hostname()
 	pid := os.Getpid()
 
+	// 启动横幅曾以多行裸文本打到 stdout，与 JSON 日志混在一起无法解析。
+	// 现在只在 logger 尚未接管时输出一行结构化记录；logger 接管后由
+	// process.starting 事件承担同一信息，避免同语义双写。
+	if c.logger != nil {
+		c.logger.Info(context.Background(), "application info",
+			"event", "runtime.log",
+			"app_id", ai.GetAppId(), "app_version", ai.GetVersion(),
+			"app_instance_id", ai.GetInstanceId(), "host", host, "pid", pid)
+		return
+	}
 	if os.Getenv("APPINFO_FORMAT") == "json" {
 		out := map[string]interface{}{
-			"timestamp":   ts,
 			"host":        host,
 			"pid":         pid,
 			"name":        ai.Name,
@@ -205,21 +212,8 @@ func (c *Context) PrintAppInfo() {
 		return
 	}
 
-	fmt.Printf("[%s] %s (pid:%d@%s)\n", ts, ai.Name, pid, host)
-	fmt.Printf("  Version: %s\n", ai.Version)
-	fmt.Printf("  AppId: %s\n", ai.AppId)
-	fmt.Printf("  InstanceId: %s\n", ai.InstanceId)
-	if len(ai.Metadata) > 0 {
-		fmt.Println("  Metadata:")
-		keys := make([]string, 0, len(ai.Metadata))
-		for k := range ai.Metadata {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			fmt.Printf("    %s=%s\n", k, ai.Metadata[k])
-		}
-	}
+	fmt.Printf("%s (pid:%d@%s) version=%s appid=%s instance=%s\n",
+		ai.Name, pid, host, ai.Version, ai.AppId, ai.InstanceId)
 }
 
 func (c *Context) GetRegistrar() kratosRegistry.Registrar {

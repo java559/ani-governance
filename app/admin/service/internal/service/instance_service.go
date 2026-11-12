@@ -27,6 +27,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	"go-wind-admin/pkg/telemetry"
 )
 
 const InstanceCreateAction = "/instance.v1.InstanceService/AcceptCreate"
@@ -465,7 +467,7 @@ func (s *InstanceService) ExecInstance(ctx context.Context, r *view.ExecInstance
 	requestID, _ := requestid.FromContext(ctx)
 	t, e := s.binding.client.Target(ctx, tenant, actor, d.InstanceId, d.ExpectedVersion)
 	if e != nil {
-		klog.Errorw("event", "instance_exec_upstream_failed", "stage", "resource.target", "grpc_code", status.Code(e).String(), "request_id", requestID)
+		klog.Errorw(append([]any{"event", "dependency.failed", "dependency", "grpc", "action", "instance.exec", "step", "resource.target", "grpc_code", status.Code(e).String(), "request_id", requestID}, telemetry.ErrorFields(e)...)...)
 		return nil, e
 	}
 	if t == nil || t.TenantId != tenant || t.InstanceId != d.InstanceId || t.Version != d.ExpectedVersion || t.PodUid == "" || t.NotebookUid == "" || t.Shell == "" || t.ContainerName != "workspace" {
@@ -473,7 +475,7 @@ func (s *InstanceService) ExecInstance(ctx context.Context, r *view.ExecInstance
 	}
 	current, e := s.binding.client.Get(ctx, tenant, actor, d.InstanceId)
 	if e != nil {
-		klog.Errorw("event", "instance_exec_upstream_failed", "stage", "resource.get", "grpc_code", status.Code(e).String(), "request_id", requestID)
+		klog.Errorw(append([]any{"event", "dependency.failed", "dependency", "grpc", "action", "instance.exec", "step", "resource.get", "grpc_code", status.Code(e).String(), "request_id", requestID}, telemetry.ErrorFields(e)...)...)
 		return nil, e
 	}
 	if current == nil || current.Id != d.InstanceId || current.Version != d.ExpectedVersion {
@@ -491,7 +493,7 @@ func (s *InstanceService) ExecInstance(ctx context.Context, r *view.ExecInstance
 	sessionRequestID := uuid.NewString()
 	reply, e := s.sessions.CreateSession(ctx, &sessionpb.CreateSessionRequest{RequestId: sessionRequestID, IdempotencyKey: d.IdempotencyKey, Principal: &sessionpb.Principal{TenantId: tenant, SubjectId: actor}, Target: &sessionpb.Target{InstanceId: d.InstanceId, WorkloadName: t.NotebookName, WorkloadKind: kind, InstanceBinding: &sessionpb.InstanceBinding{Version: t.Version, ClusterId: t.ClusterId, Namespace: t.Namespace, NotebookName: t.NotebookName, NotebookUid: t.NotebookUid, PodName: t.PodName, PodUid: t.PodUid, ContainerName: t.ContainerName, Shell: t.Shell}}, Mode: &sessionpb.CreateSessionRequest_Exec{Exec: &sessionpb.ExecOptions{Container: t.ContainerName, Command: []string{t.Shell}, Tty: true, Rows: d.Rows, Cols: d.Cols}}})
 	if e != nil {
-		klog.Errorw("event", "instance_exec_upstream_failed", "stage", "session_gateway.create_session", "grpc_code", status.Code(e).String(), "request_id", requestID, "session_request_id", sessionRequestID)
+		klog.Errorw(append([]any{"event", "dependency.failed", "dependency", "grpc", "action", "instance.exec", "step", "session_gateway.create_session", "grpc_code", status.Code(e).String(), "request_id", requestID, "session_request_id", sessionRequestID}, telemetry.ErrorFields(e)...)...)
 		return nil, e
 	}
 	if reply == nil || reply.SessionId == "" || reply.ConnectUrl == "" || reply.ExpiresAt == nil {

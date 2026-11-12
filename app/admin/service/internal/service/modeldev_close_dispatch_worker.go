@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"fmt"
 	"go-wind-admin/app/admin/service/internal/data"
 )
 
@@ -18,16 +19,21 @@ func (w *ModelDevDispatchWorker) deliverNextClose(ctx context.Context) (worked, 
 		return false, false
 	}
 	if err != nil {
-		w.warn("modeldev close claim unavailable")
+		dependencyFailed(ctx, w.log.Logger, "postgresql", "modeldev.stop", []any{"worker", "modeldev_close", "step", "claim"}, err)
 		return false, false
 	}
 	if claim == nil {
 		return false, true
 	}
 	if claim.Intent == nil {
-		w.warn("modeldev close original unavailable")
+		stepFailed(ctx, w.log.Logger, "claim", "MODELDEV_CLOSE_ORIGINAL_MISSING",
+			[]any{"worker", "modeldev_close", "step", "claim"}, fmt.Errorf("modeldev close original unavailable"))
 		return true, false
 	}
+	// Restore the close-side trace captured on first entry into CLOSING.
+	identity := backgroundIdentity(claim.Intent.OperationID, "modeldev", claim.Intent.ExecutionID, "", "modeldev.stop")
+	ctx, runSpan := restoreBackgroundTrace(ctx, decodeAcceptanceTelemetry(claim.Intent.TelemetryJSON), nil, identity, w.log.Logger, "modeldev.close")
+	defer runSpan.End()
 	call, cancel = context.WithTimeout(ctx, 3*time.Second)
 	receipt, deliveryErr := w.client.ApplyCloseIntent(call, *claim.Intent)
 	cancel()
@@ -45,13 +51,17 @@ func (w *ModelDevDispatchWorker) deliverNextClose(ctx context.Context) (worked, 
 		if errors.As(deliveryErr, &classified) && classified != nil {
 			failure = *classified
 		}
+		// Record the real RPC/status cause before it becomes a delivery code.
+		stepFailed(ctx, w.log.Logger, "dispatch", "MODELDEV_CLOSE_FAILED", identity, deliveryErr)
 		written, err = w.repository.DeferCloseDelivery(write, claim, failure)
 	}
 	if ctx.Err() == nil {
 		if err != nil {
-			w.warn("modeldev close delivery writeback unavailable")
+			statePersistFailed(ctx, w.log.Logger, "modeldev.stop", "persist_ack", identity, err)
 		} else if !written {
-			w.warn("modeldev close delivery writeback ignored after lease change")
+			if w.log.Logger != nil {
+				w.log.Logger.Warn(ctx, "modeldev close writeback ignored after lease change", append(append([]any{"event", "operation.lease_lost", "reason", "LEASE_LOST"}, identity...))...)
+			}
 		}
 	}
 	return true, true

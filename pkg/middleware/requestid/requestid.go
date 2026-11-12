@@ -13,6 +13,7 @@ package requestid
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/go-kratos/kratos/v2/errors"
@@ -97,6 +98,24 @@ func resolveFromHeader(header interface{ Get(string) string }) string {
 	return ""
 }
 
+// Ensure resolves the request ID once at the outermost boundary and stores it
+// on the context. It reuses the existing header precedence and validation so
+// downstream middleware and audit code observe the same value.
+func Ensure(ctx context.Context, header http.Header) (context.Context, string) {
+	if id, ok := FromContext(ctx); ok {
+		return ctx, id
+	}
+	requestID := resolveFromHeader(header)
+	if requestID == "" {
+		requestID = uuid.NewString()
+	}
+	// Backfill the inbound header: audit reads request.Header directly.
+	if header != nil {
+		header.Set(HeaderRequestID, requestID)
+	}
+	return NewContext(ctx, requestID), requestID
+}
+
 // Server 返回请求 ID 中间件。
 //
 // 挂载位置建议：recovery 之后、logging 之前。这样日志与审计中间件都能从上下文
@@ -112,26 +131,19 @@ func Server() middleware.Middleware {
 			requestID := ""
 			if httpTransport != nil {
 				if r := httpTransport.Request(); r != nil {
-					requestID = resolveFromHeader(r.Header)
+					// The outermost filter already resolved this request; keep
+					// its value so both layers agree on one ID.
+					ctx, requestID = Ensure(ctx, r.Header)
 				}
 			}
 			if requestID == "" {
 				requestID = uuid.NewString()
+				ctx = NewContext(ctx, requestID)
 			}
-
-			ctx = NewContext(ctx, requestID)
 
 			if httpTransport != nil {
 				// 回写响应头，便于调用方与前端在报错时上报该 ID。
 				httpTransport.ReplyHeader().Set(HeaderRequestID, requestID)
-
-				// 把生成结果回填到入站请求头：既有审计中间件是直接读
-				// request.Header（见 logging 包的 getRequestId），而非读上下文。
-				// 在此处回填可让审计拿到同一个 ID，且无需改动 logging 包。
-				// 本中间件位于链上游、handler 之前，同 goroutine 内无并发问题。
-				if r := httpTransport.Request(); r != nil {
-					r.Header.Set(HeaderRequestID, requestID)
-				}
 			}
 
 			reply, err := handler(ctx, req)

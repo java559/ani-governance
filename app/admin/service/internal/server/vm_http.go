@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/transport/http"
 	view "go-wind-admin/api/gen/go/vm/service/v1"
@@ -51,20 +52,27 @@ func RegisterVMHTTPServer(server *http.Server, s *service.VMService) {
 		handler := func(ctx http.Context) error {
 			http.SetOperation(ctx, "/admin.service.v1.VMService/"+entry.operation)
 			request := entry.request()
+			requestCtx := ctx.Request().Context()
 			if registered.Method == "GET" {
 				if err := decodeInstanceQuery(ctx.Request(), request); err != nil {
-					return kratoserrors.BadRequest("VM_INVALID_REQUEST", "invalid VM query")
+					return rejectVMRequest(requestCtx, err, "invalid VM query")
 				}
 			} else {
 				if entry.action == "set-security-groups" {
 					raw, err := io.ReadAll(io.LimitReader(ctx.Request().Body, 65537))
-					if err != nil || len(raw) > 65536 || validateSecurityGroupSelectionJSON(raw) != nil {
-						return kratoserrors.BadRequest("VM_INVALID_REQUEST", "explicit security_group_ids array required")
+					if err != nil {
+						return rejectVMRequest(requestCtx, err, "invalid VM request")
+					}
+					if len(raw) > 65536 {
+						return rejectVMRequest(requestCtx, fmt.Errorf("VM request body exceeds 65536 bytes"), "invalid VM request")
+					}
+					if err = validateSecurityGroupSelectionJSON(raw); err != nil {
+						return rejectVMRequest(requestCtx, err, "explicit security_group_ids array required")
 					}
 					ctx.Request().Body = io.NopCloser(bytes.NewReader(raw))
 				}
 				if err := decodeStrictJSONHTTP(ctx.Request(), request); err != nil {
-					return kratoserrors.BadRequest("VM_INVALID_REQUEST", "invalid VM request")
+					return rejectVMRequest(requestCtx, err, "invalid VM request")
 				}
 			}
 			if strings.Contains(registered.Path, "{") {
@@ -122,6 +130,14 @@ func RegisterVMHTTPServer(server *http.Server, s *service.VMService) {
 			router.DELETE(registered.Path, handler)
 		}
 	}
+}
+
+// rejectVMRequest keeps the existing 400 contract while handing the real
+// bind/JSON failure to this request's completion record. Only the error object
+// is captured; request content is never logged.
+func rejectVMRequest(ctx context.Context, err error, message string) error {
+	captureHTTPError(ctx, err)
+	return kratoserrors.BadRequest("VM_INVALID_REQUEST", message)
 }
 
 func vmHTTPError(err error) error {

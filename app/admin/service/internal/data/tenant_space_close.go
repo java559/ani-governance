@@ -11,11 +11,16 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
+
+	"go-wind-admin/pkg/telemetry"
 )
 
 type TenantSpaceCloseIntent struct {
 	TenantID                      uint32
 	ResourceTenantID, OperationID string
+	// TelemetryJSON is the close-side telemetry, separate from the open context
+	// so a later close never overwrites the creation trace.
+	TelemetryJSON []byte
 }
 
 // RequestTenantSpaceClose persists a one-way close intent before destructive
@@ -67,7 +72,7 @@ func beginTenantSpaceClose(ctx context.Context, tx *ent.Tx, tenantID uint32, row
 	if !tenantSpaceUUID(operation) {
 		return nil, false, fmt.Errorf("invalid tenant space operation")
 	}
-	intent := &TenantSpaceCloseIntent{TenantID: tenantID, ResourceTenantID: row.ResourceTenantID, OperationID: operation}
+	intent := &TenantSpaceCloseIntent{TenantID: tenantID, ResourceTenantID: row.ResourceTenantID, OperationID: operation, TelemetryJSON: []byte(tenantTelemetryValue(row.TenantSpaceCloseTelemetryContext))}
 	closed := row.TenantSpaceState == tenant.TenantSpaceStateCLOSED
 	if !closed && row.TenantSpaceState != tenant.TenantSpaceStateCLOSING {
 		// Pending commands may have reached Resource even if their ACK was lost.
@@ -82,7 +87,8 @@ func beginTenantSpaceClose(ctx context.Context, tx *ent.Tx, tenantID uint32, row
 				return nil, false, kratosErrors.Conflict("SANDBOX_CREATE_PENDING", "Sandbox 创建结果尚未确认，请稍后重试")
 			}
 		}
-		update := tx.Tenant.UpdateOneID(tenantID).SetTenantSpaceState(tenant.TenantSpaceStateCLOSING).ClearTenantSpaceLeaseOwner().ClearTenantSpaceLeaseUntil().ClearTenantSpaceNextAttemptAt()
+		update := tx.Tenant.UpdateOneID(tenantID).SetTenantSpaceState(tenant.TenantSpaceStateCLOSING).ClearTenantSpaceLeaseOwner().ClearTenantSpaceLeaseUntil().ClearTenantSpaceNextAttemptAt().
+			SetNillableTenantSpaceCloseTelemetryContext(encodeTenantTelemetry(telemetry.Capture(ctx)))
 		// Legacy rows have never had an operation. Set it only once under the
 		// tenant lock; Ent intentionally makes the field immutable thereafter.
 		if row.TenantSpaceOperationID == nil {

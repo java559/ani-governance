@@ -34,9 +34,10 @@ func NewImageClient(c ImageClientConfig) (*ImageClient, func(), error) {
 	}
 	security, err := resourceClientTLS(c.CAFile, c.CertFile, c.KeyFile)
 	if err != nil {
+		dialDependencyFailed(peerResourceService, "load_certificate", err)
 		return nil, nil, fmt.Errorf("Image mTLS configuration: %w", err)
 	}
-	conn, err := grpc.NewClient(c.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)))
+	conn, err := grpc.NewClient(c.Address, outboundDial(peerResourceService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)))...)
 	if err != nil {
 		return nil, nil, fmt.Errorf("create Image client: %w", err)
 	}

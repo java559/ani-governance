@@ -2,11 +2,15 @@ package server
 
 import (
 	kratoserrors "github.com/go-kratos/kratos/v2/errors"
+	khttp "github.com/go-kratos/kratos/v2/transport/http"
 	"github.com/stretchr/testify/require"
 	view "go-wind-admin/api/gen/go/vm/service/v1"
+	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/app/admin/service/internal/service"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -31,6 +35,27 @@ func TestVMHTTPErrorPreservesVMContractReasons(t *testing.T) {
 		require.Equal(t, test.reason, kratoserrors.Reason(result))
 		require.NotContains(t, result.Error(), "private")
 	}
+}
+
+func TestVMRouteDecodeFailureKeepsCauseInCompletionLog(t *testing.T) {
+	logger, buf := newTestLogger(t)
+	server := khttp.NewServer(khttp.Filter(httpObservabilityFilter(logger)))
+	vmService := service.NewVMService(nil, service.NewVMBinding(nil, nil, "cluster"), nil, &data.QuotaLedgerRepo{}, nil)
+	RegisterVMHTTPServer(server, vmService)
+	actual := httptest.NewServer(server)
+	t.Cleanup(actual.Close)
+
+	resp, err := http.Get(actual.URL + "/api/v1/virtual-machines?state=bogus")
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	done := findEvent(records(t, buf), "http.request.completed")
+	require.NotNil(t, done)
+	require.Equal(t, "rejected", done["result"])
+	msg, _ := done["error"].(string)
+	require.Contains(t, msg, `"state"`)
+	require.NotContains(t, msg, "bogus")
 }
 
 func TestVMListQueryAcceptsOnlyDeclaredFilters(t *testing.T) {

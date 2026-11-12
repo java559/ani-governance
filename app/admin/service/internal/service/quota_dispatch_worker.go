@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -142,7 +143,7 @@ func (w *QuotaDispatchWorker) drain(ctx context.Context) {
 		}
 		ops, err := w.ledger.ClaimDispatchable(ctx, w.workerID, w.lease, w.batchLimit)
 		if err != nil {
-			w.log.Errorf(context.Background(), "claim dispatchable failed: %s", err.Error())
+			dependencyFailed(context.Background(), w.log.Logger, "postgresql", "quota.claim", []any{"worker", "quota_dispatch", "step", "claim"}, err)
 			return
 		}
 		if len(ops) == 0 {
@@ -161,14 +162,18 @@ func (w *QuotaDispatchWorker) drain(ctx context.Context) {
 
 // dispatchOne 投递单个已领取操作：先提交领取（ClaimDispatchable 已提交），再发 RPC。
 func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedOperation) {
+	// Restore the accepted request's trace for this dispatch pass.
+	identity := backgroundIdentity(op.OperationID, "quota", op.ResourceID, "", op.Action)
+	saved, telemetryErr := decodeClaimTelemetry(op.TelemetryJSON)
+	ctx, runSpan := restoreBackgroundTrace(ctx, saved, telemetryErr, identity, w.log.Logger, "quota."+op.Action)
+	defer runSpan.End()
 	adapter := w.registry.Lookup(op.OwnerService, op.Action)
 	if adapter == nil {
 		// 恢复遇到缺失 adapter：保留账本并报错，不退额、不改余额（§8.2）。
-		w.log.Errorf(context.Background(), "missing quota adapter for owner=%s action=%s operation=%s: ledger kept, dispatch deferred",
-			op.OwnerService, op.Action, op.OperationID)
+		stepFailed(ctx, w.log.Logger, "dispatch", "QUOTA_ADAPTER_MISSING", identity, fmt.Errorf("missing quota adapter for owner=%s action=%s", op.OwnerService, op.Action))
 		next := time.Now().Add(60 * time.Second)
 		if _, err := w.ledger.MarkUnknown(ctx, op.TenantID, op.OperationID, op.LeaseGeneration, next, "ADAPTER_MISSING", false); err != nil {
-			w.log.Errorf(context.Background(), "mark unknown failed: %s", err.Error())
+			statePersistFailed(ctx, w.log.Logger, op.Action, "mark_unknown", identity, err)
 		}
 		return
 	}
@@ -180,14 +185,17 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 	}
 	original, readErr := w.ledger.GetChargesForOperation(ctx, op.TenantID, createID)
 	if readErr != nil {
-		w.deferInvalidCommand(ctx, op, "ORIGINAL_CHARGES_UNAVAILABLE")
+		// Record the driver error (including SQLSTATE) at the real read boundary;
+		// MarkUnknown below only carries the fixed business reason.
+		dependencyFailed(ctx, w.log.Logger, "postgresql", "quota.original_charges.read", identity, readErr)
+		w.deferInvalidCommand(ctx, op, identity, "ORIGINAL_CHARGES_UNAVAILABLE")
 		return
 	}
 	charges := make([]data.QuotaChargeRef, 0, len(original))
 	seenCode, seenID := map[string]bool{}, map[string]bool{}
 	for _, c := range original {
 		if c == nil || c.TenantID == nil || *c.TenantID != op.TenantID || c.OperationID != createID || c.OriginalUnits <= 0 || c.ChargeID == "" || c.QuotaCode == "" || seenCode[c.QuotaCode] || seenID[c.ChargeID] {
-			w.deferInvalidCommand(ctx, op, "ORIGINAL_CHARGES_INVALID")
+			w.deferInvalidCommand(ctx, op, identity, "ORIGINAL_CHARGES_INVALID")
 			return
 		}
 		seenCode[c.QuotaCode], seenID[c.ChargeID] = true, true
@@ -207,7 +215,7 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 	}
 	if commandcontract.ManagedOwner(op.OwnerService) {
 		if _, err := validateDispatchCommand(op.OwnerService, cmd); err != nil {
-			w.deferInvalidCommand(ctx, op, "ORIGINAL_COMMAND_INVALID")
+			w.deferInvalidCommand(ctx, op, identity, "ORIGINAL_COMMAND_INVALID")
 			return
 		}
 	}
@@ -225,13 +233,15 @@ func (w *QuotaDispatchWorker) dispatchOne(ctx context.Context, op *data.ClaimedO
 	if derr == nil {
 		ok, aerr := w.ledger.AckDispatched(ctx, op.TenantID, op.OperationID, op.LeaseGeneration, string(ack))
 		if aerr != nil {
-			w.log.Errorf(context.Background(), "ack writeback failed: %s", aerr.Error())
+			statePersistFailed(ctx, w.log.Logger, op.Action, "persist_ack", identity, aerr)
 			return
 		}
 		if !ok {
-			// 迟到回写：租约已被接管，放弃本次结果（FAIL-18）。
-			w.log.Warnf(context.Background(), "ack writeback skipped (stale generation) operation=%s generation=%d", op.OperationID, op.LeaseGeneration)
+			w.log.Log(ctx, slog.LevelWarn, "operation.lease_lost", "ack writeback skipped (stale generation)",
+				append(identity, "reason", "LEASE_LOST")...)
+			return
 		}
+		w.log.Log(ctx, slog.LevelInfo, "operation.dispatched", "quota operation dispatched", identity...)
 		return
 	}
 
@@ -291,10 +301,12 @@ func vmDeleteVersionRejected(err error) bool {
 	return false
 }
 
-func (w *QuotaDispatchWorker) deferInvalidCommand(ctx context.Context, op *data.ClaimedOperation, reason string) {
+func (w *QuotaDispatchWorker) deferInvalidCommand(ctx context.Context, op *data.ClaimedOperation, identity []any, reason string) {
 	_, err := w.ledger.MarkUnknown(ctx, op.TenantID, op.OperationID, op.LeaseGeneration, time.Now().Add(time.Minute), reason, false)
 	if err != nil {
-		w.log.Errorf(context.Background(), "defer invalid command operation=%s: %s", op.OperationID, err)
+		// The business reason was already fixed; the write failure is a separate
+		// state-persistence event on the same operation trace.
+		statePersistFailed(ctx, w.log.Logger, op.Action, "mark_unknown", identity, err)
 	}
 }
 

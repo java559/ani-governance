@@ -175,6 +175,16 @@ func ExpiredAt(v time.Time) predicate.Tenant {
 	return predicate.Tenant(sql.FieldEQ(FieldExpiredAt, v))
 }
 
+// TenantSpaceTelemetryContext applies equality check predicate on the "tenant_space_telemetry_context" field. It's identical to TenantSpaceTelemetryContextEQ.
+func TenantSpaceTelemetryContext(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContext applies equality check predicate on the "tenant_space_close_telemetry_context" field. It's identical to TenantSpaceCloseTelemetryContextEQ.
+func TenantSpaceCloseTelemetryContext(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Tenant {
 	return predicate.Tenant(sql.FieldEQ(FieldCreatedAt, v))
@@ -1693,6 +1703,156 @@ func ExpiredAtIsNil() predicate.Tenant {
 // ExpiredAtNotNil applies the NotNil predicate on the "expired_at" field.
 func ExpiredAtNotNil() predicate.Tenant {
 	return predicate.Tenant(sql.FieldNotNull(FieldExpiredAt))
+}
+
+// TenantSpaceTelemetryContextEQ applies the EQ predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextNEQ applies the NEQ predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextNEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextIn applies the In predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceTelemetryContext, vs...))
+}
+
+// TenantSpaceTelemetryContextNotIn applies the NotIn predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextNotIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceTelemetryContext, vs...))
+}
+
+// TenantSpaceTelemetryContextGT applies the GT predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextGT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextGTE applies the GTE predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextGTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextLT applies the LT predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextLT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextLTE applies the LTE predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextLTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextContains applies the Contains predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextContains(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContains(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextHasPrefix applies the HasPrefix predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextHasPrefix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasPrefix(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextHasSuffix applies the HasSuffix predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextHasSuffix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasSuffix(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextIsNil applies the IsNil predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextIsNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldIsNull(FieldTenantSpaceTelemetryContext))
+}
+
+// TenantSpaceTelemetryContextNotNil applies the NotNil predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextNotNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotNull(FieldTenantSpaceTelemetryContext))
+}
+
+// TenantSpaceTelemetryContextEqualFold applies the EqualFold predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextEqualFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEqualFold(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceTelemetryContextContainsFold applies the ContainsFold predicate on the "tenant_space_telemetry_context" field.
+func TenantSpaceTelemetryContextContainsFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContainsFold(FieldTenantSpaceTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextEQ applies the EQ predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEQ(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextNEQ applies the NEQ predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextNEQ(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNEQ(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextIn applies the In predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldIn(FieldTenantSpaceCloseTelemetryContext, vs...))
+}
+
+// TenantSpaceCloseTelemetryContextNotIn applies the NotIn predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextNotIn(vs ...string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotIn(FieldTenantSpaceCloseTelemetryContext, vs...))
+}
+
+// TenantSpaceCloseTelemetryContextGT applies the GT predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextGT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGT(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextGTE applies the GTE predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextGTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldGTE(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextLT applies the LT predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextLT(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLT(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextLTE applies the LTE predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextLTE(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldLTE(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextContains applies the Contains predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextContains(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContains(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextHasPrefix applies the HasPrefix predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextHasPrefix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasPrefix(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextHasSuffix applies the HasSuffix predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextHasSuffix(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldHasSuffix(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextIsNil applies the IsNil predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextIsNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldIsNull(FieldTenantSpaceCloseTelemetryContext))
+}
+
+// TenantSpaceCloseTelemetryContextNotNil applies the NotNil predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextNotNil() predicate.Tenant {
+	return predicate.Tenant(sql.FieldNotNull(FieldTenantSpaceCloseTelemetryContext))
+}
+
+// TenantSpaceCloseTelemetryContextEqualFold applies the EqualFold predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextEqualFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldEqualFold(FieldTenantSpaceCloseTelemetryContext, v))
+}
+
+// TenantSpaceCloseTelemetryContextContainsFold applies the ContainsFold predicate on the "tenant_space_close_telemetry_context" field.
+func TenantSpaceCloseTelemetryContextContainsFold(v string) predicate.Tenant {
+	return predicate.Tenant(sql.FieldContainsFold(FieldTenantSpaceCloseTelemetryContext, v))
 }
 
 // HasPlan applies the HasEdge predicate on the "plan" edge.

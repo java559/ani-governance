@@ -75,6 +75,10 @@ type Tenant struct {
 	SubscriptionPlan *string `json:"subscription_plan,omitempty"`
 	// 租户有效期
 	ExpiredAt *time.Time `json:"expired_at,omitempty"`
+	// 租户空间 open 受理日志关联上下文（JSONB）
+	TenantSpaceTelemetryContext *string `json:"tenant_space_telemetry_context,omitempty"`
+	// 租户空间 close 受理日志关联上下文（JSONB）
+	TenantSpaceCloseTelemetryContext *string `json:"tenant_space_close_telemetry_context,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TenantQuery when eager-loading is set.
 	Edges        TenantEdges `json:"edges"`
@@ -108,7 +112,7 @@ func (*Tenant) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case tenant.FieldID, tenant.FieldCreatedBy, tenant.FieldUpdatedBy, tenant.FieldDeletedBy, tenant.FieldTenantSpaceLeaseGeneration, tenant.FieldAdminUserID, tenant.FieldPlanID:
 			values[i] = new(sql.NullInt64)
-		case tenant.FieldRemark, tenant.FieldResourceTenantID, tenant.FieldTenantSpaceState, tenant.FieldTenantSpaceOperationID, tenant.FieldTenantSpaceLeaseOwner, tenant.FieldName, tenant.FieldCode, tenant.FieldLogoURL, tenant.FieldDomain, tenant.FieldIndustry, tenant.FieldStatus, tenant.FieldType, tenant.FieldAuditStatus, tenant.FieldSubscriptionPlan:
+		case tenant.FieldRemark, tenant.FieldResourceTenantID, tenant.FieldTenantSpaceState, tenant.FieldTenantSpaceOperationID, tenant.FieldTenantSpaceLeaseOwner, tenant.FieldName, tenant.FieldCode, tenant.FieldLogoURL, tenant.FieldDomain, tenant.FieldIndustry, tenant.FieldStatus, tenant.FieldType, tenant.FieldAuditStatus, tenant.FieldSubscriptionPlan, tenant.FieldTenantSpaceTelemetryContext, tenant.FieldTenantSpaceCloseTelemetryContext:
 			values[i] = new(sql.NullString)
 		case tenant.FieldCreatedAt, tenant.FieldUpdatedAt, tenant.FieldDeletedAt, tenant.FieldTenantSpaceLeaseUntil, tenant.FieldTenantSpaceNextAttemptAt, tenant.FieldSubscriptionAt, tenant.FieldUnsubscribeAt, tenant.FieldExpiredAt:
 			values[i] = new(sql.NullTime)
@@ -326,6 +330,20 @@ func (_m *Tenant) assignValues(columns []string, values []any) error {
 				_m.ExpiredAt = new(time.Time)
 				*_m.ExpiredAt = value.Time
 			}
+		case tenant.FieldTenantSpaceTelemetryContext:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_telemetry_context", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceTelemetryContext = new(string)
+				*_m.TenantSpaceTelemetryContext = value.String
+			}
+		case tenant.FieldTenantSpaceCloseTelemetryContext:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field tenant_space_close_telemetry_context", values[i])
+			} else if value.Valid {
+				_m.TenantSpaceCloseTelemetryContext = new(string)
+				*_m.TenantSpaceCloseTelemetryContext = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -499,6 +517,16 @@ func (_m *Tenant) String() string {
 	if v := _m.ExpiredAt; v != nil {
 		builder.WriteString("expired_at=")
 		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.TenantSpaceTelemetryContext; v != nil {
+		builder.WriteString("tenant_space_telemetry_context=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.TenantSpaceCloseTelemetryContext; v != nil {
+		builder.WriteString("tenant_space_close_telemetry_context=")
+		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')
 	return builder.String()

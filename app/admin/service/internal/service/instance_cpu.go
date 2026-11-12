@@ -12,6 +12,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/telemetry"
 )
 
 func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Principal, key, resource string, version int64, original *ent.QuotaOperation, replayed *bool) (*commandv1.GpuDeleteAcceptance, error) {
@@ -56,7 +57,7 @@ func (s *GpuAcceptance) acceptInstanceCPUDelete(ctx context.Context, p *auth.Pri
 	if e != nil {
 		return nil, e
 	}
-	result, e := s.ledger.CreateDeleteOperation(ctx, &data.QuotaDeleteInput{TenantID: p.TenantID, ActorType: string(p.Type), ActorID: actorID, OwnerService: InstanceOwner, Action: InstanceDeleteAction, IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), ResourceID: resource})
+	result, e := s.ledger.CreateDeleteOperation(ctx, &data.QuotaDeleteInput{TenantID: p.TenantID, ActorType: string(p.Type), ActorID: actorID, OwnerService: InstanceOwner, Action: InstanceDeleteAction, IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), ResourceID: resource, TelemetryContext: telemetry.Capture(ctx)})
 	if e != nil {
 		return nil, e
 	}

@@ -36,7 +36,7 @@ func NewObservabilityClientFromEnv() (*ObservabilityClient, func(), error) {
 	if err != nil {
 		return nil, nil, fmt.Errorf("observability mTLS configuration invalid: %w", err)
 	}
-	conn, err := grpc.NewClient(addr, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	conn, err := grpc.NewClient(addr, outboundDial(peerObservabilityService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))...)
 	if err != nil {
 		return nil, nil, err
 	}

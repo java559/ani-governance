@@ -28,6 +28,7 @@ import (
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/task"
+	"go-wind-admin/pkg/telemetry"
 )
 
 // TaskEnqueuer 投递一次性 asynq 任务的接口。
@@ -118,25 +119,25 @@ func (s *InternalMessageService) RegisterTaskEnqueuer(enqueuer TaskEnqueuer) {
 }
 
 func (s *InternalMessageService) HandleAuthorize(r *http.Request, token string) error {
-	//s.log.Debugf(context.Background(), "authorizing token: %s", token)
-	//s.log.Debugf(context.Background(), "authorizing token HEADER: %s", req.Header.Get("Authorization"))
+	// The request context carries this request's trace; the token is never logged.
+	ctx := r.Context()
 
-	resp, err := s.authenticator.Authenticate(context.Background(), &authenticationV1.ValidateTokenRequest{
+	resp, err := s.authenticator.Authenticate(ctx, &authenticationV1.ValidateTokenRequest{
 		ClientType:    s.clientType,
 		Token:         token,
 		TokenCategory: authenticationV1.TokenCategory_ACCESS,
 	})
 	if err != nil {
-		s.log.Errorf(context.Background(), "token authentication failed: %s", err)
+		s.log.Errorf(ctx, "token authentication failed: %s", err)
 		return err
 	}
 
 	if resp.GetIsBlocked() {
-		s.log.Warnf(context.Background(), "token is blocked: %s", token)
+		s.log.Warnf(ctx, "token is blocked")
 		return authenticationV1.ErrorForbidden("token is blocked")
 	}
 	if !resp.GetIsValid() {
-		s.log.Warnf(context.Background(), "token is invalid: %s", token)
+		s.log.Warnf(ctx, "token is invalid")
 		return authenticationV1.ErrorUnauthorized("invalid token")
 	}
 
@@ -350,7 +351,7 @@ func (s *InternalMessageService) SendMessage(ctx context.Context, req *internalM
 		vc, _ := viewer.FromContext(ctx)
 
 		if s.taskEnqueuer != nil {
-			if err := s.taskEnqueuer.NewTask(task.BroadcastMessageTaskType, &task.BroadcastMessageTaskData{MessageId: msgId}); err != nil {
+			if err := s.taskEnqueuer.NewTask(task.BroadcastMessageTaskType, &task.BroadcastMessageTaskData{MessageId: msgId, TelemetryJSON: encodeTelemetryJSON(telemetry.Capture(ctx))}); err != nil {
 				s.log.Errorf(ctx, "enqueue broadcast task for message [%d] failed, falling back to goroutine: %s", msgId, err)
 				s.fanoutBroadcastGoroutine(msgId, senderId, title, content, vc)
 			}
@@ -501,7 +502,16 @@ func (s *InternalMessageService) fanoutBroadcastGoroutine(messageId, senderUserI
 // 幂等性由 (message_id, recipient_user_id) 唯一约束 + CreateBulk 的 ON CONFLICT DO NOTHING 保证。
 // 注意：asynq handler 的 ctx 不携带请求期的 viewer，需注入 SystemViewer 以通过 ent 租户隐私层。
 func (s *InternalMessageService) AsyncBroadcastMessage(taskType string, taskData *task.BroadcastMessageTaskData) error {
-	s.log.Infof(context.Background(), "AsyncBroadcastMessage [%s] messageId=%d", taskType, taskData.MessageId)
+	// Restore the enqueuing request's trace for this run. A missing or malformed
+	// value is handled after the business payload is already decoded, so it can
+	// never fail the broadcast; the trace is logging metadata only.
+	runCtx, restored := restoreBroadcastTelemetry(taskData.TelemetryJSON)
+	_ = restored
+	if runCtx != nil {
+		s.log.Infof(runCtx, "AsyncBroadcastMessage [%s] messageId=%d", taskType, taskData.MessageId)
+	} else {
+		s.log.Infof(context.Background(), "AsyncBroadcastMessage [%s] messageId=%d", taskType, taskData.MessageId)
+	}
 
 	// asynq handler 的 ctx 不携带请求期的 viewer，ent 的 TenantPrivacy 会拒绝无 viewer 的查询。
 	// 注入 SystemViewer（平台级全可见）以通过隐私层。
@@ -520,4 +530,36 @@ func (s *InternalMessageService) AsyncBroadcastMessage(taskType string, taskData
 	s.executeBroadcast(ctx, taskData.MessageId, msg.GetCreatedBy(), msg.GetTitle(), msg.GetContent())
 
 	return nil
+}
+
+// encodeTelemetryJSON renders the logging metadata for the task payload.
+func encodeTelemetryJSON(tc telemetry.TelemetryContext) json.RawMessage {
+	if !tc.Valid() {
+		return nil
+	}
+	b, e := json.Marshal(tc)
+	if e != nil {
+		return nil
+	}
+	return b
+}
+
+// restoreBroadcastTelemetry decodes the payload telemetry and extracts its
+// trace. A malformed value leaves the business path untouched.
+func restoreBroadcastTelemetry(raw json.RawMessage) (context.Context, error) {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	tc, e := telemetry.Decode(raw)
+	if e != nil {
+		return nil, e
+	}
+	if !tc.Valid() {
+		return nil, nil
+	}
+	ctx, re := telemetry.Restore(context.Background(), tc)
+	if re != nil {
+		return nil, re
+	}
+	return ctx, nil
 }

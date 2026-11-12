@@ -16,6 +16,8 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
+
+	"go-wind-admin/pkg/telemetry"
 )
 
 // Generation belongs to Governance's durable source command, not ModelDev's
@@ -26,9 +28,12 @@ type ModelDevStopIntent struct {
 	Generation                                                    uint64
 	RequestedActor                                                string
 	RequestedAt                                                   time.Time
+	// TelemetryJSON is the close-side telemetry captured on first entry into
+	// CLOSING, kept separate so it never overwrites the create-side trace.
+	TelemetryJSON []byte
 }
 
-func (r *ModelDevAcceptanceRepo) AcceptStop(ctx context.Context, tenantID uint32, resourceTenantID, executionID, actor string) (*ModelDevStopIntent, bool, error) {
+func (r *ModelDevAcceptanceRepo) AcceptStop(ctx context.Context, tenantID uint32, resourceTenantID, executionID, actor string, telemetryContext telemetry.TelemetryContext) (*ModelDevStopIntent, bool, error) {
 	if tenantID == 0 || !modelDevCanonicalUUID(resourceTenantID) || !modelDevCanonicalUUID(executionID) || !validModelDevClientActor(actor) {
 		return nil, false, fmt.Errorf("%w: modeldev stop scope", cpup01.ErrInvalidArgument)
 	}
@@ -48,6 +53,7 @@ func (r *ModelDevAcceptanceRepo) AcceptStop(ctx context.Context, tenantID uint32
 		if row.StopIntentGeneration == 0 {
 			_, err = tx.ModelDevAcceptance.Update().Where(modeldevacceptance.IDEQ(row.ID), modeldevacceptance.TenantIDEQ(tenantID), modeldevacceptance.StopIntentGenerationEQ(0)).
 				SetStopIntentGeneration(1).SetStopRequestedActor(actor).SetCloseDispatchState(modeldevacceptance.CloseDispatchStateQUEUED).
+				SetNillableCloseTelemetryContext(encodeModelDevTelemetry(telemetryContext)).
 				Modify(func(u *entsql.UpdateBuilder) {
 					u.Set(modeldevacceptance.FieldStopRequestedAt, entsql.Expr("statement_timestamp()"))
 				}).Save(ctx)
@@ -99,7 +105,7 @@ func modelDevStopIntentFromRow(row *ent.ModelDevAcceptance) (*ModelDevStopIntent
 	if row.StopIntentGeneration <= 0 || row.StopRequestedAt == nil || row.StopRequestedActor == nil || row.CloseDispatchState == modeldevacceptance.CloseDispatchStateIDLE {
 		return nil, fmt.Errorf("invalid persisted modeldev stop intent")
 	}
-	intent := &ModelDevStopIntent{TenantID: *row.TenantID, ResourceTenantID: row.ResourceTenantID, OperationID: row.OperationID, ExecutionID: row.ExecutionID, ExecutionSpecHash: row.ExecutionSpecHash, Generation: uint64(row.StopIntentGeneration), RequestedActor: *row.StopRequestedActor, RequestedAt: *row.StopRequestedAt}
+	intent := &ModelDevStopIntent{TenantID: *row.TenantID, ResourceTenantID: row.ResourceTenantID, OperationID: row.OperationID, ExecutionID: row.ExecutionID, ExecutionSpecHash: row.ExecutionSpecHash, Generation: uint64(row.StopIntentGeneration), RequestedActor: *row.StopRequestedActor, RequestedAt: *row.StopRequestedAt, TelemetryJSON: []byte(modelDevTelemetryValue(row.CloseTelemetryContext))}
 	if _, err := modelDevCloseRequest(*intent); err != nil {
 		return nil, err
 	}

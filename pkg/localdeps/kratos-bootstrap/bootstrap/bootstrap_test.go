@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	conf "go-wind-admin/pkg/localdeps/kratos-bootstrap/api/gen/go/conf/v1"
+	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 )
 
 func initApp(ctx *Context) (*kratos.App, func(), error) {
@@ -146,4 +147,51 @@ func (s *lifecycleServer) Stop(context.Context) error {
 func TestNewInstanceId(t *testing.T) {
 	instanceId := NewInstanceId("gowind-test-service", "1.0.0", "127.0.0.1", "8000")
 	t.Logf("InstanceId: %s", instanceId)
+}
+
+// captureLogger records Info calls so the startup banner can be asserted without
+// capturing process stdout.
+type captureLogger struct {
+	infos []capturedInfo
+}
+
+type capturedInfo struct {
+	msg     string
+	keyvals []any
+}
+
+func (c *captureLogger) Debug(context.Context, string, ...any) {}
+func (c *captureLogger) Warn(context.Context, string, ...any)  {}
+func (c *captureLogger) Error(context.Context, string, ...any) {}
+func (c *captureLogger) Info(_ context.Context, msg string, keyvals ...any) {
+	c.infos = append(c.infos, capturedInfo{msg: msg, keyvals: keyvals})
+}
+func (c *captureLogger) With(...any) bLogger.Logger { return c }
+
+// TestPrintAppInfoUsesStructuredLogger pins the wiring that keeps the startup
+// banner off the plain-text fallback: when the context carries a logger,
+// PrintAppInfo must emit one structured runtime.log record instead of the
+// legacy "name (pid@host) version=..." line.
+func TestPrintAppInfoUsesStructuredLogger(t *testing.T) {
+	l := &captureLogger{}
+	c := NewContextWithParam(context.Background(), &conf.AppInfo{
+		Name:       "ani-governance",
+		AppId:      "ani-governance",
+		Version:    "1.0.0",
+		InstanceId: "instance-1",
+	}, nil, l)
+
+	c.PrintAppInfo()
+
+	if len(l.infos) != 1 {
+		t.Fatalf("expected one structured app info record, got %d", len(l.infos))
+	}
+	rec := l.infos[0]
+	if rec.msg != "application info" {
+		t.Fatalf("unexpected message: %q", rec.msg)
+	}
+	kv := map[any]any{rec.keyvals[0]: rec.keyvals[1], rec.keyvals[2]: rec.keyvals[3]}
+	if kv["event"] != "runtime.log" {
+		t.Fatalf("app info record must carry event=runtime.log, got %v", kv["event"])
+	}
 }

@@ -39,10 +39,11 @@ func NewNetworkClient(c NetworkClientConfig) (*NetworkClient, func(), error) {
 	}
 	security, err := resourceClientTLS(c.CAFile, c.CertFile, c.KeyFile)
 	if err != nil {
+		dialDependencyFailed(peerResourceService, "load_certificate", err)
 		return nil, nil, fmt.Errorf("network mTLS configuration: %w", err)
 	}
 	// No DNS TXT or resolver-supplied retry/hedging policy is authorized.
-	conn, err := grpc.NewClient(c.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)))
+	conn, err := grpc.NewClient(c.Address, outboundDial(peerResourceService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)))...)
 	if err != nil {
 		return nil, nil, err
 	}

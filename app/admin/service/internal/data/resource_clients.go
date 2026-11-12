@@ -24,7 +24,7 @@ func NewResourceClientsFromEnv() (*InstanceClient, *ComputeClient, *ClusterOpsCl
 	if err != nil {
 		return nil, nil, nil, nil, fmt.Errorf("resource mTLS configuration invalid: %w", err)
 	}
-	connection, err := grpc.NewClient(address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tls)))
+	connection, err := grpc.NewClient(address, outboundDial(peerResourceService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tls)))...)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}

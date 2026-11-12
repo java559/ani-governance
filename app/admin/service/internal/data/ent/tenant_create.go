@@ -415,6 +415,34 @@ func (_c *TenantCreate) SetNillableExpiredAt(v *time.Time) *TenantCreate {
 	return _c
 }
 
+// SetTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field.
+func (_c *TenantCreate) SetTenantSpaceTelemetryContext(v string) *TenantCreate {
+	_c.mutation.SetTenantSpaceTelemetryContext(v)
+	return _c
+}
+
+// SetNillableTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field if the given value is not nil.
+func (_c *TenantCreate) SetNillableTenantSpaceTelemetryContext(v *string) *TenantCreate {
+	if v != nil {
+		_c.SetTenantSpaceTelemetryContext(*v)
+	}
+	return _c
+}
+
+// SetTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field.
+func (_c *TenantCreate) SetTenantSpaceCloseTelemetryContext(v string) *TenantCreate {
+	_c.mutation.SetTenantSpaceCloseTelemetryContext(v)
+	return _c
+}
+
+// SetNillableTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field if the given value is not nil.
+func (_c *TenantCreate) SetNillableTenantSpaceCloseTelemetryContext(v *string) *TenantCreate {
+	if v != nil {
+		_c.SetTenantSpaceCloseTelemetryContext(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *TenantCreate) SetID(v uint32) *TenantCreate {
 	_c.mutation.SetID(v)
@@ -689,6 +717,14 @@ func (_c *TenantCreate) createSpec() (*Tenant, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExpiredAt(); ok {
 		_spec.SetField(tenant.FieldExpiredAt, field.TypeTime, value)
 		_node.ExpiredAt = &value
+	}
+	if value, ok := _c.mutation.TenantSpaceTelemetryContext(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceTelemetryContext, field.TypeString, value)
+		_node.TenantSpaceTelemetryContext = &value
+	}
+	if value, ok := _c.mutation.TenantSpaceCloseTelemetryContext(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceCloseTelemetryContext, field.TypeString, value)
+		_node.TenantSpaceCloseTelemetryContext = &value
 	}
 	if nodes := _c.mutation.PlanIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1224,6 +1260,42 @@ func (u *TenantUpsert) UpdateExpiredAt() *TenantUpsert {
 // ClearExpiredAt clears the value of the "expired_at" field.
 func (u *TenantUpsert) ClearExpiredAt() *TenantUpsert {
 	u.SetNull(tenant.FieldExpiredAt)
+	return u
+}
+
+// SetTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field.
+func (u *TenantUpsert) SetTenantSpaceTelemetryContext(v string) *TenantUpsert {
+	u.Set(tenant.FieldTenantSpaceTelemetryContext, v)
+	return u
+}
+
+// UpdateTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field to the value that was provided on create.
+func (u *TenantUpsert) UpdateTenantSpaceTelemetryContext() *TenantUpsert {
+	u.SetExcluded(tenant.FieldTenantSpaceTelemetryContext)
+	return u
+}
+
+// ClearTenantSpaceTelemetryContext clears the value of the "tenant_space_telemetry_context" field.
+func (u *TenantUpsert) ClearTenantSpaceTelemetryContext() *TenantUpsert {
+	u.SetNull(tenant.FieldTenantSpaceTelemetryContext)
+	return u
+}
+
+// SetTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field.
+func (u *TenantUpsert) SetTenantSpaceCloseTelemetryContext(v string) *TenantUpsert {
+	u.Set(tenant.FieldTenantSpaceCloseTelemetryContext, v)
+	return u
+}
+
+// UpdateTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field to the value that was provided on create.
+func (u *TenantUpsert) UpdateTenantSpaceCloseTelemetryContext() *TenantUpsert {
+	u.SetExcluded(tenant.FieldTenantSpaceCloseTelemetryContext)
+	return u
+}
+
+// ClearTenantSpaceCloseTelemetryContext clears the value of the "tenant_space_close_telemetry_context" field.
+func (u *TenantUpsert) ClearTenantSpaceCloseTelemetryContext() *TenantUpsert {
+	u.SetNull(tenant.FieldTenantSpaceCloseTelemetryContext)
 	return u
 }
 
@@ -1827,6 +1899,48 @@ func (u *TenantUpsertOne) UpdateExpiredAt() *TenantUpsertOne {
 func (u *TenantUpsertOne) ClearExpiredAt() *TenantUpsertOne {
 	return u.Update(func(s *TenantUpsert) {
 		s.ClearExpiredAt()
+	})
+}
+
+// SetTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field.
+func (u *TenantUpsertOne) SetTenantSpaceTelemetryContext(v string) *TenantUpsertOne {
+	return u.Update(func(s *TenantUpsert) {
+		s.SetTenantSpaceTelemetryContext(v)
+	})
+}
+
+// UpdateTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field to the value that was provided on create.
+func (u *TenantUpsertOne) UpdateTenantSpaceTelemetryContext() *TenantUpsertOne {
+	return u.Update(func(s *TenantUpsert) {
+		s.UpdateTenantSpaceTelemetryContext()
+	})
+}
+
+// ClearTenantSpaceTelemetryContext clears the value of the "tenant_space_telemetry_context" field.
+func (u *TenantUpsertOne) ClearTenantSpaceTelemetryContext() *TenantUpsertOne {
+	return u.Update(func(s *TenantUpsert) {
+		s.ClearTenantSpaceTelemetryContext()
+	})
+}
+
+// SetTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field.
+func (u *TenantUpsertOne) SetTenantSpaceCloseTelemetryContext(v string) *TenantUpsertOne {
+	return u.Update(func(s *TenantUpsert) {
+		s.SetTenantSpaceCloseTelemetryContext(v)
+	})
+}
+
+// UpdateTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field to the value that was provided on create.
+func (u *TenantUpsertOne) UpdateTenantSpaceCloseTelemetryContext() *TenantUpsertOne {
+	return u.Update(func(s *TenantUpsert) {
+		s.UpdateTenantSpaceCloseTelemetryContext()
+	})
+}
+
+// ClearTenantSpaceCloseTelemetryContext clears the value of the "tenant_space_close_telemetry_context" field.
+func (u *TenantUpsertOne) ClearTenantSpaceCloseTelemetryContext() *TenantUpsertOne {
+	return u.Update(func(s *TenantUpsert) {
+		s.ClearTenantSpaceCloseTelemetryContext()
 	})
 }
 
@@ -2596,6 +2710,48 @@ func (u *TenantUpsertBulk) UpdateExpiredAt() *TenantUpsertBulk {
 func (u *TenantUpsertBulk) ClearExpiredAt() *TenantUpsertBulk {
 	return u.Update(func(s *TenantUpsert) {
 		s.ClearExpiredAt()
+	})
+}
+
+// SetTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field.
+func (u *TenantUpsertBulk) SetTenantSpaceTelemetryContext(v string) *TenantUpsertBulk {
+	return u.Update(func(s *TenantUpsert) {
+		s.SetTenantSpaceTelemetryContext(v)
+	})
+}
+
+// UpdateTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field to the value that was provided on create.
+func (u *TenantUpsertBulk) UpdateTenantSpaceTelemetryContext() *TenantUpsertBulk {
+	return u.Update(func(s *TenantUpsert) {
+		s.UpdateTenantSpaceTelemetryContext()
+	})
+}
+
+// ClearTenantSpaceTelemetryContext clears the value of the "tenant_space_telemetry_context" field.
+func (u *TenantUpsertBulk) ClearTenantSpaceTelemetryContext() *TenantUpsertBulk {
+	return u.Update(func(s *TenantUpsert) {
+		s.ClearTenantSpaceTelemetryContext()
+	})
+}
+
+// SetTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field.
+func (u *TenantUpsertBulk) SetTenantSpaceCloseTelemetryContext(v string) *TenantUpsertBulk {
+	return u.Update(func(s *TenantUpsert) {
+		s.SetTenantSpaceCloseTelemetryContext(v)
+	})
+}
+
+// UpdateTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field to the value that was provided on create.
+func (u *TenantUpsertBulk) UpdateTenantSpaceCloseTelemetryContext() *TenantUpsertBulk {
+	return u.Update(func(s *TenantUpsert) {
+		s.UpdateTenantSpaceCloseTelemetryContext()
+	})
+}
+
+// ClearTenantSpaceCloseTelemetryContext clears the value of the "tenant_space_close_telemetry_context" field.
+func (u *TenantUpsertBulk) ClearTenantSpaceCloseTelemetryContext() *TenantUpsertBulk {
+	return u.Update(func(s *TenantUpsert) {
+		s.ClearTenantSpaceCloseTelemetryContext()
 	})
 }
 

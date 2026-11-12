@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"strconv"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	view "go-wind-admin/api/gen/go/sandbox/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/telemetry"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -45,6 +47,33 @@ type SandboxService struct {
 
 func NewSandboxService(client SandboxOwnerClient, authorization InstanceActionAuthorizer, tenants ResourceTenantResolver, admission SandboxIntentStore) *SandboxService {
 	return &SandboxService{client: client, authorization: authorization, tenants: tenants, admission: admission}
+}
+
+// logSandboxAcceptance records the durable acceptance decision on the current
+// request trace. A replay also carries the origin trace captured when the
+// intent was first persisted, so the original action stays traceable.
+func logSandboxAcceptance(ctx context.Context, intent *data.SandboxCreateIntent, acc *view.SandboxAcceptance) {
+	if acc == nil {
+		return
+	}
+	attrs := []any{
+		"operation_id", acc.OperationId,
+		"resource_id", acc.ResourceId,
+		"resource_type", "sandbox",
+		"action", "sandbox.create",
+	}
+	if acc.Replayed {
+		attrs = append(attrs, "event", "operation.replayed", "result", "replayed")
+		if intent != nil && len(intent.TelemetryJSON) > 0 {
+			if tc, err := telemetry.Decode(intent.TelemetryJSON); err == nil && tc.OriginTraceID != "" {
+				attrs = append(attrs, "origin_trace_id", tc.OriginTraceID)
+			}
+		}
+		slog.Default().InfoContext(ctx, "sandbox create replayed", attrs...)
+		return
+	}
+	attrs = append(attrs, "event", "operation.accepted", "result", "accepted")
+	slog.Default().InfoContext(ctx, "sandbox create accepted", attrs...)
 }
 
 func (s *SandboxService) scope(ctx context.Context, path, method string) (string, string, error) {
@@ -116,13 +145,24 @@ func (s *SandboxService) CreateSandbox(ctx context.Context, r *view.CreateSandbo
 	}
 	if intent != nil {
 		if intent.ResourceTenantID != tenant || intent.OperationID != operationID || !sandboxIntentMatches(intent, input, intentDigest) {
+			slog.Default().WarnContext(ctx, "sandbox create intent conflict",
+				"event", "operation.conflict",
+				"reason", "SANDBOX_IDEMPOTENCY_CONFLICT",
+				"operation_id", intent.OperationID,
+				"resource_id", resourceID,
+				"resource_type", "sandbox",
+				"action", "sandbox.create")
 			return nil, kratoserrors.Conflict("SANDBOX_IDEMPOTENCY_CONFLICT", "sandbox create intent changed")
 		}
 		return s.deliverSandboxCreate(ctx, intent, true)
 	}
 	previous, err := s.client.GetSandbox(ctx, tenant, actor, &res.GetSandboxRequest{TenantId: tenant, SandboxId: resourceID})
 	if err == nil {
-		return sandboxCreateReplay(previous, tenant, resourceID, operationID, input, intentDigest)
+		acc, replayErr := sandboxCreateReplay(previous, tenant, resourceID, operationID, input, intentDigest)
+		if replayErr == nil {
+			logSandboxAcceptance(ctx, nil, acc)
+		}
+		return acc, replayErr
 	}
 	if status.Code(err) != codes.NotFound {
 		return nil, err
@@ -136,7 +176,11 @@ func (s *SandboxService) CreateSandbox(ctx context.Context, r *view.CreateSandbo
 		}
 		previous, lookupErr := s.client.GetSandbox(ctx, tenant, actor, &res.GetSandboxRequest{TenantId: tenant, SandboxId: resourceID})
 		if lookupErr == nil {
-			return sandboxCreateReplay(previous, tenant, resourceID, operationID, input, intentDigest)
+			acc, replayErr := sandboxCreateReplay(previous, tenant, resourceID, operationID, input, intentDigest)
+			if replayErr == nil {
+				logSandboxAcceptance(ctx, nil, acc)
+			}
+			return acc, replayErr
 		}
 		if status.Code(lookupErr) != codes.NotFound {
 			return nil, lookupErr
@@ -206,7 +250,9 @@ func (s *SandboxService) deliverSandboxCreate(ctx context.Context, intent *data.
 		if err := s.admission.AcknowledgeSandboxCreate(ackCtx, intent.TenantID, intent.SandboxID, intent.OperationID); err != nil {
 			return nil, err
 		}
-		return &view.SandboxAcceptance{OperationId: intent.OperationID, ResourceId: intent.SandboxID, Accepted: true, Replayed: true}, nil
+		acc := &view.SandboxAcceptance{OperationId: intent.OperationID, ResourceId: intent.SandboxID, Accepted: true, Replayed: true}
+		logSandboxAcceptance(ctx, intent, acc)
+		return acc, nil
 	}
 	if replay {
 		if prior, lookupErr := lookup(); lookupErr == nil {
@@ -245,7 +291,9 @@ func (s *SandboxService) deliverSandboxCreate(ctx context.Context, intent *data.
 	if err = s.admission.AcknowledgeSandboxCreate(ackCtx, intent.TenantID, intent.SandboxID, intent.OperationID); err != nil {
 		return nil, err
 	}
-	return &view.SandboxAcceptance{OperationId: intent.OperationID, ResourceId: intent.SandboxID, Accepted: true, Replayed: replay || ack.Ack.Replayed}, nil
+	acc := &view.SandboxAcceptance{OperationId: intent.OperationID, ResourceId: intent.SandboxID, Accepted: true, Replayed: replay || ack.Ack.Replayed}
+	logSandboxAcceptance(ctx, intent, acc)
+	return acc, nil
 }
 
 // Older durable intents included an instance reference in their digest. Retain

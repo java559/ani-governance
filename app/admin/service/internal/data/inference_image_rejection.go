@@ -12,6 +12,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/quotacharge"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"go-wind-admin/pkg/telemetry"
 )
 
 // InferenceImageRejection is stored on the rejected CREATE. The linked DELETE
@@ -83,7 +84,7 @@ func (r *QuotaLedgerRepo) RejectInferenceImageAndClose(ctx context.Context, clai
 		if e = tx.QuotaOperation.UpdateOne(original).SetUpdatedAt(databaseNow).SetDispatchState(quotaoperation.DispatchStateRejected).SetRetryBlocked(true).SetLastErrorCode(reason).ClearNextAttemptAt().ClearLeaseOwner().ClearLeaseUntil().Exec(ctx); e != nil {
 			return e
 		}
-		in := &QuotaDeleteInput{TenantID: claim.TenantID, ActorType: original.ActorType, ActorID: original.ActorID, OwnerService: original.OwnerService, Action: commandcontract.InferenceDeleteAction, IdempotencyKey: key, RequestHash: hash, ResourceID: original.ResourceID, CanonicalRequest: string(canonical)}
+		in := &QuotaDeleteInput{TenantID: claim.TenantID, ActorType: original.ActorType, ActorID: original.ActorID, OwnerService: original.OwnerService, Action: commandcontract.InferenceDeleteAction, IdempotencyKey: key, RequestHash: hash, ResourceID: original.ResourceID, CanonicalRequest: string(canonical), TelemetryContext: telemetry.Capture(ctx)}
 		// A concurrent authorized user close may already have committed under
 		// this same tenant lock. Attach it instead of creating a second close.
 		close, e := tx.QuotaOperation.Query().Where(quotaoperation.TenantIDEQ(claim.TenantID), quotaoperation.CreateOperationIDEQ(original.OperationID), quotaoperation.OwnerServiceEQ(original.OwnerService), quotaoperation.ActionEQ(commandcontract.InferenceDeleteAction), quotaoperation.DispatchStateNEQ(quotaoperation.DispatchStateRejected)).Order(ent.Asc(quotaoperation.FieldID)).First(ctx)

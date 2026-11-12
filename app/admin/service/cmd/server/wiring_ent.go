@@ -623,15 +623,14 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	// 接口切片，否则 Start 空指针崩溃。
 	extraServers := []transport.Server{quotaWorker}
 	if instanceOwner != nil {
-		extraServers = append(extraServers, service.NewSandboxDispatchWorker(quotaLedgerRepo, sandboxService))
-		extraServers = append(extraServers, service.NewTenantSpaceDispatchWorker(tenantRepo, instanceOwner))
+		extraServers = append(extraServers, service.NewSandboxDispatchWorker(ctx, quotaLedgerRepo, sandboxService))
+		extraServers = append(extraServers, service.NewTenantSpaceDispatchWorker(ctx, tenantRepo, instanceOwner))
 	}
 	if modeldevClient != nil {
 		publisher := service.NewModelDevDispatchWorker(ctx, modeldevAcceptanceRepo, modeldevClient)
 		publisher.SetCreateMaintenance(modeldevMaintenance)
 		extraServers = append(extraServers, publisher)
 	}
-
 	if quotaInternalServer != nil {
 		extraServers = append(extraServers, quotaInternalServer)
 	}

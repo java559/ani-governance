@@ -1,5 +1,7 @@
 package task
 
+import "encoding/json"
+
 // BroadcastMessageTaskType 是站内信全员广播任务的类型常量。
 // 该任务为一次性投递任务（非周期），由 InternalMessageService.SendMessage 在创建消息后入队，
 // handler 为 InternalMessageService.AsyncBroadcastMessage。
@@ -13,4 +15,8 @@ const BroadcastMessageTaskType = "broadcast_message"
 // handler 按 id 分页拉取用户后批量插入收件记录，无需在 payload 里携带大字段。
 type BroadcastMessageTaskData struct {
 	MessageId uint32 `json:"message_id"`
+	// TelemetryJSON is the enqueuing request's trace snapshot, carried as raw
+	// JSON so a wrongly typed value cannot fail the broker's payload decode.
+	// It is logging metadata only and never participates in business logic.
+	TelemetryJSON json.RawMessage `json:"telemetry_context,omitempty"`
 }

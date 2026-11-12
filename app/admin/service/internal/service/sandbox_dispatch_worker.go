@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 	"time"
 
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
+	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 	"google.golang.org/grpc/status"
 )
 
@@ -16,13 +17,14 @@ import (
 type SandboxDispatchWorker struct {
 	ledger  *data.QuotaLedgerRepo
 	sandbox *SandboxService
+	log     bLogger.Logger
 	mu      sync.Mutex
 	cancel  context.CancelFunc
 	done    chan struct{}
 }
 
-func NewSandboxDispatchWorker(ledger *data.QuotaLedgerRepo, sandbox *SandboxService) *SandboxDispatchWorker {
-	return &SandboxDispatchWorker{ledger: ledger, sandbox: sandbox}
+func NewSandboxDispatchWorker(ctx *bootstrap.Context, ledger *data.QuotaLedgerRepo, sandbox *SandboxService) *SandboxDispatchWorker {
+	return &SandboxDispatchWorker{ledger: ledger, sandbox: sandbox, log: ctx.GetLogger()}
 }
 func (w *SandboxDispatchWorker) Start(ctx context.Context) error {
 	w.mu.Lock()
@@ -65,18 +67,28 @@ func (w *SandboxDispatchWorker) loop(ctx context.Context, done chan struct{}) {
 		callCtx, cancel := context.WithTimeout(ctx, 70*time.Second)
 		intent, err := w.ledger.ClaimSandboxCreate(callCtx)
 		if err == nil && intent != nil {
-			_, err = w.sandbox.deliverSandboxCreate(callCtx, intent, true)
+			identity := backgroundIdentity(intent.OperationID, "sandbox", intent.SandboxID, "", "sandbox.create")
+			saved, telemetryErr := decodeClaimTelemetry(intent.TelemetryJSON)
+			runCtx, runSpan := restoreBackgroundTrace(callCtx, saved, telemetryErr, identity, w.log, "sandbox.create")
+			_, err = w.sandbox.deliverSandboxCreate(runCtx, intent, true)
 			if err != nil {
 				code := status.Code(err).String()
 				cleanupCtx, cleanupCancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 				if retryErr := w.ledger.RetrySandboxCreate(cleanupCtx, intent.TenantID, intent.SandboxID, intent.LeaseGeneration, code); retryErr != nil {
-					slog.Warn("sandbox create retry scheduling failed", "sandbox_id", intent.SandboxID)
+					statePersistFailed(runCtx, w.log, "sandbox.create", "schedule_retry", identity, retryErr)
+				} else {
+					retryScheduled(runCtx, w.log, code, identity, "")
 				}
 				cleanupCancel()
-				slog.Warn("sandbox create delivery not confirmed", "sandbox_id", intent.SandboxID, "code", code)
+				// The real delivery failure is recorded at the delivery point; keep
+				// a non-confirmed loop summary too.
+				w.log.Warn(runCtx, "sandbox create delivery not confirmed",
+					append(append([]any{"event", "step.waiting", "reason", code}, identity...))...)
 			}
+			// One span per tick: End it here rather than defer inside the loop.
+			runSpan.End()
 		} else if err != nil && ctx.Err() == nil {
-			slog.Warn("sandbox create claim failed")
+			dependencyFailed(ctx, w.log, "postgresql", "sandbox.claim", []any{"worker", "sandbox", "step", "claim"}, err)
 		}
 		cancel()
 	}

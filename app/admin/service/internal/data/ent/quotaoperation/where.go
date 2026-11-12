@@ -169,6 +169,11 @@ func AckJSON(v string) predicate.QuotaOperation {
 	return predicate.QuotaOperation(sql.FieldEQ(FieldAckJSON, v))
 }
 
+// TelemetryContext applies equality check predicate on the "telemetry_context" field. It's identical to TelemetryContextEQ.
+func TelemetryContext(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldEQ(FieldTelemetryContext, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.QuotaOperation {
 	return predicate.QuotaOperation(sql.FieldEQ(FieldCreatedAt, v))
@@ -1527,6 +1532,81 @@ func AckJSONEqualFold(v string) predicate.QuotaOperation {
 // AckJSONContainsFold applies the ContainsFold predicate on the "ack_json" field.
 func AckJSONContainsFold(v string) predicate.QuotaOperation {
 	return predicate.QuotaOperation(sql.FieldContainsFold(FieldAckJSON, v))
+}
+
+// TelemetryContextEQ applies the EQ predicate on the "telemetry_context" field.
+func TelemetryContextEQ(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldEQ(FieldTelemetryContext, v))
+}
+
+// TelemetryContextNEQ applies the NEQ predicate on the "telemetry_context" field.
+func TelemetryContextNEQ(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldNEQ(FieldTelemetryContext, v))
+}
+
+// TelemetryContextIn applies the In predicate on the "telemetry_context" field.
+func TelemetryContextIn(vs ...string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldIn(FieldTelemetryContext, vs...))
+}
+
+// TelemetryContextNotIn applies the NotIn predicate on the "telemetry_context" field.
+func TelemetryContextNotIn(vs ...string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldNotIn(FieldTelemetryContext, vs...))
+}
+
+// TelemetryContextGT applies the GT predicate on the "telemetry_context" field.
+func TelemetryContextGT(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldGT(FieldTelemetryContext, v))
+}
+
+// TelemetryContextGTE applies the GTE predicate on the "telemetry_context" field.
+func TelemetryContextGTE(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldGTE(FieldTelemetryContext, v))
+}
+
+// TelemetryContextLT applies the LT predicate on the "telemetry_context" field.
+func TelemetryContextLT(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldLT(FieldTelemetryContext, v))
+}
+
+// TelemetryContextLTE applies the LTE predicate on the "telemetry_context" field.
+func TelemetryContextLTE(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldLTE(FieldTelemetryContext, v))
+}
+
+// TelemetryContextContains applies the Contains predicate on the "telemetry_context" field.
+func TelemetryContextContains(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldContains(FieldTelemetryContext, v))
+}
+
+// TelemetryContextHasPrefix applies the HasPrefix predicate on the "telemetry_context" field.
+func TelemetryContextHasPrefix(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldHasPrefix(FieldTelemetryContext, v))
+}
+
+// TelemetryContextHasSuffix applies the HasSuffix predicate on the "telemetry_context" field.
+func TelemetryContextHasSuffix(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldHasSuffix(FieldTelemetryContext, v))
+}
+
+// TelemetryContextIsNil applies the IsNil predicate on the "telemetry_context" field.
+func TelemetryContextIsNil() predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldIsNull(FieldTelemetryContext))
+}
+
+// TelemetryContextNotNil applies the NotNil predicate on the "telemetry_context" field.
+func TelemetryContextNotNil() predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldNotNull(FieldTelemetryContext))
+}
+
+// TelemetryContextEqualFold applies the EqualFold predicate on the "telemetry_context" field.
+func TelemetryContextEqualFold(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldEqualFold(FieldTelemetryContext, v))
+}
+
+// TelemetryContextContainsFold applies the ContainsFold predicate on the "telemetry_context" field.
+func TelemetryContextContainsFold(v string) predicate.QuotaOperation {
+	return predicate.QuotaOperation(sql.FieldContainsFold(FieldTelemetryContext, v))
 }
 
 // And groups predicates with the AND operator between them.

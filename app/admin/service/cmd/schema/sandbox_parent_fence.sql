@@ -14,6 +14,7 @@ CREATE TABLE sys_sandbox_create_intents (
  lease_until timestamptz NOT NULL DEFAULT '-infinity',
  retry_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
  last_error_code text NOT NULL DEFAULT '',
+ telemetry_context jsonb NULL,
  created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
  PRIMARY KEY (tenant_id, sandbox_id),

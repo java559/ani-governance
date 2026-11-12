@@ -62,45 +62,33 @@ func NewKratosLogger(cfg *conf.Logger) (log.Logger, error) {
 	return AsKratosLogger(lg), nil
 }
 
-// NewLoggerProvider 创建一个新的日志记录器提供者，返回项目 Logger 接口。
-// 它会从 cfg 创建具体 logger（通过 NewLogger），并为 logger 附加一组标准字段
-// （service.*, ts, caller, trace_id, span_id）。
-// 实现是防御性的：当 cfg 或 appInfo 为空或 NewLogger 返回 nil/err 时，
-// 会回退到标准控制台 logger。
+// NewLoggerProvider 创建主服务日志记录器，返回项目 Logger 接口。
+//
+// 主进程固定使用单行 JSON stdout handler（与早期初始化 logger 同源），
+// 并附加服务身份字段：service.name / service.version / service.instance.id。
+// Kratos 原生字段 ts / caller / service.id 不再输出，改由 handler 统一映射
+// 为 time / source / service.instance.id（见 json.go）。
+//
+// 防御性行为保留：cfg 或 appInfo 为空、或后端创建失败时回退到同一 JSON logger，
+// 但绝不回退到 nop —— 缺少日志会让客户侧彻底看不到错误。
 func NewLoggerProvider(cfg *conf.Logger, appInfo *conf.AppInfo) Logger {
-	var l Logger
-	if cfg == nil || cfg.GetType() == "" {
-		l = NewStdLogger()
-	} else {
-		if lg, err := NewLogger(cfg); err == nil && lg != nil {
-			l = lg
-		} else {
-			l = NewStdLogger()
+	l := NewStdLogger()
+
+	fields := make([]any, 0, 6)
+	if appInfo != nil {
+		if name := appInfo.GetAppId(); name != "" {
+			fields = append(fields, "service.name", name)
+		}
+		if version := appInfo.GetVersion(); version != "" {
+			fields = append(fields, "service.version", version)
+		}
+		if instance := appInfo.GetInstanceId(); instance != "" {
+			fields = append(fields, "service.instance.id", instance)
 		}
 	}
-
-	// 通过 Kratos log.With 附加 Valuer 字段（ts/caller）。
-	// 这些 Valuer 不依赖 ctx（DefaultTimestamp 返回当前时间，DefaultCaller 返回调用栈），
-	// 所以能正确穿过 Kratos log.Logger 不携带 ctx 的限制。
-	// trace_id/span_id 不使用 Valuer（因 Kratos Log 不接收 ctx 导致求值为空），
-	// 而是通过 WrapTrace 从 Logger 接口的 ctx 参数直接提取。
-	kl := AsKratosLogger(l)
-
-	fields := []any{
-		"ts", log.DefaultTimestamp,
-		"caller", log.DefaultCaller,
+	if len(fields) > 0 {
+		l = l.With(fields...)
 	}
-
-	if appInfo != nil {
-		fields = append([]any{
-			"service.id", appInfo.GetAppId(),
-			"service.instance", appInfo.GetInstanceId(),
-			"service.version", appInfo.GetVersion(),
-		}, fields...)
-	}
-
-	kl = log.With(kl, fields...)
-	l = FromKratosLogger(kl)
 
 	// 自动注入 trace_id / span_id（从 Logger 接口的 ctx 参数提取）
 	return WrapTrace(l)

@@ -15,6 +15,8 @@ func (s *Server) prepareHeaderForSSE(w http.ResponseWriter) {
 
 	w.Header().Set("Access-Control-Allow-Origin", s.corsAllowOrigin)
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	// Correlation headers stay readable by the browser, matching the REST entry.
+	w.Header().Set("Access-Control-Expose-Headers", "X-Request-ID, X-Trace-ID")
 
 	for k, v := range s.headers {
 		w.Header().Set(k, v)
@@ -28,6 +30,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", s.corsAllowOrigin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Token, Last-Event-ID")
+		w.Header().Set("Access-Control-Expose-Headers", "X-Request-ID, X-Trace-ID")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 		w.WriteHeader(http.StatusNoContent)
 		return

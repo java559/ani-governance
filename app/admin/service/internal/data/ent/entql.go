@@ -667,6 +667,8 @@ var schemaGraph = func() *sqlgraph.Schema {
 			modeldevacceptance.FieldCloseRetryBlocked:     {Type: field.TypeBool, Column: modeldevacceptance.FieldCloseRetryBlocked},
 			modeldevacceptance.FieldCloseLastErrorCode:    {Type: field.TypeString, Column: modeldevacceptance.FieldCloseLastErrorCode},
 			modeldevacceptance.FieldCloseReceiptCanonical: {Type: field.TypeBytes, Column: modeldevacceptance.FieldCloseReceiptCanonical},
+			modeldevacceptance.FieldTelemetryContext:      {Type: field.TypeString, Column: modeldevacceptance.FieldTelemetryContext},
+			modeldevacceptance.FieldCloseTelemetryContext: {Type: field.TypeString, Column: modeldevacceptance.FieldCloseTelemetryContext},
 		},
 	}
 	graph.Nodes[21] = &sqlgraph.Node{
@@ -1149,6 +1151,7 @@ var schemaGraph = func() *sqlgraph.Schema {
 			quotaoperation.FieldLeaseOwner:        {Type: field.TypeString, Column: quotaoperation.FieldLeaseOwner},
 			quotaoperation.FieldLeaseUntil:        {Type: field.TypeTime, Column: quotaoperation.FieldLeaseUntil},
 			quotaoperation.FieldAckJSON:           {Type: field.TypeString, Column: quotaoperation.FieldAckJSON},
+			quotaoperation.FieldTelemetryContext:  {Type: field.TypeString, Column: quotaoperation.FieldTelemetryContext},
 		},
 	}
 	graph.Nodes[39] = &sqlgraph.Node{
@@ -1361,34 +1364,36 @@ var schemaGraph = func() *sqlgraph.Schema {
 		},
 		Type: "Tenant",
 		Fields: map[string]*sqlgraph.FieldSpec{
-			tenant.FieldCreatedAt:                  {Type: field.TypeTime, Column: tenant.FieldCreatedAt},
-			tenant.FieldUpdatedAt:                  {Type: field.TypeTime, Column: tenant.FieldUpdatedAt},
-			tenant.FieldDeletedAt:                  {Type: field.TypeTime, Column: tenant.FieldDeletedAt},
-			tenant.FieldCreatedBy:                  {Type: field.TypeUint32, Column: tenant.FieldCreatedBy},
-			tenant.FieldUpdatedBy:                  {Type: field.TypeUint32, Column: tenant.FieldUpdatedBy},
-			tenant.FieldDeletedBy:                  {Type: field.TypeUint32, Column: tenant.FieldDeletedBy},
-			tenant.FieldRemark:                     {Type: field.TypeString, Column: tenant.FieldRemark},
-			tenant.FieldResourceTenantID:           {Type: field.TypeString, Column: tenant.FieldResourceTenantID},
-			tenant.FieldTenantSpaceState:           {Type: field.TypeEnum, Column: tenant.FieldTenantSpaceState},
-			tenant.FieldTenantSpaceOperationID:     {Type: field.TypeString, Column: tenant.FieldTenantSpaceOperationID},
-			tenant.FieldTenantSpaceLeaseGeneration: {Type: field.TypeInt64, Column: tenant.FieldTenantSpaceLeaseGeneration},
-			tenant.FieldTenantSpaceLeaseOwner:      {Type: field.TypeString, Column: tenant.FieldTenantSpaceLeaseOwner},
-			tenant.FieldTenantSpaceLeaseUntil:      {Type: field.TypeTime, Column: tenant.FieldTenantSpaceLeaseUntil},
-			tenant.FieldTenantSpaceNextAttemptAt:   {Type: field.TypeTime, Column: tenant.FieldTenantSpaceNextAttemptAt},
-			tenant.FieldName:                       {Type: field.TypeString, Column: tenant.FieldName},
-			tenant.FieldCode:                       {Type: field.TypeString, Column: tenant.FieldCode},
-			tenant.FieldLogoURL:                    {Type: field.TypeString, Column: tenant.FieldLogoURL},
-			tenant.FieldDomain:                     {Type: field.TypeString, Column: tenant.FieldDomain},
-			tenant.FieldIndustry:                   {Type: field.TypeString, Column: tenant.FieldIndustry},
-			tenant.FieldAdminUserID:                {Type: field.TypeUint32, Column: tenant.FieldAdminUserID},
-			tenant.FieldStatus:                     {Type: field.TypeEnum, Column: tenant.FieldStatus},
-			tenant.FieldType:                       {Type: field.TypeEnum, Column: tenant.FieldType},
-			tenant.FieldAuditStatus:                {Type: field.TypeEnum, Column: tenant.FieldAuditStatus},
-			tenant.FieldSubscriptionAt:             {Type: field.TypeTime, Column: tenant.FieldSubscriptionAt},
-			tenant.FieldUnsubscribeAt:              {Type: field.TypeTime, Column: tenant.FieldUnsubscribeAt},
-			tenant.FieldPlanID:                     {Type: field.TypeUint32, Column: tenant.FieldPlanID},
-			tenant.FieldSubscriptionPlan:           {Type: field.TypeString, Column: tenant.FieldSubscriptionPlan},
-			tenant.FieldExpiredAt:                  {Type: field.TypeTime, Column: tenant.FieldExpiredAt},
+			tenant.FieldCreatedAt:                        {Type: field.TypeTime, Column: tenant.FieldCreatedAt},
+			tenant.FieldUpdatedAt:                        {Type: field.TypeTime, Column: tenant.FieldUpdatedAt},
+			tenant.FieldDeletedAt:                        {Type: field.TypeTime, Column: tenant.FieldDeletedAt},
+			tenant.FieldCreatedBy:                        {Type: field.TypeUint32, Column: tenant.FieldCreatedBy},
+			tenant.FieldUpdatedBy:                        {Type: field.TypeUint32, Column: tenant.FieldUpdatedBy},
+			tenant.FieldDeletedBy:                        {Type: field.TypeUint32, Column: tenant.FieldDeletedBy},
+			tenant.FieldRemark:                           {Type: field.TypeString, Column: tenant.FieldRemark},
+			tenant.FieldResourceTenantID:                 {Type: field.TypeString, Column: tenant.FieldResourceTenantID},
+			tenant.FieldTenantSpaceState:                 {Type: field.TypeEnum, Column: tenant.FieldTenantSpaceState},
+			tenant.FieldTenantSpaceOperationID:           {Type: field.TypeString, Column: tenant.FieldTenantSpaceOperationID},
+			tenant.FieldTenantSpaceLeaseGeneration:       {Type: field.TypeInt64, Column: tenant.FieldTenantSpaceLeaseGeneration},
+			tenant.FieldTenantSpaceLeaseOwner:            {Type: field.TypeString, Column: tenant.FieldTenantSpaceLeaseOwner},
+			tenant.FieldTenantSpaceLeaseUntil:            {Type: field.TypeTime, Column: tenant.FieldTenantSpaceLeaseUntil},
+			tenant.FieldTenantSpaceNextAttemptAt:         {Type: field.TypeTime, Column: tenant.FieldTenantSpaceNextAttemptAt},
+			tenant.FieldName:                             {Type: field.TypeString, Column: tenant.FieldName},
+			tenant.FieldCode:                             {Type: field.TypeString, Column: tenant.FieldCode},
+			tenant.FieldLogoURL:                          {Type: field.TypeString, Column: tenant.FieldLogoURL},
+			tenant.FieldDomain:                           {Type: field.TypeString, Column: tenant.FieldDomain},
+			tenant.FieldIndustry:                         {Type: field.TypeString, Column: tenant.FieldIndustry},
+			tenant.FieldAdminUserID:                      {Type: field.TypeUint32, Column: tenant.FieldAdminUserID},
+			tenant.FieldStatus:                           {Type: field.TypeEnum, Column: tenant.FieldStatus},
+			tenant.FieldType:                             {Type: field.TypeEnum, Column: tenant.FieldType},
+			tenant.FieldAuditStatus:                      {Type: field.TypeEnum, Column: tenant.FieldAuditStatus},
+			tenant.FieldSubscriptionAt:                   {Type: field.TypeTime, Column: tenant.FieldSubscriptionAt},
+			tenant.FieldUnsubscribeAt:                    {Type: field.TypeTime, Column: tenant.FieldUnsubscribeAt},
+			tenant.FieldPlanID:                           {Type: field.TypeUint32, Column: tenant.FieldPlanID},
+			tenant.FieldSubscriptionPlan:                 {Type: field.TypeString, Column: tenant.FieldSubscriptionPlan},
+			tenant.FieldExpiredAt:                        {Type: field.TypeTime, Column: tenant.FieldExpiredAt},
+			tenant.FieldTenantSpaceTelemetryContext:      {Type: field.TypeString, Column: tenant.FieldTenantSpaceTelemetryContext},
+			tenant.FieldTenantSpaceCloseTelemetryContext: {Type: field.TypeString, Column: tenant.FieldTenantSpaceCloseTelemetryContext},
 		},
 	}
 	graph.Nodes[48] = &sqlgraph.Node{
@@ -4334,6 +4339,16 @@ func (f *ModelDevAcceptanceFilter) WhereCloseReceiptCanonical(p entql.BytesP) {
 	f.Where(p.Field(modeldevacceptance.FieldCloseReceiptCanonical))
 }
 
+// WhereTelemetryContext applies the entql string predicate on the telemetry_context field.
+func (f *ModelDevAcceptanceFilter) WhereTelemetryContext(p entql.StringP) {
+	f.Where(p.Field(modeldevacceptance.FieldTelemetryContext))
+}
+
+// WhereCloseTelemetryContext applies the entql string predicate on the close_telemetry_context field.
+func (f *ModelDevAcceptanceFilter) WhereCloseTelemetryContext(p entql.StringP) {
+	f.Where(p.Field(modeldevacceptance.FieldCloseTelemetryContext))
+}
+
 // addPredicate implements the predicateAdder interface.
 func (_q *NotificationChannelQuery) addPredicate(pred func(s *sql.Selector)) {
 	_q.predicates = append(_q.predicates, pred)
@@ -6420,6 +6435,11 @@ func (f *QuotaOperationFilter) WhereAckJSON(p entql.StringP) {
 	f.Where(p.Field(quotaoperation.FieldAckJSON))
 }
 
+// WhereTelemetryContext applies the entql string predicate on the telemetry_context field.
+func (f *QuotaOperationFilter) WhereTelemetryContext(p entql.StringP) {
+	f.Where(p.Field(quotaoperation.FieldTelemetryContext))
+}
+
 // addPredicate implements the predicateAdder interface.
 func (_q *QuotaReleaseReceiptQuery) addPredicate(pred func(s *sql.Selector)) {
 	_q.predicates = append(_q.predicates, pred)
@@ -7393,6 +7413,16 @@ func (f *TenantFilter) WhereSubscriptionPlan(p entql.StringP) {
 // WhereExpiredAt applies the entql time.Time predicate on the expired_at field.
 func (f *TenantFilter) WhereExpiredAt(p entql.TimeP) {
 	f.Where(p.Field(tenant.FieldExpiredAt))
+}
+
+// WhereTenantSpaceTelemetryContext applies the entql string predicate on the tenant_space_telemetry_context field.
+func (f *TenantFilter) WhereTenantSpaceTelemetryContext(p entql.StringP) {
+	f.Where(p.Field(tenant.FieldTenantSpaceTelemetryContext))
+}
+
+// WhereTenantSpaceCloseTelemetryContext applies the entql string predicate on the tenant_space_close_telemetry_context field.
+func (f *TenantFilter) WhereTenantSpaceCloseTelemetryContext(p entql.StringP) {
+	f.Where(p.Field(tenant.FieldTenantSpaceCloseTelemetryContext))
 }
 
 // WhereHasPlan applies a predicate to check if query has an edge plan.

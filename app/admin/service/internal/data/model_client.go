@@ -98,8 +98,9 @@ func NewModelClient(c ModelClientConfig) (*ModelClient, func(), error) {
 			return nil
 		},
 	}
-	connection, err := grpc.NewClient(c.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	connection, err := grpc.NewClient(c.Address, outboundDial(peerModelService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))...)
 	if err != nil {
+		dialDependencyFailed(peerModelService, "create_client", err)
 		return nil, nil, errors.New("invalid model client address")
 	}
 	return &ModelClient{connection: connection, client: modelv1.NewModelServiceClient(connection), timeout: c.Timeout}, func() { _ = connection.Close() }, nil

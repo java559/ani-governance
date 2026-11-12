@@ -31,8 +31,13 @@ func TestAdditionalHTTPFilterPreservesCORS(t *testing.T) {
 	if w.Code != 204 || !called || w.Header().Get("X-Boundary") != "checked" || w.Header().Get("Access-Control-Allow-Origin") != "https://console.example.test" {
 		t.Fatal("additional filter displaced CORS", w.Code, w.Header())
 	}
-	if got := w.Header().Get("Access-Control-Expose-Headers"); !strings.EqualFold(got, "X-Request-ID") {
-		t.Fatalf("request ID not exposed to browser: %q", got)
+	// Both correlation headers must be readable by the browser: X-Request-ID
+	// keeps its existing contract and X-Trace-ID carries the W3C trace.
+	exposed := w.Header().Get("Access-Control-Expose-Headers")
+	for _, want := range []string{"X-Request-ID", "X-Trace-ID"} {
+		if !strings.Contains(strings.ToLower(exposed), strings.ToLower(want)) {
+			t.Fatalf("header %s not exposed to browser: %q", want, exposed)
+		}
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/commandcontract"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/telemetry"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -66,7 +67,7 @@ func (s *GpuAcceptance) acceptPreparedCreate(ctx context.Context, p *auth.Princi
 	if err != nil {
 		return nil, err
 	}
-	result, err := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: resourceID, OperationID: operationID, ActorType: string(p.Type), ActorID: actorID, OwnerService: s.binding.OwnerService(), Action: s.binding.CreateAction(), IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), Items: items})
+	result, err := s.ledger.Occupy(ctx, &data.QuotaOccupyInput{TenantID: p.TenantID, ResourceTenantID: tenant, ResourceID: resourceID, OperationID: operationID, ActorType: string(p.Type), ActorID: actorID, OwnerService: s.binding.OwnerService(), Action: s.binding.CreateAction(), IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), Items: items, TelemetryContext: telemetry.Capture(ctx)})
 	if err == nil && s.worker != nil {
 		s.worker.Notify()
 	}

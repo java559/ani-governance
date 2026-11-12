@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -10,6 +11,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
+	"go-wind-admin/pkg/telemetry"
 )
 
 // SandboxCreateIntent retains a complete frozen owner command. A timeout or
@@ -20,6 +22,9 @@ type SandboxCreateIntent struct {
 	Command                                                                   []byte
 	Acknowledged                                                              bool
 	LeaseGeneration                                                           int64
+	// TelemetryJSON is the raw telemetry captured at registration, decoded by
+	// the dispatch worker; never folded into the command or intent digest.
+	TelemetryJSON []byte
 }
 
 // Use the same Ent transaction and tenant lock as quota admission. All SQL is
@@ -37,11 +42,11 @@ func (r *QuotaLedgerRepo) sandboxTenantTx(ctx context.Context, tenant uint32, f 
 	})
 }
 
-const sandboxIntentColumns = `tenant_id,resource_tenant_id,instance_id,sandbox_id,operation_id,intent_digest,actor,command,acknowledged`
+const sandboxIntentColumns = `tenant_id,resource_tenant_id,instance_id,sandbox_id,operation_id,intent_digest,actor,command,acknowledged,telemetry_context`
 
 func sandboxScanIntent(ctx context.Context, tx *ent.Tx, query string, args ...any) (*SandboxCreateIntent, error) {
 	i := new(SandboxCreateIntent)
-	err := tx.SandboxScan(ctx, query, args, &i.TenantID, &i.ResourceTenantID, &i.InstanceID, &i.SandboxID, &i.OperationID, &i.IntentDigest, &i.Actor, &i.Command, &i.Acknowledged)
+	err := tx.SandboxScan(ctx, query, args, &i.TenantID, &i.ResourceTenantID, &i.InstanceID, &i.SandboxID, &i.OperationID, &i.IntentDigest, &i.Actor, &i.Command, &i.Acknowledged, &i.TelemetryJSON)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -81,7 +86,10 @@ func (r *QuotaLedgerRepo) RegisterSandboxCreateIntent(ctx context.Context, in Sa
 		if row.TenantSpaceState == tenant.TenantSpaceStateCLOSING || row.TenantSpaceState == tenant.TenantSpaceStateCLOSED {
 			return kratoserrors.Conflict("TENANT_SPACE_CLOSING", "租户空间正在关闭，无法创建 Sandbox")
 		}
-		_, e = tx.SandboxExec(ctx, `INSERT INTO sys_sandbox_create_intents(tenant_id,resource_tenant_id,instance_id,sandbox_id,operation_id,intent_digest,actor,command) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb)`, in.TenantID, in.ResourceTenantID, in.InstanceID, in.SandboxID, in.OperationID, in.IntentDigest, in.Actor, string(in.Command))
+		if len(in.TelemetryJSON) == 0 {
+			in.TelemetryJSON = encodeSandboxTelemetry(telemetry.Capture(ctx))
+		}
+		_, e = tx.SandboxExec(ctx, `INSERT INTO sys_sandbox_create_intents(tenant_id,resource_tenant_id,instance_id,sandbox_id,operation_id,intent_digest,actor,command,telemetry_context) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb)`, in.TenantID, in.ResourceTenantID, in.InstanceID, in.SandboxID, in.OperationID, in.IntentDigest, in.Actor, string(in.Command), string(in.TelemetryJSON))
 		if e != nil {
 			return e
 		}
@@ -111,7 +119,7 @@ func (r *QuotaLedgerRepo) AcknowledgeSandboxCreate(ctx context.Context, tenant u
 func (r *QuotaLedgerRepo) ClaimSandboxCreate(ctx context.Context) (out *SandboxCreateIntent, err error) {
 	err = r.transaction(ctx, func(tx *ent.Tx) error {
 		i := new(SandboxCreateIntent)
-		e := tx.SandboxScan(ctx, `UPDATE sys_sandbox_create_intents SET lease_generation=lease_generation+1,lease_until=CURRENT_TIMESTAMP+interval '90 seconds',updated_at=CURRENT_TIMESTAMP WHERE (tenant_id,sandbox_id)=(SELECT tenant_id,sandbox_id FROM sys_sandbox_create_intents WHERE NOT acknowledged AND retry_at<=CURRENT_TIMESTAMP AND lease_until<=CURRENT_TIMESTAMP ORDER BY retry_at,created_at,tenant_id,sandbox_id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING `+sandboxIntentColumns+`,lease_generation`, nil, &i.TenantID, &i.ResourceTenantID, &i.InstanceID, &i.SandboxID, &i.OperationID, &i.IntentDigest, &i.Actor, &i.Command, &i.Acknowledged, &i.LeaseGeneration)
+		e := tx.SandboxScan(ctx, `UPDATE sys_sandbox_create_intents SET lease_generation=lease_generation+1,lease_until=CURRENT_TIMESTAMP+interval '90 seconds',updated_at=CURRENT_TIMESTAMP WHERE (tenant_id,sandbox_id)=(SELECT tenant_id,sandbox_id FROM sys_sandbox_create_intents WHERE NOT acknowledged AND retry_at<=CURRENT_TIMESTAMP AND lease_until<=CURRENT_TIMESTAMP ORDER BY retry_at,created_at,tenant_id,sandbox_id FOR UPDATE SKIP LOCKED LIMIT 1) RETURNING `+sandboxIntentColumns+`,lease_generation`, nil, &i.TenantID, &i.ResourceTenantID, &i.InstanceID, &i.SandboxID, &i.OperationID, &i.IntentDigest, &i.Actor, &i.Command, &i.Acknowledged, &i.TelemetryJSON, &i.LeaseGeneration)
 		if errors.Is(e, sql.ErrNoRows) {
 			return nil
 		}
@@ -128,4 +136,17 @@ func (r *QuotaLedgerRepo) RetrySandboxCreate(ctx context.Context, tenant uint32,
 		_, err := tx.SandboxExec(ctx, `UPDATE sys_sandbox_create_intents SET updated_at=CURRENT_TIMESTAMP,retry_at=CURRENT_TIMESTAMP+interval '3 seconds',lease_until='-infinity',last_error_code=$4 WHERE tenant_id=$1 AND sandbox_id=$2 AND lease_generation=$3 AND NOT acknowledged`, tenant, id, generation, code)
 		return err
 	})
+}
+
+// encodeSandboxTelemetry renders the logging metadata for the intent's jsonb
+// column, or nil when the context carries no captured trace.
+func encodeSandboxTelemetry(tc telemetry.TelemetryContext) []byte {
+	if !tc.Valid() {
+		return nil
+	}
+	b, e := json.Marshal(tc)
+	if e != nil {
+		return nil
+	}
+	return b
 }

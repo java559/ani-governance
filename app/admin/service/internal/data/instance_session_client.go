@@ -53,7 +53,7 @@ func NewInstanceSessionClientFromEnv() (*InstanceSessionClient, func(), error) {
 		}
 		return fmt.Errorf("SG peer exact DNS mismatch")
 	}}
-	conn, e := grpc.NewClient(addr, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(cfg)))
+	conn, e := grpc.NewClient(addr, outboundDial(peerResourceService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(cfg)))...)
 	if e != nil {
 		return nil, nil, e
 	}

@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/edge"
@@ -137,6 +138,25 @@ func (Tenant) Fields() []ent.Field {
 
 		field.Time("expired_at").
 			Comment("租户有效期").
+			Optional().
+			Nillable(),
+
+		// tenant_space_telemetry_context / tenant_space_close_telemetry_context
+		// 只承载日志关联的 TelemetryContext；不进入业务字段、锁或调度语义。
+		field.String("tenant_space_telemetry_context").
+			Comment("租户空间 open 受理日志关联上下文（JSONB）").
+			SchemaType(map[string]string{
+				dialect.MySQL:    "json",
+				dialect.Postgres: "jsonb",
+			}).
+			Optional().
+			Nillable(),
+		field.String("tenant_space_close_telemetry_context").
+			Comment("租户空间 close 受理日志关联上下文（JSONB）").
+			SchemaType(map[string]string{
+				dialect.MySQL:    "json",
+				dialect.Postgres: "jsonb",
+			}).
 			Optional().
 			Nillable(),
 	}

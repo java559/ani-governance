@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -133,15 +134,23 @@ func (w *ModelDevDispatchWorker) deliverNext(ctx context.Context) bool {
 		return false
 	}
 	if err != nil {
-		w.warn("modeldev delivery claim unavailable")
+		dependencyFailed(ctx, w.log.Logger, "postgresql", "modeldev.create", []any{"worker", "modeldev_create", "step", "claim"}, err)
 		return false
 	}
 	if claim == nil {
 		return false
 	}
 	if claim.Acceptance == nil {
-		w.warn("modeldev delivery original unavailable")
+		stepFailed(ctx, w.log.Logger, "claim", "MODELDEV_ORIGINAL_MISSING",
+			[]any{"worker", "modeldev_create", "step", "claim"}, fmt.Errorf("modeldev delivery original unavailable"))
 		return false
+	}
+	// Restore the accepted request's trace for this delivery pass.
+	identity := backgroundIdentity(claim.Acceptance.OperationID, "modeldev", claim.Acceptance.ExecutionID, "", "modeldev.create")
+	ctx, runSpan := restoreBackgroundTrace(ctx, decodeAcceptanceTelemetry(claim.Acceptance.TelemetryJSON), nil, identity, w.log.Logger, "modeldev.create")
+	defer runSpan.End()
+	if w.log.Logger != nil {
+		w.log.Logger.Info(ctx, "modeldev delivery dispatch", append(append([]any{"event", "operation.dispatch_started"}, identity...), "peer.service", "ani-modeldev-service")...)
 	}
 	// Claim committed before the RPC begins. The typed sender validates and
 	// delivers this exact original; it never resolves defaults or renews time.
@@ -161,12 +170,18 @@ func (w *ModelDevDispatchWorker) deliverNext(ctx context.Context) bool {
 		if err != nil {
 			// A failed or lost writeback leaves the lease recoverable. Do not
 			// turn an uncertain commit into a different command or local ACK.
-			w.warn("modeldev delivery acknowledgment persistence unavailable")
+			statePersistFailed(ctx, w.log.Logger, "modeldev.create", "persist_ack", identity, err)
 		} else if !written {
-			w.warn("modeldev delivery acknowledgment ignored after lease change")
+			if w.log.Logger != nil {
+				w.log.Logger.Warn(ctx, "modeldev delivery ack ignored after lease change", append(append([]any{"event", "operation.lease_lost", "reason", "LEASE_LOST"}, identity...))...)
+			}
+		} else if w.log.Logger != nil {
+			w.log.Logger.Info(ctx, "modeldev delivery acknowledged", append(append([]any{"event", "operation.dispatched"}, identity...))...)
 		}
 		return true
 	}
+	// Record the real RPC/status cause before it becomes a fixed delivery code.
+	stepFailed(ctx, w.log.Logger, "dispatch", "MODELDEV_DELIVERY_FAILED", identity, deliveryErr)
 	failure := data.ModelDevDeliveryFailure{Code: "OWNER_UNAVAILABLE"}
 	var classified *data.ModelDevDeliveryFailure
 	if errors.As(deliveryErr, &classified) && classified != nil {
@@ -177,11 +192,15 @@ func (w *ModelDevDispatchWorker) deliverNext(ctx context.Context) bool {
 		return true
 	}
 	if err != nil {
-		w.warn("modeldev delivery retry persistence unavailable")
+		statePersistFailed(ctx, w.log.Logger, "modeldev.create", "schedule_retry", identity, err)
 	} else if !written {
-		w.warn("modeldev delivery retry ignored after lease change")
+		if w.log.Logger != nil {
+			w.log.Logger.Warn(ctx, "modeldev delivery retry ignored after lease change", append(append([]any{"event", "operation.lease_lost", "reason", "LEASE_LOST"}, identity...))...)
+		}
 	} else if failure.Permanent {
-		w.warn("modeldev delivery retry blocked by command contract")
+		if w.log.Logger != nil {
+			w.log.Logger.Warn(ctx, "modeldev delivery retry blocked by contract", append(append([]any{"event", "operation.retry_scheduled", "reason", failure.Code}, identity...))...)
+		}
 	}
 	return true
 }

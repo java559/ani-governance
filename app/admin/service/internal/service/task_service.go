@@ -23,6 +23,8 @@ import (
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 	"go-wind-admin/pkg/middleware/auth"
 	"go-wind-admin/pkg/task"
+	"go-wind-admin/pkg/telemetry"
+	"go.opentelemetry.io/otel"
 )
 
 // TaskScheduler 任务调度接口
@@ -509,10 +511,17 @@ func (s *TaskService) startTask(t *taskV1.Task) error {
 // 目录：AUDIT_ARCHIVE_DIR（默认 ./data/audit-archive）；
 // 保留天数：AUDIT_RETENTION_DAYS（默认 180）。
 func (s *TaskService) AsyncAuditLogArchive(taskType string, taskData *task.AuditLogArchiveTaskData) error {
-	s.log.Infof(context.Background(), "AsyncAuditLogArchive [%s] [%+v]", taskType, taskData)
+	// Each periodic pass is its own run: it has no user trace to inherit, so it
+	// starts a fresh span rather than reusing the registration-time context.
+	ctx, span := otel.Tracer("ani-governance/worker").Start(context.Background(), "audit.archive")
+	defer span.End()
+	started := time.Now()
+	s.log.Info(ctx, "audit archive run started", "event", "worker.run_started", "worker", "audit_archive")
 
 	if s.auditLogArchiveRepo == nil {
-		return errors.New("audit log archive repo is not configured")
+		err := errors.New("audit log archive repo is not configured")
+		s.log.Error(ctx, "audit archive repo missing", append([]any{"event", "worker.run_failed", "worker", "audit_archive", "result", "failed"}, telemetry.ErrorFields(err)...)...)
+		return err
 	}
 
 	outDir := os.Getenv("AUDIT_ARCHIVE_DIR")
@@ -527,15 +536,17 @@ func (s *TaskService) AsyncAuditLogArchive(taskType string, taskData *task.Audit
 	}
 	before := time.Now().AddDate(0, 0, -retentionDays)
 
-	ctx := appViewer.NewSystemViewerContext(context.Background())
-	results, err := s.auditLogArchiveRepo.ArchiveExpired(ctx, before, outDir)
+	runCtx := appViewer.NewSystemViewerContext(ctx)
+	results, err := s.auditLogArchiveRepo.ArchiveExpired(runCtx, before, outDir)
 	if err != nil {
-		s.log.Errorf(ctx, "audit log archive failed: %s", err.Error())
+		kv := append([]any{"event", "worker.run_failed", "worker", "audit_archive", "result", "failed", "duration_ms", float64(time.Since(started).Milliseconds())}, telemetry.ErrorFields(err)...)
+		s.log.Error(ctx, "audit log archive failed", kv...)
 		return err
 	}
 	for table, n := range results {
-		s.log.Infof(ctx, "audit log archived: %s -> %d rows (dir=%s)", table, n, outDir)
+		s.log.Info(ctx, "audit log archived", "event", "runtime.log", "table", table, "rows", n)
 	}
+	s.log.Info(ctx, "audit archive run completed", "event", "worker.run_completed", "worker", "audit_archive", "result", "completed", "duration_ms", float64(time.Since(started).Milliseconds()))
 	return nil
 }
 
@@ -548,22 +559,27 @@ func (s *TaskService) AsyncAuditLogArchive(taskType string, taskData *task.Audit
 //
 // READONLY 策略的即时读写拦截由 TenantAccessChecker 中间件承担，不需要等待本扫描任务。
 func (s *TaskService) AsyncTenantExpiryScan(taskType string, taskData *task.TenantExpiryScanTaskData) error {
-	s.log.Infof(context.Background(), "AsyncTenantExpiryScan [%s] [%+v]", taskType, taskData)
+	// Each periodic pass starts its own span; registration-time context is not
+	// carried across future runs.
+	ctx, span := otel.Tracer("ani-governance/worker").Start(context.Background(), "tenant.expiry_scan")
+	defer span.End()
+	started := time.Now()
+	s.log.Info(ctx, "tenant expiry scan started", "event", "worker.run_started", "worker", "tenant_expiry_scan")
 
 	if s.tenantUsageRepo == nil {
-		s.log.Errorf(context.Background(), "AsyncTenantExpiryScan: tenantUsageRepo is nil, aborting")
-		return errors.New("tenantUsageRepo is not configured")
-	}
-
-	// 用 SystemViewerContext 包裹：到期扫描需要跨租户查询。
-	ctx := appViewer.NewSystemViewerContext(context.Background())
-
-	count, err := s.tenantUsageRepo.EnforceExpiryPolicies(ctx)
-	if err != nil {
-		s.log.Errorf(context.Background(), "AsyncTenantExpiryScan: enforce failed: %v", err)
+		err := errors.New("tenantUsageRepo is not configured")
+		s.log.Error(ctx, "tenant expiry scan repo missing", append([]any{"event", "worker.run_failed", "worker", "tenant_expiry_scan", "result", "failed"}, telemetry.ErrorFields(err)...)...)
 		return err
 	}
 
-	s.log.Infof(context.Background(), "AsyncTenantExpiryScan: completed, %d tenants enforced", count)
+	runCtx := appViewer.NewSystemViewerContext(ctx)
+	count, err := s.tenantUsageRepo.EnforceExpiryPolicies(runCtx)
+	if err != nil {
+		kv := append([]any{"event", "worker.run_failed", "worker", "tenant_expiry_scan", "result", "failed", "duration_ms", float64(time.Since(started).Milliseconds())}, telemetry.ErrorFields(err)...)
+		s.log.Error(ctx, "tenant expiry scan failed", kv...)
+		return err
+	}
+
+	s.log.Info(ctx, "tenant expiry scan completed", "event", "worker.run_completed", "worker", "tenant_expiry_scan", "result", "completed", "duration_ms", float64(time.Since(started).Milliseconds()), "tenants_enforced", count)
 	return nil
 }

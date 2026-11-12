@@ -95,8 +95,7 @@ func NopLogger() Logger { return nopLogger{} }
 // stdLogger 使用标准库 log/slog 作为后端。
 // 这是项目 Logger 的参考实现，不依赖任何第三方日志框架。
 type stdLogger struct {
-	l     *slog.Logger
-	extra []any
+	l *slog.Logger
 }
 
 // Compile-time assertion: stdLogger implements Logger.
@@ -104,46 +103,40 @@ var _ Logger = (*stdLogger)(nil)
 
 // Debug forwards to slog.Logger.DebugContext.
 func (s *stdLogger) Debug(ctx context.Context, msg string, keyvals ...any) {
-	s.l.DebugContext(orBackground(ctx), msg, s.kvs(keyvals)...)
+	s.l.DebugContext(orBackground(ctx), msg, keyvals...)
 }
 
 // Info forwards to slog.Logger.InfoContext.
 func (s *stdLogger) Info(ctx context.Context, msg string, keyvals ...any) {
-	s.l.InfoContext(orBackground(ctx), msg, s.kvs(keyvals)...)
+	s.l.InfoContext(orBackground(ctx), msg, keyvals...)
 }
 
 // Warn forwards to slog.Logger.WarnContext.
 func (s *stdLogger) Warn(ctx context.Context, msg string, keyvals ...any) {
-	s.l.WarnContext(orBackground(ctx), msg, s.kvs(keyvals)...)
+	s.l.WarnContext(orBackground(ctx), msg, keyvals...)
 }
 
 // Error forwards to slog.Logger.ErrorContext.
 func (s *stdLogger) Error(ctx context.Context, msg string, keyvals ...any) {
-	s.l.ErrorContext(orBackground(ctx), msg, s.kvs(keyvals)...)
+	s.l.ErrorContext(orBackground(ctx), msg, keyvals...)
 }
 
 // With 返回附加了指定 key-value 对的新 stdLogger 实例。
+// 固定属性只挂在 slog.Logger 上，不在每次调用时重复拼接，避免同一 key 出现两次。
 func (s *stdLogger) With(keyvals ...any) Logger {
-	return &stdLogger{l: s.l.With(keyvals...), extra: mergeKvs(s.extra, keyvals)}
-}
-
-// kvs 合并 extra（来自 With）与本次调用的 keyvals。
-func (s *stdLogger) kvs(keyvals []any) []any {
-	if len(s.extra) == 0 {
-		return keyvals
+	if len(keyvals) == 0 {
+		return s
 	}
-	return mergeKvs(s.extra, keyvals)
+	return &stdLogger{l: s.l.With(keyvals...)}
 }
 
-// NewStdLogger 创建一个基于 slog 的 Logger，输出到 stderr，级别为 Info。
+// NewStdLogger 创建一个基于 slog 的 Logger，输出单行 JSON 到 stdout，级别为 Info。
 //
 // 这是项目 Logger 接口的原生实现，不依赖 Kratos。
-// 调用方需要不同格式/级别/输出位置时，可以：
-//   - 构建自己的 *slog.Logger 并直接赋值给 stdLogger{L: myLogger}
-//   - 或自行实现 Logger 接口
+// 运行期主进程统一使用 JSON；本函数与 [NewJSONLogger] 使用同一 handler 规则，
+// 避免同一进程混出 text 与 JSON 两种格式。
 func NewStdLogger() Logger {
-	h := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})
-	return &stdLogger{l: slog.New(h)}
+	return NewJSONLogger(os.Stdout, slog.LevelInfo)
 }
 
 // NewSlogLogger 使用指定的 *slog.Logger 创建 Logger。
@@ -272,6 +265,32 @@ func (h *Helper) Errorf(ctx context.Context, format string, args ...any) {
 	h.Error(ctx, fmt.Sprintf(format, args...))
 }
 
+// Log 输出一条结构化业务事件。
+//
+// event 是公共事件目录中的名字；attrs 为交替 key-value 对，应使用
+// telemetry.ErrorFields(err) 处理错误，而不是拼接自由文本。
+func (h *Helper) Log(ctx context.Context, level slog.Level, event, msg string, attrs ...any) {
+	if event == "" {
+		event = RuntimeEvent
+	}
+	kv := make([]any, 0, len(attrs)+3)
+	kv = append(kv, "event", event)
+	if msg == "" {
+		msg = event
+	}
+	kv = append(kv, attrs...)
+	switch {
+	case level < slog.LevelInfo:
+		h.Debug(ctx, msg, kv...)
+	case level < slog.LevelWarn:
+		h.Info(ctx, msg, kv...)
+	case level < slog.LevelError:
+		h.Warn(ctx, msg, kv...)
+	default:
+		h.Error(ctx, msg, kv...)
+	}
+}
+
 // ============================================================================
 // 全局 Logger 状态
 // ============================================================================
@@ -310,18 +329,4 @@ func orBackground(ctx context.Context) context.Context {
 		return context.Background()
 	}
 	return ctx
-}
-
-// mergeKvs 合并两组 key-value 对。
-func mergeKvs(a, b []any) []any {
-	if len(a) == 0 {
-		return b
-	}
-	if len(b) == 0 {
-		return a
-	}
-	out := make([]any, 0, len(a)+len(b))
-	out = append(out, a...)
-	out = append(out, b...)
-	return out
 }

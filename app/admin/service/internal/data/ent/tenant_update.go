@@ -553,6 +553,46 @@ func (_u *TenantUpdate) ClearExpiredAt() *TenantUpdate {
 	return _u
 }
 
+// SetTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field.
+func (_u *TenantUpdate) SetTenantSpaceTelemetryContext(v string) *TenantUpdate {
+	_u.mutation.SetTenantSpaceTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field if the given value is not nil.
+func (_u *TenantUpdate) SetNillableTenantSpaceTelemetryContext(v *string) *TenantUpdate {
+	if v != nil {
+		_u.SetTenantSpaceTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceTelemetryContext clears the value of the "tenant_space_telemetry_context" field.
+func (_u *TenantUpdate) ClearTenantSpaceTelemetryContext() *TenantUpdate {
+	_u.mutation.ClearTenantSpaceTelemetryContext()
+	return _u
+}
+
+// SetTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field.
+func (_u *TenantUpdate) SetTenantSpaceCloseTelemetryContext(v string) *TenantUpdate {
+	_u.mutation.SetTenantSpaceCloseTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field if the given value is not nil.
+func (_u *TenantUpdate) SetNillableTenantSpaceCloseTelemetryContext(v *string) *TenantUpdate {
+	if v != nil {
+		_u.SetTenantSpaceCloseTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceCloseTelemetryContext clears the value of the "tenant_space_close_telemetry_context" field.
+func (_u *TenantUpdate) ClearTenantSpaceCloseTelemetryContext() *TenantUpdate {
+	_u.mutation.ClearTenantSpaceCloseTelemetryContext()
+	return _u
+}
+
 // SetPlan sets the "plan" edge to the Plan entity.
 func (_u *TenantUpdate) SetPlan(v *Plan) *TenantUpdate {
 	return _u.SetPlanID(v.ID)
@@ -817,6 +857,18 @@ func (_u *TenantUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ExpiredAtCleared() {
 		_spec.ClearField(tenant.FieldExpiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TenantSpaceTelemetryContext(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TenantSpaceTelemetryContextCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceTelemetryContext, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceCloseTelemetryContext(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceCloseTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TenantSpaceCloseTelemetryContextCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceCloseTelemetryContext, field.TypeString)
 	}
 	if _u.mutation.PlanCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1392,6 +1444,46 @@ func (_u *TenantUpdateOne) ClearExpiredAt() *TenantUpdateOne {
 	return _u
 }
 
+// SetTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field.
+func (_u *TenantUpdateOne) SetTenantSpaceTelemetryContext(v string) *TenantUpdateOne {
+	_u.mutation.SetTenantSpaceTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field if the given value is not nil.
+func (_u *TenantUpdateOne) SetNillableTenantSpaceTelemetryContext(v *string) *TenantUpdateOne {
+	if v != nil {
+		_u.SetTenantSpaceTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceTelemetryContext clears the value of the "tenant_space_telemetry_context" field.
+func (_u *TenantUpdateOne) ClearTenantSpaceTelemetryContext() *TenantUpdateOne {
+	_u.mutation.ClearTenantSpaceTelemetryContext()
+	return _u
+}
+
+// SetTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field.
+func (_u *TenantUpdateOne) SetTenantSpaceCloseTelemetryContext(v string) *TenantUpdateOne {
+	_u.mutation.SetTenantSpaceCloseTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field if the given value is not nil.
+func (_u *TenantUpdateOne) SetNillableTenantSpaceCloseTelemetryContext(v *string) *TenantUpdateOne {
+	if v != nil {
+		_u.SetTenantSpaceCloseTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTenantSpaceCloseTelemetryContext clears the value of the "tenant_space_close_telemetry_context" field.
+func (_u *TenantUpdateOne) ClearTenantSpaceCloseTelemetryContext() *TenantUpdateOne {
+	_u.mutation.ClearTenantSpaceCloseTelemetryContext()
+	return _u
+}
+
 // SetPlan sets the "plan" edge to the Plan entity.
 func (_u *TenantUpdateOne) SetPlan(v *Plan) *TenantUpdateOne {
 	return _u.SetPlanID(v.ID)
@@ -1686,6 +1778,18 @@ func (_u *TenantUpdateOne) sqlSave(ctx context.Context) (_node *Tenant, err erro
 	}
 	if _u.mutation.ExpiredAtCleared() {
 		_spec.ClearField(tenant.FieldExpiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.TenantSpaceTelemetryContext(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TenantSpaceTelemetryContextCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceTelemetryContext, field.TypeString)
+	}
+	if value, ok := _u.mutation.TenantSpaceCloseTelemetryContext(); ok {
+		_spec.SetField(tenant.FieldTenantSpaceCloseTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TenantSpaceCloseTelemetryContextCleared() {
+		_spec.ClearField(tenant.FieldTenantSpaceCloseTelemetryContext, field.TypeString)
 	}
 	if _u.mutation.PlanCleared() {
 		edge := &sqlgraph.EdgeSpec{

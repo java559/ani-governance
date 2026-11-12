@@ -278,6 +278,20 @@ func (_c *QuotaOperationCreate) SetNillableAckJSON(v *string) *QuotaOperationCre
 	return _c
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (_c *QuotaOperationCreate) SetTelemetryContext(v string) *QuotaOperationCreate {
+	_c.mutation.SetTelemetryContext(v)
+	return _c
+}
+
+// SetNillableTelemetryContext sets the "telemetry_context" field if the given value is not nil.
+func (_c *QuotaOperationCreate) SetNillableTelemetryContext(v *string) *QuotaOperationCreate {
+	if v != nil {
+		_c.SetTelemetryContext(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *QuotaOperationCreate) SetID(v uint32) *QuotaOperationCreate {
 	_c.mutation.SetID(v)
@@ -592,6 +606,10 @@ func (_c *QuotaOperationCreate) createSpec() (*QuotaOperation, *sqlgraph.CreateS
 		_spec.SetField(quotaoperation.FieldAckJSON, field.TypeString, value)
 		_node.AckJSON = &value
 	}
+	if value, ok := _c.mutation.TelemetryContext(); ok {
+		_spec.SetField(quotaoperation.FieldTelemetryContext, field.TypeString, value)
+		_node.TelemetryContext = &value
+	}
 	return _node, _spec
 }
 
@@ -827,6 +845,24 @@ func (u *QuotaOperationUpsert) UpdateAckJSON() *QuotaOperationUpsert {
 // ClearAckJSON clears the value of the "ack_json" field.
 func (u *QuotaOperationUpsert) ClearAckJSON() *QuotaOperationUpsert {
 	u.SetNull(quotaoperation.FieldAckJSON)
+	return u
+}
+
+// SetTelemetryContext sets the "telemetry_context" field.
+func (u *QuotaOperationUpsert) SetTelemetryContext(v string) *QuotaOperationUpsert {
+	u.Set(quotaoperation.FieldTelemetryContext, v)
+	return u
+}
+
+// UpdateTelemetryContext sets the "telemetry_context" field to the value that was provided on create.
+func (u *QuotaOperationUpsert) UpdateTelemetryContext() *QuotaOperationUpsert {
+	u.SetExcluded(quotaoperation.FieldTelemetryContext)
+	return u
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (u *QuotaOperationUpsert) ClearTelemetryContext() *QuotaOperationUpsert {
+	u.SetNull(quotaoperation.FieldTelemetryContext)
 	return u
 }
 
@@ -1131,6 +1167,27 @@ func (u *QuotaOperationUpsertOne) UpdateAckJSON() *QuotaOperationUpsertOne {
 func (u *QuotaOperationUpsertOne) ClearAckJSON() *QuotaOperationUpsertOne {
 	return u.Update(func(s *QuotaOperationUpsert) {
 		s.ClearAckJSON()
+	})
+}
+
+// SetTelemetryContext sets the "telemetry_context" field.
+func (u *QuotaOperationUpsertOne) SetTelemetryContext(v string) *QuotaOperationUpsertOne {
+	return u.Update(func(s *QuotaOperationUpsert) {
+		s.SetTelemetryContext(v)
+	})
+}
+
+// UpdateTelemetryContext sets the "telemetry_context" field to the value that was provided on create.
+func (u *QuotaOperationUpsertOne) UpdateTelemetryContext() *QuotaOperationUpsertOne {
+	return u.Update(func(s *QuotaOperationUpsert) {
+		s.UpdateTelemetryContext()
+	})
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (u *QuotaOperationUpsertOne) ClearTelemetryContext() *QuotaOperationUpsertOne {
+	return u.Update(func(s *QuotaOperationUpsert) {
+		s.ClearTelemetryContext()
 	})
 }
 
@@ -1601,6 +1658,27 @@ func (u *QuotaOperationUpsertBulk) UpdateAckJSON() *QuotaOperationUpsertBulk {
 func (u *QuotaOperationUpsertBulk) ClearAckJSON() *QuotaOperationUpsertBulk {
 	return u.Update(func(s *QuotaOperationUpsert) {
 		s.ClearAckJSON()
+	})
+}
+
+// SetTelemetryContext sets the "telemetry_context" field.
+func (u *QuotaOperationUpsertBulk) SetTelemetryContext(v string) *QuotaOperationUpsertBulk {
+	return u.Update(func(s *QuotaOperationUpsert) {
+		s.SetTelemetryContext(v)
+	})
+}
+
+// UpdateTelemetryContext sets the "telemetry_context" field to the value that was provided on create.
+func (u *QuotaOperationUpsertBulk) UpdateTelemetryContext() *QuotaOperationUpsertBulk {
+	return u.Update(func(s *QuotaOperationUpsert) {
+		s.UpdateTelemetryContext()
+	})
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (u *QuotaOperationUpsertBulk) ClearTelemetryContext() *QuotaOperationUpsertBulk {
+	return u.Update(func(s *QuotaOperationUpsert) {
+		s.ClearTelemetryContext()
 	})
 }
 

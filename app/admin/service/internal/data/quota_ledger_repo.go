@@ -28,6 +28,9 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/quotaoperation"
 	"go-wind-admin/app/admin/service/internal/data/ent/quotareleasereceipt"
 	appViewer "go-wind-admin/pkg/entgo/viewer"
+
+	"go-wind-admin/pkg/telemetry"
+	"strconv"
 )
 
 type QuotaLedgerRepo struct {
@@ -56,11 +59,15 @@ type QuotaOccupyInput struct {
 	// to bind the frozen command context before the durable ledger row exists.
 	OperationID string
 	Items       []QuotaOccupyItem
+	// TelemetryContext is the accepted request's trace snapshot; it never enters
+	// the canonical request or request hash.
+	TelemetryContext telemetry.TelemetryContext
 }
 type QuotaOccupyResult struct {
 	OperationID, ResourceID string
 	ChargeIDs               []string
 	Replayed                bool
+	TelemetryContext        telemetry.TelemetryContext
 }
 type QuotaReleaseInput struct {
 	OwnerService, ReleaseEventID, OperationID, Reason, PayloadHash, PayloadJSON string
@@ -80,11 +87,13 @@ type QuotaReleaseResult struct {
 type QuotaDeleteInput struct {
 	TenantID                                                                                            uint32
 	ActorType, ActorID, OwnerService, Action, IdempotencyKey, RequestHash, CanonicalRequest, ResourceID string
+	TelemetryContext                                                                                    telemetry.TelemetryContext
 }
 type QuotaDeleteResult struct {
 	OperationID, CreateOperationID, ChargeID, ResourceID string
 	ChargeIDs                                            []string
 	Replayed, LocalCanceled, OwnerRejected               bool
+	TelemetryContext                                     telemetry.TelemetryContext
 }
 type QuotaChargeRef struct {
 	ChargeID, QuotaCode string
@@ -96,12 +105,49 @@ type ClaimedOperation struct {
 	LeaseGeneration                                                                                                                       int64
 	AttemptCount                                                                                                                          int
 	Charges                                                                                                                               []QuotaChargeRef
+	// TelemetryJSON is the raw persisted telemetry column, decoded by the worker.
+	TelemetryJSON []byte
 }
 type InvariantRow struct {
 	TenantID                       uint32
 	QuotaCode                      string
 	OccupiedUnits, ChargeRemainder int64
 	Balanced                       bool
+}
+
+// encodeTelemetry renders the logging metadata for an ent string column, or
+// nil when the context carries no captured trace.
+func encodeTelemetry(tc telemetry.TelemetryContext) *string {
+	if !tc.Valid() {
+		return nil
+	}
+	b, e := json.Marshal(tc)
+	if e != nil {
+		return nil
+	}
+	v := string(b)
+	return &v
+}
+
+// decodeTelemetry parses a stored telemetry column for the caller's log context.
+// A malformed value yields the zero value; the business path is unaffected.
+func decodeTelemetry(v *string) telemetry.TelemetryContext {
+	if v == nil {
+		return telemetry.TelemetryContext{}
+	}
+	tc, e := telemetry.Decode([]byte(*v))
+	if e != nil {
+		return telemetry.TelemetryContext{}
+	}
+	return tc
+}
+
+// telemetryValue returns the stored telemetry text, or "" when unset.
+func telemetryValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }
 
 func chargeIDs(charges []*ent.QuotaCharge) []string {
@@ -224,7 +270,7 @@ func (r *QuotaLedgerRepo) occupyInTx(ctx context.Context, tx *ent.Tx, in *QuotaO
 			if e = validateOperationCharges(op, charges); e != nil {
 				return e
 			}
-			out = &QuotaOccupyResult{op.OperationID, op.ResourceID, chargeIDs(charges), true}
+			out = &QuotaOccupyResult{OperationID: op.OperationID, ResourceID: op.ResourceID, ChargeIDs: chargeIDs(charges), Replayed: true, TelemetryContext: decodeTelemetry(op.TelemetryContext)}
 			return nil
 		}
 		if !ent.IsNotFound(err) {
@@ -271,7 +317,7 @@ func (r *QuotaLedgerRepo) occupyInTx(ctx context.Context, tx *ent.Tx, in *QuotaO
 				return in.OperationID
 			}
 			return generateUUID()
-		}()).SetTenantID(in.TenantID).SetResourceTenantID(in.ResourceTenantID).SetResourceID(in.ResourceID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(in.CanonicalRequest).SetDispatchState(quotaoperation.DispatchState("QUEUED")).Save(ctx)
+		}()).SetTenantID(in.TenantID).SetResourceTenantID(in.ResourceTenantID).SetResourceID(in.ResourceID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(in.CanonicalRequest).SetDispatchState(quotaoperation.DispatchState("QUEUED")).SetNillableTelemetryContext(encodeTelemetry(in.TelemetryContext)).Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -295,7 +341,7 @@ func (r *QuotaLedgerRepo) occupyInTx(ctx context.Context, tx *ent.Tx, in *QuotaO
 		for i, it := range in.Items {
 			ids[i] = byCode[it.QuotaCode]
 		}
-		out = &QuotaOccupyResult{op.OperationID, op.ResourceID, ids, false}
+		out = &QuotaOccupyResult{OperationID: op.OperationID, ResourceID: op.ResourceID, ChargeIDs: ids, TelemetryContext: in.TelemetryContext}
 		return nil
 	}()
 	return out, err
@@ -661,7 +707,7 @@ func createDeleteOperationTx(ctx context.Context, tx *ent.Tx, in *QuotaDeleteInp
 			return e
 		}
 	}
-	op, e := tx.QuotaOperation.Create().SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(tid).SetResourceTenantID(original.ResourceTenantID).SetResourceID(original.ResourceID).SetNillableCreateOperationID(&original.OperationID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(canonical).SetDispatchState(quotaoperation.DispatchState(state)).Save(ctx)
+	op, e := tx.QuotaOperation.Create().SetCreatedAt(databaseNow).SetUpdatedAt(databaseNow).SetOperationID(generateUUID()).SetTenantID(tid).SetResourceTenantID(original.ResourceTenantID).SetResourceID(original.ResourceID).SetNillableCreateOperationID(&original.OperationID).SetActorType(in.ActorType).SetActorID(in.ActorID).SetOwnerService(in.OwnerService).SetAction(in.Action).SetIdempotencyKey(in.IdempotencyKey).SetRequestHash(in.RequestHash).SetCanonicalRequest(canonical).SetDispatchState(quotaoperation.DispatchState(state)).SetNillableTelemetryContext(encodeTelemetry(in.TelemetryContext)).Save(ctx)
 	if e != nil {
 		return e
 	}
@@ -685,7 +731,7 @@ func instanceDeleteSnapshot(original, requested string) (string, error) {
 	return commandcontract.DeleteSnapshot(commandcontract.InstanceOwner, original, requested)
 }
 func deleteResult(op *ent.QuotaOperation, charges []*ent.QuotaCharge, replay bool) *QuotaDeleteResult {
-	result := &QuotaDeleteResult{OperationID: op.OperationID, ResourceID: op.ResourceID, ChargeIDs: chargeIDs(charges), Replayed: replay, LocalCanceled: op.DispatchState == "CANCELED_UNSENT", OwnerRejected: op.DispatchState == quotaoperation.DispatchStateRejected}
+	result := &QuotaDeleteResult{OperationID: op.OperationID, ResourceID: op.ResourceID, ChargeIDs: chargeIDs(charges), Replayed: replay, LocalCanceled: op.DispatchState == "CANCELED_UNSENT", OwnerRejected: op.DispatchState == quotaoperation.DispatchStateRejected, TelemetryContext: decodeTelemetry(op.TelemetryContext)}
 	if op.CreateOperationID != nil {
 		result.CreateOperationID = *op.CreateOperationID
 	}
@@ -861,18 +907,27 @@ func (r *QuotaLedgerRepo) ClaimDispatchable(ctx context.Context, worker string, 
 				// without recording an attempt and could starve healthy operations.
 				// A repaired original vector is retried without changing accounting.
 				code := "ORIGINAL_CHARGES_INVALID"
+				reason := code
+				validationErr := validateOperationCharges(op, charges)
+				// Record the real validation failure on the record's own trace
+				// before the op becomes UNKNOWN and this path returns no claimed
+				// object to the worker.
+				recordCtx := r.restoreClaimTrace(ctx, op, validationErr)
+				r.logClaimFailure(recordCtx, op, "validate_original_charges", reason, validationErr)
 				delay := min(30*time.Second, time.Second<<min(max(op.AttemptCount-1, 0), 5))
 				next := time.Now().Add(delay)
 				n, e := tx.QuotaOperation.Update().SetUpdatedAt(databaseNow).Where(quotaoperation.TenantIDEQ(*op.TenantID), quotaoperation.OperationIDEQ(op.OperationID), quotaoperation.LeaseGenerationEQ(op.LeaseGeneration), quotaoperation.DispatchStateEQ(quotaoperation.DispatchStateDispatching)).SetDispatchState(quotaoperation.DispatchStateUnknown).SetNillableNextAttemptAt(&next).SetNillableLastErrorCode(&code).SetRetryBlocked(false).Save(ctx)
 				if e != nil {
+					r.logClaimPersistFailure(recordCtx, op, e)
 					return e
 				}
 				if n != 1 {
+					r.logClaimPersistFailure(recordCtx, op, quotapb.ErrorInvalidQuotaRequest("%s", "failed to retain invalid original charge claim"))
 					return quotapb.ErrorInvalidQuotaRequest("%s", "failed to retain invalid original charge claim")
 				}
 				return nil
 			}
-			v := ClaimedOperation{ID: op.ID, TenantID: *op.TenantID, OperationID: op.OperationID, ResourceTenantID: op.ResourceTenantID, ResourceID: op.ResourceID, ActorType: op.ActorType, ActorID: op.ActorID, OwnerService: op.OwnerService, Action: op.Action, RequestHash: op.RequestHash, CanonicalRequest: op.CanonicalRequest, LeaseGeneration: op.LeaseGeneration, AttemptCount: op.AttemptCount}
+			v := ClaimedOperation{ID: op.ID, TenantID: *op.TenantID, OperationID: op.OperationID, ResourceTenantID: op.ResourceTenantID, ResourceID: op.ResourceID, ActorType: op.ActorType, ActorID: op.ActorID, OwnerService: op.OwnerService, Action: op.Action, RequestHash: op.RequestHash, CanonicalRequest: op.CanonicalRequest, LeaseGeneration: op.LeaseGeneration, AttemptCount: op.AttemptCount, TelemetryJSON: []byte(telemetryValue(op.TelemetryContext))}
 			if op.CreateOperationID != nil {
 				v.CreateOperationID = *op.CreateOperationID
 			}
@@ -938,4 +993,62 @@ func (r *QuotaLedgerRepo) ResumeDispatch(ctx context.Context, tid uint32, id str
 		}
 		return nil
 	})
+}
+
+// restoreClaimTrace rebuilds the claimed record's trace for the branches that
+// never return a claimed object. It decodes the raw telemetry independently.
+func (r *QuotaLedgerRepo) restoreClaimTrace(ctx context.Context, op *ent.QuotaOperation, cause error) context.Context {
+	if r.log == nil {
+		return ctx
+	}
+	saved, e := telemetry.Decode([]byte(telemetryValue(op.TelemetryContext)))
+	identity := r.claimIdentity(op)
+	if e != nil {
+		r.log.Error(ctx, "telemetry context invalid", append(append([]any{"event", "telemetry.context_invalid", "reason", "TELEMETRY_CONTEXT_INVALID"}, identity...), telemetry.ErrorFields(e)...)...)
+		return telemetry.WithBusiness(ctx, r.claimBusiness(op))
+	}
+	if !saved.Valid() {
+		r.log.Error(ctx, "telemetry context missing", append([]any{"event", "telemetry.context_missing", "reason", "TELEMETRY_CONTEXT_MISSING"}, identity...)...)
+		return telemetry.WithBusiness(ctx, r.claimBusiness(op))
+	}
+	restored, re := telemetry.Restore(ctx, saved)
+	if re != nil {
+		r.log.Error(ctx, "telemetry context invalid", append(append([]any{"event", "telemetry.context_invalid", "reason", "TELEMETRY_CONTEXT_INVALID"}, identity...), telemetry.ErrorFields(re)...)...)
+		return telemetry.WithBusiness(ctx, r.claimBusiness(op))
+	}
+	return telemetry.WithBusiness(restored, r.claimBusiness(op))
+}
+
+func (r *QuotaLedgerRepo) claimBusiness(op *ent.QuotaOperation) telemetry.BusinessContext {
+	b := telemetry.BusinessContext{OperationID: op.OperationID, ResourceType: "quota", ResourceID: op.ResourceID, Action: op.Action}
+	if op.TenantID != nil {
+		b.TenantID = strconv.FormatUint(uint64(*op.TenantID), 10)
+	}
+	return b
+}
+
+func (r *QuotaLedgerRepo) claimIdentity(op *ent.QuotaOperation) []any {
+	out := []any{"operation_id", op.OperationID, "resource_type", "quota", "resource_id", op.ResourceID, "action", op.Action}
+	if op.TenantID != nil {
+		out = append(out, "tenant_id", strconv.FormatUint(uint64(*op.TenantID), 10))
+	}
+	return out
+}
+
+func (r *QuotaLedgerRepo) logClaimFailure(ctx context.Context, op *ent.QuotaOperation, step, reason string, err error) {
+	if r.log == nil || err == nil {
+		return
+	}
+	kv := append([]any{"event", "step.failed", "step", step, "result", "failed", "reason", reason, "worker", "quota_dispatch"}, r.claimIdentity(op)...)
+	kv = append(kv, telemetry.ErrorFields(err)...)
+	r.log.Error(ctx, "quota claim validation failed", kv...)
+}
+
+func (r *QuotaLedgerRepo) logClaimPersistFailure(ctx context.Context, op *ent.QuotaOperation, err error) {
+	if r.log == nil || err == nil {
+		return
+	}
+	kv := append([]any{"event", "state.persist_failed", "action", op.Action, "step", "mark_unknown"}, r.claimIdentity(op)...)
+	kv = append(kv, telemetry.ErrorFields(err)...)
+	r.log.Error(ctx, "quota claim state save failed", kv...)
 }

@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"encoding/json"
 	quotapb "go-wind-admin/api/gen/go/quota/service/v1"
 	"time"
 
@@ -29,6 +30,8 @@ import (
 	appViewer "go-wind-admin/pkg/entgo/viewer"
 
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
+
+	"go-wind-admin/pkg/telemetry"
 )
 
 type TenantRepo struct {
@@ -228,6 +231,7 @@ func (r *TenantRepo) CreateWithTx(ctx context.Context, tx *ent.Tx, data *identit
 	builder := tx.Tenant.Create().
 		SetTenantSpaceState(tenant.TenantSpaceStateQUEUED).
 		SetTenantSpaceOperationID(uuid.NewString()).
+		SetNillableTenantSpaceTelemetryContext(encodeTenantTelemetry(telemetry.Capture(ctx))).
 		SetNillableName(data.Name).
 		SetNillableCode(data.Code).
 		SetNillableDomain(data.Domain).
@@ -483,4 +487,25 @@ func (r *TenantRepo) ListTenantsByIds(ctx context.Context, ids []uint32) ([]*ide
 	}
 
 	return dtos, nil
+}
+
+// encodeTenantTelemetry renders the logging metadata for a tenant jsonb column.
+func encodeTenantTelemetry(tc telemetry.TelemetryContext) *string {
+	if !tc.Valid() {
+		return nil
+	}
+	b, e := json.Marshal(tc)
+	if e != nil {
+		return nil
+	}
+	v := string(b)
+	return &v
+}
+
+// tenantTelemetryValue returns the stored telemetry text, or "" when unset.
+func tenantTelemetryValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
 }

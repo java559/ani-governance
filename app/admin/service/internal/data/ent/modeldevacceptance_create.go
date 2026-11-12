@@ -372,6 +372,34 @@ func (_c *ModelDevAcceptanceCreate) SetCloseReceiptCanonical(v []byte) *ModelDev
 	return _c
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (_c *ModelDevAcceptanceCreate) SetTelemetryContext(v string) *ModelDevAcceptanceCreate {
+	_c.mutation.SetTelemetryContext(v)
+	return _c
+}
+
+// SetNillableTelemetryContext sets the "telemetry_context" field if the given value is not nil.
+func (_c *ModelDevAcceptanceCreate) SetNillableTelemetryContext(v *string) *ModelDevAcceptanceCreate {
+	if v != nil {
+		_c.SetTelemetryContext(*v)
+	}
+	return _c
+}
+
+// SetCloseTelemetryContext sets the "close_telemetry_context" field.
+func (_c *ModelDevAcceptanceCreate) SetCloseTelemetryContext(v string) *ModelDevAcceptanceCreate {
+	_c.mutation.SetCloseTelemetryContext(v)
+	return _c
+}
+
+// SetNillableCloseTelemetryContext sets the "close_telemetry_context" field if the given value is not nil.
+func (_c *ModelDevAcceptanceCreate) SetNillableCloseTelemetryContext(v *string) *ModelDevAcceptanceCreate {
+	if v != nil {
+		_c.SetCloseTelemetryContext(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ModelDevAcceptanceCreate) SetID(v uint32) *ModelDevAcceptanceCreate {
 	_c.mutation.SetID(v)
@@ -794,6 +822,14 @@ func (_c *ModelDevAcceptanceCreate) createSpec() (*ModelDevAcceptance, *sqlgraph
 		_spec.SetField(modeldevacceptance.FieldCloseReceiptCanonical, field.TypeBytes, value)
 		_node.CloseReceiptCanonical = value
 	}
+	if value, ok := _c.mutation.TelemetryContext(); ok {
+		_spec.SetField(modeldevacceptance.FieldTelemetryContext, field.TypeString, value)
+		_node.TelemetryContext = &value
+	}
+	if value, ok := _c.mutation.CloseTelemetryContext(); ok {
+		_spec.SetField(modeldevacceptance.FieldCloseTelemetryContext, field.TypeString, value)
+		_node.CloseTelemetryContext = &value
+	}
 	return _node, _spec
 }
 
@@ -1197,6 +1233,42 @@ func (u *ModelDevAcceptanceUpsert) UpdateCloseReceiptCanonical() *ModelDevAccept
 // ClearCloseReceiptCanonical clears the value of the "close_receipt_canonical" field.
 func (u *ModelDevAcceptanceUpsert) ClearCloseReceiptCanonical() *ModelDevAcceptanceUpsert {
 	u.SetNull(modeldevacceptance.FieldCloseReceiptCanonical)
+	return u
+}
+
+// SetTelemetryContext sets the "telemetry_context" field.
+func (u *ModelDevAcceptanceUpsert) SetTelemetryContext(v string) *ModelDevAcceptanceUpsert {
+	u.Set(modeldevacceptance.FieldTelemetryContext, v)
+	return u
+}
+
+// UpdateTelemetryContext sets the "telemetry_context" field to the value that was provided on create.
+func (u *ModelDevAcceptanceUpsert) UpdateTelemetryContext() *ModelDevAcceptanceUpsert {
+	u.SetExcluded(modeldevacceptance.FieldTelemetryContext)
+	return u
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (u *ModelDevAcceptanceUpsert) ClearTelemetryContext() *ModelDevAcceptanceUpsert {
+	u.SetNull(modeldevacceptance.FieldTelemetryContext)
+	return u
+}
+
+// SetCloseTelemetryContext sets the "close_telemetry_context" field.
+func (u *ModelDevAcceptanceUpsert) SetCloseTelemetryContext(v string) *ModelDevAcceptanceUpsert {
+	u.Set(modeldevacceptance.FieldCloseTelemetryContext, v)
+	return u
+}
+
+// UpdateCloseTelemetryContext sets the "close_telemetry_context" field to the value that was provided on create.
+func (u *ModelDevAcceptanceUpsert) UpdateCloseTelemetryContext() *ModelDevAcceptanceUpsert {
+	u.SetExcluded(modeldevacceptance.FieldCloseTelemetryContext)
+	return u
+}
+
+// ClearCloseTelemetryContext clears the value of the "close_telemetry_context" field.
+func (u *ModelDevAcceptanceUpsert) ClearCloseTelemetryContext() *ModelDevAcceptanceUpsert {
+	u.SetNull(modeldevacceptance.FieldCloseTelemetryContext)
 	return u
 }
 
@@ -1694,6 +1766,48 @@ func (u *ModelDevAcceptanceUpsertOne) UpdateCloseReceiptCanonical() *ModelDevAcc
 func (u *ModelDevAcceptanceUpsertOne) ClearCloseReceiptCanonical() *ModelDevAcceptanceUpsertOne {
 	return u.Update(func(s *ModelDevAcceptanceUpsert) {
 		s.ClearCloseReceiptCanonical()
+	})
+}
+
+// SetTelemetryContext sets the "telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertOne) SetTelemetryContext(v string) *ModelDevAcceptanceUpsertOne {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.SetTelemetryContext(v)
+	})
+}
+
+// UpdateTelemetryContext sets the "telemetry_context" field to the value that was provided on create.
+func (u *ModelDevAcceptanceUpsertOne) UpdateTelemetryContext() *ModelDevAcceptanceUpsertOne {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.UpdateTelemetryContext()
+	})
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertOne) ClearTelemetryContext() *ModelDevAcceptanceUpsertOne {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.ClearTelemetryContext()
+	})
+}
+
+// SetCloseTelemetryContext sets the "close_telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertOne) SetCloseTelemetryContext(v string) *ModelDevAcceptanceUpsertOne {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.SetCloseTelemetryContext(v)
+	})
+}
+
+// UpdateCloseTelemetryContext sets the "close_telemetry_context" field to the value that was provided on create.
+func (u *ModelDevAcceptanceUpsertOne) UpdateCloseTelemetryContext() *ModelDevAcceptanceUpsertOne {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.UpdateCloseTelemetryContext()
+	})
+}
+
+// ClearCloseTelemetryContext clears the value of the "close_telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertOne) ClearCloseTelemetryContext() *ModelDevAcceptanceUpsertOne {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.ClearCloseTelemetryContext()
 	})
 }
 
@@ -2357,6 +2471,48 @@ func (u *ModelDevAcceptanceUpsertBulk) UpdateCloseReceiptCanonical() *ModelDevAc
 func (u *ModelDevAcceptanceUpsertBulk) ClearCloseReceiptCanonical() *ModelDevAcceptanceUpsertBulk {
 	return u.Update(func(s *ModelDevAcceptanceUpsert) {
 		s.ClearCloseReceiptCanonical()
+	})
+}
+
+// SetTelemetryContext sets the "telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertBulk) SetTelemetryContext(v string) *ModelDevAcceptanceUpsertBulk {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.SetTelemetryContext(v)
+	})
+}
+
+// UpdateTelemetryContext sets the "telemetry_context" field to the value that was provided on create.
+func (u *ModelDevAcceptanceUpsertBulk) UpdateTelemetryContext() *ModelDevAcceptanceUpsertBulk {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.UpdateTelemetryContext()
+	})
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertBulk) ClearTelemetryContext() *ModelDevAcceptanceUpsertBulk {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.ClearTelemetryContext()
+	})
+}
+
+// SetCloseTelemetryContext sets the "close_telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertBulk) SetCloseTelemetryContext(v string) *ModelDevAcceptanceUpsertBulk {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.SetCloseTelemetryContext(v)
+	})
+}
+
+// UpdateCloseTelemetryContext sets the "close_telemetry_context" field to the value that was provided on create.
+func (u *ModelDevAcceptanceUpsertBulk) UpdateCloseTelemetryContext() *ModelDevAcceptanceUpsertBulk {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.UpdateCloseTelemetryContext()
+	})
+}
+
+// ClearCloseTelemetryContext clears the value of the "close_telemetry_context" field.
+func (u *ModelDevAcceptanceUpsertBulk) ClearCloseTelemetryContext() *ModelDevAcceptanceUpsertBulk {
+	return u.Update(func(s *ModelDevAcceptanceUpsert) {
+		s.ClearCloseTelemetryContext()
 	})
 }
 

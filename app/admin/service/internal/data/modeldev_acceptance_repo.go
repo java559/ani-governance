@@ -17,6 +17,8 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
 	"go-wind-admin/app/admin/service/internal/data/ent/tenant"
 	entCrud "go-wind-admin/pkg/localdeps/go-crud/entgo"
+
+	"go-wind-admin/pkg/telemetry"
 )
 
 const ModelDevCreateAction = "modeldev.execution.create"
@@ -46,6 +48,9 @@ type ModelDevFrozenCandidate struct {
 	Intent      cpup01.Intent
 	Snapshot    cpup01.Snapshot
 	AcceptedAt  time.Time
+	// TelemetryContext is captured at acceptance and never enters the intent/
+	// spec hashes.
+	TelemetryContext telemetry.TelemetryContext
 }
 
 type ModelDevAcceptance struct {
@@ -59,6 +64,8 @@ type ModelDevAcceptance struct {
 	AcceptedAt        time.Time
 	DispatchState     string
 	OwnerReceipt      *ModelDevOwnerReceipt
+	// TelemetryJSON is the raw persisted create-side telemetry, decoded by the worker.
+	TelemetryJSON []byte
 }
 
 // ModelDevAcceptanceRepo commits admission, its delivery intent and any GPU
@@ -190,6 +197,7 @@ func (r *ModelDevAcceptanceRepo) AcceptFrozen(ctx context.Context, scope ModelDe
 			SetSnapshotCanonical(snapshotCanonical).
 			SetAcceptedAt(acceptedAt).
 			SetDispatchState(modeldevacceptance.DispatchStateQUEUED).
+			SetNillableTelemetryContext(encodeModelDevTelemetry(candidate.TelemetryContext)).
 			Save(ctx)
 		if err != nil {
 			return err
@@ -245,6 +253,25 @@ func (r *ModelDevAcceptanceRepo) acceptanceTransaction(ctx context.Context, work
 	return err
 }
 
+func encodeModelDevTelemetry(tc telemetry.TelemetryContext) *string {
+	if !tc.Valid() {
+		return nil
+	}
+	b, e := json.Marshal(tc)
+	if e != nil {
+		return nil
+	}
+	v := string(b)
+	return &v
+}
+
+func modelDevTelemetryValue(v *string) string {
+	if v == nil {
+		return ""
+	}
+	return *v
+}
+
 func modelDevAcceptanceFromRow(row *ent.ModelDevAcceptance) (*ModelDevAcceptance, error) {
 	invalid := errors.New("invalid persisted modeldev acceptance")
 	if row == nil || row.TenantID == nil || *row.TenantID == 0 || row.Action != ModelDevCreateAction || row.IdempotencyKey == "" {
@@ -271,6 +298,7 @@ func modelDevAcceptanceFromRow(row *ent.ModelDevAcceptance) (*ModelDevAcceptance
 		Intent: intent, Snapshot: snapshot,
 		IntentHash: row.IntentHash, ExecutionSpecHash: row.ExecutionSpecHash,
 		AcceptedAt: row.AcceptedAt, DispatchState: string(row.DispatchState),
+		TelemetryJSON: []byte(modelDevTelemetryValue(row.TelemetryContext)),
 	}
 	if row.AttemptCount < 0 || row.LeaseGeneration < 0 {
 		return nil, invalid

@@ -30496,6 +30496,8 @@ type ModelDevAcceptanceMutation struct {
 	close_retry_blocked       *bool
 	close_last_error_code     *string
 	close_receipt_canonical   *[]byte
+	telemetry_context         *string
+	close_telemetry_context   *string
 	clearedFields             map[string]struct{}
 	done                      bool
 	oldValue                  func(context.Context) (*ModelDevAcceptance, error)
@@ -32070,6 +32072,104 @@ func (m *ModelDevAcceptanceMutation) ResetCloseReceiptCanonical() {
 	delete(m.clearedFields, modeldevacceptance.FieldCloseReceiptCanonical)
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (m *ModelDevAcceptanceMutation) SetTelemetryContext(s string) {
+	m.telemetry_context = &s
+}
+
+// TelemetryContext returns the value of the "telemetry_context" field in the mutation.
+func (m *ModelDevAcceptanceMutation) TelemetryContext() (r string, exists bool) {
+	v := m.telemetry_context
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTelemetryContext returns the old "telemetry_context" field's value of the ModelDevAcceptance entity.
+// If the ModelDevAcceptance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelDevAcceptanceMutation) OldTelemetryContext(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTelemetryContext is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTelemetryContext requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTelemetryContext: %w", err)
+	}
+	return oldValue.TelemetryContext, nil
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (m *ModelDevAcceptanceMutation) ClearTelemetryContext() {
+	m.telemetry_context = nil
+	m.clearedFields[modeldevacceptance.FieldTelemetryContext] = struct{}{}
+}
+
+// TelemetryContextCleared returns if the "telemetry_context" field was cleared in this mutation.
+func (m *ModelDevAcceptanceMutation) TelemetryContextCleared() bool {
+	_, ok := m.clearedFields[modeldevacceptance.FieldTelemetryContext]
+	return ok
+}
+
+// ResetTelemetryContext resets all changes to the "telemetry_context" field.
+func (m *ModelDevAcceptanceMutation) ResetTelemetryContext() {
+	m.telemetry_context = nil
+	delete(m.clearedFields, modeldevacceptance.FieldTelemetryContext)
+}
+
+// SetCloseTelemetryContext sets the "close_telemetry_context" field.
+func (m *ModelDevAcceptanceMutation) SetCloseTelemetryContext(s string) {
+	m.close_telemetry_context = &s
+}
+
+// CloseTelemetryContext returns the value of the "close_telemetry_context" field in the mutation.
+func (m *ModelDevAcceptanceMutation) CloseTelemetryContext() (r string, exists bool) {
+	v := m.close_telemetry_context
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCloseTelemetryContext returns the old "close_telemetry_context" field's value of the ModelDevAcceptance entity.
+// If the ModelDevAcceptance object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ModelDevAcceptanceMutation) OldCloseTelemetryContext(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCloseTelemetryContext is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCloseTelemetryContext requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCloseTelemetryContext: %w", err)
+	}
+	return oldValue.CloseTelemetryContext, nil
+}
+
+// ClearCloseTelemetryContext clears the value of the "close_telemetry_context" field.
+func (m *ModelDevAcceptanceMutation) ClearCloseTelemetryContext() {
+	m.close_telemetry_context = nil
+	m.clearedFields[modeldevacceptance.FieldCloseTelemetryContext] = struct{}{}
+}
+
+// CloseTelemetryContextCleared returns if the "close_telemetry_context" field was cleared in this mutation.
+func (m *ModelDevAcceptanceMutation) CloseTelemetryContextCleared() bool {
+	_, ok := m.clearedFields[modeldevacceptance.FieldCloseTelemetryContext]
+	return ok
+}
+
+// ResetCloseTelemetryContext resets all changes to the "close_telemetry_context" field.
+func (m *ModelDevAcceptanceMutation) ResetCloseTelemetryContext() {
+	m.close_telemetry_context = nil
+	delete(m.clearedFields, modeldevacceptance.FieldCloseTelemetryContext)
+}
+
 // Where appends a list predicates to the ModelDevAcceptanceMutation builder.
 func (m *ModelDevAcceptanceMutation) Where(ps ...predicate.ModelDevAcceptance) {
 	m.predicates = append(m.predicates, ps...)
@@ -32104,7 +32204,7 @@ func (m *ModelDevAcceptanceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ModelDevAcceptanceMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 35)
 	if m.tenant_id != nil {
 		fields = append(fields, modeldevacceptance.FieldTenantID)
 	}
@@ -32204,6 +32304,12 @@ func (m *ModelDevAcceptanceMutation) Fields() []string {
 	if m.close_receipt_canonical != nil {
 		fields = append(fields, modeldevacceptance.FieldCloseReceiptCanonical)
 	}
+	if m.telemetry_context != nil {
+		fields = append(fields, modeldevacceptance.FieldTelemetryContext)
+	}
+	if m.close_telemetry_context != nil {
+		fields = append(fields, modeldevacceptance.FieldCloseTelemetryContext)
+	}
 	return fields
 }
 
@@ -32278,6 +32384,10 @@ func (m *ModelDevAcceptanceMutation) Field(name string) (ent.Value, bool) {
 		return m.CloseLastErrorCode()
 	case modeldevacceptance.FieldCloseReceiptCanonical:
 		return m.CloseReceiptCanonical()
+	case modeldevacceptance.FieldTelemetryContext:
+		return m.TelemetryContext()
+	case modeldevacceptance.FieldCloseTelemetryContext:
+		return m.CloseTelemetryContext()
 	}
 	return nil, false
 }
@@ -32353,6 +32463,10 @@ func (m *ModelDevAcceptanceMutation) OldField(ctx context.Context, name string) 
 		return m.OldCloseLastErrorCode(ctx)
 	case modeldevacceptance.FieldCloseReceiptCanonical:
 		return m.OldCloseReceiptCanonical(ctx)
+	case modeldevacceptance.FieldTelemetryContext:
+		return m.OldTelemetryContext(ctx)
+	case modeldevacceptance.FieldCloseTelemetryContext:
+		return m.OldCloseTelemetryContext(ctx)
 	}
 	return nil, fmt.Errorf("unknown ModelDevAcceptance field %s", name)
 }
@@ -32593,6 +32707,20 @@ func (m *ModelDevAcceptanceMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetCloseReceiptCanonical(v)
 		return nil
+	case modeldevacceptance.FieldTelemetryContext:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTelemetryContext(v)
+		return nil
+	case modeldevacceptance.FieldCloseTelemetryContext:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCloseTelemetryContext(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ModelDevAcceptance field %s", name)
 }
@@ -32734,6 +32862,12 @@ func (m *ModelDevAcceptanceMutation) ClearedFields() []string {
 	if m.FieldCleared(modeldevacceptance.FieldCloseReceiptCanonical) {
 		fields = append(fields, modeldevacceptance.FieldCloseReceiptCanonical)
 	}
+	if m.FieldCleared(modeldevacceptance.FieldTelemetryContext) {
+		fields = append(fields, modeldevacceptance.FieldTelemetryContext)
+	}
+	if m.FieldCleared(modeldevacceptance.FieldCloseTelemetryContext) {
+		fields = append(fields, modeldevacceptance.FieldCloseTelemetryContext)
+	}
 	return fields
 }
 
@@ -32783,6 +32917,12 @@ func (m *ModelDevAcceptanceMutation) ClearField(name string) error {
 		return nil
 	case modeldevacceptance.FieldCloseReceiptCanonical:
 		m.ClearCloseReceiptCanonical()
+		return nil
+	case modeldevacceptance.FieldTelemetryContext:
+		m.ClearTelemetryContext()
+		return nil
+	case modeldevacceptance.FieldCloseTelemetryContext:
+		m.ClearCloseTelemetryContext()
 		return nil
 	}
 	return fmt.Errorf("unknown ModelDevAcceptance nullable field %s", name)
@@ -32890,6 +33030,12 @@ func (m *ModelDevAcceptanceMutation) ResetField(name string) error {
 		return nil
 	case modeldevacceptance.FieldCloseReceiptCanonical:
 		m.ResetCloseReceiptCanonical()
+		return nil
+	case modeldevacceptance.FieldTelemetryContext:
+		m.ResetTelemetryContext()
+		return nil
+	case modeldevacceptance.FieldCloseTelemetryContext:
+		m.ResetCloseTelemetryContext()
 		return nil
 	}
 	return fmt.Errorf("unknown ModelDevAcceptance field %s", name)
@@ -56445,6 +56591,7 @@ type QuotaOperationMutation struct {
 	lease_owner         *string
 	lease_until         *time.Time
 	ack_json            *string
+	telemetry_context   *string
 	clearedFields       map[string]struct{}
 	done                bool
 	oldValue            func(context.Context) (*QuotaOperation, error)
@@ -57610,6 +57757,55 @@ func (m *QuotaOperationMutation) ResetAckJSON() {
 	delete(m.clearedFields, quotaoperation.FieldAckJSON)
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (m *QuotaOperationMutation) SetTelemetryContext(s string) {
+	m.telemetry_context = &s
+}
+
+// TelemetryContext returns the value of the "telemetry_context" field in the mutation.
+func (m *QuotaOperationMutation) TelemetryContext() (r string, exists bool) {
+	v := m.telemetry_context
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTelemetryContext returns the old "telemetry_context" field's value of the QuotaOperation entity.
+// If the QuotaOperation object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *QuotaOperationMutation) OldTelemetryContext(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTelemetryContext is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTelemetryContext requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTelemetryContext: %w", err)
+	}
+	return oldValue.TelemetryContext, nil
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (m *QuotaOperationMutation) ClearTelemetryContext() {
+	m.telemetry_context = nil
+	m.clearedFields[quotaoperation.FieldTelemetryContext] = struct{}{}
+}
+
+// TelemetryContextCleared returns if the "telemetry_context" field was cleared in this mutation.
+func (m *QuotaOperationMutation) TelemetryContextCleared() bool {
+	_, ok := m.clearedFields[quotaoperation.FieldTelemetryContext]
+	return ok
+}
+
+// ResetTelemetryContext resets all changes to the "telemetry_context" field.
+func (m *QuotaOperationMutation) ResetTelemetryContext() {
+	m.telemetry_context = nil
+	delete(m.clearedFields, quotaoperation.FieldTelemetryContext)
+}
+
 // Where appends a list predicates to the QuotaOperationMutation builder.
 func (m *QuotaOperationMutation) Where(ps ...predicate.QuotaOperation) {
 	m.predicates = append(m.predicates, ps...)
@@ -57644,7 +57840,7 @@ func (m *QuotaOperationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *QuotaOperationMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 25)
 	if m.created_at != nil {
 		fields = append(fields, quotaoperation.FieldCreatedAt)
 	}
@@ -57717,6 +57913,9 @@ func (m *QuotaOperationMutation) Fields() []string {
 	if m.ack_json != nil {
 		fields = append(fields, quotaoperation.FieldAckJSON)
 	}
+	if m.telemetry_context != nil {
+		fields = append(fields, quotaoperation.FieldTelemetryContext)
+	}
 	return fields
 }
 
@@ -57773,6 +57972,8 @@ func (m *QuotaOperationMutation) Field(name string) (ent.Value, bool) {
 		return m.LeaseUntil()
 	case quotaoperation.FieldAckJSON:
 		return m.AckJSON()
+	case quotaoperation.FieldTelemetryContext:
+		return m.TelemetryContext()
 	}
 	return nil, false
 }
@@ -57830,6 +58031,8 @@ func (m *QuotaOperationMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldLeaseUntil(ctx)
 	case quotaoperation.FieldAckJSON:
 		return m.OldAckJSON(ctx)
+	case quotaoperation.FieldTelemetryContext:
+		return m.OldTelemetryContext(ctx)
 	}
 	return nil, fmt.Errorf("unknown QuotaOperation field %s", name)
 }
@@ -58007,6 +58210,13 @@ func (m *QuotaOperationMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAckJSON(v)
 		return nil
+	case quotaoperation.FieldTelemetryContext:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTelemetryContext(v)
+		return nil
 	}
 	return fmt.Errorf("unknown QuotaOperation field %s", name)
 }
@@ -58106,6 +58316,9 @@ func (m *QuotaOperationMutation) ClearedFields() []string {
 	if m.FieldCleared(quotaoperation.FieldAckJSON) {
 		fields = append(fields, quotaoperation.FieldAckJSON)
 	}
+	if m.FieldCleared(quotaoperation.FieldTelemetryContext) {
+		fields = append(fields, quotaoperation.FieldTelemetryContext)
+	}
 	return fields
 }
 
@@ -58149,6 +58362,9 @@ func (m *QuotaOperationMutation) ClearField(name string) error {
 		return nil
 	case quotaoperation.FieldAckJSON:
 		m.ClearAckJSON()
+		return nil
+	case quotaoperation.FieldTelemetryContext:
+		m.ClearTelemetryContext()
 		return nil
 	}
 	return fmt.Errorf("unknown QuotaOperation nullable field %s", name)
@@ -58229,6 +58445,9 @@ func (m *QuotaOperationMutation) ResetField(name string) error {
 		return nil
 	case quotaoperation.FieldAckJSON:
 		m.ResetAckJSON()
+		return nil
+	case quotaoperation.FieldTelemetryContext:
+		m.ResetTelemetryContext()
 		return nil
 	}
 	return fmt.Errorf("unknown QuotaOperation field %s", name)
@@ -68437,47 +68656,49 @@ func (m *TaskMutation) ResetEdge(name string) error {
 // TenantMutation represents an operation that mutates the Tenant nodes in the graph.
 type TenantMutation struct {
 	config
-	op                               Op
-	typ                              string
-	id                               *uint32
-	created_at                       *time.Time
-	updated_at                       *time.Time
-	deleted_at                       *time.Time
-	created_by                       *uint32
-	addcreated_by                    *int32
-	updated_by                       *uint32
-	addupdated_by                    *int32
-	deleted_by                       *uint32
-	adddeleted_by                    *int32
-	remark                           *string
-	resource_tenant_id               *string
-	tenant_space_state               *tenant.TenantSpaceState
-	tenant_space_operation_id        *string
-	tenant_space_lease_generation    *int64
-	addtenant_space_lease_generation *int64
-	tenant_space_lease_owner         *string
-	tenant_space_lease_until         *time.Time
-	tenant_space_next_attempt_at     *time.Time
-	name                             *string
-	code                             *string
-	logo_url                         *string
-	domain                           *string
-	industry                         *string
-	admin_user_id                    *uint32
-	addadmin_user_id                 *int32
-	status                           *tenant.Status
-	_type                            *tenant.Type
-	audit_status                     *tenant.AuditStatus
-	subscription_at                  *time.Time
-	unsubscribe_at                   *time.Time
-	subscription_plan                *string
-	expired_at                       *time.Time
-	clearedFields                    map[string]struct{}
-	plan                             *uint32
-	clearedplan                      bool
-	done                             bool
-	oldValue                         func(context.Context) (*Tenant, error)
-	predicates                       []predicate.Tenant
+	op                                   Op
+	typ                                  string
+	id                                   *uint32
+	created_at                           *time.Time
+	updated_at                           *time.Time
+	deleted_at                           *time.Time
+	created_by                           *uint32
+	addcreated_by                        *int32
+	updated_by                           *uint32
+	addupdated_by                        *int32
+	deleted_by                           *uint32
+	adddeleted_by                        *int32
+	remark                               *string
+	resource_tenant_id                   *string
+	tenant_space_state                   *tenant.TenantSpaceState
+	tenant_space_operation_id            *string
+	tenant_space_lease_generation        *int64
+	addtenant_space_lease_generation     *int64
+	tenant_space_lease_owner             *string
+	tenant_space_lease_until             *time.Time
+	tenant_space_next_attempt_at         *time.Time
+	name                                 *string
+	code                                 *string
+	logo_url                             *string
+	domain                               *string
+	industry                             *string
+	admin_user_id                        *uint32
+	addadmin_user_id                     *int32
+	status                               *tenant.Status
+	_type                                *tenant.Type
+	audit_status                         *tenant.AuditStatus
+	subscription_at                      *time.Time
+	unsubscribe_at                       *time.Time
+	subscription_plan                    *string
+	expired_at                           *time.Time
+	tenant_space_telemetry_context       *string
+	tenant_space_close_telemetry_context *string
+	clearedFields                        map[string]struct{}
+	plan                                 *uint32
+	clearedplan                          bool
+	done                                 bool
+	oldValue                             func(context.Context) (*Tenant, error)
+	predicates                           []predicate.Tenant
 }
 
 var _ ent.Mutation = (*TenantMutation)(nil)
@@ -70021,6 +70242,104 @@ func (m *TenantMutation) ResetExpiredAt() {
 	delete(m.clearedFields, tenant.FieldExpiredAt)
 }
 
+// SetTenantSpaceTelemetryContext sets the "tenant_space_telemetry_context" field.
+func (m *TenantMutation) SetTenantSpaceTelemetryContext(s string) {
+	m.tenant_space_telemetry_context = &s
+}
+
+// TenantSpaceTelemetryContext returns the value of the "tenant_space_telemetry_context" field in the mutation.
+func (m *TenantMutation) TenantSpaceTelemetryContext() (r string, exists bool) {
+	v := m.tenant_space_telemetry_context
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantSpaceTelemetryContext returns the old "tenant_space_telemetry_context" field's value of the Tenant entity.
+// If the Tenant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantMutation) OldTenantSpaceTelemetryContext(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantSpaceTelemetryContext is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantSpaceTelemetryContext requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantSpaceTelemetryContext: %w", err)
+	}
+	return oldValue.TenantSpaceTelemetryContext, nil
+}
+
+// ClearTenantSpaceTelemetryContext clears the value of the "tenant_space_telemetry_context" field.
+func (m *TenantMutation) ClearTenantSpaceTelemetryContext() {
+	m.tenant_space_telemetry_context = nil
+	m.clearedFields[tenant.FieldTenantSpaceTelemetryContext] = struct{}{}
+}
+
+// TenantSpaceTelemetryContextCleared returns if the "tenant_space_telemetry_context" field was cleared in this mutation.
+func (m *TenantMutation) TenantSpaceTelemetryContextCleared() bool {
+	_, ok := m.clearedFields[tenant.FieldTenantSpaceTelemetryContext]
+	return ok
+}
+
+// ResetTenantSpaceTelemetryContext resets all changes to the "tenant_space_telemetry_context" field.
+func (m *TenantMutation) ResetTenantSpaceTelemetryContext() {
+	m.tenant_space_telemetry_context = nil
+	delete(m.clearedFields, tenant.FieldTenantSpaceTelemetryContext)
+}
+
+// SetTenantSpaceCloseTelemetryContext sets the "tenant_space_close_telemetry_context" field.
+func (m *TenantMutation) SetTenantSpaceCloseTelemetryContext(s string) {
+	m.tenant_space_close_telemetry_context = &s
+}
+
+// TenantSpaceCloseTelemetryContext returns the value of the "tenant_space_close_telemetry_context" field in the mutation.
+func (m *TenantMutation) TenantSpaceCloseTelemetryContext() (r string, exists bool) {
+	v := m.tenant_space_close_telemetry_context
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTenantSpaceCloseTelemetryContext returns the old "tenant_space_close_telemetry_context" field's value of the Tenant entity.
+// If the Tenant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TenantMutation) OldTenantSpaceCloseTelemetryContext(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTenantSpaceCloseTelemetryContext is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTenantSpaceCloseTelemetryContext requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTenantSpaceCloseTelemetryContext: %w", err)
+	}
+	return oldValue.TenantSpaceCloseTelemetryContext, nil
+}
+
+// ClearTenantSpaceCloseTelemetryContext clears the value of the "tenant_space_close_telemetry_context" field.
+func (m *TenantMutation) ClearTenantSpaceCloseTelemetryContext() {
+	m.tenant_space_close_telemetry_context = nil
+	m.clearedFields[tenant.FieldTenantSpaceCloseTelemetryContext] = struct{}{}
+}
+
+// TenantSpaceCloseTelemetryContextCleared returns if the "tenant_space_close_telemetry_context" field was cleared in this mutation.
+func (m *TenantMutation) TenantSpaceCloseTelemetryContextCleared() bool {
+	_, ok := m.clearedFields[tenant.FieldTenantSpaceCloseTelemetryContext]
+	return ok
+}
+
+// ResetTenantSpaceCloseTelemetryContext resets all changes to the "tenant_space_close_telemetry_context" field.
+func (m *TenantMutation) ResetTenantSpaceCloseTelemetryContext() {
+	m.tenant_space_close_telemetry_context = nil
+	delete(m.clearedFields, tenant.FieldTenantSpaceCloseTelemetryContext)
+}
+
 // ClearPlan clears the "plan" edge to the Plan entity.
 func (m *TenantMutation) ClearPlan() {
 	m.clearedplan = true
@@ -70082,7 +70401,7 @@ func (m *TenantMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TenantMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 30)
 	if m.created_at != nil {
 		fields = append(fields, tenant.FieldCreatedAt)
 	}
@@ -70167,6 +70486,12 @@ func (m *TenantMutation) Fields() []string {
 	if m.expired_at != nil {
 		fields = append(fields, tenant.FieldExpiredAt)
 	}
+	if m.tenant_space_telemetry_context != nil {
+		fields = append(fields, tenant.FieldTenantSpaceTelemetryContext)
+	}
+	if m.tenant_space_close_telemetry_context != nil {
+		fields = append(fields, tenant.FieldTenantSpaceCloseTelemetryContext)
+	}
 	return fields
 }
 
@@ -70231,6 +70556,10 @@ func (m *TenantMutation) Field(name string) (ent.Value, bool) {
 		return m.SubscriptionPlan()
 	case tenant.FieldExpiredAt:
 		return m.ExpiredAt()
+	case tenant.FieldTenantSpaceTelemetryContext:
+		return m.TenantSpaceTelemetryContext()
+	case tenant.FieldTenantSpaceCloseTelemetryContext:
+		return m.TenantSpaceCloseTelemetryContext()
 	}
 	return nil, false
 }
@@ -70296,6 +70625,10 @@ func (m *TenantMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldSubscriptionPlan(ctx)
 	case tenant.FieldExpiredAt:
 		return m.OldExpiredAt(ctx)
+	case tenant.FieldTenantSpaceTelemetryContext:
+		return m.OldTenantSpaceTelemetryContext(ctx)
+	case tenant.FieldTenantSpaceCloseTelemetryContext:
+		return m.OldTenantSpaceCloseTelemetryContext(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tenant field %s", name)
 }
@@ -70501,6 +70834,20 @@ func (m *TenantMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetExpiredAt(v)
 		return nil
+	case tenant.FieldTenantSpaceTelemetryContext:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantSpaceTelemetryContext(v)
+		return nil
+	case tenant.FieldTenantSpaceCloseTelemetryContext:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTenantSpaceCloseTelemetryContext(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Tenant field %s", name)
 }
@@ -70669,6 +71016,12 @@ func (m *TenantMutation) ClearedFields() []string {
 	if m.FieldCleared(tenant.FieldExpiredAt) {
 		fields = append(fields, tenant.FieldExpiredAt)
 	}
+	if m.FieldCleared(tenant.FieldTenantSpaceTelemetryContext) {
+		fields = append(fields, tenant.FieldTenantSpaceTelemetryContext)
+	}
+	if m.FieldCleared(tenant.FieldTenantSpaceCloseTelemetryContext) {
+		fields = append(fields, tenant.FieldTenantSpaceCloseTelemetryContext)
+	}
 	return fields
 }
 
@@ -70757,6 +71110,12 @@ func (m *TenantMutation) ClearField(name string) error {
 		return nil
 	case tenant.FieldExpiredAt:
 		m.ClearExpiredAt()
+		return nil
+	case tenant.FieldTenantSpaceTelemetryContext:
+		m.ClearTenantSpaceTelemetryContext()
+		return nil
+	case tenant.FieldTenantSpaceCloseTelemetryContext:
+		m.ClearTenantSpaceCloseTelemetryContext()
 		return nil
 	}
 	return fmt.Errorf("unknown Tenant nullable field %s", name)
@@ -70849,6 +71208,12 @@ func (m *TenantMutation) ResetField(name string) error {
 		return nil
 	case tenant.FieldExpiredAt:
 		m.ResetExpiredAt()
+		return nil
+	case tenant.FieldTenantSpaceTelemetryContext:
+		m.ResetTenantSpaceTelemetryContext()
+		return nil
+	case tenant.FieldTenantSpaceCloseTelemetryContext:
+		m.ResetTenantSpaceCloseTelemetryContext()
 		return nil
 	}
 	return fmt.Errorf("unknown Tenant field %s", name)

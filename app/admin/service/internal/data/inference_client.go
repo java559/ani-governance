@@ -76,8 +76,9 @@ func NewInferenceClient(c InferenceClientConfig) (*InferenceClient, func(), erro
 			return nil
 		},
 	}
-	connection, err := grpc.NewClient(c.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+	connection, err := grpc.NewClient(c.Address, outboundDial(peerInferenceService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))...)
 	if err != nil {
+		dialDependencyFailed(peerInferenceService, "create_client", err)
 		return nil, nil, errors.New("invalid inference client address")
 	}
 	return &InferenceClient{client: runtimev1.NewInferenceServiceManagerClient(connection), diagnostics: runtimev1.NewInferenceDiagnosticsClient(connection), keys: runtimev1.NewInferenceAccessKeyServiceClient(connection), timeout: c.Timeout}, func() { _ = connection.Close() }, nil

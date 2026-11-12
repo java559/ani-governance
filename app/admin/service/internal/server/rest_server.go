@@ -8,7 +8,6 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/middleware/logging"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/middleware/selector"
 	"github.com/go-kratos/kratos/v2/middleware/validate"
 	"github.com/go-kratos/kratos/v2/transport/http"
@@ -55,8 +54,9 @@ func NewRestMiddleware(
 ) []middleware.Middleware {
 	var ms []middleware.Middleware
 	// recovery 必须置于链首：任何中间件/handler 的 panic（如审计日志解析畸形 JWT）
-	// 兜底为 500，避免崩溃请求 goroutine、被用作未认证 DoS。
-	ms = append(ms, recovery.Recovery())
+	// 兜底为 500，避免崩溃请求 goroutine、被用作未认证 DoS。自定义 handler 在实际
+	// 捕获点记录 process.panic，避免默认 handler 把完整请求格式化进日志。
+	ms = append(ms, recoveryMiddleware(ctx.GetLogger()))
 	// request id 必须早于 logging 与审计中间件：两者都要读这个 ID
 	// （审计直接读 request header，日志从上下文取），挂晚了只能拿到空值。
 	// 同时它会把 ID 写进错误 metadata，对齐 ANI 契约要求的 request_id 字段。
@@ -249,7 +249,12 @@ func NewRestServer(
 	if err != nil || modelConfig.Timeout > 24*time.Hour {
 		return nil, fmt.Errorf("invalid bounded model import HTTP budget")
 	}
-	srv, err := rpc.CreateRestServerWithFilters(streamConfig, []http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout, modeldevConfig.ModelResolutionTimeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, clusterOpsHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, gpuHTTPFilter, storageQueryHTTPFilter},
+	// 最外层观测 filter 必须早于 CORS、手写 bind、鉴权与路由：404/405、解码失败、
+	// panic 与正常业务共享同一个 trace，并由同一处产出完成记录。
+	// errorEncoder 在记录真实原错之后才合并 trace_id，保持既有错误协议不变。
+	observability := httpObservabilityFilter(ctx.GetLogger())
+	srv, err := rpc.CreateRestServerWithOuterFilter(streamConfig, observability, traceErrorEncoder(nil),
+		[]http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout, modeldevConfig.ModelResolutionTimeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, clusterOpsHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, gpuHTTPFilter, storageQueryHTTPFilter},
 		middlewares...,
 	)
 	if err != nil {

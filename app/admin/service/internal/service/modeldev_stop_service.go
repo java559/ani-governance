@@ -8,6 +8,8 @@ import (
 	modeldevv1 "go-wind-admin/api/gen/go/modeldev/service/v1"
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/pkg/middleware/auth"
+
+	"go-wind-admin/pkg/telemetry"
 )
 
 // Stop records a current authorized user's irreversible intent. It deliberately
@@ -37,7 +39,7 @@ func (s *ModelDevService) StopExecution(ctx context.Context, in *modeldevv1.Stop
 	if err != nil {
 		return nil, errors.Forbidden("FORBIDDEN", "tenant user required")
 	}
-	intent, replayed, err := s.acceptances.AcceptStop(ctx, principal.TenantID, tenantID, in.ExecutionId, actor)
+	intent, replayed, err := s.acceptances.AcceptStop(ctx, principal.TenantID, tenantID, in.ExecutionId, actor, telemetry.Capture(ctx))
 	if err != nil {
 		return nil, modelDevStopFailure(err)
 	}

@@ -8,6 +8,7 @@ import (
 	"go-wind-admin/app/admin/service/internal/data"
 	"go-wind-admin/app/admin/service/internal/data/ent"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/telemetry"
 	"strconv"
 )
 
@@ -53,7 +54,7 @@ func (s *GpuAcceptance) acceptVMDelete(ctx context.Context, p *auth.Principal, k
 	if err != nil {
 		return nil, err
 	}
-	result, err := s.ledger.CreateDeleteOperation(ctx, &data.QuotaDeleteInput{TenantID: p.TenantID, ActorType: string(p.Type), ActorID: actorID, OwnerService: InstanceOwner, Action: commandcontract.VMDeleteAction, IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), ResourceID: resource})
+	result, err := s.ledger.CreateDeleteOperation(ctx, &data.QuotaDeleteInput{TenantID: p.TenantID, ActorType: string(p.Type), ActorID: actorID, OwnerService: InstanceOwner, Action: commandcontract.VMDeleteAction, IdempotencyKey: key, RequestHash: hash, CanonicalRequest: string(raw), ResourceID: resource, TelemetryContext: telemetry.Capture(ctx)})
 	if err != nil {
 		return nil, err
 	}

@@ -79,12 +79,12 @@ func NewAcceleratorClient(c AcceleratorClientConfig) (*AcceleratorClient, func()
 		defer cancel()
 		return invoke(ctx, method, req, reply, cc, opts...)
 	}
-	conn, err = grpc.NewClient(c.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithUnaryInterceptor(interceptor), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS13, RootCAs: roots, Certificates: []tls.Certificate{cert}, ServerName: c.ServerName, VerifyConnection: func(state tls.ConnectionState) error {
+	conn, err = grpc.NewClient(c.Address, outboundDial(peerAcceleratorService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithUnaryInterceptor(interceptor), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{MinVersion: tls.VersionTLS13, RootCAs: roots, Certificates: []tls.Certificate{cert}, ServerName: c.ServerName, VerifyConnection: func(state tls.ConnectionState) error {
 		if len(state.VerifiedChains) == 0 || len(state.PeerCertificates) == 0 || !hasExactDNSName(state.PeerCertificates[0], c.ServerName) {
 			return fmt.Errorf("accelerator server exact DNS SAN mismatch")
 		}
 		return nil
-	}})))
+	}})))...)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -84,6 +84,10 @@ type ModelDevAcceptance struct {
 	CloseLastErrorCode *string `json:"close_last_error_code,omitempty"`
 	// CloseReceiptCanonical holds the value of the "close_receipt_canonical" field.
 	CloseReceiptCanonical []byte `json:"close_receipt_canonical,omitempty"`
+	// 创建受理日志关联上下文（JSONB）
+	TelemetryContext *string `json:"telemetry_context,omitempty"`
+	// 关闭受理日志关联上下文（JSONB）
+	CloseTelemetryContext *string `json:"close_telemetry_context,omitempty"`
 	selectValues          sql.SelectValues
 }
 
@@ -98,7 +102,7 @@ func (*ModelDevAcceptance) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case modeldevacceptance.FieldID, modeldevacceptance.FieldTenantID, modeldevacceptance.FieldAttemptCount, modeldevacceptance.FieldLeaseGeneration, modeldevacceptance.FieldStopIntentGeneration, modeldevacceptance.FieldCloseAttemptCount, modeldevacceptance.FieldCloseLeaseGeneration:
 			values[i] = new(sql.NullInt64)
-		case modeldevacceptance.FieldResourceTenantID, modeldevacceptance.FieldActor, modeldevacceptance.FieldAction, modeldevacceptance.FieldIdempotencyKey, modeldevacceptance.FieldOperationID, modeldevacceptance.FieldExecutionID, modeldevacceptance.FieldIntentHash, modeldevacceptance.FieldExecutionSpecHash, modeldevacceptance.FieldDispatchState, modeldevacceptance.FieldLeaseOwner, modeldevacceptance.FieldLastErrorCode, modeldevacceptance.FieldStopRequestedActor, modeldevacceptance.FieldCloseDispatchState, modeldevacceptance.FieldCloseLeaseOwner, modeldevacceptance.FieldCloseLastErrorCode:
+		case modeldevacceptance.FieldResourceTenantID, modeldevacceptance.FieldActor, modeldevacceptance.FieldAction, modeldevacceptance.FieldIdempotencyKey, modeldevacceptance.FieldOperationID, modeldevacceptance.FieldExecutionID, modeldevacceptance.FieldIntentHash, modeldevacceptance.FieldExecutionSpecHash, modeldevacceptance.FieldDispatchState, modeldevacceptance.FieldLeaseOwner, modeldevacceptance.FieldLastErrorCode, modeldevacceptance.FieldStopRequestedActor, modeldevacceptance.FieldCloseDispatchState, modeldevacceptance.FieldCloseLeaseOwner, modeldevacceptance.FieldCloseLastErrorCode, modeldevacceptance.FieldTelemetryContext, modeldevacceptance.FieldCloseTelemetryContext:
 			values[i] = new(sql.NullString)
 		case modeldevacceptance.FieldAcceptedAt, modeldevacceptance.FieldLeaseUntil, modeldevacceptance.FieldNextAttemptAt, modeldevacceptance.FieldStopRequestedAt, modeldevacceptance.FieldCloseLeaseUntil, modeldevacceptance.FieldCloseNextAttemptAt:
 			values[i] = new(sql.NullTime)
@@ -332,6 +336,20 @@ func (_m *ModelDevAcceptance) assignValues(columns []string, values []any) error
 			} else if value != nil {
 				_m.CloseReceiptCanonical = *value
 			}
+		case modeldevacceptance.FieldTelemetryContext:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field telemetry_context", values[i])
+			} else if value.Valid {
+				_m.TelemetryContext = new(string)
+				*_m.TelemetryContext = value.String
+			}
+		case modeldevacceptance.FieldCloseTelemetryContext:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field close_telemetry_context", values[i])
+			} else if value.Valid {
+				_m.CloseTelemetryContext = new(string)
+				*_m.CloseTelemetryContext = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -488,6 +506,16 @@ func (_m *ModelDevAcceptance) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("close_receipt_canonical=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CloseReceiptCanonical))
+	builder.WriteString(", ")
+	if v := _m.TelemetryContext; v != nil {
+		builder.WriteString("telemetry_context=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.CloseTelemetryContext; v != nil {
+		builder.WriteString("close_telemetry_context=")
+		builder.WriteString(*v)
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

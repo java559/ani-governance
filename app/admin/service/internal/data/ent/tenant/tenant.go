@@ -70,6 +70,10 @@ const (
 	FieldSubscriptionPlan = "subscription_plan"
 	// FieldExpiredAt holds the string denoting the expired_at field in the database.
 	FieldExpiredAt = "expired_at"
+	// FieldTenantSpaceTelemetryContext holds the string denoting the tenant_space_telemetry_context field in the database.
+	FieldTenantSpaceTelemetryContext = "tenant_space_telemetry_context"
+	// FieldTenantSpaceCloseTelemetryContext holds the string denoting the tenant_space_close_telemetry_context field in the database.
+	FieldTenantSpaceCloseTelemetryContext = "tenant_space_close_telemetry_context"
 	// EdgePlan holds the string denoting the plan edge name in mutations.
 	EdgePlan = "plan"
 	// Table holds the table name of the tenant in the database.
@@ -114,6 +118,8 @@ var Columns = []string{
 	FieldPlanID,
 	FieldSubscriptionPlan,
 	FieldExpiredAt,
+	FieldTenantSpaceTelemetryContext,
+	FieldTenantSpaceCloseTelemetryContext,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -405,6 +411,16 @@ func BySubscriptionPlan(opts ...sql.OrderTermOption) OrderOption {
 // ByExpiredAt orders the results by the expired_at field.
 func ByExpiredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiredAt, opts...).ToFunc()
+}
+
+// ByTenantSpaceTelemetryContext orders the results by the tenant_space_telemetry_context field.
+func ByTenantSpaceTelemetryContext(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceTelemetryContext, opts...).ToFunc()
+}
+
+// ByTenantSpaceCloseTelemetryContext orders the results by the tenant_space_close_telemetry_context field.
+func ByTenantSpaceCloseTelemetryContext(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTenantSpaceCloseTelemetryContext, opts...).ToFunc()
 }
 
 // ByPlanField orders the results by plan field.

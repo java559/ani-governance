@@ -61,35 +61,41 @@ func NewTracerProvider(ctx context.Context, cfg *conf.Tracer, appInfo *conf.AppI
 }
 
 // NewTracerProviderWithShutdown 返回 (tp, shutdownFunc, error)，推荐在 main 中使用并在退出时调用 shutdownFunc(ctx)
+//
+// 即使没有配置 exporter，也会建立有效的 SDK TracerProvider 并固定启用 W3C
+// TraceContext 传播：本期的日志关联依赖有效的 span 上下文，而导出器不是前置条件。
 func NewTracerProviderWithShutdown(ctx context.Context, cfg *conf.Tracer, appInfo *conf.AppInfo) (*traceSdk.TracerProvider, func(context.Context) error, error) {
-	if cfg == nil || appInfo == nil {
-		return nil, func(context.Context) error { return nil }, nil
-	}
-
 	// do not mutate caller cfg; use local defaults
-	sampler := cfg.GetSampler()
-	if sampler == 0 {
-		sampler = 1.0
-	}
-	env := cfg.GetEnv()
-	if env == "" {
-		env = "dev"
+	sampler := 1.0
+	env := "dev"
+	if cfg != nil {
+		if value := cfg.GetSampler(); value != 0 {
+			sampler = value
+		}
+		if value := cfg.GetEnv(); value != "" {
+			env = value
+		}
 	}
 
-	opts := []traceSdk.TracerProviderOption{
-		traceSdk.WithSampler(traceSdk.ParentBased(traceSdk.TraceIDRatioBased(sampler))),
-		traceSdk.WithResource(resource.NewSchemaless(
+	var attrs []attribute.KeyValue
+	attrs = append(attrs, attribute.String("service.env", env))
+	if appInfo != nil {
+		attrs = append(attrs,
 			semConv.ServiceNamespaceKey.String(appInfo.GetProject()),
 			semConv.ServiceNameKey.String(appInfo.GetAppId()),
 			semConv.ServiceVersionKey.String(appInfo.GetVersion()),
 			semConv.ServiceInstanceIDKey.String(appInfo.GetInstanceId()),
-			attribute.String("service.env", env),
-		)),
+		)
+	}
+
+	opts := []traceSdk.TracerProviderOption{
+		traceSdk.WithSampler(traceSdk.ParentBased(traceSdk.TraceIDRatioBased(sampler))),
+		traceSdk.WithResource(resource.NewSchemaless(attrs...)),
 	}
 
 	// NOTE: cfg.GetBatcher() historically used as exporter name in this project.
 	// Consider renaming conf.Tracer fields to `Exporter`/`ExporterName` in the future.
-	if len(cfg.GetEndpoint()) > 0 {
+	if cfg != nil && len(cfg.GetEndpoint()) > 0 {
 		exp, err := NewTracerExporter(ctx, cfg)
 		if err != nil {
 			return nil, nil, err
@@ -116,13 +122,13 @@ func NewTracerProviderWithShutdown(ctx context.Context, cfg *conf.Tracer, appInf
 	// set global tracer provider
 	otel.SetTracerProvider(tp)
 
-	// set global propagator
-	otel.SetTextMapPropagator(
-		NewCompositePropagator(
-			cfg.GetEnableTraceContext(),
-			cfg.GetEnableBaggage(),
-		),
-	)
+	// W3C TraceContext 固定启用；baggage 仅在配置显式打开时附加。
+	enableTraceContext := true
+	enableBaggage := false
+	if cfg != nil {
+		enableBaggage = cfg.GetEnableBaggage()
+	}
+	otel.SetTextMapPropagator(NewCompositePropagator(enableTraceContext, enableBaggage))
 
 	shutdown := func(c context.Context) error {
 		// shutdown global provider if it's still the same one

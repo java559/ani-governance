@@ -80,8 +80,9 @@ func NewModelDevClient(config ModelDevClientConfig) (*ModelDevClient, func(), er
 	if err != nil {
 		return nil, nil, err
 	}
-	connection, err := grpc.NewClient(config.Address, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(cpup01.MaxControlRPCBytes), grpc.MaxCallSendMsgSize(cpup01.MaxControlRPCBytes)))
+	connection, err := grpc.NewClient(config.Address, outboundDial(peerModelDevService, grpc.WithDisableServiceConfig(), grpc.WithDisableRetry(), grpc.WithTransportCredentials(credentials.NewTLS(security)), grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(cpup01.MaxControlRPCBytes), grpc.MaxCallSendMsgSize(cpup01.MaxControlRPCBytes)))...)
 	if err != nil {
+		dialDependencyFailed(peerModelDevService, "create_client", err)
 		return nil, nil, errors.New("invalid modeldev client configuration")
 	}
 	client := &ModelDevClient{connection: connection, client: modeldevv1.NewModelDevAdmissionServiceClient(connection), timeout: config.Timeout, resolutionTimeout: config.ModelResolutionTimeout, importTimeout: config.ImportTimeout}

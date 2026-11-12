@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
-	"log/slog"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"go-wind-admin/app/admin/service/internal/data"
+	"go-wind-admin/pkg/localdeps/kratos-bootstrap/bootstrap"
+	bLogger "go-wind-admin/pkg/localdeps/kratos-bootstrap/logger"
 	"google.golang.org/grpc/status"
 )
 
@@ -15,15 +16,19 @@ import (
 type TenantSpaceDispatchWorker struct {
 	open   *tenantSpaceDispatcher
 	close  *tenantSpaceCloseDispatcher
+	log    bLogger.Logger
 	mu     sync.Mutex
 	cancel context.CancelFunc
 	done   chan struct{}
 }
 
-func NewTenantSpaceDispatchWorker(repo *data.TenantRepo, client *data.InstanceClient) *TenantSpaceDispatchWorker {
+func NewTenantSpaceDispatchWorker(ctx *bootstrap.Context, repo *data.TenantRepo, client *data.InstanceClient) *TenantSpaceDispatchWorker {
+	logger := ctx.GetLogger()
 	return &TenantSpaceDispatchWorker{
-		open:  &tenantSpaceDispatcher{repository: repo, remote: client, owner: uuid.NewString()},
-		close: &tenantSpaceCloseDispatcher{repository: repo, remote: client},
+		open:  &tenantSpaceDispatcher{repository: repo, remote: client, owner: uuid.NewString(), log: logger},
+		close: &tenantSpaceCloseDispatcher{repository: repo, remote: client, log: logger},
+		// loop-level errors keep the same structured logger.
+		log: logger,
 	}
 }
 func (w *TenantSpaceDispatchWorker) Start(parent context.Context) error {
@@ -71,7 +76,10 @@ func (w *TenantSpaceDispatchWorker) loop(ctx context.Context, done chan struct{}
 				return
 			}
 			if err != nil {
-				slog.Warn("tenant space delivery not confirmed", "code", status.Code(err).String())
+				// The step already recorded the real cause; this is the closed
+				// loop-level summary with the same identity/code.
+				w.log.Warn(ctx, "tenant space delivery not confirmed",
+					"event", "step.waiting", "reason", status.Code(err).String())
 			}
 		}
 		delay := 3 * time.Second

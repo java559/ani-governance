@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
@@ -77,6 +78,26 @@ func (ModelDevAcceptance) Fields() []ent.Field {
 		field.Bool("close_retry_blocked").Default(false),
 		field.String("close_last_error_code").Optional().Nillable(),
 		field.Bytes("close_receipt_canonical").Optional(),
+
+		// telemetry_context / close_telemetry_context 只承载日志关联的
+		// TelemetryContext。独立 jsonb 列，不进 canonical 摘要、幂等键或冻结规格。
+		// 创建与关闭分开保存，用户新动作不覆盖创建来源。
+		field.String("telemetry_context").
+			Comment("创建受理日志关联上下文（JSONB）").
+			SchemaType(map[string]string{
+				dialect.MySQL:    "json",
+				dialect.Postgres: "jsonb",
+			}).
+			Optional().
+			Nillable(),
+		field.String("close_telemetry_context").
+			Comment("关闭受理日志关联上下文（JSONB）").
+			SchemaType(map[string]string{
+				dialect.MySQL:    "json",
+				dialect.Postgres: "jsonb",
+			}).
+			Optional().
+			Nillable(),
 	}
 }
 

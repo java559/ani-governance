@@ -1,4 +1,4 @@
-h1:ieShtsA4c0SK5HZIGq0AuIFRtsn+Vx0yfE9m/hDUh0o=
+h1:kkL5GAxksPTmbjO4mXlOVeJuzVaD0HlV2HzTcHlpDy0=
 20260921134442_initial.sql h1:wcoowx/qa0ev483qqzyy2giZB06OLheXrMOnWzoyHQo=
 20260922190000_quota_expand.sql h1:O2egZip9fZi342945Yxx8knOMw5JKExhpIIfPcuT1W8=
 20260922190100_quota_constraints.sql h1:rlPy/NiWSfQWSZFQqlPvw0qM69zD3buJkuG+glRs7WY=
@@ -17,4 +17,5 @@ h1:ieShtsA4c0SK5HZIGq0AuIFRtsn+Vx0yfE9m/hDUh0o=
 20261029101000_sandbox_fence_deployment_repair.sql h1:yBNBiWDfNWP6vkavuaFXQJi3f2cyFSe9GdNts/G418E=
 20261030010000_tenant_space_intent.sql h1:AaPWcJZe2nibKdGzyGQ83X0rH4E+L+imjaSGzUa3Y2o=
 20261031010000_drop_instance_contract_version.sql h1:T9xnp48YWfwOHamZklZP17L43mSaOd5rSyVi6kZunGU=
-20261110154500_retire_acc_usage_sync.sql h1:FbKM+jE6BXoT4weqPj6E1hZWb0nGIbfqz0g1ipM4RK4=
+20261110010000_logging_telemetry_context.sql h1:689ePCfrsN+uI//9VQZpfHB/HJOrhmF/mDnc+qN3ebM=
+20261110154500_retire_acc_usage_sync.sql h1:G3Qpslq0qkmduKvA80xAkR6SwJjpjUW3yDz8vixkVt0=

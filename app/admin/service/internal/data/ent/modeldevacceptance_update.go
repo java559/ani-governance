@@ -414,6 +414,46 @@ func (_u *ModelDevAcceptanceUpdate) ClearCloseReceiptCanonical() *ModelDevAccept
 	return _u
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdate) SetTelemetryContext(v string) *ModelDevAcceptanceUpdate {
+	_u.mutation.SetTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTelemetryContext sets the "telemetry_context" field if the given value is not nil.
+func (_u *ModelDevAcceptanceUpdate) SetNillableTelemetryContext(v *string) *ModelDevAcceptanceUpdate {
+	if v != nil {
+		_u.SetTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdate) ClearTelemetryContext() *ModelDevAcceptanceUpdate {
+	_u.mutation.ClearTelemetryContext()
+	return _u
+}
+
+// SetCloseTelemetryContext sets the "close_telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdate) SetCloseTelemetryContext(v string) *ModelDevAcceptanceUpdate {
+	_u.mutation.SetCloseTelemetryContext(v)
+	return _u
+}
+
+// SetNillableCloseTelemetryContext sets the "close_telemetry_context" field if the given value is not nil.
+func (_u *ModelDevAcceptanceUpdate) SetNillableCloseTelemetryContext(v *string) *ModelDevAcceptanceUpdate {
+	if v != nil {
+		_u.SetCloseTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearCloseTelemetryContext clears the value of the "close_telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdate) ClearCloseTelemetryContext() *ModelDevAcceptanceUpdate {
+	_u.mutation.ClearCloseTelemetryContext()
+	return _u
+}
+
 // Mutation returns the ModelDevAcceptanceMutation object of the builder.
 func (_u *ModelDevAcceptanceUpdate) Mutation() *ModelDevAcceptanceMutation {
 	return _u.mutation
@@ -632,6 +672,18 @@ func (_u *ModelDevAcceptanceUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if _u.mutation.CloseReceiptCanonicalCleared() {
 		_spec.ClearField(modeldevacceptance.FieldCloseReceiptCanonical, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.TelemetryContext(); ok {
+		_spec.SetField(modeldevacceptance.FieldTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TelemetryContextCleared() {
+		_spec.ClearField(modeldevacceptance.FieldTelemetryContext, field.TypeString)
+	}
+	if value, ok := _u.mutation.CloseTelemetryContext(); ok {
+		_spec.SetField(modeldevacceptance.FieldCloseTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.CloseTelemetryContextCleared() {
+		_spec.ClearField(modeldevacceptance.FieldCloseTelemetryContext, field.TypeString)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
@@ -1040,6 +1092,46 @@ func (_u *ModelDevAcceptanceUpdateOne) ClearCloseReceiptCanonical() *ModelDevAcc
 	return _u
 }
 
+// SetTelemetryContext sets the "telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdateOne) SetTelemetryContext(v string) *ModelDevAcceptanceUpdateOne {
+	_u.mutation.SetTelemetryContext(v)
+	return _u
+}
+
+// SetNillableTelemetryContext sets the "telemetry_context" field if the given value is not nil.
+func (_u *ModelDevAcceptanceUpdateOne) SetNillableTelemetryContext(v *string) *ModelDevAcceptanceUpdateOne {
+	if v != nil {
+		_u.SetTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearTelemetryContext clears the value of the "telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdateOne) ClearTelemetryContext() *ModelDevAcceptanceUpdateOne {
+	_u.mutation.ClearTelemetryContext()
+	return _u
+}
+
+// SetCloseTelemetryContext sets the "close_telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdateOne) SetCloseTelemetryContext(v string) *ModelDevAcceptanceUpdateOne {
+	_u.mutation.SetCloseTelemetryContext(v)
+	return _u
+}
+
+// SetNillableCloseTelemetryContext sets the "close_telemetry_context" field if the given value is not nil.
+func (_u *ModelDevAcceptanceUpdateOne) SetNillableCloseTelemetryContext(v *string) *ModelDevAcceptanceUpdateOne {
+	if v != nil {
+		_u.SetCloseTelemetryContext(*v)
+	}
+	return _u
+}
+
+// ClearCloseTelemetryContext clears the value of the "close_telemetry_context" field.
+func (_u *ModelDevAcceptanceUpdateOne) ClearCloseTelemetryContext() *ModelDevAcceptanceUpdateOne {
+	_u.mutation.ClearCloseTelemetryContext()
+	return _u
+}
+
 // Mutation returns the ModelDevAcceptanceMutation object of the builder.
 func (_u *ModelDevAcceptanceUpdateOne) Mutation() *ModelDevAcceptanceMutation {
 	return _u.mutation
@@ -1288,6 +1380,18 @@ func (_u *ModelDevAcceptanceUpdateOne) sqlSave(ctx context.Context) (_node *Mode
 	}
 	if _u.mutation.CloseReceiptCanonicalCleared() {
 		_spec.ClearField(modeldevacceptance.FieldCloseReceiptCanonical, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.TelemetryContext(); ok {
+		_spec.SetField(modeldevacceptance.FieldTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.TelemetryContextCleared() {
+		_spec.ClearField(modeldevacceptance.FieldTelemetryContext, field.TypeString)
+	}
+	if value, ok := _u.mutation.CloseTelemetryContext(); ok {
+		_spec.SetField(modeldevacceptance.FieldCloseTelemetryContext, field.TypeString, value)
+	}
+	if _u.mutation.CloseTelemetryContextCleared() {
+		_spec.ClearField(modeldevacceptance.FieldCloseTelemetryContext, field.TypeString)
 	}
 	_spec.AddModifiers(_u.modifiers...)
 	_node = &ModelDevAcceptance{config: _u.config}

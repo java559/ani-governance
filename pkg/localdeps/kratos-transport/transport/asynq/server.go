@@ -95,7 +95,7 @@ func NewServer(opts ...ServerOption) *Server {
 			Concurrency: defaultConcurrency,
 			Logger:      newLogger(),
 		},
-		schedulerOpts: &asynq.SchedulerOpts{},
+		schedulerOpts: &asynq.SchedulerOpts{Logger: newLogger()},
 		mux:           asynq.NewServeMux(),
 
 		codec: encoding.GetCodec("json"),

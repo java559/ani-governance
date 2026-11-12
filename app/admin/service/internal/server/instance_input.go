@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	stderrors "errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -207,8 +208,21 @@ func validateSchedulingJSON(raw json.RawMessage) error {
 	return nil
 }
 
-func decodeInstanceQuery(r *http.Request, message proto.Message) error {
+func decodeInstanceQuery(r *http.Request, message proto.Message) (err error) {
 	invalid := errors.BadRequest("INVALID_INSTANCE_REQUEST", "invalid instance query")
+	// The public error stays the same for every caller, but the request capture
+	// records which parameter failed so the completion log can name the cause.
+	parameter := ""
+	defer func() {
+		if err != invalid || r == nil {
+			return
+		}
+		reason := "invalid instance query"
+		if parameter != "" {
+			reason = fmt.Sprintf("invalid value for query parameter %q", parameter)
+		}
+		captureHTTPError(r.Context(), stderrors.New(reason))
+	}()
 	allowed := map[string]bool{}
 	switch message.(type) {
 	case *vmview.ListVMsRequest:
@@ -252,6 +266,7 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 	}
 	object := map[string]any{}
 	for field, values := range values {
+		parameter = field
 		if !allowed[field] || len(values) != 1 {
 			return invalid
 		}
@@ -343,6 +358,7 @@ func decodeInstanceQuery(r *http.Request, message proto.Message) error {
 			object[field] = value
 		}
 	}
+	parameter = ""
 	raw, err := json.Marshal(object)
 	if err != nil {
 		return invalid

@@ -62,6 +62,8 @@ const (
 	FieldLeaseUntil = "lease_until"
 	// FieldAckJSON holds the string denoting the ack_json field in the database.
 	FieldAckJSON = "ack_json"
+	// FieldTelemetryContext holds the string denoting the telemetry_context field in the database.
+	FieldTelemetryContext = "telemetry_context"
 	// Table holds the table name of the quotaoperation in the database.
 	Table = "sys_quota_operations"
 )
@@ -93,6 +95,7 @@ var Columns = []string{
 	FieldLeaseOwner,
 	FieldLeaseUntil,
 	FieldAckJSON,
+	FieldTelemetryContext,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -307,4 +310,9 @@ func ByLeaseUntil(opts ...sql.OrderTermOption) OrderOption {
 // ByAckJSON orders the results by the ack_json field.
 func ByAckJSON(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAckJSON, opts...).ToFunc()
+}
+
+// ByTelemetryContext orders the results by the telemetry_context field.
+func ByTelemetryContext(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTelemetryContext, opts...).ToFunc()
 }
