@@ -1,6 +1,6 @@
 module go-wind-admin
 
-go 1.26.10
+go 1.26.11
 
 require (
 	entgo.io/ent v0.14.6
@@ -24,7 +24,7 @@ require (
 	github.com/redis/go-redis/v9 v9.22.0
 	github.com/stretchr/testify v1.12.1
 	github.com/xiaoqidun/entps v1.50.1
-	github.com/zhangzhe-ctrl/ani-accelerator-service v1.6.1-0.20261110145729-1825ddeb2a79
+	github.com/zhangzhe-ctrl/ani-accelerator-service v1.6.1-0.20261112100952-692575f6cc8f
 	github.com/zhangzhe-ctrl/ani-modeldev-service v1.6.1-0.20261111043846-7a21b2d01ec9
 	github.com/zhangzhe-ctrl/ani-observability-service/api v0.1.3-0.20261110143719-1b95e58fa6e1
 	github.com/zhangzhe-ctrl/ani-resource-service v1.6.1-0.20261111055916-8c2f4b6a6436

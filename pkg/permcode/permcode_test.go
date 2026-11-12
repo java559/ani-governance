@@ -50,6 +50,11 @@ func TestResolveAuthoritativeCodes(t *testing.T) {
 		{"POST", "/api/v1/admin/accelerator/profiles/{profile_id}:delete", "accelerator:profile:delete", SourceCapability},
 		{"GET", "/api/v1/admin/accelerator/initialization", "accelerator:initialization:read", SourceManagement},
 		{"GET", "/api/v1/admin/accelerator/discovered-nodes", "accelerator:discovery:list", SourceManagement},
+		{"GET", "/api/v1/admin/accelerator/supply-candidates", "accelerator:discovery:list", SourceManagement},
+		{"GET", "/api/v1/admin/accelerator/supply-configurations", "accelerator:discovery:list", SourceManagement},
+		{"POST", "/api/v1/admin/accelerator/supply-groups:preview-policy", "accelerator:discovery:list", SourceManagement},
+		{"POST", "/api/v1/admin/accelerator/supply-registrations", "accelerator:supply:register", SourceManagement},
+		{"GET", "/api/v1/admin/accelerator/supply-registrations/{registration_id}", "accelerator:discovery:list", SourceManagement},
 		{"POST", "/api/v1/admin/accelerator/initializations", "accelerator:initialization:create", SourceManagement},
 		{"GET", "/api/v1/admin/accelerator/initializations/{operation_id}", "accelerator:initialization:read", SourceManagement},
 		{"POST", "/api/v1/admin/accelerator/initializations/{operation_id}:retry", "accelerator:initialization:retry", SourceManagement},
@@ -286,7 +291,7 @@ func TestCountsAndKeys(t *testing.T) {
 		"POST /api/v1/admin/cluster-ops/clusters/{cluster_id}/resources/{name}/restart":                   {Code: "cluster:ops:restart", Source: clusterOpsSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
 		"GET /api/v1/admin/cluster-ops/clusters/{cluster_id}/namespaces/{namespace}/pods/{pod_name}/logs": {Code: "cluster:ops:logs", Source: clusterOpsSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
 	}
-	if want := 225; ManagementCount() != want {
+	if want := 230; ManagementCount() != want {
 		t.Errorf("ManagementCount() = %d, want %d", ManagementCount(), want)
 	}
 	// The Sandbox code, file and token APIs add nine capabilities to the
@@ -305,11 +310,12 @@ func TestCountsAndKeys(t *testing.T) {
 	const modelDevDatasetCapabilities = 17
 	// Seven retired accelerator routes and two new admin capacity routes.
 	const acceleratorV11Delta = -5
-	if want := 204 - 3 + len(platformComponentReads) + len(platformComponentLogStreams) + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + manualVNicCapabilities + networkAssociatedInstances + platformBaseNetworkEntry + vmImageCapabilities + vmRuntimeCapabilities + modelDevDatasetCapabilities + len(clusterOpsCapabilities) + acceleratorV11Delta; CapabilityCount() != want {
+	const acceleratorSupplyRegistrationCapabilities = 5
+	if want := 204 - 3 + len(platformComponentReads) + len(platformComponentLogStreams) + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + manualVNicCapabilities + networkAssociatedInstances + platformBaseNetworkEntry + vmImageCapabilities + vmRuntimeCapabilities + len(clusterOpsCapabilities) + modelDevDatasetCapabilities + acceleratorV11Delta + acceleratorSupplyRegistrationCapabilities; CapabilityCount() != want {
 		t.Errorf("CapabilityCount() = %d, want %d", CapabilityCount(), want)
 	}
 	keys := AllKeys()
-	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + manualVNicCapabilities + networkAssociatedInstances + platformBaseNetworkEntry + vmImageKeysPerRoute + vmRuntimeCapabilities + modelDevDatasetCapabilities + len(clusterOpsCapabilities) + acceleratorV11Delta; len(keys) != want {
+	if want := 390 - 3 + len(securityGroupCapabilities) + len(storageWrites) + len(storageStats) + sandboxPhaseTwoCapabilities + vmLogCapabilities + modelDevEnvironmentCapabilities + manualVNicCapabilities + networkAssociatedInstances + platformBaseNetworkEntry + vmImageKeysPerRoute + vmRuntimeCapabilities + len(clusterOpsCapabilities) + modelDevDatasetCapabilities + acceleratorV11Delta + acceleratorSupplyRegistrationCapabilities; len(keys) != want {
 		t.Errorf("AllKeys() = %d, want %d", len(keys), want)
 	}
 	keySet := make(map[string]bool, len(keys))

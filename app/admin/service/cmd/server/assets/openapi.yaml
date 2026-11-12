@@ -525,6 +525,54 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AcceleratorProfilePreview'
+    /api/v1/admin/accelerator/supply-candidates:
+        get:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_ListSupplyCandidates
+            parameters:
+                - name: connection_ref
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorSupplyCandidates'
+    /api/v1/admin/accelerator/supply-configurations:
+        get:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_GetSupplyConfiguration
+            parameters:
+                - name: connection_ref
+                  in: query
+                  schema:
+                    type: string
+                - name: provider_config_ref
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorRegisteredSupplyConfiguration'
     /api/v1/admin/accelerator/supply-groups:
         get:
             tags:
@@ -639,6 +687,60 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/AcceleratorSupply'
+    /api/v1/admin/accelerator/supply-groups:preview-policy:
+        post:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_PreviewSupplyGroupPolicy
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/PreviewAcceleratorSupplyGroupPolicyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorSupplyGroupPolicyPreview'
+    /api/v1/admin/accelerator/supply-registrations:
+        post:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_RegisterSupplyConfiguration
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RegisterAcceleratorSupplyConfigurationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorSupplyRegistrationResult'
+    /api/v1/admin/accelerator/supply-registrations/{registration_id}:
+        get:
+            tags:
+                - AcceleratorAdminService
+            operationId: AcceleratorAdminService_GetSupplyRegistration
+            parameters:
+                - name: registration_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AcceleratorSupplyRegistrationResult'
     /api/v1/admin/api-audit-logs:
         get:
             tags:
@@ -15054,6 +15156,7 @@ components:
                     format: uint32
                 core_budget_additive:
                     type: boolean
+                    description: Legacy metadata only; new registrations omit this field.
                 runtime_class_name:
                     type: string
                 resource_types:
@@ -15215,6 +15318,44 @@ components:
                     type: array
                     items:
                         type: string
+                source_kind:
+                    type: string
+                provider_config_version:
+                    type: string
+        AcceleratorGroupPolicyShape:
+            type: object
+            properties:
+                allocation_type:
+                    type: string
+                mode:
+                    type: string
+                resource_key:
+                    type: string
+                isolation_class:
+                    type: string
+                memory_mib_per_device:
+                    type: string
+                core_limit_percent:
+                    type: integer
+                    format: uint32
+                compute_units_per_device:
+                    type: integer
+                    format: uint32
+                max_devices_per_replica:
+                    type: integer
+                    format: uint32
+                shares_per_physical_device:
+                    type: integer
+                    format: uint32
+                unused_memory_mib_per_physical_device:
+                    type: string
+                unused_core_percent_per_physical_device:
+                    type: integer
+                    format: uint32
+                memory_blocks_per_device:
+                    type: string
+                native_memory_capacity_bytes:
+                    type: string
         AcceleratorInitialization:
             type: object
             properties:
@@ -15291,6 +15432,10 @@ components:
                     type: string
                 queue_name:
                     type: string
+                provider_config_version:
+                    type: string
+                policy:
+                    $ref: '#/components/schemas/AcceleratorSupplyGroupPolicy'
         AcceleratorInitializationNewPool:
             type: object
             properties:
@@ -15377,6 +15522,8 @@ components:
                 compute_units_per_device:
                     type: integer
                     format: uint32
+                derive_from_group_policy:
+                    type: boolean
         AcceleratorInitializationProfileResult:
             type: object
             properties:
@@ -15539,6 +15686,44 @@ components:
                         $ref: '#/components/schemas/AcceleratorProfile'
                 next_page_token:
                     type: string
+        AcceleratorRegisteredSupplyConfiguration:
+            type: object
+            properties:
+                registration_id:
+                    type: string
+                client_key:
+                    type: string
+                connection_ref:
+                    type: string
+                provider_config_ref:
+                    type: string
+                version:
+                    type: string
+                    format: uint64
+                display_name:
+                    type: string
+                nodes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorNode'
+                model_key:
+                    type: string
+                baseline:
+                    $ref: '#/components/schemas/AcceleratorBaseline'
+                candidates:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyCandidate'
+                declarations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyDeclaration'
+                resource_mapping_source:
+                    type: string
+                created_at:
+                    type: string
+                capability:
+                    $ref: '#/components/schemas/AcceleratorSupplyCapability'
         AcceleratorResourceTypeCapacity:
             type: object
             properties:
@@ -15562,6 +15747,14 @@ components:
                     type: array
                     items:
                         type: string
+                nominal_units:
+                    nullable: true
+                    type: string
+                    format: int64
+                estimated_available_units:
+                    nullable: true
+                    type: string
+                    format: int64
         AcceleratorResourceTypeConfig:
             type: object
             properties:
@@ -15615,6 +15808,134 @@ components:
                     type: string
                 adopted_at:
                     type: string
+                provider_config_ref:
+                    type: string
+                provider_config_version:
+                    type: string
+                policy:
+                    $ref: '#/components/schemas/AcceleratorSupplyGroupPolicy'
+        AcceleratorSupplyCandidate:
+            type: object
+            properties:
+                candidate_id:
+                    type: string
+                node:
+                    $ref: '#/components/schemas/AcceleratorNode'
+                adapter_id:
+                    type: string
+                allocation_type:
+                    type: string
+                resource_key:
+                    type: string
+                model_key:
+                    type: string
+                device_uids:
+                    type: array
+                    items:
+                        type: string
+                memory_capacity_bytes:
+                    type: string
+                    format: uint64
+                compute_units_per_device:
+                    type: integer
+                    format: uint32
+                memory_block_mib:
+                    type: integer
+                    format: uint32
+                split_count:
+                    type: integer
+                    format: uint32
+                core_budget_additive:
+                    type: boolean
+                max_memory_mib_per_device:
+                    type: string
+                    format: int64
+                runtime_class_name:
+                    type: string
+                runtime_class_candidates:
+                    type: array
+                    items:
+                        type: string
+                resource_mapping_required:
+                    type: boolean
+                sources:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyFactSource'
+                missing_fields:
+                    type: array
+                    items:
+                        type: string
+                blocking_reasons:
+                    type: array
+                    items:
+                        type: string
+                source_kind:
+                    type: string
+                devices:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyDeviceIdentity'
+        AcceleratorSupplyCandidates:
+            type: object
+            properties:
+                connection_ref:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyCandidate'
+                total:
+                    type: string
+                    format: uint64
+                discovery_revision:
+                    type: string
+                checks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorInitializationCheck'
+        AcceleratorSupplyCapability:
+            type: object
+            properties:
+                source_kind:
+                    type: string
+                whole_max_devices_per_replica:
+                    type: integer
+                    format: uint32
+            description: Capability belongs to the immutable registration; each group freezes a policy.
+        AcceleratorSupplyDeclaration:
+            type: object
+            properties:
+                field:
+                    type: string
+                value:
+                    type: string
+                source:
+                    type: string
+        AcceleratorSupplyDeviceIdentity:
+            type: object
+            properties:
+                device_uid:
+                    type: string
+                device_kind:
+                    type: string
+                parent_device_uid:
+                    type: string
+                memory_capacity_bytes:
+                    type: string
+                    format: uint64
+                compute_units:
+                    type: integer
+                    format: uint32
+        AcceleratorSupplyFactSource:
+            type: object
+            properties:
+                field:
+                    type: string
+                source:
+                    type: string
+                ref:
+                    type: string
         AcceleratorSupplyGroupCapacity:
             type: object
             properties:
@@ -15630,6 +15951,90 @@ components:
                         $ref: '#/components/schemas/AcceleratorResourceTypeCapacity'
                 observed_at:
                     type: string
+        AcceleratorSupplyGroupPolicy:
+            type: object
+            properties:
+                policy_kind:
+                    type: string
+                parts:
+                    type: integer
+                    format: uint32
+                resource_key:
+                    type: string
+                native_allocation_type:
+                    type: string
+        AcceleratorSupplyGroupPolicyOption:
+            type: object
+            properties:
+                policy:
+                    $ref: '#/components/schemas/AcceleratorSupplyGroupPolicy'
+                selectable:
+                    type: boolean
+                blocking_reasons:
+                    type: array
+                    items:
+                        type: string
+                missing_fields:
+                    type: array
+                    items:
+                        type: string
+                shape:
+                    $ref: '#/components/schemas/AcceleratorGroupPolicyShape'
+        AcceleratorSupplyGroupPolicyPreview:
+            type: object
+            properties:
+                connection_ref:
+                    type: string
+                provider_config_ref:
+                    type: string
+                provider_config_version:
+                    type: string
+                discovery_revision:
+                    type: string
+                options:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyGroupPolicyOption'
+        AcceleratorSupplyRegistrationInput:
+            type: object
+            properties:
+                client_key:
+                    type: string
+                candidate_ids:
+                    type: array
+                    items:
+                        type: string
+                display_name:
+                    type: string
+                max_devices_per_replica:
+                    type: integer
+                    format: uint32
+                runtime_class_name:
+                    type: string
+                declarations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyDeclaration'
+                resource_mapping_confirmed:
+                    type: boolean
+                resource_mapping_source:
+                    type: string
+                whole_max_devices_per_replica:
+                    type: integer
+                    format: uint32
+        AcceleratorSupplyRegistrationResult:
+            type: object
+            properties:
+                registration_id:
+                    type: string
+                connection_ref:
+                    type: string
+                created_at:
+                    type: string
+                configurations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorRegisteredSupplyConfiguration'
         AcceptInvitationRequest:
             type: object
             properties:
@@ -15725,6 +16130,14 @@ components:
                     $ref: '#/components/schemas/AcceleratorBaseline'
                 queue_name:
                     type: string
+                provider_config_ref:
+                    type: string
+                provider_config_version:
+                    type: string
+                discovery_revision:
+                    type: string
+                policy:
+                    $ref: '#/components/schemas/AcceleratorSupplyGroupPolicy'
         AdoptAcceleratorSupplyRequest:
             type: object
             properties:
@@ -16745,6 +17158,8 @@ components:
                 spec:
                     $ref: '#/components/schemas/AcceleratorProfileSpec'
                 expected_group_version:
+                    type: string
+                group_id:
                     type: string
         CreateAcceleratorProfileRequest:
             type: object
@@ -25057,6 +25472,26 @@ components:
                 devices_per_instance:
                     type: integer
                     format: uint32
+        PreviewAcceleratorSupplyGroupPolicyData:
+            type: object
+            properties:
+                connection_ref:
+                    type: string
+                provider_config_ref:
+                    type: string
+                provider_config_version:
+                    type: string
+                nodes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorNode'
+                discovery_revision:
+                    type: string
+        PreviewAcceleratorSupplyGroupPolicyRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/PreviewAcceleratorSupplyGroupPolicyData'
         PriorityClassAllowlist:
             type: object
             properties:
@@ -25495,6 +25930,24 @@ components:
             properties:
                 data:
                     $ref: '#/components/schemas/RegisterAcceleratorClusterData'
+        RegisterAcceleratorSupplyConfigurationData:
+            type: object
+            properties:
+                idempotency_key:
+                    type: string
+                connection_ref:
+                    type: string
+                discovery_revision:
+                    type: string
+                registrations:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/AcceleratorSupplyRegistrationInput'
+        RegisterAcceleratorSupplyConfigurationRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/RegisterAcceleratorSupplyConfigurationData'
         RegisterImageRequest:
             type: object
             properties:

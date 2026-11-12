@@ -1343,6 +1343,32 @@ Gov服务名固定 `admin.service.v1.AcceleratorCapacityAdminService`；HTTP Ope
 
 容量DTO为AcceleratorProfileCapacity/AcceleratorSupplyGroupCapacity及其嵌套结构。可选64位整数缺失为显式null，已知0为字符串"0"，所有64位值使用精确十进制字符串；数组为空时为[]，totals固定输出六项值或null。allocation_type/basis/granularity是明确枚举名字符串。Gov只鉴权与映射，不做容量计算，不把容量或监控变为创建、删除、退额门槛。
 
+### 按需供给候选与确认登记
+
+兼容字段 `baseline.core_budget_additive` 保留原字段号并使用 optional presence，只承载旧元数据。新供给登记无需声明该字段；Gov 不注入 true/false 默认值，也不删除或改写历史声明，因此已受理请求仍以原 key、原正文交由 ACC 重放。未提供、显式 false 和显式 true 在读写映射中保持可区分。
+
+本轮组策略增量增加 `GET /api/v1/admin/accelerator/supply-configurations?connection_ref=...&provider_config_ref=...` 和只读 `POST /api/v1/admin/accelerator/supply-groups:preview-policy`，均要求当前平台用户的 `accelerator:discovery:list`。前者只读已保存登记，后者以登记版本、UID/name 节点集合和初始化 revision 返回所有选项及原因。新登记显式批准 `whole_max_devices_per_replica`；新组传引用、版本和不可变策略；新规格传 `derive_from_group_policy=true`，不得夹带旧规格字段（包括零值）。独立 Adopt 与 CreateProfile 同样透传策略形式，历史原文仅由 ACC 的原收据重放处理。
+
+初始化提交在 Gov 查询当前 `cluster:register` 权限作为可信 RPC optional 委托，不再为判断目录而预读硬件。HTTP 不定义该内部字段。明确无权传 false，授权依赖错误仍返回失败。收到 ACC 的提交、读取或重试结果后，Gov 在公开响应前重新检查冻结的全部 `required_actions`，保留未知动作拒绝。这样原键原文重放不依赖临时失败的节点读取，撤权后也不会泄露原操作结果。正式发布仍需将 ACC 导出模块更新为对应不可变版本；本地联调使用隔离工作区替换。
+
+本批合同补齐人工安装驱动、设备插件、exporter、Prometheus 及必要宿主机预切分之后的供给登记入口。Gov 只做当前平台用户鉴权和契约映射；候选发现、事实复核、不可变登记与幂等收据由 ACC 负责。正式路由不调用独立 bootstrap，不执行安装、切卡、文件投递或进程重启。
+
+| 编号 | 方法/路径 | 下游完整 RPC 后缀 / 语义 | 权限 |
+| --- | --- | --- | --- |
+| ACC-27 | GET /api/v1/admin/accelerator/supply-candidates | ListSupplyCandidates；connection_ref/page/pageSize，按需读取候选，items/total/discovery_revision/checks；查询零业务写入 | accelerator:discovery:list |
+| ACC-28 | POST /api/v1/admin/accelerator/supply-registrations | RegisterSupplyConfiguration；data.idempotency_key/connection_ref/discovery_revision/registrations，同步持久登记并直接返回实际保存结果 | accelerator:supply:register |
+| ACC-29 | GET /api/v1/admin/accelerator/supply-registrations/{registration_id} | GetSupplyRegistration；按持久登记 ID 恢复结果，不查询实时硬件或重新登记 | accelerator:discovery:list |
+
+三个完整 RPC 仍属于 `/accelerator.v1.AcceleratorAdminService/` 下的 Gov 平台用户委托。只接受已认证平台 user JWT，拒绝租户和 API Key 主体；沿用当前 action authorizer 和 exact method mTLS 允许清单。不会把公网传入的 actor、tenant、服务地址或凭据转成可信下游身份。
+
+候选 GET 只接受单值 connection_ref 与规范正整数 page/pageSize，默认 1/20，pageSize 最大 200；重复、空值、前导零、未知查询字段和超界整数返回 400。登记 POST 保留 `{data:{...}}`，不接受 query；正文最大 1 MiB，以严格 Proto JSON 拒绝未知字段和客户端自报内部身份。三个入口均使用 `Cache-Control: no-store`。64 位整数在 HTTP protobuf JSON 中保持十进制字符串；未知事实使用 optional presence 和 missing_fields，不能补零或假定普通 protojson 自动投影 null。
+
+登记的 registrations 引用候选和发现 revision，并携带管理员策略选择。观测事实不能由前端伪造覆盖；缺失字段可通过单独带来源的人工声明补齐并保留 MANUAL_DECLARATION，不能按资源名称推算固定片 bytes/CU。候选的时间和动态使用量不作为稳定 revision 的输入。冲突、同键重放、并发唯一性及重启后的收据恢复由 ACC 的真实持久化合同裁决，Gov 不另建状态机或写登记库。
+
+同步返回表示供给已登记为 ACC Provider 可读取的不可变引用/版本，不代表资源池、供给组或规格已经创建，也不代表硬件计算验收通过。按 ID 读取不接受 query 或正文，路径 registration_id 为权威；重启后可恢复保存结果，未返回的写入仍通过原幂等请求重放。前端应重新读取 discovered-nodes 获得登记后的新 discovery_revision，再走原初始化任务；不能复用登记前旧快照。旧文件供给和已纳管组的冻结 baseline 保持原身份，动态登记不扩大到未确认的节点 UID/型号。
+
+部署仍先 `admin sync-apis --dry-run`、显式目录同步，再运行权限登记；脚本仅登记 API/permission 关系，不自动授予角色、启用套餐或创建额度。软件、数据库和实机结果分别记录，不能由本节存在推断闭环完成。
+
 ### 节点发现与初始化
 
 | 编号 | 方法/路径 | 下游完整 RPC 后缀 / 语义 | 权限 |

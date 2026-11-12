@@ -6,8 +6,13 @@ DO $$
 DECLARE r record; aid integer; pid integer;
 BEGIN
  FOR r IN SELECT * FROM (VALUES
+  ('GET','/api/v1/admin/accelerator/supply-configurations','accelerator:discovery:list','ACCELERATOR'),
+  ('POST','/api/v1/admin/accelerator/supply-groups:preview-policy','accelerator:discovery:list','ACCELERATOR'),
   ('GET','/api/v1/admin/accelerator/initialization','accelerator:initialization:read','ACCELERATOR'),
   ('GET','/api/v1/admin/accelerator/discovered-nodes','accelerator:discovery:list','ACCELERATOR'),
+  ('GET','/api/v1/admin/accelerator/supply-candidates','accelerator:discovery:list','ACCELERATOR'),
+  ('POST','/api/v1/admin/accelerator/supply-registrations','accelerator:supply:register','ACCELERATOR'),
+  ('GET','/api/v1/admin/accelerator/supply-registrations/{registration_id}','accelerator:discovery:list','ACCELERATOR'),
   ('POST','/api/v1/admin/accelerator/initializations','accelerator:initialization:create','ACCELERATOR'),
   ('GET','/api/v1/admin/accelerator/initializations/{operation_id}','accelerator:initialization:read','ACCELERATOR'),
   ('POST','/api/v1/admin/accelerator/initializations/{operation_id}:retry','accelerator:initialization:retry','ACCELERATOR'),

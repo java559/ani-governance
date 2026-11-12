@@ -23,6 +23,11 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	AcceleratorAdminService_GetInitialization_FullMethodName            = "/admin.service.v1.AcceleratorAdminService/GetInitialization"
 	AcceleratorAdminService_ListDiscoveredNodes_FullMethodName          = "/admin.service.v1.AcceleratorAdminService/ListDiscoveredNodes"
+	AcceleratorAdminService_ListSupplyCandidates_FullMethodName         = "/admin.service.v1.AcceleratorAdminService/ListSupplyCandidates"
+	AcceleratorAdminService_RegisterSupplyConfiguration_FullMethodName  = "/admin.service.v1.AcceleratorAdminService/RegisterSupplyConfiguration"
+	AcceleratorAdminService_GetSupplyRegistration_FullMethodName        = "/admin.service.v1.AcceleratorAdminService/GetSupplyRegistration"
+	AcceleratorAdminService_GetSupplyConfiguration_FullMethodName       = "/admin.service.v1.AcceleratorAdminService/GetSupplyConfiguration"
+	AcceleratorAdminService_PreviewSupplyGroupPolicy_FullMethodName     = "/admin.service.v1.AcceleratorAdminService/PreviewSupplyGroupPolicy"
 	AcceleratorAdminService_CreateInitialization_FullMethodName         = "/admin.service.v1.AcceleratorAdminService/CreateInitialization"
 	AcceleratorAdminService_GetInitializationOperation_FullMethodName   = "/admin.service.v1.AcceleratorAdminService/GetInitializationOperation"
 	AcceleratorAdminService_RetryInitializationOperation_FullMethodName = "/admin.service.v1.AcceleratorAdminService/RetryInitializationOperation"
@@ -50,6 +55,11 @@ const (
 type AcceleratorAdminServiceClient interface {
 	GetInitialization(ctx context.Context, in *v1.GetAcceleratorInitializationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitialization, error)
 	ListDiscoveredNodes(ctx context.Context, in *v1.ListAcceleratorDiscoveredNodesRequest, opts ...grpc.CallOption) (*v1.AcceleratorDiscoveredNodes, error)
+	ListSupplyCandidates(ctx context.Context, in *v1.ListAcceleratorSupplyCandidatesRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyCandidates, error)
+	RegisterSupplyConfiguration(ctx context.Context, in *v1.RegisterAcceleratorSupplyConfigurationRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyRegistrationResult, error)
+	GetSupplyRegistration(ctx context.Context, in *v1.GetAcceleratorSupplyRegistrationRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyRegistrationResult, error)
+	GetSupplyConfiguration(ctx context.Context, in *v1.GetAcceleratorSupplyConfigurationRequest, opts ...grpc.CallOption) (*v1.AcceleratorRegisteredSupplyConfiguration, error)
+	PreviewSupplyGroupPolicy(ctx context.Context, in *v1.PreviewAcceleratorSupplyGroupPolicyRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyGroupPolicyPreview, error)
 	CreateInitialization(ctx context.Context, in *v1.CreateAcceleratorInitializationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error)
 	GetInitializationOperation(ctx context.Context, in *v1.GetAcceleratorInitializationOperationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error)
 	RetryInitializationOperation(ctx context.Context, in *v1.RetryAcceleratorInitializationOperationRequest, opts ...grpc.CallOption) (*v1.AcceleratorInitializationOperation, error)
@@ -90,6 +100,56 @@ func (c *acceleratorAdminServiceClient) ListDiscoveredNodes(ctx context.Context,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.AcceleratorDiscoveredNodes)
 	err := c.cc.Invoke(ctx, AcceleratorAdminService_ListDiscoveredNodes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) ListSupplyCandidates(ctx context.Context, in *v1.ListAcceleratorSupplyCandidatesRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyCandidates, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorSupplyCandidates)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_ListSupplyCandidates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) RegisterSupplyConfiguration(ctx context.Context, in *v1.RegisterAcceleratorSupplyConfigurationRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyRegistrationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorSupplyRegistrationResult)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_RegisterSupplyConfiguration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) GetSupplyRegistration(ctx context.Context, in *v1.GetAcceleratorSupplyRegistrationRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyRegistrationResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorSupplyRegistrationResult)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_GetSupplyRegistration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) GetSupplyConfiguration(ctx context.Context, in *v1.GetAcceleratorSupplyConfigurationRequest, opts ...grpc.CallOption) (*v1.AcceleratorRegisteredSupplyConfiguration, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorRegisteredSupplyConfiguration)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_GetSupplyConfiguration_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *acceleratorAdminServiceClient) PreviewSupplyGroupPolicy(ctx context.Context, in *v1.PreviewAcceleratorSupplyGroupPolicyRequest, opts ...grpc.CallOption) (*v1.AcceleratorSupplyGroupPolicyPreview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.AcceleratorSupplyGroupPolicyPreview)
+	err := c.cc.Invoke(ctx, AcceleratorAdminService_PreviewSupplyGroupPolicy_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -265,6 +325,11 @@ func (c *acceleratorAdminServiceClient) ListDevices(ctx context.Context, in *v1.
 type AcceleratorAdminServiceServer interface {
 	GetInitialization(context.Context, *v1.GetAcceleratorInitializationRequest) (*v1.AcceleratorInitialization, error)
 	ListDiscoveredNodes(context.Context, *v1.ListAcceleratorDiscoveredNodesRequest) (*v1.AcceleratorDiscoveredNodes, error)
+	ListSupplyCandidates(context.Context, *v1.ListAcceleratorSupplyCandidatesRequest) (*v1.AcceleratorSupplyCandidates, error)
+	RegisterSupplyConfiguration(context.Context, *v1.RegisterAcceleratorSupplyConfigurationRequest) (*v1.AcceleratorSupplyRegistrationResult, error)
+	GetSupplyRegistration(context.Context, *v1.GetAcceleratorSupplyRegistrationRequest) (*v1.AcceleratorSupplyRegistrationResult, error)
+	GetSupplyConfiguration(context.Context, *v1.GetAcceleratorSupplyConfigurationRequest) (*v1.AcceleratorRegisteredSupplyConfiguration, error)
+	PreviewSupplyGroupPolicy(context.Context, *v1.PreviewAcceleratorSupplyGroupPolicyRequest) (*v1.AcceleratorSupplyGroupPolicyPreview, error)
 	CreateInitialization(context.Context, *v1.CreateAcceleratorInitializationRequest) (*v1.AcceleratorInitializationOperation, error)
 	GetInitializationOperation(context.Context, *v1.GetAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error)
 	RetryInitializationOperation(context.Context, *v1.RetryAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error)
@@ -296,6 +361,21 @@ func (UnimplementedAcceleratorAdminServiceServer) GetInitialization(context.Cont
 }
 func (UnimplementedAcceleratorAdminServiceServer) ListDiscoveredNodes(context.Context, *v1.ListAcceleratorDiscoveredNodesRequest) (*v1.AcceleratorDiscoveredNodes, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListDiscoveredNodes not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) ListSupplyCandidates(context.Context, *v1.ListAcceleratorSupplyCandidatesRequest) (*v1.AcceleratorSupplyCandidates, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSupplyCandidates not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) RegisterSupplyConfiguration(context.Context, *v1.RegisterAcceleratorSupplyConfigurationRequest) (*v1.AcceleratorSupplyRegistrationResult, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterSupplyConfiguration not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) GetSupplyRegistration(context.Context, *v1.GetAcceleratorSupplyRegistrationRequest) (*v1.AcceleratorSupplyRegistrationResult, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSupplyRegistration not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) GetSupplyConfiguration(context.Context, *v1.GetAcceleratorSupplyConfigurationRequest) (*v1.AcceleratorRegisteredSupplyConfiguration, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSupplyConfiguration not implemented")
+}
+func (UnimplementedAcceleratorAdminServiceServer) PreviewSupplyGroupPolicy(context.Context, *v1.PreviewAcceleratorSupplyGroupPolicyRequest) (*v1.AcceleratorSupplyGroupPolicyPreview, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewSupplyGroupPolicy not implemented")
 }
 func (UnimplementedAcceleratorAdminServiceServer) CreateInitialization(context.Context, *v1.CreateAcceleratorInitializationRequest) (*v1.AcceleratorInitializationOperation, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateInitialization not implemented")
@@ -399,6 +479,96 @@ func _AcceleratorAdminService_ListDiscoveredNodes_Handler(srv interface{}, ctx c
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AcceleratorAdminServiceServer).ListDiscoveredNodes(ctx, req.(*v1.ListAcceleratorDiscoveredNodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_ListSupplyCandidates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListAcceleratorSupplyCandidatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).ListSupplyCandidates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_ListSupplyCandidates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).ListSupplyCandidates(ctx, req.(*v1.ListAcceleratorSupplyCandidatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_RegisterSupplyConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.RegisterAcceleratorSupplyConfigurationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).RegisterSupplyConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_RegisterSupplyConfiguration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).RegisterSupplyConfiguration(ctx, req.(*v1.RegisterAcceleratorSupplyConfigurationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_GetSupplyRegistration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetAcceleratorSupplyRegistrationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).GetSupplyRegistration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_GetSupplyRegistration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).GetSupplyRegistration(ctx, req.(*v1.GetAcceleratorSupplyRegistrationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_GetSupplyConfiguration_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetAcceleratorSupplyConfigurationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).GetSupplyConfiguration(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_GetSupplyConfiguration_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).GetSupplyConfiguration(ctx, req.(*v1.GetAcceleratorSupplyConfigurationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AcceleratorAdminService_PreviewSupplyGroupPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.PreviewAcceleratorSupplyGroupPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AcceleratorAdminServiceServer).PreviewSupplyGroupPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AcceleratorAdminService_PreviewSupplyGroupPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AcceleratorAdminServiceServer).PreviewSupplyGroupPolicy(ctx, req.(*v1.PreviewAcceleratorSupplyGroupPolicyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -705,6 +875,26 @@ var AcceleratorAdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListDiscoveredNodes",
 			Handler:    _AcceleratorAdminService_ListDiscoveredNodes_Handler,
+		},
+		{
+			MethodName: "ListSupplyCandidates",
+			Handler:    _AcceleratorAdminService_ListSupplyCandidates_Handler,
+		},
+		{
+			MethodName: "RegisterSupplyConfiguration",
+			Handler:    _AcceleratorAdminService_RegisterSupplyConfiguration_Handler,
+		},
+		{
+			MethodName: "GetSupplyRegistration",
+			Handler:    _AcceleratorAdminService_GetSupplyRegistration_Handler,
+		},
+		{
+			MethodName: "GetSupplyConfiguration",
+			Handler:    _AcceleratorAdminService_GetSupplyConfiguration_Handler,
+		},
+		{
+			MethodName: "PreviewSupplyGroupPolicy",
+			Handler:    _AcceleratorAdminService_PreviewSupplyGroupPolicy_Handler,
 		},
 		{
 			MethodName: "CreateInitialization",

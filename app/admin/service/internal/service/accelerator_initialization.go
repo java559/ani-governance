@@ -21,7 +21,16 @@ func (s *AcceleratorService) GetInitialization(ctx context.Context, request *vie
 	if err != nil {
 		return nil, mapAcceleratorError(err)
 	}
-	return wireAcceleratorInitialization(result)
+	output, err := wireAcceleratorInitialization(result)
+	if err != nil {
+		return nil, err
+	}
+	if result.LatestOperation != nil {
+		if _, err := s.authorizedInitializationOperation(ctx, result.LatestOperation); err != nil {
+			return nil, err
+		}
+	}
+	return output, nil
 }
 
 func (s *AcceleratorService) ListDiscoveredNodes(ctx context.Context, request *view.ListAcceleratorDiscoveredNodesRequest) (*view.AcceleratorDiscoveredNodes, error) {
@@ -68,23 +77,16 @@ func (s *AcceleratorService) CreateInitialization(ctx context.Context, request *
 	if err := s.authorizeInitializationActions(ctx, actions...); err != nil {
 		return nil, err
 	}
-	initialization, err := s.client.Admin.GetInitialization(ctx, &acc.GetInitializationRequest{Context: trusted, ConnectionRef: input.ConnectionRef})
+	allowed, err := s.initializationActionAllowed(ctx, "accelerator:cluster:register")
 	if err != nil {
-		return nil, mapAcceleratorError(err)
+		return nil, err
 	}
-	if initialization == nil {
-		return nil, acceleratorInvalidResponse()
-	}
-	if !initialization.Registered {
-		if err := s.authorizeInitializationActions(ctx, "accelerator:cluster:register"); err != nil {
-			return nil, err
-		}
-	}
+	input.AllowClusterRegistration = &allowed
 	result, err := s.client.Admin.CreateInitialization(ctx, input)
 	if err != nil {
 		return nil, mapAcceleratorError(err)
 	}
-	return wireAcceleratorInitializationOperation(result)
+	return s.authorizedInitializationOperation(ctx, result)
 }
 
 func (s *AcceleratorService) GetInitializationOperation(ctx context.Context, request *view.GetAcceleratorInitializationOperationRequest) (*view.AcceleratorInitializationOperation, error) {
@@ -102,7 +104,7 @@ func (s *AcceleratorService) GetInitializationOperation(ctx context.Context, req
 	if err != nil {
 		return nil, mapAcceleratorError(err)
 	}
-	return wireAcceleratorInitializationOperation(result)
+	return s.authorizedInitializationOperation(ctx, result)
 }
 
 func (s *AcceleratorService) RetryInitializationOperation(ctx context.Context, request *view.RetryAcceleratorInitializationOperationRequest) (*view.AcceleratorInitializationOperation, error) {
@@ -140,10 +142,23 @@ func (s *AcceleratorService) RetryInitializationOperation(ctx context.Context, r
 	if err != nil {
 		return nil, mapAcceleratorError(err)
 	}
-	return wireAcceleratorInitializationOperation(result)
+	return s.authorizedInitializationOperation(ctx, result)
 }
 
 func acceleratorInitializationID(value string) bool {
 	id, err := uuid.Parse(value)
 	return err == nil && id != uuid.Nil && id.String() == value
+}
+
+// RequiredActions are frozen by ACC. Revalidate them before exposing any
+// successful result, including receipt replay and operation reads.
+func (s *AcceleratorService) authorizedInitializationOperation(ctx context.Context, input *acc.InitializationOperation) (*view.AcceleratorInitializationOperation, error) {
+	output, err := wireAcceleratorInitializationOperation(input)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.authorizeInitializationActions(ctx, output.RequiredActions...); err != nil {
+		return nil, err
+	}
+	return output, nil
 }

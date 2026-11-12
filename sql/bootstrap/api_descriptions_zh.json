@@ -1,4 +1,6 @@
 {
+  "GET /api/v1/admin/accelerator/supply-configurations": "按引用读取已登记GPU供给",
+  "POST /api/v1/admin/accelerator/supply-groups:preview-policy": "预览GPU组策略",
   "DELETE /api/v1/admin/apis/{id}": "删除API",
   "DELETE /api/v1/admin/cluster-ops/clusters/{cluster_id}/resources/{name}": "删除集群资源",
   "DELETE /api/v1/admin/compute-presets/{id}": "删除算力配置",
@@ -66,6 +68,8 @@
   "GET /api/v1/admin/accelerator/profiles:preview": "预览算力规格容量",
   "GET /api/v1/admin/accelerator/supply-groups": "查询GPU供给组列表",
   "GET /api/v1/admin/accelerator/supply-groups/{group_id}/capacity": "查询GPU供给组容量",
+  "GET /api/v1/admin/accelerator/supply-candidates": "按需发现GPU供给候选",
+  "GET /api/v1/admin/accelerator/supply-registrations/{registration_id}": "查询GPU供给登记结果",
   "GET /api/v1/admin/api-audit-logs": "查询API访问审计日志列表",
   "GET /api/v1/admin/api-audit-logs/{id}": "查询API访问审计日志详情",
   "GET /api/v1/admin/apis": "查询API列表",
@@ -319,6 +323,7 @@
   "POST /api/v1/admin/accelerator/profiles/{profile_id}:set-state": "设置算力规格状态",
   "POST /api/v1/admin/accelerator/supply-groups/{group_id}:set-admission": "设置GPU供给组准入状态",
   "POST /api/v1/admin/accelerator/supply-groups:adopt": "接管GPU供给组",
+  "POST /api/v1/admin/accelerator/supply-registrations": "确认登记GPU供给配置",
   "POST /api/v1/admin/apis": "创建API",
   "POST /api/v1/admin/apis/sync": "同步API目录",
   "POST /api/v1/admin/cluster-ops/clusters/{cluster_id}/resources": "创建集群资源",

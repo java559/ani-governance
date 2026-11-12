@@ -71,6 +71,7 @@ func wireAcceleratorBaseline(v *acc.ProviderBaseline) *view.AcceleratorBaseline 
 	if v == nil {
 		return nil
 	}
+	// Preserve nil, known false and known true for optional legacy metadata.
 	out := &view.AcceleratorBaseline{BaselineId: v.BaselineId, AdapterId: v.AdapterId, MemoryBlockMib: v.MemoryBlockMib, SplitCount: v.SplitCount, CoreBudgetAdditive: v.CoreBudgetAdditive, RuntimeClassName: v.RuntimeClassName}
 	for _, t := range v.ResourceTypes {
 		if t == nil {
@@ -84,6 +85,7 @@ func acceleratorBaselineInput(v *view.AcceleratorBaseline) (*acc.ProviderBaselin
 	if v == nil {
 		return nil, acceleratorInvalid()
 	}
+	// Old request replay retains the supplied legacy value and its presence.
 	out := &acc.ProviderBaseline{BaselineId: v.BaselineId, AdapterId: v.AdapterId, MemoryBlockMib: v.MemoryBlockMib, SplitCount: v.SplitCount, CoreBudgetAdditive: v.CoreBudgetAdditive, RuntimeClassName: v.RuntimeClassName}
 	for _, t := range v.ResourceTypes {
 		if t == nil {
@@ -98,7 +100,14 @@ func acceleratorBaselineInput(v *view.AcceleratorBaseline) (*acc.ProviderBaselin
 	return out, nil
 }
 func wireAcceleratorSupply(v *acc.SupplyGroup) *view.AcceleratorSupply {
-	out := &view.AcceleratorSupply{GroupId: v.GroupId, PoolId: v.PoolId, ClusterId: v.ClusterId, DisplayName: v.DisplayName, ModelKey: v.ModelKey, Baseline: wireAcceleratorBaseline(v.Baseline), Admission: v.Admission.String(), QueueName: v.QueueName, Version: v.Version, AdoptedAt: v.AdoptedAt}
+	out := &view.AcceleratorSupply{GroupId: v.GroupId, PoolId: v.PoolId, ClusterId: v.ClusterId, DisplayName: v.DisplayName, ModelKey: v.ModelKey, Baseline: wireAcceleratorBaseline(v.Baseline), Admission: v.Admission.String(), QueueName: v.QueueName, Version: v.Version, AdoptedAt: v.AdoptedAt, ProviderConfigRef: v.ProviderConfigRef, ProviderConfigVersion: v.ProviderConfigVersion}
+	if v.Policy != nil {
+		out.Policy = &view.AcceleratorSupplyGroupPolicy{PolicyKind: v.Policy.PolicyKind.String(), Parts: v.Policy.Parts, ResourceKey: v.Policy.ResourceKey}
+		if v.Policy.NativeAllocationType != nil {
+			value := v.Policy.NativeAllocationType.String()
+			out.Policy.NativeAllocationType = &value
+		}
+	}
 	for _, n := range v.Nodes {
 		out.Nodes = append(out.Nodes, &view.AcceleratorNode{Uid: n.GetUid(), Name: n.GetName()})
 	}
@@ -141,7 +150,7 @@ func wireAcceleratorResourceTypeCapacity(v *acc.ResourceTypeCapacity) *view.Acce
 	if v == nil {
 		return nil
 	}
-	out := &view.AcceleratorResourceTypeCapacity{AllocationType: v.AllocationType.String(), ResourceKey: v.ResourceKey, Basis: v.Basis.String(), Granularity: v.Granularity.String(), Totals: wireAcceleratorCapacityTotals(v.Totals), ObservedAt: v.ObservedAt, MissingFields: v.MissingFields}
+	out := &view.AcceleratorResourceTypeCapacity{AllocationType: v.AllocationType.String(), ResourceKey: v.ResourceKey, Basis: v.Basis.String(), Granularity: v.Granularity.String(), Totals: wireAcceleratorCapacityTotals(v.Totals), NominalUnits: v.NominalUnits, EstimatedAvailableUnits: v.EstimatedAvailableUnits, ObservedAt: v.ObservedAt, MissingFields: v.MissingFields}
 	for _, d := range v.Details {
 		out.Details = append(out.Details, wireAcceleratorCapacityDetail(d))
 	}

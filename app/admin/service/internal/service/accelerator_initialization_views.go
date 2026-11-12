@@ -51,7 +51,12 @@ func acceleratorInitializationInput(input *view.CreateAcceleratorInitializationD
 				return nil, nil, acceleratorInvalid()
 			}
 			newGroup := target.NewGroup
-			mappedNew := &acc.InitializationNewGroup{PoolKey: newGroup.PoolKey, DisplayName: newGroup.DisplayName, ProviderConfigRef: newGroup.ProviderConfigRef, QueueName: newGroup.QueueName}
+			mappedNew := &acc.InitializationNewGroup{PoolKey: newGroup.PoolKey, DisplayName: newGroup.DisplayName, ProviderConfigRef: newGroup.ProviderConfigRef, ProviderConfigVersion: newGroup.ProviderConfigVersion, QueueName: newGroup.QueueName}
+			policy, err := acceleratorGroupPolicyInput(newGroup.Policy)
+			if err != nil {
+				return nil, nil, err
+			}
+			mappedNew.Policy = policy
 			for _, node := range newGroup.Nodes {
 				if node == nil {
 					return nil, nil, acceleratorInvalid()
@@ -76,11 +81,24 @@ func acceleratorInitializationInput(input *view.CreateAcceleratorInitializationD
 		if profile == nil {
 			return nil, nil, acceleratorInvalid()
 		}
-		allocation, ok := acc.AllocationType_value[profile.AllocationType]
-		if !ok || allocation == 0 {
-			return nil, nil, acceleratorInvalid()
+		mappedProfile := &acc.InitializationProfileInput{ClientKey: profile.ClientKey, GroupKey: profile.GroupKey, DisplayName: profile.DisplayName, DeriveFromGroupPolicy: profile.DeriveFromGroupPolicy}
+		if profile.DeriveFromGroupPolicy {
+			if profile.MemoryMibPerDevice != 0 || profile.CoreLimitPercent != 0 || profile.MaxDevicesPerReplica != 0 || profile.AllocationType != "" || profile.ResourceKey != "" || profile.ComputeUnitsPerDevice != 0 {
+				return nil, nil, acceleratorInvalid()
+			}
+		} else {
+			allocation, ok := acc.AllocationType_value[profile.AllocationType]
+			if !ok || allocation == 0 {
+				return nil, nil, acceleratorInvalid()
+			}
+			mappedProfile.MemoryMibPerDevice = profile.MemoryMibPerDevice
+			mappedProfile.CoreLimitPercent = profile.CoreLimitPercent
+			mappedProfile.MaxDevicesPerReplica = profile.MaxDevicesPerReplica
+			mappedProfile.AllocationType = acc.AllocationType(allocation)
+			mappedProfile.ResourceKey = profile.ResourceKey
+			mappedProfile.ComputeUnitsPerDevice = profile.ComputeUnitsPerDevice
 		}
-		result.Profiles = append(result.Profiles, &acc.InitializationProfileInput{ClientKey: profile.ClientKey, GroupKey: profile.GroupKey, DisplayName: profile.DisplayName, MemoryMibPerDevice: profile.MemoryMibPerDevice, CoreLimitPercent: profile.CoreLimitPercent, MaxDevicesPerReplica: profile.MaxDevicesPerReplica, AllocationType: acc.AllocationType(allocation), ResourceKey: profile.ResourceKey, ComputeUnitsPerDevice: profile.ComputeUnitsPerDevice})
+		result.Profiles = append(result.Profiles, mappedProfile)
 		if newGroups[profile.GroupKey] {
 			actions = append(actions, "accelerator:supply-group:set-admission")
 		}
@@ -148,7 +166,7 @@ func wireAcceleratorDiscoveredNodes(input *acc.DiscoveredNodes) (*view.Accelerat
 			if config == nil {
 				return nil, acceleratorInvalidResponse()
 			}
-			mapped := &view.AcceleratorDiscoveredProviderConfig{ProviderConfigRef: config.ProviderConfigRef, AdapterId: config.AdapterId}
+			mapped := &view.AcceleratorDiscoveredProviderConfig{ProviderConfigRef: config.ProviderConfigRef, AdapterId: config.AdapterId, SourceKind: config.SourceKind.String(), ProviderConfigVersion: config.ProviderConfigVersion}
 			for _, kind := range config.AllocationTypes {
 				mapped.AllocationTypes = append(mapped.AllocationTypes, kind.String())
 			}

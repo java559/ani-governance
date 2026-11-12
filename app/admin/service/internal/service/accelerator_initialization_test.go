@@ -18,19 +18,26 @@ import (
 	"go-wind-admin/pkg/localdeps/kratos-authz/engine"
 	"go-wind-admin/pkg/localdeps/kratos-authz/engine/casbin"
 	"go-wind-admin/pkg/middleware/auth"
+	"go-wind-admin/pkg/permcode"
 )
 
 type initializationBoundaryClient struct {
 	acc.AcceleratorAdminServiceClient
-	registered bool
-	operation  *acc.InitializationOperation
-	created    *acc.CreateInitializationRequest
-	retried    *acc.RetryInitializationOperationRequest
-	listed     *acc.ListDiscoveredNodesRequest
-	failure    error
+	registered  bool
+	operation   *acc.InitializationOperation
+	created     *acc.CreateInitializationRequest
+	retried     *acc.RetryInitializationOperationRequest
+	listed      *acc.ListDiscoveredNodesRequest
+	failure     error
+	readFailure error
+	readCount   int
 }
 
 func (client *initializationBoundaryClient) GetInitialization(context.Context, *acc.GetInitializationRequest, ...grpc.CallOption) (*acc.Initialization, error) {
+	client.readCount++
+	if client.readFailure != nil {
+		return nil, client.readFailure
+	}
 	return &acc.Initialization{Registered: client.registered, ConfigurationState: "READY"}, client.failure
 }
 
@@ -64,7 +71,8 @@ func initializationServiceFixture(t *testing.T, actions ...string) (*Accelerator
 		if index%2 == 1 {
 			role = "writer"
 		}
-		rules = append(rules, casbin.PolicyRule{PType: "p", V0: role, V1: route.path, V2: route.method, V3: "0"})
+		// Match AuthorizerProvider, which normalizes directory parameter names.
+		rules = append(rules, casbin.PolicyRule{PType: "p", V0: role, V1: permcode.NormalizePath(route.path), V2: route.method, V3: "0"})
 	}
 	require.NoError(t, policy.SetPolicies(context.Background(), engine.PolicyMap{"policies": rules, "projects": engine.MakeProjects("0")}, nil))
 	client := &initializationBoundaryClient{registered: true, operation: &acc.InitializationOperation{OperationId: uuid.NewString(), Version: 1, State: "ACCEPTED", RequiredActions: []string{"accelerator:pool:create"}}}
@@ -95,8 +103,11 @@ func TestAcceleratorInitializationComponentAuthorizationAndTrustedIdentity(t *te
 	client.created = nil
 	client.registered = false
 	_, err = service.CreateInitialization(ctx, request)
-	require.EqualValues(t, 403, errors.FromError(err).Code)
-	require.Nil(t, client.created)
+	require.NoError(t, err)
+	require.NotNil(t, client.created)
+	require.NotNil(t, client.created.AllowClusterRegistration)
+	require.False(t, *client.created.AllowClusterRegistration)
+	require.Zero(t, client.readCount)
 
 	service, client, ctx = initializationServiceFixture(t, "accelerator:initialization:create")
 	_, err = service.CreateInitialization(ctx, initializationPoolRequest())
@@ -153,6 +164,35 @@ func TestAcceleratorInitializationRetryRechecksFrozenActions(t *testing.T) {
 	require.NotNil(t, client.retried)
 }
 
+func TestAcceleratorInitializationRetryRequiresNormalizedRouteAndFrozenAutoOpenGrants(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		actions []string
+		allowed bool
+	}{
+		{"missing retry", []string{"accelerator:supply-group:set-admission", "accelerator:profile:publish"}, false},
+		{"missing auto open", []string{"accelerator:initialization:retry", "accelerator:profile:publish"}, false},
+		{"missing profile publish", []string{"accelerator:initialization:retry", "accelerator:supply-group:set-admission"}, false},
+		{"complete grants", []string{"accelerator:initialization:retry", "accelerator:supply-group:set-admission", "accelerator:profile:publish"}, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			service, client, ctx := initializationServiceFixture(t, test.actions...)
+			client.operation.RequiredActions = []string{"accelerator:supply-group:set-admission", "accelerator:profile:publish"}
+			request := &view.RetryAcceleratorInitializationOperationRequest{OperationId: client.operation.OperationId, Data: &view.RetryAcceleratorInitializationOperationData{IdempotencyKey: uuid.NewString(), ExpectedVersion: 1}}
+			result, err := service.RetryInitializationOperation(ctx, request)
+			if !test.allowed {
+				require.EqualValues(t, 403, errors.FromError(err).Code)
+				require.Nil(t, client.retried)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, request.OperationId, result.OperationId)
+			require.NotNil(t, client.retried)
+			require.Equal(t, request.Data.IdempotencyKey, client.retried.Mutation.IdempotencyKey)
+		})
+	}
+}
+
 func TestAcceleratorInitializationDiscoveryPageAndErrorAttribution(t *testing.T) {
 	service, client, ctx := initializationServiceFixture(t, "accelerator:discovery:list", "accelerator:initialization:read")
 	result, err := service.ListDiscoveredNodes(ctx, nil)
@@ -184,4 +224,65 @@ func TestAcceleratorInitializationRejectsUntrustedPlatformClaims(t *testing.T) {
 		_, err := service.GetInitialization(invalid, &view.GetAcceleratorInitializationRequest{})
 		require.Error(t, err)
 	}
+}
+
+func TestAcceleratorInitializationReplayIgnoresDiscoveryFailureAndRechecksActions(t *testing.T) {
+	service, client, ctx := initializationServiceFixture(t, "accelerator:initialization:create", "accelerator:pool:create")
+	request := initializationPoolRequest()
+	client.readFailure = status.Error(codes.Unavailable, "Kubernetes nodes unavailable")
+	first, err := service.CreateInitialization(ctx, request)
+	require.NoError(t, err)
+	second, err := service.CreateInitialization(ctx, request)
+	require.NoError(t, err)
+	require.Equal(t, first.OperationId, second.OperationId)
+	require.Zero(t, client.readCount)
+	require.False(t, client.created.GetAllowClusterRegistration())
+
+	// The receipt says the original operation also required cluster registration.
+	// The same current caller cannot receive that result after the grant is gone.
+	client.operation.RequiredActions = append(client.operation.RequiredActions, "accelerator:cluster:register")
+	_, err = service.CreateInitialization(ctx, request)
+	require.EqualValues(t, 403, errors.FromError(err).Code)
+	require.Zero(t, client.readCount)
+
+	service, client, ctx = initializationServiceFixture(t, "accelerator:initialization:create", "accelerator:pool:create", "accelerator:cluster:register")
+	_, err = service.CreateInitialization(ctx, request)
+	require.NoError(t, err)
+	require.True(t, client.created.GetAllowClusterRegistration())
+}
+
+func TestAcceleratorInitializationPolicyAndDerivedProfileMapping(t *testing.T) {
+	parts := uint32(8)
+	request := initializationPoolRequest()
+	request.Data.Groups = []*view.AcceleratorInitializationGroupInput{{ClientKey: "group", Group: &view.AcceleratorInitializationGroupInput_NewGroup{NewGroup: &view.AcceleratorInitializationNewGroup{PoolKey: "pool-main", ProviderConfigRef: "supply", ProviderConfigVersion: 1, Policy: &view.AcceleratorSupplyGroupPolicy{PolicyKind: "EQUAL_SHARE", Parts: &parts}, Nodes: []*view.AcceleratorNode{{Uid: "uid", Name: "node"}}}}}}
+	request.Data.Profiles = []*view.AcceleratorInitializationProfileInput{{ClientKey: "profile", GroupKey: "group", DisplayName: "eighth", DeriveFromGroupPolicy: true}}
+	result, actions, err := acceleratorInitializationInput(request.Data)
+	require.NoError(t, err)
+	require.Equal(t, acc.SupplyGroupPolicyKind_EQUAL_SHARE, result.Groups[0].GetNewGroup().Policy.PolicyKind)
+	require.EqualValues(t, 1, result.Groups[0].GetNewGroup().ProviderConfigVersion)
+	require.EqualValues(t, 8, result.Groups[0].GetNewGroup().Policy.GetParts())
+	require.True(t, result.Profiles[0].DeriveFromGroupPolicy)
+	require.Zero(t, result.Profiles[0].MemoryMibPerDevice)
+	require.Contains(t, actions, "accelerator:supply-group:set-admission")
+	request.Data.Profiles[0].MaxDevicesPerReplica = 1
+	_, _, err = acceleratorInitializationInput(request.Data)
+	require.EqualValues(t, 400, errors.FromError(err).Code)
+}
+
+type initializationAuthorizationFailure struct{}
+
+func (initializationAuthorizationFailure) IsAuthorized(_ context.Context, _ engine.Subject, _ engine.Action, resource engine.Resource, _ engine.Project) (bool, error) {
+	if resource == engine.Resource(permcode.NormalizePath(acceleratorInitializationActions["accelerator:cluster:register"].path)) {
+		return false, status.Error(codes.Unavailable, "authorization source unavailable")
+	}
+	return true, nil
+}
+func TestAcceleratorInitializationDoesNotConvertAuthorizationFailureToFalse(t *testing.T) {
+	service, client, ctx := initializationServiceFixture(t, "accelerator:initialization:create", "accelerator:pool:create")
+	service.actionAuthorizer = initializationAuthorizationFailure{}
+	_, err := service.CreateInitialization(ctx, initializationPoolRequest())
+	require.EqualValues(t, 503, errors.FromError(err).Code)
+	require.Equal(t, "ACCELERATOR_AUTHORIZATION_UNAVAILABLE", errors.FromError(err).Reason)
+	require.Nil(t, client.created)
+	require.Zero(t, client.readCount)
 }

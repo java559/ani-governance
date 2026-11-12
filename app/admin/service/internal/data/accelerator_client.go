@@ -157,6 +157,11 @@ func acceleratorMetadata(method string, request any) (metadata.MD, error) {
 func acceleratorMethodKind(method string) string {
 	switch method {
 	case acc.AcceleratorAdminService_GetInitialization_FullMethodName,
+		acc.AcceleratorAdminService_GetSupplyConfiguration_FullMethodName,
+		acc.AcceleratorAdminService_PreviewSupplyGroupPolicy_FullMethodName,
+		acc.AcceleratorAdminService_ListSupplyCandidates_FullMethodName,
+		acc.AcceleratorAdminService_RegisterSupplyConfiguration_FullMethodName,
+		acc.AcceleratorAdminService_GetSupplyRegistration_FullMethodName,
 		acc.AcceleratorAdminService_ListDiscoveredNodes_FullMethodName,
 		acc.AcceleratorAdminService_CreateInitialization_FullMethodName,
 		acc.AcceleratorAdminService_GetInitializationOperation_FullMethodName,

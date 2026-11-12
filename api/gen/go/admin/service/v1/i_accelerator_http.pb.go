@@ -29,13 +29,18 @@ const OperationAcceleratorAdminServiceCreateProfile = "/admin.service.v1.Acceler
 const OperationAcceleratorAdminServiceDeleteProfile = "/admin.service.v1.AcceleratorAdminService/DeleteProfile"
 const OperationAcceleratorAdminServiceGetInitialization = "/admin.service.v1.AcceleratorAdminService/GetInitialization"
 const OperationAcceleratorAdminServiceGetInitializationOperation = "/admin.service.v1.AcceleratorAdminService/GetInitializationOperation"
+const OperationAcceleratorAdminServiceGetSupplyConfiguration = "/admin.service.v1.AcceleratorAdminService/GetSupplyConfiguration"
+const OperationAcceleratorAdminServiceGetSupplyRegistration = "/admin.service.v1.AcceleratorAdminService/GetSupplyRegistration"
 const OperationAcceleratorAdminServiceListClusters = "/admin.service.v1.AcceleratorAdminService/ListClusters"
 const OperationAcceleratorAdminServiceListDevices = "/admin.service.v1.AcceleratorAdminService/ListDevices"
 const OperationAcceleratorAdminServiceListDiscoveredNodes = "/admin.service.v1.AcceleratorAdminService/ListDiscoveredNodes"
 const OperationAcceleratorAdminServiceListPools = "/admin.service.v1.AcceleratorAdminService/ListPools"
+const OperationAcceleratorAdminServiceListSupplyCandidates = "/admin.service.v1.AcceleratorAdminService/ListSupplyCandidates"
 const OperationAcceleratorAdminServiceListSupplyGroups = "/admin.service.v1.AcceleratorAdminService/ListSupplyGroups"
 const OperationAcceleratorAdminServicePreviewProfile = "/admin.service.v1.AcceleratorAdminService/PreviewProfile"
+const OperationAcceleratorAdminServicePreviewSupplyGroupPolicy = "/admin.service.v1.AcceleratorAdminService/PreviewSupplyGroupPolicy"
 const OperationAcceleratorAdminServiceRegisterCluster = "/admin.service.v1.AcceleratorAdminService/RegisterCluster"
+const OperationAcceleratorAdminServiceRegisterSupplyConfiguration = "/admin.service.v1.AcceleratorAdminService/RegisterSupplyConfiguration"
 const OperationAcceleratorAdminServiceRetryInitializationOperation = "/admin.service.v1.AcceleratorAdminService/RetryInitializationOperation"
 const OperationAcceleratorAdminServiceSetAdmission = "/admin.service.v1.AcceleratorAdminService/SetAdmission"
 const OperationAcceleratorAdminServiceSetProfileState = "/admin.service.v1.AcceleratorAdminService/SetProfileState"
@@ -49,13 +54,18 @@ type AcceleratorAdminServiceHTTPServer interface {
 	DeleteProfile(context.Context, *v1.DeleteAcceleratorProfileRequest) (*v1.AcceleratorProfile, error)
 	GetInitialization(context.Context, *v1.GetAcceleratorInitializationRequest) (*v1.AcceleratorInitialization, error)
 	GetInitializationOperation(context.Context, *v1.GetAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error)
+	GetSupplyConfiguration(context.Context, *v1.GetAcceleratorSupplyConfigurationRequest) (*v1.AcceleratorRegisteredSupplyConfiguration, error)
+	GetSupplyRegistration(context.Context, *v1.GetAcceleratorSupplyRegistrationRequest) (*v1.AcceleratorSupplyRegistrationResult, error)
 	ListClusters(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorClusters, error)
 	ListDevices(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorDevices, error)
 	ListDiscoveredNodes(context.Context, *v1.ListAcceleratorDiscoveredNodesRequest) (*v1.AcceleratorDiscoveredNodes, error)
 	ListPools(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorPools, error)
+	ListSupplyCandidates(context.Context, *v1.ListAcceleratorSupplyCandidatesRequest) (*v1.AcceleratorSupplyCandidates, error)
 	ListSupplyGroups(context.Context, *v1.AcceleratorPageRequest) (*v1.AcceleratorSupplies, error)
 	PreviewProfile(context.Context, *v1.PreviewAcceleratorProfileRequest) (*v1.AcceleratorProfilePreview, error)
+	PreviewSupplyGroupPolicy(context.Context, *v1.PreviewAcceleratorSupplyGroupPolicyRequest) (*v1.AcceleratorSupplyGroupPolicyPreview, error)
 	RegisterCluster(context.Context, *v1.RegisterAcceleratorClusterRequest) (*v1.AcceleratorCluster, error)
+	RegisterSupplyConfiguration(context.Context, *v1.RegisterAcceleratorSupplyConfigurationRequest) (*v1.AcceleratorSupplyRegistrationResult, error)
 	RetryInitializationOperation(context.Context, *v1.RetryAcceleratorInitializationOperationRequest) (*v1.AcceleratorInitializationOperation, error)
 	SetAdmission(context.Context, *v1.SetAcceleratorAdmissionRequest) (*v1.AcceleratorSupply, error)
 	SetProfileState(context.Context, *v1.SetAcceleratorProfileStateRequest) (*v1.AcceleratorProfile, error)
@@ -65,6 +75,11 @@ func RegisterAcceleratorAdminServiceHTTPServer(s *http.Server, srv AcceleratorAd
 	r := s.Route("/")
 	r.GET("/api/v1/admin/accelerator/initialization", _AcceleratorAdminService_GetInitialization0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/accelerator/discovered-nodes", _AcceleratorAdminService_ListDiscoveredNodes0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/supply-candidates", _AcceleratorAdminService_ListSupplyCandidates0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/supply-registrations", _AcceleratorAdminService_RegisterSupplyConfiguration0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/supply-registrations/{registration_id}", _AcceleratorAdminService_GetSupplyRegistration0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/accelerator/supply-configurations", _AcceleratorAdminService_GetSupplyConfiguration0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/accelerator/supply-groups:preview-policy", _AcceleratorAdminService_PreviewSupplyGroupPolicy0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/accelerator/initializations", _AcceleratorAdminService_CreateInitialization0_HTTP_Handler(srv))
 	r.GET("/api/v1/admin/accelerator/initializations/{operation_id}", _AcceleratorAdminService_GetInitializationOperation0_HTTP_Handler(srv))
 	r.POST("/api/v1/admin/accelerator/initializations/{operation_id}:retry", _AcceleratorAdminService_RetryInitializationOperation0_HTTP_Handler(srv))
@@ -117,6 +132,110 @@ func _AcceleratorAdminService_ListDiscoveredNodes0_HTTP_Handler(srv AcceleratorA
 			return err
 		}
 		reply := out.(*v1.AcceleratorDiscoveredNodes)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_ListSupplyCandidates0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.ListAcceleratorSupplyCandidatesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServiceListSupplyCandidates)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListSupplyCandidates(ctx, req.(*v1.ListAcceleratorSupplyCandidatesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorSupplyCandidates)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_RegisterSupplyConfiguration0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.RegisterAcceleratorSupplyConfigurationRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServiceRegisterSupplyConfiguration)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RegisterSupplyConfiguration(ctx, req.(*v1.RegisterAcceleratorSupplyConfigurationRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorSupplyRegistrationResult)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_GetSupplyRegistration0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetAcceleratorSupplyRegistrationRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServiceGetSupplyRegistration)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSupplyRegistration(ctx, req.(*v1.GetAcceleratorSupplyRegistrationRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorSupplyRegistrationResult)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_GetSupplyConfiguration0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.GetAcceleratorSupplyConfigurationRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServiceGetSupplyConfiguration)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetSupplyConfiguration(ctx, req.(*v1.GetAcceleratorSupplyConfigurationRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorRegisteredSupplyConfiguration)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AcceleratorAdminService_PreviewSupplyGroupPolicy0_HTTP_Handler(srv AcceleratorAdminServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in v1.PreviewAcceleratorSupplyGroupPolicyRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAcceleratorAdminServicePreviewSupplyGroupPolicy)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.PreviewSupplyGroupPolicy(ctx, req.(*v1.PreviewAcceleratorSupplyGroupPolicyRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*v1.AcceleratorSupplyGroupPolicyPreview)
 		return ctx.Result(200, reply)
 	}
 }
@@ -476,13 +595,18 @@ type AcceleratorAdminServiceHTTPClient interface {
 	DeleteProfile(ctx context.Context, req *v1.DeleteAcceleratorProfileRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfile, err error)
 	GetInitialization(ctx context.Context, req *v1.GetAcceleratorInitializationRequest, opts ...http.CallOption) (rsp *v1.AcceleratorInitialization, err error)
 	GetInitializationOperation(ctx context.Context, req *v1.GetAcceleratorInitializationOperationRequest, opts ...http.CallOption) (rsp *v1.AcceleratorInitializationOperation, err error)
+	GetSupplyConfiguration(ctx context.Context, req *v1.GetAcceleratorSupplyConfigurationRequest, opts ...http.CallOption) (rsp *v1.AcceleratorRegisteredSupplyConfiguration, err error)
+	GetSupplyRegistration(ctx context.Context, req *v1.GetAcceleratorSupplyRegistrationRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupplyRegistrationResult, err error)
 	ListClusters(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorClusters, err error)
 	ListDevices(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorDevices, err error)
 	ListDiscoveredNodes(ctx context.Context, req *v1.ListAcceleratorDiscoveredNodesRequest, opts ...http.CallOption) (rsp *v1.AcceleratorDiscoveredNodes, err error)
 	ListPools(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorPools, err error)
+	ListSupplyCandidates(ctx context.Context, req *v1.ListAcceleratorSupplyCandidatesRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupplyCandidates, err error)
 	ListSupplyGroups(ctx context.Context, req *v1.AcceleratorPageRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupplies, err error)
 	PreviewProfile(ctx context.Context, req *v1.PreviewAcceleratorProfileRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfilePreview, err error)
+	PreviewSupplyGroupPolicy(ctx context.Context, req *v1.PreviewAcceleratorSupplyGroupPolicyRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupplyGroupPolicyPreview, err error)
 	RegisterCluster(ctx context.Context, req *v1.RegisterAcceleratorClusterRequest, opts ...http.CallOption) (rsp *v1.AcceleratorCluster, err error)
+	RegisterSupplyConfiguration(ctx context.Context, req *v1.RegisterAcceleratorSupplyConfigurationRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupplyRegistrationResult, err error)
 	RetryInitializationOperation(ctx context.Context, req *v1.RetryAcceleratorInitializationOperationRequest, opts ...http.CallOption) (rsp *v1.AcceleratorInitializationOperation, err error)
 	SetAdmission(ctx context.Context, req *v1.SetAcceleratorAdmissionRequest, opts ...http.CallOption) (rsp *v1.AcceleratorSupply, err error)
 	SetProfileState(ctx context.Context, req *v1.SetAcceleratorProfileStateRequest, opts ...http.CallOption) (rsp *v1.AcceleratorProfile, err error)
@@ -600,6 +724,32 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) GetInitializationOperation(ctx c
 	return &out, nil
 }
 
+func (c *AcceleratorAdminServiceHTTPClientImpl) GetSupplyConfiguration(ctx context.Context, in *v1.GetAcceleratorSupplyConfigurationRequest, opts ...http.CallOption) (*v1.AcceleratorRegisteredSupplyConfiguration, error) {
+	var out v1.AcceleratorRegisteredSupplyConfiguration
+	pattern := "/api/v1/admin/accelerator/supply-configurations"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceGetSupplyConfiguration))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AcceleratorAdminServiceHTTPClientImpl) GetSupplyRegistration(ctx context.Context, in *v1.GetAcceleratorSupplyRegistrationRequest, opts ...http.CallOption) (*v1.AcceleratorSupplyRegistrationResult, error) {
+	var out v1.AcceleratorSupplyRegistrationResult
+	pattern := "/api/v1/admin/accelerator/supply-registrations/{registration_id}"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceGetSupplyRegistration))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AcceleratorAdminServiceHTTPClientImpl) ListClusters(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorClusters, error) {
 	var out v1.AcceleratorClusters
 	pattern := "/api/v1/admin/accelerator/clusters"
@@ -652,6 +802,19 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) ListPools(ctx context.Context, i
 	return &out, nil
 }
 
+func (c *AcceleratorAdminServiceHTTPClientImpl) ListSupplyCandidates(ctx context.Context, in *v1.ListAcceleratorSupplyCandidatesRequest, opts ...http.CallOption) (*v1.AcceleratorSupplyCandidates, error) {
+	var out v1.AcceleratorSupplyCandidates
+	pattern := "/api/v1/admin/accelerator/supply-candidates"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceListSupplyCandidates))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AcceleratorAdminServiceHTTPClientImpl) ListSupplyGroups(ctx context.Context, in *v1.AcceleratorPageRequest, opts ...http.CallOption) (*v1.AcceleratorSupplies, error) {
 	var out v1.AcceleratorSupplies
 	pattern := "/api/v1/admin/accelerator/supply-groups"
@@ -678,11 +841,37 @@ func (c *AcceleratorAdminServiceHTTPClientImpl) PreviewProfile(ctx context.Conte
 	return &out, nil
 }
 
+func (c *AcceleratorAdminServiceHTTPClientImpl) PreviewSupplyGroupPolicy(ctx context.Context, in *v1.PreviewAcceleratorSupplyGroupPolicyRequest, opts ...http.CallOption) (*v1.AcceleratorSupplyGroupPolicyPreview, error) {
+	var out v1.AcceleratorSupplyGroupPolicyPreview
+	pattern := "/api/v1/admin/accelerator/supply-groups:preview-policy"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServicePreviewSupplyGroupPolicy))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AcceleratorAdminServiceHTTPClientImpl) RegisterCluster(ctx context.Context, in *v1.RegisterAcceleratorClusterRequest, opts ...http.CallOption) (*v1.AcceleratorCluster, error) {
 	var out v1.AcceleratorCluster
 	pattern := "/api/v1/admin/accelerator/clusters"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceRegisterCluster))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AcceleratorAdminServiceHTTPClientImpl) RegisterSupplyConfiguration(ctx context.Context, in *v1.RegisterAcceleratorSupplyConfigurationRequest, opts ...http.CallOption) (*v1.AcceleratorSupplyRegistrationResult, error) {
+	var out v1.AcceleratorSupplyRegistrationResult
+	pattern := "/api/v1/admin/accelerator/supply-registrations"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAcceleratorAdminServiceRegisterSupplyConfiguration))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {

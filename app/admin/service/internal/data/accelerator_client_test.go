@@ -41,6 +41,31 @@ func (s *acceleratorIdentityServer) ListDiscoveredNodes(ctx context.Context, _ *
 	s.received <- md
 	return &acc.DiscoveredNodes{}, nil
 }
+func (s *acceleratorIdentityServer) ListSupplyCandidates(ctx context.Context, _ *acc.ListSupplyCandidatesRequest) (*acc.SupplyCandidates, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.SupplyCandidates{}, nil
+}
+func (s *acceleratorIdentityServer) RegisterSupplyConfiguration(ctx context.Context, _ *acc.RegisterSupplyConfigurationRequest) (*acc.SupplyRegistrationResult, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.SupplyRegistrationResult{}, nil
+}
+func (s *acceleratorIdentityServer) GetSupplyRegistration(ctx context.Context, request *acc.GetSupplyRegistrationRequest) (*acc.SupplyRegistrationResult, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.SupplyRegistrationResult{RegistrationId: request.RegistrationId}, nil
+}
+func (s *acceleratorIdentityServer) GetSupplyConfiguration(ctx context.Context, request *acc.GetSupplyConfigurationRequest) (*acc.RegisteredSupplyConfiguration, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.RegisteredSupplyConfiguration{ConnectionRef: request.ConnectionRef, ProviderConfigRef: request.ProviderConfigRef}, nil
+}
+func (s *acceleratorIdentityServer) PreviewSupplyGroupPolicy(ctx context.Context, _ *acc.PreviewSupplyGroupPolicyRequest) (*acc.PreviewSupplyGroupPolicyResponse, error) {
+	md, _ := metadata.FromIncomingContext(ctx)
+	s.received <- md
+	return &acc.PreviewSupplyGroupPolicyResponse{}, nil
+}
 func (s *acceleratorIdentityServer) CreateInitialization(ctx context.Context, _ *acc.CreateInitializationRequest) (*acc.InitializationOperation, error) {
 	md, _ := metadata.FromIncomingContext(ctx)
 	s.received <- md
@@ -195,6 +220,26 @@ func TestAcceleratorMTLSIdentityAndDelegation(t *testing.T) {
 		}},
 		{"ListDiscoveredNodes", func() error {
 			_, err := client.Admin.ListDiscoveredNodes(ctx, &acc.ListDiscoveredNodesRequest{Context: adminRead})
+			return err
+		}},
+		{"ListSupplyCandidates", func() error {
+			_, err := client.Admin.ListSupplyCandidates(ctx, &acc.ListSupplyCandidatesRequest{Context: adminRead, ConnectionRef: "managed"})
+			return err
+		}},
+		{"RegisterSupplyConfiguration", func() error {
+			_, err := client.Admin.RegisterSupplyConfiguration(ctx, &acc.RegisterSupplyConfigurationRequest{Mutation: mutation, ConnectionRef: "managed"})
+			return err
+		}},
+		{"GetSupplyRegistration", func() error {
+			_, err := client.Admin.GetSupplyRegistration(ctx, &acc.GetSupplyRegistrationRequest{Context: adminRead, RegistrationId: uuid.NewString()})
+			return err
+		}},
+		{"GetSupplyConfiguration", func() error {
+			_, err := client.Admin.GetSupplyConfiguration(ctx, &acc.GetSupplyConfigurationRequest{Context: adminRead, ConnectionRef: "managed", ProviderConfigRef: "supply"})
+			return err
+		}},
+		{"PreviewSupplyGroupPolicy", func() error {
+			_, err := client.Admin.PreviewSupplyGroupPolicy(ctx, &acc.PreviewSupplyGroupPolicyRequest{Context: adminRead, ConnectionRef: "managed", ProviderConfigRef: "supply"})
 			return err
 		}},
 		{"CreateInitialization", func() error {

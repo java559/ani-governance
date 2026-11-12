@@ -48,6 +48,11 @@ func TestAcceleratorErrorMappingKeepsReasonAndDropsRawContent(t *testing.T) {
 	st, e := status.New(codes.Internal, "raw").WithDetails(&errdetails.ErrorInfo{Reason: "postgres://secret"})
 	require.NoError(t, e)
 	require.Equal(t, "ACCELERATOR_ERROR", errors.FromError(mapAcceleratorError(st.Err())).Reason)
+	denied, err := status.New(codes.PermissionDenied, "private details").WithDetails(&errdetails.ErrorInfo{Reason: "CLUSTER_REGISTRATION_NOT_AUTHORIZED", Domain: "accelerator"})
+	require.NoError(t, err)
+	mapped := errors.FromError(mapAcceleratorError(denied.Err()))
+	require.EqualValues(t, 403, mapped.Code)
+	require.Equal(t, "CLUSTER_REGISTRATION_NOT_AUTHORIZED", mapped.Reason)
 }
 
 func TestAcceleratorPrincipalRequiresExplicitScopeAndJWT(t *testing.T) {

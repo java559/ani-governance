@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-kratos/kratos/v2/errors"
-	"github.com/zhangzhe-ctrl/ani-accelerator-service/pkg/schedulerconfig"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -84,7 +83,7 @@ func (c *InstanceSchedulingCluster) WriteSchedulerConfig(ctx context.Context, do
 	if !c.writeReady {
 		return "", "", errors.ServiceUnavailable("SCHEDULER_BASELINE_NOT_ALIGNED", "scheduler baseline migration is required")
 	}
-	next, err := schedulerconfig.ProtectedDigest(instanceSchedulerVersion, document)
+	next, err := instanceSchedulerProtectedProjection(document)
 	if err != nil {
 		return "", "", errors.BadRequest("INVALID_SCHEDULER_CONFIG", "invalid scheduler configuration").WithCause(err)
 	}
@@ -101,7 +100,7 @@ func (c *InstanceSchedulingCluster) WriteSchedulerConfig(ctx context.Context, do
 	if !ok {
 		return "", "", errors.ServiceUnavailable("SCHEDULER_CONFIG_UNAVAILABLE", "registered configuration is unavailable")
 	}
-	protected, err := schedulerconfig.ProtectedDigest(instanceSchedulerVersion, current)
+	protected, err := instanceSchedulerProtectedProjection(current)
 	if err != nil {
 		return "", "", errors.ServiceUnavailable("SCHEDULER_CONFIG_UNAVAILABLE", "current scheduler configuration is invalid").WithCause(err)
 	}

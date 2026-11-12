@@ -131,6 +131,9 @@ func mapAcceleratorError(err error) error {
 	case codes.InvalidArgument:
 		httpCode = 400
 	case codes.Unauthenticated, codes.PermissionDenied:
+		if code == codes.PermissionDenied && reason == "CLUSTER_REGISTRATION_NOT_AUTHORIZED" {
+			return errors.Forbidden(reason, "cluster registration permission required")
+		}
 		// User permissions were already checked by Governance. A rejected
 		// trusted service call is a dependency failure, not a user grant.
 		httpCode = 503
@@ -275,18 +278,28 @@ func (s *AcceleratorService) AdoptSupplyGroup(ctx context.Context, r *view.Adopt
 		return nil, e
 	}
 	d := r.GetData()
-	if d == nil || d.Baseline == nil {
+	if d == nil {
 		return nil, acceleratorInvalid()
 	}
 	m, e := acceleratorMutation(c, d.IdempotencyKey)
 	if e != nil {
 		return nil, e
 	}
-	baseline, e := acceleratorBaselineInput(d.Baseline)
+	var baseline *acc.ProviderBaseline
+	if d.Baseline != nil {
+		baseline, e = acceleratorBaselineInput(d.Baseline)
+		if e != nil {
+			return nil, e
+		}
+	}
+	policy, e := acceleratorGroupPolicyInput(d.Policy)
 	if e != nil {
 		return nil, e
 	}
-	req := &acc.AdoptSupplyGroupRequest{Mutation: m, DisplayName: d.DisplayName, PoolId: d.PoolId, ModelKey: d.ModelKey, Baseline: baseline, QueueName: d.QueueName}
+	if d.Baseline != nil && (d.Policy != nil || d.ProviderConfigRef != "" || d.ProviderConfigVersion != 0 || d.DiscoveryRevision != "") {
+		return nil, acceleratorInvalid()
+	}
+	req := &acc.AdoptSupplyGroupRequest{Mutation: m, DisplayName: d.DisplayName, PoolId: d.PoolId, ModelKey: d.ModelKey, Baseline: baseline, QueueName: d.QueueName, ProviderConfigRef: d.ProviderConfigRef, ProviderConfigVersion: d.ProviderConfigVersion, DiscoveryRevision: d.DiscoveryRevision, Policy: policy}
 	for _, n := range d.Nodes {
 		if n == nil {
 			return nil, acceleratorInvalid()
@@ -334,18 +347,21 @@ func (s *AcceleratorService) CreateProfile(ctx context.Context, r *view.CreateAc
 		return nil, e
 	}
 	d := r.GetData()
-	if d == nil || d.Spec == nil {
+	if d == nil || d.Spec == nil && d.GroupId == "" || d.Spec != nil && d.GroupId != "" {
 		return nil, acceleratorInvalid()
 	}
 	m, e := acceleratorMutation(c, d.IdempotencyKey)
 	if e != nil {
 		return nil, e
 	}
-	spec, e := acceleratorSpecInput(d.Spec)
-	if e != nil {
-		return nil, e
+	var spec *acc.ProfileSpec
+	if d.Spec != nil {
+		spec, e = acceleratorSpecInput(d.Spec)
+		if e != nil {
+			return nil, e
+		}
 	}
-	v, e := s.client.Admin.CreateProfile(ctx, &acc.CreateProfileRequest{Mutation: m, DisplayName: d.DisplayName, Spec: spec, ExpectedGroupVersion: d.ExpectedGroupVersion})
+	v, e := s.client.Admin.CreateProfile(ctx, &acc.CreateProfileRequest{Mutation: m, DisplayName: d.DisplayName, Spec: spec, ExpectedGroupVersion: d.ExpectedGroupVersion, GroupId: d.GroupId})
 	if e != nil {
 		return nil, mapAcceleratorError(e)
 	}

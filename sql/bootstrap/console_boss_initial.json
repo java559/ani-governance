@@ -273,6 +273,14 @@
       ]
     },
     {
+      "code": "accelerator:supply:register",
+      "name": "确认登记GPU供给配置",
+      "group": "boss.gpu",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
       "code": "accelerator:initialization:create",
       "name": "提交算力初始化",
       "group": "boss.gpu",
@@ -3354,6 +3362,51 @@
       "method": "GET",
       "path": "/api/v1/admin/accelerator/discovered-nodes",
       "operation": "AcceleratorAdminService_ListDiscoveredNodes",
+      "module": "ACCELERATOR",
+      "permissions": [
+        "accelerator:discovery:list"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/accelerator/supply-configurations",
+      "operation": "AcceleratorAdminService_GetSupplyConfiguration",
+      "module": "ACCELERATOR",
+      "permissions": [
+        "accelerator:discovery:list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/accelerator/supply-groups:preview-policy",
+      "operation": "AcceleratorAdminService_PreviewSupplyGroupPolicy",
+      "module": "ACCELERATOR",
+      "permissions": [
+        "accelerator:discovery:list"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/accelerator/supply-candidates",
+      "operation": "AcceleratorAdminService_ListSupplyCandidates",
+      "module": "ACCELERATOR",
+      "permissions": [
+        "accelerator:discovery:list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/accelerator/supply-registrations",
+      "operation": "AcceleratorAdminService_RegisterSupplyConfiguration",
+      "module": "ACCELERATOR",
+      "permissions": [
+        "accelerator:supply:register"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/accelerator/supply-registrations/{registration_id}",
+      "operation": "AcceleratorAdminService_GetSupplyRegistration",
       "module": "ACCELERATOR",
       "permissions": [
         "accelerator:discovery:list"

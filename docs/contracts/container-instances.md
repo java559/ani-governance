@@ -180,7 +180,7 @@ PATCH 使用 FieldMask 的 JSON 字符串形式，路径按 ProtoJSON lowerCamel
 | GET `/api/v1/admin/instance-scheduling-settings` | `{defaults,priority_class_allowlists}`；`instance:scheduling:read` |
 | PUT `/api/v1/admin/instance-scheduling-settings` | `{data:{defaults,priority_class_allowlists}}`；同时要求 `instance:scheduling:defaults:update` 和 `instance:scheduling:allowlists:update` |
 
-config 为登记 ConfigMap 固定 key 的原生 YAML 字符串。最终更新使用编辑时的不透明 resourceVersion；冲突返回 409，客户端重新读取并由管理员处理冲突。其他键、metadata、actions 顺序、tiers 和未知项保留。ACC 同一版本归一化算法只豁免已审核的评分参数，GPU 模式、编码、单位和未知内容受保护。环境基线尚未对齐时写入口返回 503，读取保持可用。保存只确认 ConfigMap 更新；不表示调度器已经加载。
+config 为登记 ConfigMap 固定 key 的原生 YAML 字符串。最终更新使用编辑时的不透明 resourceVersion；冲突返回 409，客户端重新读取并由管理员处理冲突。其他键、metadata、actions 顺序、tiers 和未知项保留。Gov 的私有 Volcano v1.15.2 编辑守卫只豁免已审核的 nodeorder/binpack/deviceshare 评分参数，GPU 模式、编码、单位和未知内容受保护；当次比较使用规范化保护投影，不再依赖 ACC 已退役的安装基线摘要包。环境基线尚未对齐时写入口返回 503，读取保持可用。保存只确认 ConfigMap 更新；不表示调度器已经加载。
 
 settings 是当前唯一集群的一条完整配置，PUT 原子替换 defaults 和名单；不接受租户覆盖层。两个字段均须出现，`defaults:{}` 和 `priority_class_allowlists:[]` 合法。defaults 只含可选 `pod_placement`、`priority_class_name`；名单形如 `[{"tenant_id":1,"priority_class_names":["batch-low"]}]`，tenant_id 是已存在的 Gov 租户 ID。重复租户或名称、空或非法 PriorityClass 名称、未知字段均拒绝。空配置读取为 `{defaults:{},priority_class_allowlists:[]}`。
 

@@ -147,7 +147,7 @@ func projectAcceleratorCapacity(raw json.RawMessage, kind string) (json.RawMessa
 		nulls = []string{"total_units", "allocated_units", "unallocated_units", "total_memory_mib", "allocated_memory_mib", "unallocated_memory_mib"}
 	case "detail":
 		nulls = []string{"nominal_units", "estimated_available_units"}
-	case "profile":
+	case "profile", "resource":
 		nulls = []string{"nominal_units", "estimated_available_units"}
 	case "group":
 		nulls = []string{"physical_device_count"}

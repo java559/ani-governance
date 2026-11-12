@@ -33,7 +33,7 @@ func (c *capacityACCProtocol) GetProfileCapacity(_ context.Context, r *acc.GetPr
 }
 func (c *capacityACCProtocol) GetSupplyGroupCapacity(_ context.Context, r *acc.GetSupplyGroupCapacityRequest, _ ...grpc.CallOption) (*acc.SupplyGroupCapacity, error) {
 	c.requests <- r.Context
-	return &acc.SupplyGroupCapacity{GroupId: r.GroupId, PhysicalDeviceCount: proto.Int64(0), ResourceTypes: []*acc.ResourceTypeCapacity{{AllocationType: acc.AllocationType_FIXED_PARTITION, ResourceKey: "hygon.com/hcu-share-8c-16g", Basis: acc.CapacityBasis_BOUND_POD_REQUEST, Granularity: acc.CapacityGranularity_NODE_RESOURCE, Details: []*acc.CapacityDetail{{NodeUid: "node-uid", NodeName: "node1", EstimatedAvailableUnits: proto.Int64(0)}}}}}, nil
+	return &acc.SupplyGroupCapacity{GroupId: r.GroupId, PhysicalDeviceCount: proto.Int64(0), ResourceTypes: []*acc.ResourceTypeCapacity{{AllocationType: acc.AllocationType_FIXED_PARTITION, ResourceKey: "hygon.com/hcu-share-8c-16g", Basis: acc.CapacityBasis_BOUND_POD_REQUEST, Granularity: acc.CapacityGranularity_NODE_RESOURCE, NominalUnits: proto.Int64(0), Details: []*acc.CapacityDetail{{NodeUid: "node-uid", NodeName: "node1", EstimatedAvailableUnits: proto.Int64(0)}}}}}, nil
 }
 
 // The fixture supplies the authenticated Principal context. Only the external
@@ -118,6 +118,10 @@ func TestAcceleratorCapacityHTTPPreservesNestedNullAndExactStrings(t *testing.T)
 		t.Fatal(response.Code, body)
 	}
 	kind := body["resource_types"].([]any)[0].(map[string]any)
+	if kind["nominal_units"] != "0" {
+		t.Fatal(kind)
+	}
+	requireNullCapacityField(t, kind, "estimated_available_units")
 	for _, key := range []string{"total_units", "allocated_units", "unallocated_units", "total_memory_mib", "allocated_memory_mib", "unallocated_memory_mib"} {
 		requireNullCapacityField(t, kind["totals"].(map[string]any), key)
 	}
