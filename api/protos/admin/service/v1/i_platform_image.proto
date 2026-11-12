@@ -1,0 +1,330 @@
+// Container image management v1.2 (2026-11-11). Platform operator surface.
+// Only an authenticated platform user JWT with the matching per-operation
+// permission may call these routes; AK, sandbox and runtime identities are
+// rejected. No request can select a tenant.
+syntax = "proto3";
+package admin.service.v1;
+import "google/api/annotations.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "catalog/service/v1/image.proto";
+import "catalog/service/v1/image_management.proto";
+
+service PlatformImageService {
+  rpc GetPlatformSpace(GetPlatformSpaceRequest) returns (GetPlatformSpaceResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/images/space" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "读取平台镜像空间绑定"
+      description: "Requires the platform user JWT and image:platform:space:get. Read-only: it never initializes the space, never probes Harbor and never writes. binding_status is uninitialized, ready, provisioning, blocked or configuration_mismatch; space is absent only when uninitialized. Response is Cache-Control: no-store."
+      responses: { response_or_reference: [
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc InitializePlatform(InitializePlatformRequest) returns (InitializePlatformResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/images/space:enable" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "开通平台镜像空间"
+      description: "Requires image:platform:space:enable. Idempotent per idempotency_key and actor. Creates or resumes only the single platform project; it never issues a publisher credential and never returns a secret. Repeating the same key with the same body replays the first result; the same key with different content returns 409."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "409" value: { response: { description: "Idempotency conflict or space binding mismatch" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc GetPlatformPublisherCredential(GetPlatformPublisherCredentialRequest) returns (GetPlatformPublisherCredentialResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/images/publisher-credential" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "读取平台发布凭据元数据"
+      description: "Requires image:platform:credential:get. Never returns a secret and never reads a historical secret. state=not_issued means no publisher has ever been issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery."
+      responses: { response_or_reference: [
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Platform image space not found" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc IssuePlatformPublisherCredential(IssuePlatformPublisherCredentialRequest) returns (IssuePlatformPublisherCredentialResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/images/publisher-credential:issue" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "签发平台发布凭据"
+      description: "Requires image:platform:credential:issue. expectedVersion is mandatory and is the credential's current version (0 when never issued). This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window. It never returns a pull identity."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid idempotency key or expected version" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "409" value: { response: { description: "Version conflict, already active or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc ResetPlatformPublisherCredential(ResetPlatformPublisherCredentialRequest) returns (ResetPlatformPublisherCredentialResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/images/publisher-credential:reset" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "重置平台发布凭据"
+      description: "Requires image:platform:credential:reset. Rotates an already issued publisher; a credential that was never issued is rejected with 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid idempotency key or expected version" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "409" value: { response: { description: "Version conflict, not issued or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc DisablePlatformPublisherCredential(DisablePlatformPublisherCredentialRequest) returns (DisablePlatformPublisherCredentialResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/images/publisher-credential:disable" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "停用平台发布凭据"
+      description: "Requires image:platform:credential:disable. Disables the Harbor publisher robot and marks the credential disabled in one transaction. Never returns a secret. A credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED and does not reserve a successful command. Repeating the same key replays the first result."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid idempotency key or expected version" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "409" value: { response: { description: "Version conflict, not issued or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc ListPlatformImages(ListPlatformImagesRequest) returns (ListPlatformImagesResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/images/registrations" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "分页查询平台镜像"
+      description: "Requires image:platform:registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. total counts the same filter in the same snapshot, so a page past the end returns items=[] with the real total. The response has no next_cursor."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid page, purposes or accelerator" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc GetPlatformImage(GetPlatformImageRequest) returns (GetPlatformImageResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/images/registrations/{image_id}" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "读取单个平台镜像"
+      description: "Requires image:platform:registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image in another scope both return 404."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid image id" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Image not found in the platform scope" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc RegisterPlatformImage(RegisterPlatformImageRequest) returns (RegisterPlatformImageResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/images/registrations" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "登记平台镜像"
+      description: "Requires image:platform:registration:create. image_reference must be an already pushed reference inside the platform project (<=512 bytes). purposes is 1..5 and is normalized to a sorted, de-duplicated list; accelerator defaults to undeclared. The same idempotency_key with the same body replays the first result and returns the same image; a different body under the same key returns 409."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid reference, metadata or idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "409" value: { response: { description: "Idempotency conflict, already registered or space not ready" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc UpdatePlatformImage(UpdatePlatformImageRequest) returns (UpdatePlatformImageResponse) {
+    option (google.api.http) = { patch: "/api/v1/platform/images/registrations/{image_id}" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "按字段掩码修改平台镜像"
+      description: "Requires image:platform:registration:update. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field named in the mask must be present, while a field outside the mask must be absent. description may be cleared with an empty string; an empty displayName or empty purposes is rejected. expectedVersion and idempotencyKey are control fields and are never part of the mask. A stale expectedVersion returns 409 VERSION_CONFLICT, and replaying the same key returns the first stored result even after later edits."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid mask, patched value or control field" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Image not found in the platform scope" } } },
+        { name: "409" value: { response: { description: "Version or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc UnregisterPlatformImage(UnregisterPlatformImageRequest) returns (UnregisterPlatformImageResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/images/registrations/{image_id}:unregister" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "注销平台镜像登记"
+      description: "Requires image:platform:registration:unregister. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory. Repeating the same key replays the first result; an already unregistered image returns 404."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid image id, version or idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Image not found in the platform scope" } } },
+        { name: "409" value: { response: { description: "Version or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+}
+
+message GetPlatformSpaceRequest {
+
+}
+
+message GetPlatformSpaceResponse {
+
+  catalog.service.v1.PlatformSpaceView space = 1;
+
+}
+
+message InitializePlatformRequest {
+
+  catalog.service.v1.ImageManagementInitializeData data = 1;
+
+}
+
+message InitializePlatformResponse {
+
+  catalog.service.v1.ImageSpace space = 1;
+
+}
+
+message GetPlatformPublisherCredentialRequest {
+
+}
+
+message GetPlatformPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+}
+
+message IssuePlatformPublisherCredentialRequest {
+
+  catalog.service.v1.ImageManagementCredentialData data = 1;
+
+}
+
+message IssuePlatformPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+  string secret = 2;
+
+  google.protobuf.Timestamp replay_until = 3;
+
+}
+
+message ResetPlatformPublisherCredentialRequest {
+
+  catalog.service.v1.ImageManagementCredentialData data = 1;
+
+}
+
+message ResetPlatformPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+  string secret = 2;
+
+  google.protobuf.Timestamp replay_until = 3;
+
+}
+
+message DisablePlatformPublisherCredentialRequest {
+
+  catalog.service.v1.ImageManagementCredentialData data = 1;
+
+}
+
+message DisablePlatformPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+}
+
+message ListPlatformImagesRequest {
+
+  string search = 1;
+
+  repeated string purposes = 2;
+
+  string accelerator = 3;
+
+  optional uint32 page = 4;
+
+  optional uint32 page_size = 5;
+
+}
+
+message ListPlatformImagesResponse {
+
+  repeated catalog.service.v1.ImageRegistration items = 1;
+
+  int64 total = 2 [json_name = "total"];
+
+}
+
+message GetPlatformImageRequest {
+
+  string image_id = 1 [json_name = "image_id"];
+
+}
+
+message GetPlatformImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}
+
+message RegisterPlatformImageRequest {
+
+  catalog.service.v1.ImageManagementRegisterData data = 1;
+
+}
+
+message RegisterPlatformImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}
+
+message UpdatePlatformImageRequest {
+
+  string image_id = 1 [json_name = "image_id"];
+
+  catalog.service.v1.ImageManagementPatchData data = 2;
+
+  google.protobuf.FieldMask update_mask = 3 [json_name = "update_mask"];
+
+}
+
+message UpdatePlatformImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}
+
+message UnregisterPlatformImageRequest {
+
+  string image_id = 1 [json_name = "image_id"];
+
+  catalog.service.v1.ImageManagementUnregisterData data = 2;
+
+}
+
+message UnregisterPlatformImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}

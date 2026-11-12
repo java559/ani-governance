@@ -22,6 +22,9 @@ var imageDigestPattern = regexp.MustCompile(`^sha256:[a-f0-9]{64}$`)
 var imageRepositoryPattern = regexp.MustCompile(`^[a-z0-9]+(?:[._-][a-z0-9]+)*$`)
 var imagePlatformPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9._-]{0,63}$`)
 
+// 平台项目名不是 t- 前缀的租户项目，规则与 Res 侧的 PlatformProject 校验一致。
+var imagePlatformProjectPattern = regexp.MustCompile(`^[a-z][a-z0-9-]{1,46}[a-z0-9]$`)
+
 func imageInvalidReply() error {
 	return errors.ServiceUnavailable("IMAGE_INVALID_RESPONSE", "invalid Image response")
 }
@@ -199,4 +202,4 @@ func mapImageError(err error) error {
 	return errors.New(httpCode, reason, "Image request failed")
 }
 
-var imageReasons = map[string]bool{"INVALID_ARGUMENT": true, "INVALID_REFERENCE": true, "INVALID_CURSOR": true, "TRUSTED_CALLER_REQUIRED": true, "PERMISSION_DENIED": true, "IMAGE_PROJECT_DENIED": true, "IMAGE_NOT_FOUND": true, "SPACE_NOT_FOUND": true, "IMAGE_ALREADY_REGISTERED": true, "SPACE_NAME_CONFLICT": true, "SPACE_NAME_IMMUTABLE": true, "IDEMPOTENCY_CONFLICT": true, "VERSION_CONFLICT": true, "SPACE_NOT_READY": true, "CREDENTIAL_ALREADY_ACTIVE": true, "CREDENTIAL_NOT_ISSUED": true, "CREDENTIAL_DELIVERY_EXPIRED": true, "UNSUPPORTED_ARTIFACT": true, "PLATFORM_MISMATCH": true, "SPACE_OWNERSHIP_UNCONFIRMED": true, "DEPENDENCY_UNAVAILABLE": true, "REQUEST_IN_PROGRESS": true, "DEADLINE_EXCEEDED": true, "INTERNAL_ERROR": true}
+var imageReasons = map[string]bool{"INVALID_ARGUMENT": true, "INVALID_REFERENCE": true, "INVALID_CURSOR": true, "TRUSTED_CALLER_REQUIRED": true, "PERMISSION_DENIED": true, "IMAGE_PROJECT_DENIED": true, "IMAGE_NOT_FOUND": true, "SPACE_NOT_FOUND": true, "IMAGE_ALREADY_REGISTERED": true, "SPACE_NAME_CONFLICT": true, "SPACE_NAME_IMMUTABLE": true, "IDEMPOTENCY_CONFLICT": true, "VERSION_CONFLICT": true, "SPACE_NOT_READY": true, "CREDENTIAL_ALREADY_ACTIVE": true, "CREDENTIAL_NOT_ISSUED": true, "CREDENTIAL_DELIVERY_EXPIRED": true, "UNSUPPORTED_ARTIFACT": true, "PLATFORM_MISMATCH": true, "SPACE_OWNERSHIP_UNCONFIRMED": true, "DEPENDENCY_UNAVAILABLE": true, "REQUEST_IN_PROGRESS": true, "DEADLINE_EXCEEDED": true, "INTERNAL_ERROR": true, "IMAGE_SPACE_BINDING_MISMATCH": true, "CANDIDATE_RECOVERY_COMPLETED": true}

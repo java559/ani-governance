@@ -13,6 +13,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -95,6 +96,7 @@ func newRestServerWithSwagger(t *testing.T, enableSwagger bool) http.Handler {
 		service.NewInferenceService(nil),  // inferenceService
 		service.NewModelService(nil, nil), // modelService: preserve route registration without a downstream client
 		nil,                               // computePresetService
+		time.Duration(0),                  // imageWriteBudget: 0 keeps the ordinary timeout in this assembly test
 		nil,                               // overviewService
 		nil,                               // platformComponentService
 	)

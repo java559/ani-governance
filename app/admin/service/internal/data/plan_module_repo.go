@@ -18,8 +18,10 @@ import (
 	"go-wind-admin/app/admin/service/internal/data/ent/plan"
 	"go-wind-admin/app/admin/service/internal/data/ent/planmodule"
 	"go-wind-admin/app/admin/service/internal/data/ent/predicate"
+	tenantEntity "go-wind-admin/app/admin/service/internal/data/ent/tenant"
 
 	identityV1 "go-wind-admin/api/gen/go/identity/service/v1"
+	appViewer "go-wind-admin/pkg/entgo/viewer"
 )
 
 type PlanModuleRepo struct {
@@ -328,4 +330,87 @@ func mapEntModuleToProto(m planmodule.Module) identityV1.Module {
 		return identityV1.Module_MODULE_UNSPECIFIED
 	}
 	return identityV1.Module(value)
+}
+
+// TenantExists 报告目标租户是否存在且未删除，不检查状态与套餐。
+// 平台代管的查看、停用、注销类操作使用它：即使目标租户已停用或套餐已变更，
+// 也要能读到状态并回收身份。
+func (r *PlanModuleRepo) TenantExists(ctx context.Context, tenantID uint32) (bool, error) {
+	if r == nil || r.entClient == nil || tenantID == 0 {
+		return false, nil
+	}
+	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	ok, err := r.entClient.Client().Tenant.Query().
+		Where(tenantEntity.IDEQ(tenantID), tenantEntity.DeletedAtIsNil()).
+		Exist(sysCtx)
+	if err != nil {
+		r.log.Errorf(ctx, "query tenant %d for platform image gate failed: %s", tenantID, err.Error())
+		return false, identityV1.ErrorInternalServerError("query tenant failed")
+	}
+	return ok, nil
+}
+
+// activeTenant 返回目标租户，仅当它存在、status=ON、未过期且未删除时；
+// 否则返回 nil，调用方无需区分“不存在”和“不可用”。
+func (r *PlanModuleRepo) activeTenant(ctx context.Context, tenantID uint32) (*ent.Tenant, error) {
+	if r == nil || r.entClient == nil || tenantID == 0 {
+		return nil, nil
+	}
+	sysCtx := appViewer.NewSystemViewerContext(ctx)
+	t, err := r.entClient.Client().Tenant.Query().
+		Where(tenantEntity.IDEQ(tenantID), tenantEntity.DeletedAtIsNil()).
+		WithPlan().
+		Only(sysCtx)
+	if ent.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		r.log.Errorf(ctx, "query tenant %d for platform image gate failed: %s", tenantID, err.Error())
+		return nil, identityV1.ErrorInternalServerError("query tenant failed")
+	}
+	if t.Status == nil || *t.Status != tenantEntity.StatusOn {
+		return nil, nil
+	}
+	if t.ExpiredAt != nil && !t.ExpiredAt.IsZero() && t.ExpiredAt.Before(time.Now()) {
+		return nil, nil
+	}
+	return t, nil
+}
+
+// TenantActive 报告代管目标租户当前是否仍可用（存在、启用、未过期、未删除）。
+// 平台代管入口用它区分“目标不存在”和“目标已停用”之外的普通不可用。
+func (r *PlanModuleRepo) TenantActive(ctx context.Context, tenantID uint32) (bool, error) {
+	t, err := r.activeTenant(ctx, tenantID)
+	if err != nil {
+		return false, err
+	}
+	return t != nil, nil
+}
+
+// TenantModuleEnabled 报告目标租户当前是否可用某个业务模块。
+//
+// 这是平台代管入口的只读前置检查：查询 tenant.plan_id -> plan_module.module，
+// 同时要求租户存在、status=ON、未过期、未删除。它不改变 TenantAccessChecker 的
+// 租户自助语义，只在“平台替租户开通/扩张镜像能力”时使用。
+// 已停用或套餐已变更的租户在查看、停用、注销类操作中不做本检查，便于回收。
+func (r *PlanModuleRepo) TenantModuleEnabled(ctx context.Context, tenantID uint32, module identityV1.Module) (bool, error) {
+	entModule := mapProtoModuleToEnt(module)
+	if entModule == "" {
+		return false, nil
+	}
+	t, err := r.activeTenant(ctx, tenantID)
+	if err != nil || t == nil || t.Edges.Plan == nil {
+		return false, err
+	}
+	cnt, err := r.entClient.Client().PlanModule.Query().
+		Where(
+			planmodule.HasPlanWith(plan.IDEQ(t.Edges.Plan.ID)),
+			planmodule.ModuleEQ(entModule),
+		).
+		Count(appViewer.NewSystemViewerContext(ctx))
+	if err != nil {
+		r.log.Errorf(ctx, "query plan module gate failed: %s", err.Error())
+		return false, identityV1.ErrorInternalServerError("query plan modules failed")
+	}
+	return cnt > 0, nil
 }

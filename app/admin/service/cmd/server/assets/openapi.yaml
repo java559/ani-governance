@@ -12803,6 +12803,815 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/PlatformComponentStatusResponse'
+    /api/v1/platform/images/publisher-credential:
+        get:
+            tags:
+                - PlatformImageService
+            summary: 读取平台发布凭据元数据
+            description: Requires image:platform:credential:get. Never returns a secret and never reads a historical secret. state=not_issued means no publisher has ever been issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery.
+            operationId: PlatformImageService_GetPlatformPublisherCredential
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPlatformPublisherCredentialResponse'
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Platform image space not found
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/publisher-credential:disable:
+        post:
+            tags:
+                - PlatformImageService
+            summary: 停用平台发布凭据
+            description: Requires image:platform:credential:disable. Disables the Harbor publisher robot and marks the credential disabled in one transaction. Never returns a secret. A credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED and does not reserve a successful command. Repeating the same key replays the first result.
+            operationId: PlatformImageService_DisablePlatformPublisherCredential
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DisablePlatformPublisherCredentialRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DisablePlatformPublisherCredentialResponse'
+                "400":
+                    description: Invalid idempotency key or expected version
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "409":
+                    description: Version conflict, not issued or idempotency conflict
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/publisher-credential:issue:
+        post:
+            tags:
+                - PlatformImageService
+            summary: 签发平台发布凭据
+            description: 'Requires image:platform:credential:issue. expectedVersion is mandatory and is the credential''s current version (0 when never issued). This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window. It never returns a pull identity.'
+            operationId: PlatformImageService_IssuePlatformPublisherCredential
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IssuePlatformPublisherCredentialRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IssuePlatformPublisherCredentialResponse'
+                "400":
+                    description: Invalid idempotency key or expected version
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "409":
+                    description: Version conflict, already active or idempotency conflict
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/publisher-credential:reset:
+        post:
+            tags:
+                - PlatformImageService
+            summary: 重置平台发布凭据
+            description: 'Requires image:platform:credential:reset. Rotates an already issued publisher; a credential that was never issued is rejected with 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store.'
+            operationId: PlatformImageService_ResetPlatformPublisherCredential
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ResetPlatformPublisherCredentialRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ResetPlatformPublisherCredentialResponse'
+                "400":
+                    description: Invalid idempotency key or expected version
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "409":
+                    description: Version conflict, not issued or idempotency conflict
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/registrations:
+        get:
+            tags:
+                - PlatformImageService
+            summary: 分页查询平台镜像
+            description: Requires image:platform:registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. total counts the same filter in the same snapshot, so a page past the end returns items=[] with the real total. The response has no next_cursor.
+            operationId: PlatformImageService_ListPlatformImages
+            parameters:
+                - name: search
+                  in: query
+                  schema:
+                    type: string
+                - name: purposes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: accelerator
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListPlatformImagesResponse'
+                "400":
+                    description: Invalid page, purposes or accelerator
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+        post:
+            tags:
+                - PlatformImageService
+            summary: 登记平台镜像
+            description: Requires image:platform:registration:create. image_reference must be an already pushed reference inside the platform project (<=512 bytes). purposes is 1..5 and is normalized to a sorted, de-duplicated list; accelerator defaults to undeclared. The same idempotency_key with the same body replays the first result and returns the same image; a different body under the same key returns 409.
+            operationId: PlatformImageService_RegisterPlatformImage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RegisterPlatformImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RegisterPlatformImageResponse'
+                "400":
+                    description: Invalid reference, metadata or idempotency key
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "409":
+                    description: Idempotency conflict, already registered or space not ready
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/registrations/{image_id}:
+        get:
+            tags:
+                - PlatformImageService
+            summary: 读取单个平台镜像
+            description: Requires image:platform:registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image in another scope both return 404.
+            operationId: PlatformImageService_GetPlatformImage
+            parameters:
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPlatformImageResponse'
+                "400":
+                    description: Invalid image id
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Image not found in the platform scope
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+        patch:
+            tags:
+                - PlatformImageService
+            summary: 按字段掩码修改平台镜像
+            description: Requires image:platform:registration:update. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field named in the mask must be present, while a field outside the mask must be absent. description may be cleared with an empty string; an empty displayName or empty purposes is rejected. expectedVersion and idempotencyKey are control fields and are never part of the mask. A stale expectedVersion returns 409 VERSION_CONFLICT, and replaying the same key returns the first stored result even after later edits.
+            operationId: PlatformImageService_UpdatePlatformImage
+            parameters:
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdatePlatformImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdatePlatformImageResponse'
+                "400":
+                    description: Invalid mask, patched value or control field
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Image not found in the platform scope
+                "409":
+                    description: Version or idempotency conflict
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/registrations/{image_id}:unregister:
+        post:
+            tags:
+                - PlatformImageService
+            summary: 注销平台镜像登记
+            description: 'Requires image:platform:registration:unregister. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory. Repeating the same key replays the first result; an already unregistered image returns 404.'
+            operationId: PlatformImageService_UnregisterPlatformImage
+            parameters:
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UnregisterPlatformImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UnregisterPlatformImageResponse'
+                "400":
+                    description: Invalid image id, version or idempotency key
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Image not found in the platform scope
+                "409":
+                    description: Version or idempotency conflict
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/space:
+        get:
+            tags:
+                - PlatformImageService
+            summary: 读取平台镜像空间绑定
+            description: 'Requires the platform user JWT and image:platform:space:get. Read-only: it never initializes the space, never probes Harbor and never writes. binding_status is uninitialized, ready, provisioning, blocked or configuration_mismatch; space is absent only when uninitialized. Response is Cache-Control: no-store.'
+            operationId: PlatformImageService_GetPlatformSpace
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPlatformSpaceResponse'
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/images/space:enable:
+        post:
+            tags:
+                - PlatformImageService
+            summary: 开通平台镜像空间
+            description: Requires image:platform:space:enable. Idempotent per idempotency_key and actor. Creates or resumes only the single platform project; it never issues a publisher credential and never returns a secret. Repeating the same key with the same body replays the first result; the same key with different content returns 409.
+            operationId: PlatformImageService_InitializePlatform
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/InitializePlatformRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/InitializePlatformResponse'
+                "400":
+                    description: Invalid idempotency key
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "409":
+                    description: Idempotency conflict or space binding mismatch
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:
+        get:
+            tags:
+                - AdminTenantImageService
+            summary: 读取指定租户的发布凭据元数据
+            description: Requires image:platform:tenant-credential:get. Never returns a secret. state=not_issued means never issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery.
+            operationId: AdminTenantImageService_GetTenantPublisherCredential
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTenantPublisherCredentialResponse'
+                "400":
+                    description: Invalid target tenant id
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Target tenant or image space not found
+                "503":
+                    description: Image backend or tenant mapping unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable:
+        post:
+            tags:
+                - AdminTenantImageService
+            summary: 停用指定租户的发布凭据
+            description: Requires image:platform:tenant-credential:disable. A disabled or downgraded target tenant can still be disabled here so the identity can be reclaimed. Never returns a secret; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED.
+            operationId: AdminTenantImageService_DisableTenantPublisherCredential
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/DisableTenantPublisherCredentialRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DisableTenantPublisherCredentialResponse'
+                "400":
+                    description: Invalid target tenant, idempotency key or expected version
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "409":
+                    description: Version conflict, not issued or idempotency conflict
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue:
+        post:
+            tags:
+                - AdminTenantImageService
+            summary: 为指定租户签发发布凭据
+            description: 'Requires image:platform:tenant-credential:issue and an IMAGE subscription on the target tenant''s plan. expectedVersion is mandatory. This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window.'
+            operationId: AdminTenantImageService_IssueTenantPublisherCredential
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/IssueTenantPublisherCredentialRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/IssueTenantPublisherCredentialResponse'
+                "400":
+                    description: Invalid target tenant, idempotency key or expected version
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role, permission or target subscription denied
+                "409":
+                    description: Version conflict, already active or idempotency conflict
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset:
+        post:
+            tags:
+                - AdminTenantImageService
+            summary: 重置指定租户的发布凭据
+            description: 'Requires image:platform:tenant-credential:reset and an IMAGE subscription on the target tenant''s plan. Rotates an already issued publisher; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store.'
+            operationId: AdminTenantImageService_ResetTenantPublisherCredential
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ResetTenantPublisherCredentialRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ResetTenantPublisherCredentialResponse'
+                "400":
+                    description: Invalid target tenant, idempotency key or expected version
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role, permission or target subscription denied
+                "409":
+                    description: Version conflict, not issued or idempotency conflict
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/registrations:
+        get:
+            tags:
+                - AdminTenantImageService
+            summary: 分页查询指定租户的镜像
+            description: Requires image:platform:tenant-registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. An authorized tenant without an image space returns items=[] and total=0; the response has no next_cursor.
+            operationId: AdminTenantImageService_ListTenantImages
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: search
+                  in: query
+                  schema:
+                    type: string
+                - name: purposes
+                  in: query
+                  schema:
+                    type: array
+                    items:
+                        type: string
+                - name: accelerator
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ListTenantImagesResponse'
+                "400":
+                    description: Invalid target tenant, page, purposes or accelerator
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "503":
+                    description: Image backend or tenant mapping unavailable
+            security:
+                - BearerAuth: []
+        post:
+            tags:
+                - AdminTenantImageService
+            summary: 为指定租户登记镜像
+            description: Requires image:platform:tenant-registration:create and an IMAGE subscription on the target tenant's plan. image_reference must already exist in the target tenant's own Harbor project; a reference in any other project returns 403 IMAGE_PROJECT_DENIED. purposes is 1..5 and is normalized. The same idempotency_key with the same body replays the first result.
+            operationId: AdminTenantImageService_RegisterTenantImage
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/RegisterTenantImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/RegisterTenantImageResponse'
+                "400":
+                    description: Invalid target tenant, reference, metadata or idempotency key
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role, permission, target subscription or project denied
+                "409":
+                    description: Idempotency conflict, already registered, binding mismatch or space not ready
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:
+        get:
+            tags:
+                - AdminTenantImageService
+            summary: 读取指定租户的单个镜像
+            description: Requires image:platform:tenant-registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image owned by another tenant are indistinguishable and both return 404.
+            operationId: AdminTenantImageService_GetTenantImage
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTenantImageResponse'
+                "400":
+                    description: Invalid target tenant or image id
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Image not found in the target tenant
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+        patch:
+            tags:
+                - AdminTenantImageService
+            summary: 按字段掩码修改指定租户的镜像
+            description: Requires image:platform:tenant-registration:update and an IMAGE subscription on the target tenant's plan. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field in the mask must be present; a field outside the mask must be absent. description may be cleared with an empty string. expectedVersion and idempotencyKey are control fields outside the mask. A stale expectedVersion returns 409 VERSION_CONFLICT.
+            operationId: AdminTenantImageService_UpdateTenantImage
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UpdateTenantImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateTenantImageResponse'
+                "400":
+                    description: Invalid target tenant, mask, patched value or control field
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role, permission or target subscription denied
+                "404":
+                    description: Image not found in the target tenant
+                "409":
+                    description: Version or idempotency conflict
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister:
+        post:
+            tags:
+                - AdminTenantImageService
+            summary: 注销指定租户的镜像登记
+            description: 'Requires image:platform:tenant-registration:unregister. A disabled or downgraded target tenant can still be unregistered so the registration can be reclaimed. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory and repeating the same key replays the first result.'
+            operationId: AdminTenantImageService_UnregisterTenantImage
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+                - name: image_id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/UnregisterTenantImageRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UnregisterTenantImageResponse'
+                "400":
+                    description: Invalid target tenant, image id, version or idempotency key
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Image not found in the target tenant
+                "409":
+                    description: Version or idempotency conflict
+                "503":
+                    description: Image backend unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/space:
+        get:
+            tags:
+                - AdminTenantImageService
+            summary: 读取指定租户的镜像空间
+            description: Requires the platform user JWT and image:platform:tenant-space:get. target_tenant_id comes only from the path. The operator identity is preserved in the audit trail; the tenant is only the target. Reading is allowed for an existing but disabled tenant so its state can still be inspected.
+            operationId: AdminTenantImageService_GetTenantImageSpace
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTenantImageSpaceResponse'
+                "400":
+                    description: Invalid target tenant id
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role or permission denied
+                "404":
+                    description: Target tenant or image space not found
+                "503":
+                    description: Image backend or tenant mapping unavailable
+            security:
+                - BearerAuth: []
+    /api/v1/platform/tenants/{target_tenant_id}/images/space:enable:
+        post:
+            tags:
+                - AdminTenantImageService
+            summary: 为指定租户开通镜像空间
+            description: Requires image:platform:tenant-space:enable and an IMAGE subscription on the target tenant's plan. The slug is immutable once the space exists. Idempotent per idempotency_key and actor; it never issues a publisher credential.
+            operationId: AdminTenantImageService_EnsureTenantImageSpace
+            parameters:
+                - name: target_tenant_id
+                  in: path
+                  required: true
+                  schema:
+                    type: integer
+                    format: uint32
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/EnsureTenantImageSpaceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/EnsureTenantImageSpaceResponse'
+                "400":
+                    description: Invalid target tenant, slug or idempotency key
+                "401":
+                    description: Missing, invalid or expired credentials
+                "403":
+                    description: Platform role, permission or target subscription denied
+                "409":
+                    description: Idempotency conflict or space binding mismatch
+                "503":
+                    description: Image backend or Harbor unavailable
+            security:
+                - BearerAuth: []
     /api/v1/sandbox:
         get:
             tags:
@@ -19098,6 +19907,16 @@ components:
                          仅平台管理员可指定他人，用于用户认证器丢失时的救援解绑（按 method 清空该用户全部因子）。
                     format: uint32
             description: Disable / remove
+        DisablePlatformPublisherCredentialRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ImageManagementCredentialData'
+        DisablePlatformPublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
         DisablePublisherCredentialRequest:
             type: object
             properties:
@@ -19106,6 +19925,19 @@ components:
                 idempotencyKey:
                     type: string
         DisablePublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
+        DisableTenantPublisherCredentialRequest:
+            type: object
+            properties:
+                target_tenant_id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/ImageManagementCredentialData'
+        DisableTenantPublisherCredentialResponse:
             type: object
             properties:
                 credential:
@@ -19296,6 +20128,19 @@ components:
             properties:
                 environment:
                     $ref: '#/components/schemas/TenantExecutionEnvironmentView'
+        EnsureTenantImageSpaceRequest:
+            type: object
+            properties:
+                target_tenant_id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/ImageManagementEnableData'
+        EnsureTenantImageSpaceResponse:
+            type: object
+            properties:
+                space:
+                    $ref: '#/components/schemas/ImageSpace'
         EnvironmentSource:
             type: object
             properties:
@@ -20240,6 +21085,11 @@ components:
             properties:
                 resource:
                     $ref: '#/components/schemas/PlatformEIP'
+        GetPlatformImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
         GetPlatformNetworkCapabilitiesResponse:
             type: object
             properties:
@@ -20250,6 +21100,16 @@ components:
             properties:
                 operation:
                     $ref: '#/components/schemas/PlatformOperation'
+        GetPlatformPublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
+        GetPlatformSpaceResponse:
+            type: object
+            properties:
+                space:
+                    $ref: '#/components/schemas/PlatformSpaceView'
         GetPublicAddressPoolResponse:
             type: object
             properties:
@@ -20270,6 +21130,21 @@ components:
             properties:
                 environment:
                     $ref: '#/components/schemas/TenantExecutionEnvironmentView'
+        GetTenantImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
+        GetTenantImageSpaceResponse:
+            type: object
+            properties:
+                space:
+                    $ref: '#/components/schemas/ImageSpace'
+        GetTenantPublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
         GetUploadURLData:
             type: object
             properties:
@@ -20753,6 +21628,69 @@ components:
                     type: string
                     description: 主机名
             description: 主机信息
+        ImageManagementCredentialData:
+            type: object
+            properties:
+                idempotencyKey:
+                    type: string
+                expectedVersion:
+                    type: string
+        ImageManagementEnableData:
+            type: object
+            properties:
+                slug:
+                    type: string
+                idempotencyKey:
+                    type: string
+        ImageManagementInitializeData:
+            type: object
+            properties:
+                idempotencyKey:
+                    type: string
+        ImageManagementPatchData:
+            type: object
+            properties:
+                displayName:
+                    type: string
+                description:
+                    type: string
+                purposes:
+                    type: array
+                    items:
+                        type: string
+                accelerator:
+                    type: string
+                expectedVersion:
+                    type: string
+                idempotencyKey:
+                    type: string
+            description: |-
+                ImageManagementPatchData carries only the requested presence. A field is read
+                 exclusively when its path appears in the sibling update_mask.
+        ImageManagementRegisterData:
+            type: object
+            properties:
+                imageReference:
+                    type: string
+                displayName:
+                    type: string
+                description:
+                    type: string
+                purposes:
+                    type: array
+                    items:
+                        type: string
+                accelerator:
+                    type: string
+                idempotencyKey:
+                    type: string
+        ImageManagementUnregisterData:
+            type: object
+            properties:
+                expectedVersion:
+                    type: string
+                idempotencyKey:
+                    type: string
         ImagePlatform:
             type: object
             properties:
@@ -21262,6 +22200,16 @@ components:
                     type: string
                 sizeGb:
                     type: string
+        InitializePlatformRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ImageManagementInitializeData'
+        InitializePlatformResponse:
+            type: object
+            properties:
+                space:
+                    $ref: '#/components/schemas/ImageSpace'
         InputVersionView:
             type: object
             properties:
@@ -21798,6 +22746,21 @@ components:
                 expires_at:
                     type: string
                     format: date-time
+        IssuePlatformPublisherCredentialRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ImageManagementCredentialData'
+        IssuePlatformPublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
+                secret:
+                    type: string
+                replayUntil:
+                    type: string
+                    format: date-time
         IssuePublisherCredentialRequest:
             type: object
             properties:
@@ -21806,6 +22769,24 @@ components:
                 expectedVersion:
                     type: string
         IssuePublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
+                secret:
+                    type: string
+                replayUntil:
+                    type: string
+                    format: date-time
+        IssueTenantPublisherCredentialRequest:
+            type: object
+            properties:
+                target_tenant_id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/ImageManagementCredentialData'
+        IssueTenantPublisherCredentialResponse:
             type: object
             properties:
                 credential:
@@ -22498,6 +23479,15 @@ components:
                         $ref: '#/components/schemas/PlatformEIP'
                 total:
                     type: string
+        ListPlatformImagesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ImageRegistration'
+                total:
+                    type: string
         ListPolicyEvaluationLogResponse:
             type: object
             properties:
@@ -22666,6 +23656,15 @@ components:
                         type: string
                     description: 类型名称列表
             description: 任务类型名称列表 - 回应
+        ListTenantImagesResponse:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/ImageRegistration'
+                total:
+                    type: string
         ListTenantQuotaAccountSummariesResponse:
             type: object
             properties:
@@ -25239,6 +26238,21 @@ components:
                 intranet_pool:
                     $ref: '#/components/schemas/IntranetAddressPool'
             description: Platform-owned resources. No request can assert an actor, tenant or administrator.
+        PlatformSpaceView:
+            type: object
+            properties:
+                space:
+                    $ref: '#/components/schemas/ImageSpace'
+                configuredProject:
+                    type: string
+                configuredRegistryAuthority:
+                    type: string
+                bindingStatus:
+                    type: string
+                    description: uninitialized, ready, provisioning, blocked or configuration_mismatch.
+            description: |-
+                PlatformSpaceView is the read-only platform binding projection; space is
+                 absent only when no platform space has ever been reserved.
         PolicyEvaluationLog:
             type: object
             properties:
@@ -25970,6 +26984,29 @@ components:
             properties:
                 image:
                     $ref: '#/components/schemas/ImageRegistration'
+        RegisterPlatformImageRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ImageManagementRegisterData'
+        RegisterPlatformImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
+        RegisterTenantImageRequest:
+            type: object
+            properties:
+                target_tenant_id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/ImageManagementRegisterData'
+        RegisterTenantImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
         ReleasePlatformEIPResponse:
             type: object
             properties:
@@ -26015,6 +27052,21 @@ components:
                     type: string
                     description: 新密码
             description: 凭验证码重置密码 - 请求
+        ResetPlatformPublisherCredentialRequest:
+            type: object
+            properties:
+                data:
+                    $ref: '#/components/schemas/ImageManagementCredentialData'
+        ResetPlatformPublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
+                secret:
+                    type: string
+                replayUntil:
+                    type: string
+                    format: date-time
         ResetPublisherCredentialRequest:
             type: object
             properties:
@@ -26023,6 +27075,24 @@ components:
                 expectedVersion:
                     type: string
         ResetPublisherCredentialResponse:
+            type: object
+            properties:
+                credential:
+                    $ref: '#/components/schemas/PublisherCredential'
+                secret:
+                    type: string
+                replayUntil:
+                    type: string
+                    format: date-time
+        ResetTenantPublisherCredentialRequest:
+            type: object
+            properties:
+                target_tenant_id:
+                    type: integer
+                    format: uint32
+                data:
+                    $ref: '#/components/schemas/ImageManagementCredentialData'
+        ResetTenantPublisherCredentialResponse:
             type: object
             properties:
                 credential:
@@ -27909,6 +28979,33 @@ components:
             properties:
                 image:
                     $ref: '#/components/schemas/ImageRegistration'
+        UnregisterPlatformImageRequest:
+            type: object
+            properties:
+                image_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/ImageManagementUnregisterData'
+        UnregisterPlatformImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
+        UnregisterTenantImageRequest:
+            type: object
+            properties:
+                target_tenant_id:
+                    type: integer
+                    format: uint32
+                image_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/ImageManagementUnregisterData'
+        UnregisterTenantImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
         UpdateAccessKeyRequest:
             type: object
             properties:
@@ -28341,6 +29438,21 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新套餐 -请求
+        UpdatePlatformImageRequest:
+            type: object
+            properties:
+                image_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/ImageManagementPatchData'
+                update_mask:
+                    type: string
+                    format: field-mask
+        UpdatePlatformImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
         UpdatePositionRequest:
             type: object
             properties:
@@ -28437,6 +29549,24 @@ components:
                     type: boolean
                     description: 如果设置为true的时候，资源不存在则会新增(插入)，并且在这种情况下`updateMask`字段将会被忽略。
             description: 更新调度任务 - 请求
+        UpdateTenantImageRequest:
+            type: object
+            properties:
+                target_tenant_id:
+                    type: integer
+                    format: uint32
+                image_id:
+                    type: string
+                data:
+                    $ref: '#/components/schemas/ImageManagementPatchData'
+                update_mask:
+                    type: string
+                    format: field-mask
+        UpdateTenantImageResponse:
+            type: object
+            properties:
+                image:
+                    $ref: '#/components/schemas/ImageRegistration'
         UpdateTenantRequest:
             type: object
             properties:
@@ -29753,6 +30883,7 @@ tags:
       description: OpenAPI 访问凭证（AK/SK）管理 — BFF
     - name: AdminPortalService
       description: 后台前端初始化数据与配置服务
+    - name: AdminTenantImageService
     - name: ApiAuditLogService
       description: API审计日志管理服务
     - name: ApiService
@@ -29852,6 +30983,7 @@ tags:
       description: Platform JWT/API authorization remains mandatory. No arbitrary Kubernetes proxy.
     - name: PlatformComponentService
       description: 平台组件健康快照服务（BOSS「组件状态」页表格数据源，只读）
+    - name: PlatformImageService
     - name: PlatformNetworkService
       description: Platform user JWT, current action permission and Casbin authorization required.
     - name: PolicyEvaluationLogService
