@@ -1148,9 +1148,9 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"\bimage_id\x18\x01 \x01(\tR\bimage_id\x12E\n" +
 	"\x04data\x18\x02 \x01(\v21.catalog.service.v1.ImageManagementUnregisterDataR\x04data\"^\n" +
 	"\x1fUnregisterPlatformImageResponse\x12;\n" +
-	"\x05image\x18\x01 \x01(\v2%.catalog.service.v1.ImageRegistrationR\x05image2\x87F\n" +
-	"\x14PlatformImageService\x12\x8a\x05\n" +
-	"\x10GetPlatformSpace\x12).admin.service.v1.GetPlatformSpaceRequest\x1a*.admin.service.v1.GetPlatformSpaceResponse\"\x9e\x04\xbaG\xf5\x03\x12\x1e读取平台镜像空间绑定\x1a\xb4\x02Requires the platform user JWT and image:platform:space:get. Read-only: it never initializes the space, never probes Harbor and never writes. binding_status is uninitialized, ready, provisioning, blocked or configuration_mismatch; space is absent only when uninitialized. Response is Cache-Control: no-store.B\x89\x01\x122\n" +
+	"\x05image\x18\x01 \x01(\v2%.catalog.service.v1.ImageRegistrationR\x05image2\xe6E\n" +
+	"\x14PlatformImageService\x12\x87\x05\n" +
+	"\x10GetPlatformSpace\x12).admin.service.v1.GetPlatformSpaceRequest\x1a*.admin.service.v1.GetPlatformSpaceResponse\"\x9b\x04\xbaG\xf5\x03\x12\x1e读取平台镜像空间绑定\x1a\xb4\x02Requires the platform user JWT and image:platform:space:get. Read-only: it never initializes the space, never probes Harbor and never writes. binding_status is uninitialized, ready, provisioning, blocked or configuration_mismatch; space is absent only when uninitialized. Response is Cache-Control: no-store.B\x89\x01\x122\n" +
 	"\x03401\x12+\n" +
 	")\n" +
 	"'Missing, invalid or expired credentials\x12-\n" +
@@ -1162,8 +1162,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/platform/images/space\x12\x85\x06\n" +
-	"\x12InitializePlatform\x12+.admin.service.v1.InitializePlatformRequest\x1a,.admin.service.v1.InitializePlatformResponse\"\x93\x05\xbaG\xe0\x04\x12\x18开通平台镜像空间\x1a\xbc\x02Requires image:platform:space:enable. Idempotent per idempotency_key and actor. Creates or resumes only the single platform project; it never issues a publisher credential and never returns a secret. Repeating the same key with the same body replays the first result; the same key with different content returns 409.B\xf2\x01\x12\"\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/images/space\x12\x82\x06\n" +
+	"\x12InitializePlatform\x12+.admin.service.v1.InitializePlatformRequest\x1a,.admin.service.v1.InitializePlatformResponse\"\x90\x05\xbaG\xe0\x04\x12\x18开通平台镜像空间\x1a\xbc\x02Requires image:platform:space:enable. Idempotent per idempotency_key and actor. Creates or resumes only the single platform project; it never issues a publisher credential and never returns a secret. Repeating the same key with the same body replays the first result; the same key with different content returns 409.B\xf2\x01\x12\"\n" +
 	"\x03400\x12\x1b\n" +
 	"\x19\n" +
 	"\x17Invalid idempotency key\x122\n" +
@@ -1181,8 +1181,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/platform/images/space:enable\x12\xcb\x05\n" +
-	"\x1eGetPlatformPublisherCredential\x127.admin.service.v1.GetPlatformPublisherCredentialRequest\x1a8.admin.service.v1.GetPlatformPublisherCredentialResponse\"\xb5\x04\xbaG\xfd\x03\x12!读取平台发布凭据元数据\x1a\x8e\x02Requires image:platform:credential:get. Never returns a secret and never reads a historical secret. state=not_issued means no publisher has ever been issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery.B\xb4\x01\x122\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/admin/images/space:enable\x12\xc8\x05\n" +
+	"\x1eGetPlatformPublisherCredential\x127.admin.service.v1.GetPlatformPublisherCredentialRequest\x1a8.admin.service.v1.GetPlatformPublisherCredentialResponse\"\xb2\x04\xbaG\xfd\x03\x12!读取平台发布凭据元数据\x1a\x8e\x02Requires image:platform:credential:get. Never returns a secret and never reads a historical secret. state=not_issued means no publisher has ever been issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery.B\xb4\x01\x122\n" +
 	"\x03401\x12+\n" +
 	")\n" +
 	"'Missing, invalid or expired credentials\x12-\n" +
@@ -1197,8 +1197,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02.\x12,/api/v1/platform/images/publisher-credential\x12\xcf\x06\n" +
-	" IssuePlatformPublisherCredential\x129.admin.service.v1.IssuePlatformPublisherCredentialRequest\x1a:.admin.service.v1.IssuePlatformPublisherCredentialResponse\"\xb3\x05\xbaG\xf2\x04\x12\x18签发平台发布凭据\x1a\xb0\x02Requires image:platform:credential:issue. expectedVersion is mandatory and is the credential's current version (0 when never issued). This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window. It never returns a pull identity.B\x90\x02\x126\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02+\x12)/api/v1/admin/images/publisher-credential\x12\xcc\x06\n" +
+	" IssuePlatformPublisherCredential\x129.admin.service.v1.IssuePlatformPublisherCredentialRequest\x1a:.admin.service.v1.IssuePlatformPublisherCredentialResponse\"\xb0\x05\xbaG\xf2\x04\x12\x18签发平台发布凭据\x1a\xb0\x02Requires image:platform:credential:issue. expectedVersion is mandatory and is the credential's current version (0 when never issued). This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window. It never returns a pull identity.B\x90\x02\x126\n" +
 	"\x03400\x12/\n" +
 	"-\n" +
 	"+Invalid idempotency key or expected version\x122\n" +
@@ -1216,8 +1216,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x027:\x01*\"2/api/v1/platform/images/publisher-credential:issue\x12\x8f\x06\n" +
-	" ResetPlatformPublisherCredential\x129.admin.service.v1.ResetPlatformPublisherCredentialRequest\x1a:.admin.service.v1.ResetPlatformPublisherCredentialResponse\"\xf3\x04\xbaG\xb2\x04\x12\x18重置平台发布凭据\x1a\xf4\x01Requires image:platform:credential:reset. Rotates an already issued publisher; a credential that was never issued is rejected with 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store.B\x8c\x02\x126\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/admin/images/publisher-credential:issue\x12\x8c\x06\n" +
+	" ResetPlatformPublisherCredential\x129.admin.service.v1.ResetPlatformPublisherCredentialRequest\x1a:.admin.service.v1.ResetPlatformPublisherCredentialResponse\"\xf0\x04\xbaG\xb2\x04\x12\x18重置平台发布凭据\x1a\xf4\x01Requires image:platform:credential:reset. Rotates an already issued publisher; a credential that was never issued is rejected with 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store.B\x8c\x02\x126\n" +
 	"\x03400\x12/\n" +
 	"-\n" +
 	"+Invalid idempotency key or expected version\x122\n" +
@@ -1235,8 +1235,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x027:\x01*\"2/api/v1/platform/images/publisher-credential:reset\x12\xe1\x06\n" +
-	"\"DisablePlatformPublisherCredential\x12;.admin.service.v1.DisablePlatformPublisherCredentialRequest\x1a<.admin.service.v1.DisablePlatformPublisherCredentialResponse\"\xbf\x05\xbaG\xfc\x04\x12\x18停用平台发布凭据\x1a\xbe\x02Requires image:platform:credential:disable. Disables the Harbor publisher robot and marks the credential disabled in one transaction. Never returns a secret. A credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED and does not reserve a successful command. Repeating the same key replays the first result.B\x8c\x02\x126\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x024:\x01*\"//api/v1/admin/images/publisher-credential:reset\x12\xde\x06\n" +
+	"\"DisablePlatformPublisherCredential\x12;.admin.service.v1.DisablePlatformPublisherCredentialRequest\x1a<.admin.service.v1.DisablePlatformPublisherCredentialResponse\"\xbc\x05\xbaG\xfc\x04\x12\x18停用平台发布凭据\x1a\xbe\x02Requires image:platform:credential:disable. Disables the Harbor publisher robot and marks the credential disabled in one transaction. Never returns a secret. A credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED and does not reserve a successful command. Repeating the same key replays the first result.B\x8c\x02\x126\n" +
 	"\x03400\x12/\n" +
 	"-\n" +
 	"+Invalid idempotency key or expected version\x122\n" +
@@ -1254,8 +1254,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/platform/images/publisher-credential:disable\x12\x8f\x06\n" +
-	"\x12ListPlatformImages\x12+.admin.service.v1.ListPlatformImagesRequest\x1a,.admin.service.v1.ListPlatformImagesResponse\"\x9d\x05\xbaG\xec\x04\x12\x18分页查询平台镜像\x1a\xff\x02Requires image:platform:registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. total counts the same filter in the same snapshot, so a page past the end returns items=[] with the real total. The response has no next_cursor.B\xbb\x01\x120\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x026:\x01*\"1/api/v1/admin/images/publisher-credential:disable\x12\x8c\x06\n" +
+	"\x12ListPlatformImages\x12+.admin.service.v1.ListPlatformImagesRequest\x1a,.admin.service.v1.ListPlatformImagesResponse\"\x9a\x05\xbaG\xec\x04\x12\x18分页查询平台镜像\x1a\xff\x02Requires image:platform:registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. total counts the same filter in the same snapshot, so a page past the end returns items=[] with the real total. The response has no next_cursor.B\xbb\x01\x120\n" +
 	"\x03400\x12)\n" +
 	"'\n" +
 	"%Invalid page, purposes or accelerator\x122\n" +
@@ -1270,8 +1270,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02'\x12%/api/v1/platform/images/registrations\x12\xdf\x04\n" +
-	"\x10GetPlatformImage\x12).admin.service.v1.GetPlatformImageRequest\x1a*.admin.service.v1.GetPlatformImageResponse\"\xf3\x03\xbaG\xb7\x03\x12\x18读取单个平台镜像\x1a\xad\x01Requires image:platform:registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image in another scope both return 404.B\xd8\x01\x12\x1b\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02$\x12\"/api/v1/admin/images/registrations\x12\xdc\x04\n" +
+	"\x10GetPlatformImage\x12).admin.service.v1.GetPlatformImageRequest\x1a*.admin.service.v1.GetPlatformImageResponse\"\xf0\x03\xbaG\xb7\x03\x12\x18读取单个平台镜像\x1a\xad\x01Requires image:platform:registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image in another scope both return 404.B\xd8\x01\x12\x1b\n" +
 	"\x03400\x12\x14\n" +
 	"\x12\n" +
 	"\x10Invalid image id\x122\n" +
@@ -1289,8 +1289,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x022\x120/api/v1/platform/images/registrations/{image_id}\x12\xf6\x06\n" +
-	"\x15RegisterPlatformImage\x12..admin.service.v1.RegisterPlatformImageRequest\x1a/.admin.service.v1.RegisterPlatformImageResponse\"\xfb\x05\xbaG\xc7\x05\x12\x12登记平台镜像\x1a\x85\x03Requires image:platform:registration:create. image_reference must be an already pushed reference inside the platform project (<=512 bytes). purposes is 1..5 and is normalized to a sorted, de-duplicated list; accelerator defaults to undeclared. The same idempotency_key with the same body replays the first result and returns the same image; a different body under the same key returns 409.B\x96\x02\x129\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02/\x12-/api/v1/admin/images/registrations/{image_id}\x12\xf3\x06\n" +
+	"\x15RegisterPlatformImage\x12..admin.service.v1.RegisterPlatformImageRequest\x1a/.admin.service.v1.RegisterPlatformImageResponse\"\xf8\x05\xbaG\xc7\x05\x12\x12登记平台镜像\x1a\x85\x03Requires image:platform:registration:create. image_reference must be an already pushed reference inside the platform project (<=512 bytes). purposes is 1..5 and is normalized to a sorted, de-duplicated list; accelerator defaults to undeclared. The same idempotency_key with the same body replays the first result and returns the same image; a different body under the same key returns 409.B\x96\x02\x129\n" +
 	"\x03400\x122\n" +
 	"0\n" +
 	".Invalid reference, metadata or idempotency key\x122\n" +
@@ -1308,8 +1308,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/platform/images/registrations\x12\xa3\t\n" +
-	"\x13UpdatePlatformImage\x12,.admin.service.v1.UpdatePlatformImageRequest\x1a-.admin.service.v1.UpdatePlatformImageResponse\"\xae\b\xbaG\xef\a\x12!按字段掩码修改平台镜像\x1a\x94\x05Requires image:platform:registration:update. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field named in the mask must be present, while a field outside the mask must be absent. description may be cleared with an empty string; an empty displayName or empty purposes is rejected. expectedVersion and idempotencyKey are control fields and are never part of the mask. A stale expectedVersion returns 409 VERSION_CONFLICT, and replaying the same key returns the first stored result even after later edits.B\xa0\x02\x127\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/admin/images/registrations\x12\xa0\t\n" +
+	"\x13UpdatePlatformImage\x12,.admin.service.v1.UpdatePlatformImageRequest\x1a-.admin.service.v1.UpdatePlatformImageResponse\"\xab\b\xbaG\xef\a\x12!按字段掩码修改平台镜像\x1a\x94\x05Requires image:platform:registration:update. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field named in the mask must be present, while a field outside the mask must be absent. description may be cleared with an empty string; an empty displayName or empty purposes is rejected. expectedVersion and idempotencyKey are control fields and are never part of the mask. A stale expectedVersion returns 409 VERSION_CONFLICT, and replaying the same key returns the first stored result even after later edits.B\xa0\x02\x127\n" +
 	"\x03400\x120\n" +
 	".\n" +
 	",Invalid mask, patched value or control field\x122\n" +
@@ -1330,8 +1330,8 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x025:\x01*20/api/v1/platform/images/registrations/{image_id}\x12\xb0\x06\n" +
-	"\x17UnregisterPlatformImage\x120.admin.service.v1.UnregisterPlatformImageRequest\x1a1.admin.service.v1.UnregisterPlatformImageResponse\"\xaf\x05\xbaG\xe5\x04\x12\x18注销平台镜像登记\x1a\x93\x02Requires image:platform:registration:unregister. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory. Repeating the same key replays the first result; an already unregistered image returns 404.B\xa0\x02\x127\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x022:\x01*2-/api/v1/admin/images/registrations/{image_id}\x12\xad\x06\n" +
+	"\x17UnregisterPlatformImage\x120.admin.service.v1.UnregisterPlatformImageRequest\x1a1.admin.service.v1.UnregisterPlatformImageResponse\"\xac\x05\xbaG\xe5\x04\x12\x18注销平台镜像登记\x1a\x93\x02Requires image:platform:registration:unregister. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory. Repeating the same key replays the first result; an already unregistered image returns 404.B\xa0\x02\x127\n" +
 	"\x03400\x120\n" +
 	".\n" +
 	",Invalid image id, version or idempotency key\x122\n" +
@@ -1352,7 +1352,7 @@ const file_admin_service_v1_i_platform_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02@:\x01*\";/api/v1/platform/images/registrations/{image_id}:unregisterB\xc0\x01\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02=:\x01*\"8/api/v1/admin/images/registrations/{image_id}:unregisterB\xc0\x01\n" +
 	"\x14com.admin.service.v1B\x13IPlatformImageProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var (

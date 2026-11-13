@@ -7508,7 +7508,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/components",
+      "path": "/api/v1/admin/platform/components",
       "operation": "PlatformComponentService_ListPlatformComponents",
       "module": "SYSTEM",
       "permissions": [
@@ -7517,7 +7517,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/components/{component}/logs/stream",
+      "path": "/api/v1/admin/platform/components/{component}/logs/stream",
       "operation": "PlatformComponentService_StreamComponentLogs",
       "module": "SYSTEM",
       "permissions": [
@@ -7526,7 +7526,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/images/publisher-credential",
+      "path": "/api/v1/admin/images/publisher-credential",
       "operation": "PlatformImageService_GetPlatformPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7535,7 +7535,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/images/publisher-credential:disable",
+      "path": "/api/v1/admin/images/publisher-credential:disable",
       "operation": "PlatformImageService_DisablePlatformPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7544,7 +7544,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/images/publisher-credential:issue",
+      "path": "/api/v1/admin/images/publisher-credential:issue",
       "operation": "PlatformImageService_IssuePlatformPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7553,7 +7553,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/images/publisher-credential:reset",
+      "path": "/api/v1/admin/images/publisher-credential:reset",
       "operation": "PlatformImageService_ResetPlatformPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7562,7 +7562,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/images/registrations",
+      "path": "/api/v1/admin/images/registrations",
       "operation": "PlatformImageService_ListPlatformImages",
       "module": "IMAGE",
       "permissions": [
@@ -7571,7 +7571,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/images/registrations",
+      "path": "/api/v1/admin/images/registrations",
       "operation": "PlatformImageService_RegisterPlatformImage",
       "module": "IMAGE",
       "permissions": [
@@ -7580,7 +7580,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/images/registrations/{image_id}",
+      "path": "/api/v1/admin/images/registrations/{image_id}",
       "operation": "PlatformImageService_GetPlatformImage",
       "module": "IMAGE",
       "permissions": [
@@ -7589,7 +7589,7 @@
     },
     {
       "method": "PATCH",
-      "path": "/api/v1/platform/images/registrations/{image_id}",
+      "path": "/api/v1/admin/images/registrations/{image_id}",
       "operation": "PlatformImageService_UpdatePlatformImage",
       "module": "IMAGE",
       "permissions": [
@@ -7598,7 +7598,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/images/registrations/{image_id}:unregister",
+      "path": "/api/v1/admin/images/registrations/{image_id}:unregister",
       "operation": "PlatformImageService_UnregisterPlatformImage",
       "module": "IMAGE",
       "permissions": [
@@ -7607,7 +7607,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/images/space",
+      "path": "/api/v1/admin/images/space",
       "operation": "PlatformImageService_GetPlatformSpace",
       "module": "IMAGE",
       "permissions": [
@@ -7616,7 +7616,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/images/space:enable",
+      "path": "/api/v1/admin/images/space:enable",
       "operation": "PlatformImageService_InitializePlatform",
       "module": "IMAGE",
       "permissions": [
@@ -7625,7 +7625,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential",
       "operation": "AdminTenantImageService_GetTenantPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7634,7 +7634,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:disable",
       "operation": "AdminTenantImageService_DisableTenantPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7643,7 +7643,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:issue",
       "operation": "AdminTenantImageService_IssueTenantPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7652,7 +7652,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:reset",
       "operation": "AdminTenantImageService_ResetTenantPublisherCredential",
       "module": "IMAGE",
       "permissions": [
@@ -7661,7 +7661,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/registrations",
       "operation": "AdminTenantImageService_ListTenantImages",
       "module": "IMAGE",
       "permissions": [
@@ -7670,7 +7670,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/registrations",
       "operation": "AdminTenantImageService_RegisterTenantImage",
       "module": "IMAGE",
       "permissions": [
@@ -7679,7 +7679,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}",
       "operation": "AdminTenantImageService_GetTenantImage",
       "module": "IMAGE",
       "permissions": [
@@ -7688,7 +7688,7 @@
     },
     {
       "method": "PATCH",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}",
       "operation": "AdminTenantImageService_UpdateTenantImage",
       "module": "IMAGE",
       "permissions": [
@@ -7697,7 +7697,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister",
       "operation": "AdminTenantImageService_UnregisterTenantImage",
       "module": "IMAGE",
       "permissions": [
@@ -7706,7 +7706,7 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/space",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/space",
       "operation": "AdminTenantImageService_GetTenantImageSpace",
       "module": "IMAGE",
       "permissions": [
@@ -7715,7 +7715,7 @@
     },
     {
       "method": "POST",
-      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/space:enable",
+      "path": "/api/v1/admin/tenants/{target_tenant_id}/images/space:enable",
       "operation": "AdminTenantImageService_EnsureTenantImageSpace",
       "module": "IMAGE",
       "permissions": [

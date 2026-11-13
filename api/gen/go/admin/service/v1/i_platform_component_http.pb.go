@@ -31,7 +31,7 @@ type PlatformComponentServiceHTTPServer interface {
 
 func RegisterPlatformComponentServiceHTTPServer(s *http.Server, srv PlatformComponentServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/api/v1/platform/components", _PlatformComponentService_ListPlatformComponents0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/platform/components", _PlatformComponentService_ListPlatformComponents0_HTTP_Handler(srv))
 }
 
 func _PlatformComponentService_ListPlatformComponents0_HTTP_Handler(srv PlatformComponentServiceHTTPServer) func(ctx http.Context) error {
@@ -73,7 +73,7 @@ func NewPlatformComponentServiceHTTPClient(client *http.Client) PlatformComponen
 // 未配置时返回 500 COMPONENT_STATUS_FAILED。
 func (c *PlatformComponentServiceHTTPClientImpl) ListPlatformComponents(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*PlatformComponentStatusResponse, error) {
 	var out PlatformComponentStatusResponse
-	pattern := "/api/v1/platform/components"
+	pattern := "/api/v1/admin/platform/components"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlatformComponentServiceListPlatformComponents))
 	opts = append(opts, http.PathTemplate(pattern))

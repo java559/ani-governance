@@ -221,7 +221,7 @@ def add_instance_log_stream(text):
                 "503":
                     description: Diagnostic target or upstream unavailable before READY
 """
-    # 行首锚定匹配顶层 components:（不能用裸子串：路由 /api/v1/platform/components
+    # 行首锚定匹配顶层 components:（不能用裸子串：路由 /api/v1/admin/platform/components
     # 的路径行同样以 "components:\n" 结尾，会被误计入）。
     marker = "\ncomponents:\n"
     if text.count(marker) != 1:
@@ -356,10 +356,10 @@ def add_platform_component_log_stream(text):
     # looked up by template, which means the contract must be declared here.
     if "            operationId: PlatformComponentService_ListPlatformComponents\n" not in text:
         return text
-    route = "    /api/v1/platform/components/{component}/logs/stream:\n"
+    route = "    /api/v1/admin/platform/components/{component}/logs/stream:\n"
     if route in text:
         raise SystemExit("platform component log stream must be declared once as SSE")
-    operation = """    /api/v1/platform/components/{component}/logs/stream:
+    operation = """    /api/v1/admin/platform/components/{component}/logs/stream:
         get:
             tags:
                 - PlatformComponentService
@@ -373,7 +373,7 @@ def add_platform_component_log_stream(text):
                   required: true
                   schema:
                     type: string
-                    description: Must be a name from GET /api/v1/platform/components. Arbitrary pod, namespace or index names are rejected.
+                    description: Must be a name from GET /api/v1/admin/platform/components. Arbitrary pod, namespace or index names are rejected.
                 - name: limit
                   in: query
                   schema:
@@ -432,7 +432,7 @@ def add_platform_component_log_stream(text):
                             schema:
                                 $ref: '#/components/schemas/PlatformComponentLogError'
 """
-    # 行首锚定匹配顶层 components:（不能用裸子串：路由 /api/v1/platform/components
+    # 行首锚定匹配顶层 components:（不能用裸子串：路由 /api/v1/admin/platform/components
     # 的路径行同样以 "components:\n" 结尾，会被误计入）。
     marker = "\ncomponents:\n"
     if text.count(marker) != 1:

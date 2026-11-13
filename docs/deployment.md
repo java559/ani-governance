@@ -403,7 +403,7 @@ Resource 协议、二进制、数据与实例运行对象无需变更。
 
 ## 9. 平台组件日志流（PLAT-COMP-02 增量）
 
-BOSS 日志窗口 `GET /api/v1/platform/components/{component}/logs/stream` 读 OpenSearch 的
+BOSS 日志窗口 `GET /api/v1/admin/platform/components/{component}/logs/stream` 读 OpenSearch 的
 `ani-logs-*`，不经 Higress、不经 Loki。发布顺序固定为：只读身份 → 配置与挂载 → 镜像 →
 `sync-apis` → 权限 SQL → 刷新策略。任一步失败即停止后续发布。
 
@@ -426,7 +426,7 @@ BOSS 日志窗口 `GET /api/v1/platform/components/{component}/logs/stream` 读 
 3. **发布镜像。** server 与 admin 必须同源同版本，按 §1 构建；只替换 `governance` 容器镜像。
 4. **API 目录与权限。** 用同版 admin 镜像 Job 依次执行 `sync-apis --dry-run`、`sync-apis`、
    `check`（服务镜像内没有 admin 二进制，不用 `kubectl exec`）。目录只新增一条
-   `GET /api/v1/platform/components/{component}/logs/stream`，默认不绑定任何权限。
+   `GET /api/v1/admin/platform/components/{component}/logs/stream`，默认不绑定任何权限。
    随后对已核对的 Gov 库显式执行
    [`register-platform-component-log-permissions.sql`](../scripts/ops/sql/register-platform-component-log-permissions.sql)：
    单事务、路由必须已同步且唯一、冲突即 `RAISE EXCEPTION`，只授予

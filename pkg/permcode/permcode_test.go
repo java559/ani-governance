@@ -212,12 +212,12 @@ func TestCountsAndKeys(t *testing.T) {
 	// 平台组件健康快照（BOSS 组件状态页）：平台级只读，挂 SYSTEM 模块。
 	const platformComponentSource = "scripts/ops/sql/register-platform-component-permissions.sql"
 	platformComponentReads := map[string]expectation{
-		"GET /api/v1/platform/components": {Code: "component:status:read", Source: platformComponentSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
+		"GET /api/v1/admin/platform/components": {Code: "component:status:read", Source: platformComponentSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
 	}
 	// 平台组件日志流（BOSS 组件日志窗口）：独立能力码，与状态快照互不替代。
 	const platformComponentLogSource = "scripts/ops/sql/register-platform-component-log-permissions.sql"
 	platformComponentLogStreams := map[string]expectation{
-		"GET /api/v1/platform/components/{component}/logs/stream": {Code: "component:log:read", Source: platformComponentLogSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
+		"GET /api/v1/admin/platform/components/{component}/logs/stream": {Code: "component:log:read", Source: platformComponentLogSource, BusinessModule: "SYSTEM", ScopeKind: "platform"},
 	}
 	// 容器实例重启与 PVC 挂载/卸载（dev 侧随 70807c81 引入 4 条能力）。
 	// 与 instance 其余能力同源，无法按 source 整表对拍，故逐键校验。
@@ -405,10 +405,10 @@ func TestCountsAndKeys(t *testing.T) {
 		}
 	}
 	// 两条组件能力互不替代：能力码不同，且日志流不能被放进 stream 豁免表。
-	if platformComponentLogStreams["GET /api/v1/platform/components/{component}/logs/stream"].Code == platformComponentReads["GET /api/v1/platform/components"].Code {
+	if platformComponentLogStreams["GET /api/v1/admin/platform/components/{component}/logs/stream"].Code == platformComponentReads["GET /api/v1/admin/platform/components"].Code {
 		t.Fatal("component log and status must not share one capability code")
 	}
-	if _, exempt := exemptReasons["GET /api/v1/platform/components/{component}/logs/stream"]; exempt {
+	if _, exempt := exemptReasons["GET /api/v1/admin/platform/components/{component}/logs/stream"]; exempt {
 		t.Fatal("component log stream must carry its capability code, not fall into the exempt table")
 	}
 	method, path := SplitKey("GET /api/v1/admin/users")

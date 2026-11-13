@@ -39,28 +39,28 @@ BEGIN
      AND status='ON' AND deleted_at IS NULL;
 
   FOR target IN SELECT * FROM (VALUES
-    ('image:platform:space:get','GET','/api/v1/platform/images/space'),
-    ('image:platform:space:enable','POST','/api/v1/platform/images/space:enable'),
-    ('image:platform:credential:get','GET','/api/v1/platform/images/publisher-credential'),
-    ('image:platform:credential:issue','POST','/api/v1/platform/images/publisher-credential:issue'),
-    ('image:platform:credential:reset','POST','/api/v1/platform/images/publisher-credential:reset'),
-    ('image:platform:credential:disable','POST','/api/v1/platform/images/publisher-credential:disable'),
-    ('image:platform:registration:list','GET','/api/v1/platform/images/registrations'),
-    ('image:platform:registration:get','GET','/api/v1/platform/images/registrations/{image_id}'),
-    ('image:platform:registration:create','POST','/api/v1/platform/images/registrations'),
-    ('image:platform:registration:update','PATCH','/api/v1/platform/images/registrations/{image_id}'),
-    ('image:platform:registration:unregister','POST','/api/v1/platform/images/registrations/{image_id}:unregister'),
-    ('image:platform:tenant-space:get','GET','/api/v1/platform/tenants/{target_tenant_id}/images/space'),
-    ('image:platform:tenant-space:enable','POST','/api/v1/platform/tenants/{target_tenant_id}/images/space:enable'),
-    ('image:platform:tenant-credential:get','GET','/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential'),
-    ('image:platform:tenant-credential:issue','POST','/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue'),
-    ('image:platform:tenant-credential:reset','POST','/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset'),
-    ('image:platform:tenant-credential:disable','POST','/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable'),
-    ('image:platform:tenant-registration:list','GET','/api/v1/platform/tenants/{target_tenant_id}/images/registrations'),
-    ('image:platform:tenant-registration:get','GET','/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}'),
-    ('image:platform:tenant-registration:create','POST','/api/v1/platform/tenants/{target_tenant_id}/images/registrations'),
-    ('image:platform:tenant-registration:update','PATCH','/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}'),
-    ('image:platform:tenant-registration:unregister','POST','/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister')
+    ('image:platform:space:get','GET','/api/v1/admin/images/space'),
+    ('image:platform:space:enable','POST','/api/v1/admin/images/space:enable'),
+    ('image:platform:credential:get','GET','/api/v1/admin/images/publisher-credential'),
+    ('image:platform:credential:issue','POST','/api/v1/admin/images/publisher-credential:issue'),
+    ('image:platform:credential:reset','POST','/api/v1/admin/images/publisher-credential:reset'),
+    ('image:platform:credential:disable','POST','/api/v1/admin/images/publisher-credential:disable'),
+    ('image:platform:registration:list','GET','/api/v1/admin/images/registrations'),
+    ('image:platform:registration:get','GET','/api/v1/admin/images/registrations/{image_id}'),
+    ('image:platform:registration:create','POST','/api/v1/admin/images/registrations'),
+    ('image:platform:registration:update','PATCH','/api/v1/admin/images/registrations/{image_id}'),
+    ('image:platform:registration:unregister','POST','/api/v1/admin/images/registrations/{image_id}:unregister'),
+    ('image:platform:tenant-space:get','GET','/api/v1/admin/tenants/{target_tenant_id}/images/space'),
+    ('image:platform:tenant-space:enable','POST','/api/v1/admin/tenants/{target_tenant_id}/images/space:enable'),
+    ('image:platform:tenant-credential:get','GET','/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential'),
+    ('image:platform:tenant-credential:issue','POST','/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:issue'),
+    ('image:platform:tenant-credential:reset','POST','/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:reset'),
+    ('image:platform:tenant-credential:disable','POST','/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:disable'),
+    ('image:platform:tenant-registration:list','GET','/api/v1/admin/tenants/{target_tenant_id}/images/registrations'),
+    ('image:platform:tenant-registration:get','GET','/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}'),
+    ('image:platform:tenant-registration:create','POST','/api/v1/admin/tenants/{target_tenant_id}/images/registrations'),
+    ('image:platform:tenant-registration:update','PATCH','/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}'),
+    ('image:platform:tenant-registration:unregister','POST','/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister')
   ) AS t(code,method,path) LOOP
     SELECT id INTO STRICT target_permission_id FROM sys_permissions
      WHERE code=target.code AND status='ON' AND deleted_at IS NULL;
@@ -116,14 +116,14 @@ BEGIN
        AND status='ON' AND deleted_at IS NULL;
 
     FOR target IN SELECT * FROM (VALUES
-      ('image:platform:space:get','GET','/api/v1/platform/images/space'),
-      ('image:platform:credential:get','GET','/api/v1/platform/images/publisher-credential'),
-      ('image:platform:registration:list','GET','/api/v1/platform/images/registrations'),
-      ('image:platform:registration:get','GET','/api/v1/platform/images/registrations/{image_id}'),
-      ('image:platform:tenant-space:get','GET','/api/v1/platform/tenants/{target_tenant_id}/images/space'),
-      ('image:platform:tenant-credential:get','GET','/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential'),
-      ('image:platform:tenant-registration:list','GET','/api/v1/platform/tenants/{target_tenant_id}/images/registrations'),
-      ('image:platform:tenant-registration:get','GET','/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}')
+      ('image:platform:space:get','GET','/api/v1/admin/images/space'),
+      ('image:platform:credential:get','GET','/api/v1/admin/images/publisher-credential'),
+      ('image:platform:registration:list','GET','/api/v1/admin/images/registrations'),
+      ('image:platform:registration:get','GET','/api/v1/admin/images/registrations/{image_id}'),
+      ('image:platform:tenant-space:get','GET','/api/v1/admin/tenants/{target_tenant_id}/images/space'),
+      ('image:platform:tenant-credential:get','GET','/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential'),
+      ('image:platform:tenant-registration:list','GET','/api/v1/admin/tenants/{target_tenant_id}/images/registrations'),
+      ('image:platform:tenant-registration:get','GET','/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}')
     ) AS t(code,method,path) LOOP
       SELECT id INTO STRICT target_permission_id FROM sys_permissions
        WHERE code=target.code AND status='ON' AND deleted_at IS NULL;

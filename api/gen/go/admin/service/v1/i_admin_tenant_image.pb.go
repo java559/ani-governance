@@ -1246,9 +1246,9 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"\bimage_id\x18\x02 \x01(\tR\bimage_id\x12E\n" +
 	"\x04data\x18\x03 \x01(\v21.catalog.service.v1.ImageManagementUnregisterDataR\x04data\"\\\n" +
 	"\x1dUnregisterTenantImageResponse\x12;\n" +
-	"\x05image\x18\x01 \x01(\v2%.catalog.service.v1.ImageRegistrationR\x05image2\xacJ\n" +
-	"\x17AdminTenantImageService\x12\x87\x06\n" +
-	"\x13GetTenantImageSpace\x12,.admin.service.v1.GetTenantImageSpaceRequest\x1a-.admin.service.v1.GetTenantImageSpaceResponse\"\x92\x05\xbaG\xce\x04\x12!读取指定租户的镜像空间\x1a\xa0\x02Requires the platform user JWT and image:platform:tenant-space:get. target_tenant_id comes only from the path. The operator identity is preserved in the audit trail; the tenant is only the target. Reading is allowed for an existing but disabled tenant so its state can still be inspected.B\xf3\x01\x12#\n" +
+	"\x05image\x18\x01 \x01(\v2%.catalog.service.v1.ImageRegistrationR\x05image2\x8bJ\n" +
+	"\x17AdminTenantImageService\x12\x84\x06\n" +
+	"\x13GetTenantImageSpace\x12,.admin.service.v1.GetTenantImageSpaceRequest\x1a-.admin.service.v1.GetTenantImageSpaceResponse\"\x8f\x05\xbaG\xce\x04\x12!读取指定租户的镜像空间\x1a\xa0\x02Requires the platform user JWT and image:platform:tenant-space:get. target_tenant_id comes only from the path. The operator identity is preserved in the audit trail; the tenant is only the target. Reading is allowed for an existing but disabled tenant so its state can still be inspected.B\xf3\x01\x12#\n" +
 	"\x03400\x12\x1c\n" +
 	"\x1a\n" +
 	"\x18Invalid target tenant id\x122\n" +
@@ -1266,8 +1266,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"+Image backend or tenant mapping unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02:\x128/api/v1/platform/tenants/{target_tenant_id}/images/space\x12\x86\x06\n" +
-	"\x16EnsureTenantImageSpace\x12/.admin.service.v1.EnsureTenantImageSpaceRequest\x1a0.admin.service.v1.EnsureTenantImageSpaceResponse\"\x88\x05\xbaG\xba\x04\x12!为指定租户开通镜像空间\x1a\xe1\x01Requires image:platform:tenant-space:enable and an IMAGE subscription on the target tenant's plan. The slug is immutable once the space exists. Idempotent per idempotency_key and actor; it never issues a publisher credential.B\x9e\x02\x129\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x027\x125/api/v1/admin/tenants/{target_tenant_id}/images/space\x12\x83\x06\n" +
+	"\x16EnsureTenantImageSpace\x12/.admin.service.v1.EnsureTenantImageSpaceRequest\x1a0.admin.service.v1.EnsureTenantImageSpaceResponse\"\x85\x05\xbaG\xba\x04\x12!为指定租户开通镜像空间\x1a\xe1\x01Requires image:platform:tenant-space:enable and an IMAGE subscription on the target tenant's plan. The slug is immutable once the space exists. Idempotent per idempotency_key and actor; it never issues a publisher credential.B\x9e\x02\x129\n" +
 	"\x03400\x122\n" +
 	"0\n" +
 	".Invalid target tenant, slug or idempotency key\x122\n" +
@@ -1285,8 +1285,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02D:\x01*\"?/api/v1/platform/tenants/{target_tenant_id}/images/space:enable\x12\xf6\x05\n" +
-	"\x1cGetTenantPublisherCredential\x125.admin.service.v1.GetTenantPublisherCredentialRequest\x1a6.admin.service.v1.GetTenantPublisherCredentialResponse\"\xe6\x04\xbaG\x93\x04\x12*读取指定租户的发布凭据元数据\x1a\xdc\x01Requires image:platform:tenant-credential:get. Never returns a secret. state=not_issued means never issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery.B\xf3\x01\x12#\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02A:\x01*\"</api/v1/admin/tenants/{target_tenant_id}/images/space:enable\x12\xf3\x05\n" +
+	"\x1cGetTenantPublisherCredential\x125.admin.service.v1.GetTenantPublisherCredentialRequest\x1a6.admin.service.v1.GetTenantPublisherCredentialResponse\"\xe3\x04\xbaG\x93\x04\x12*读取指定租户的发布凭据元数据\x1a\xdc\x01Requires image:platform:tenant-credential:get. Never returns a secret. state=not_issued means never issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery.B\xf3\x01\x12#\n" +
 	"\x03400\x12\x1c\n" +
 	"\x1a\n" +
 	"\x18Invalid target tenant id\x122\n" +
@@ -1304,8 +1304,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"+Image backend or tenant mapping unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02I\x12G/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential\x12\xee\x06\n" +
-	"\x1eIssueTenantPublisherCredential\x127.admin.service.v1.IssueTenantPublisherCredentialRequest\x1a8.admin.service.v1.IssueTenantPublisherCredentialResponse\"\xd8\x05\xbaG\xfc\x04\x12!为指定租户签发发布凭据\x1a\x8d\x02Requires image:platform:tenant-credential:issue and an IMAGE subscription on the target tenant's plan. expectedVersion is mandatory. This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window.B\xb4\x02\x12E\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02F\x12D/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential\x12\xeb\x06\n" +
+	"\x1eIssueTenantPublisherCredential\x127.admin.service.v1.IssueTenantPublisherCredentialRequest\x1a8.admin.service.v1.IssueTenantPublisherCredentialResponse\"\xd5\x05\xbaG\xfc\x04\x12!为指定租户签发发布凭据\x1a\x8d\x02Requires image:platform:tenant-credential:issue and an IMAGE subscription on the target tenant's plan. expectedVersion is mandatory. This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window.B\xb4\x02\x12E\n" +
 	"\x03400\x12>\n" +
 	"<\n" +
 	":Invalid target tenant, idempotency key or expected version\x122\n" +
@@ -1323,8 +1323,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02R:\x01*\"M/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue\x12\x85\a\n" +
-	"\x1eResetTenantPublisherCredential\x127.admin.service.v1.ResetTenantPublisherCredentialRequest\x1a8.admin.service.v1.ResetTenantPublisherCredentialResponse\"\xef\x05\xbaG\x93\x05\x12!重置指定租户的发布凭据\x1a\xa8\x02Requires image:platform:tenant-credential:reset and an IMAGE subscription on the target tenant's plan. Rotates an already issued publisher; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store.B\xb0\x02\x12E\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02O:\x01*\"J/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:issue\x12\x82\a\n" +
+	"\x1eResetTenantPublisherCredential\x127.admin.service.v1.ResetTenantPublisherCredentialRequest\x1a8.admin.service.v1.ResetTenantPublisherCredentialResponse\"\xec\x05\xbaG\x93\x05\x12!重置指定租户的发布凭据\x1a\xa8\x02Requires image:platform:tenant-credential:reset and an IMAGE subscription on the target tenant's plan. Rotates an already issued publisher; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store.B\xb0\x02\x12E\n" +
 	"\x03400\x12>\n" +
 	"<\n" +
 	":Invalid target tenant, idempotency key or expected version\x122\n" +
@@ -1342,8 +1342,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02R:\x01*\"M/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset\x12\xc4\x06\n" +
-	" DisableTenantPublisherCredential\x129.admin.service.v1.DisableTenantPublisherCredentialRequest\x1a:.admin.service.v1.DisableTenantPublisherCredentialResponse\"\xa8\x05\xbaG\xca\x04\x12!停用指定租户的发布凭据\x1a\xf4\x01Requires image:platform:tenant-credential:disable. A disabled or downgraded target tenant can still be disabled here so the identity can be reclaimed. Never returns a secret; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED.B\x9b\x02\x12E\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02O:\x01*\"J/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:reset\x12\xc1\x06\n" +
+	" DisableTenantPublisherCredential\x129.admin.service.v1.DisableTenantPublisherCredentialRequest\x1a:.admin.service.v1.DisableTenantPublisherCredentialResponse\"\xa5\x05\xbaG\xca\x04\x12!停用指定租户的发布凭据\x1a\xf4\x01Requires image:platform:tenant-credential:disable. A disabled or downgraded target tenant can still be disabled here so the identity can be reclaimed. Never returns a secret; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED.B\x9b\x02\x12E\n" +
 	"\x03400\x12>\n" +
 	"<\n" +
 	":Invalid target tenant, idempotency key or expected version\x122\n" +
@@ -1361,8 +1361,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02T:\x01*\"O/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable\x12\xaf\x06\n" +
-	"\x10ListTenantImages\x12).admin.service.v1.ListTenantImagesRequest\x1a*.admin.service.v1.ListTenantImagesResponse\"\xc3\x05\xbaG\xf7\x04\x12!分页查询指定租户的镜像\x1a\xe0\x02Requires image:platform:tenant-registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. An authorized tenant without an image space returns items=[] and total=0; the response has no next_cursor.B\xdc\x01\x12?\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02Q:\x01*\"L/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:disable\x12\xac\x06\n" +
+	"\x10ListTenantImages\x12).admin.service.v1.ListTenantImagesRequest\x1a*.admin.service.v1.ListTenantImagesResponse\"\xc0\x05\xbaG\xf7\x04\x12!分页查询指定租户的镜像\x1a\xe0\x02Requires image:platform:tenant-registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. An authorized tenant without an image space returns items=[] and total=0; the response has no next_cursor.B\xdc\x01\x12?\n" +
 	"\x03400\x128\n" +
 	"6\n" +
 	"4Invalid target tenant, page, purposes or accelerator\x122\n" +
@@ -1377,8 +1377,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"+Image backend or tenant mapping unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02B\x12@/api/v1/platform/tenants/{target_tenant_id}/images/registrations\x12\xb5\x05\n" +
-	"\x0eGetTenantImage\x12'.admin.service.v1.GetTenantImageRequest\x1a(.admin.service.v1.GetTenantImageResponse\"\xcf\x04\xbaG\xf8\x03\x12!读取指定租户的单个镜像\x1a\xd5\x01Requires image:platform:tenant-registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image owned by another tenant are indistinguishable and both return 404.B\xe8\x01\x12,\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02?\x12=/api/v1/admin/tenants/{target_tenant_id}/images/registrations\x12\xb2\x05\n" +
+	"\x0eGetTenantImage\x12'.admin.service.v1.GetTenantImageRequest\x1a(.admin.service.v1.GetTenantImageResponse\"\xcc\x04\xbaG\xf8\x03\x12!读取指定租户的单个镜像\x1a\xd5\x01Requires image:platform:tenant-registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image owned by another tenant are indistinguishable and both return 404.B\xe8\x01\x12,\n" +
 	"\x03400\x12%\n" +
 	"#\n" +
 	"!Invalid target tenant or image id\x122\n" +
@@ -1396,8 +1396,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02M\x12K/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}\x12\xb2\a\n" +
-	"\x13RegisterTenantImage\x12,.admin.service.v1.RegisterTenantImageRequest\x1a-.admin.service.v1.RegisterTenantImageResponse\"\xbd\x06\xbaG\xee\x05\x12\x1b为指定租户登记镜像\x1a\xe4\x02Requires image:platform:tenant-registration:create and an IMAGE subscription on the target tenant's plan. image_reference must already exist in the target tenant's own Harbor project; a reference in any other project returns 403 IMAGE_PROJECT_DENIED. purposes is 1..5 and is normalized. The same idempotency_key with the same body replays the first result.B\xd5\x02\x12H\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02J\x12H/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}\x12\xaf\a\n" +
+	"\x13RegisterTenantImage\x12,.admin.service.v1.RegisterTenantImageRequest\x1a-.admin.service.v1.RegisterTenantImageResponse\"\xba\x06\xbaG\xee\x05\x12\x1b为指定租户登记镜像\x1a\xe4\x02Requires image:platform:tenant-registration:create and an IMAGE subscription on the target tenant's plan. image_reference must already exist in the target tenant's own Harbor project; a reference in any other project returns 403 IMAGE_PROJECT_DENIED. purposes is 1..5 and is normalized. The same idempotency_key with the same body replays the first result.B\xd5\x02\x12H\n" +
 	"\x03400\x12A\n" +
 	"?\n" +
 	"=Invalid target tenant, reference, metadata or idempotency key\x122\n" +
@@ -1415,8 +1415,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"#Image backend or Harbor unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02E:\x01*\"@/api/v1/platform/tenants/{target_tenant_id}/images/registrations\x12\x80\t\n" +
-	"\x11UpdateTenantImage\x12*.admin.service.v1.UpdateTenantImageRequest\x1a+.admin.service.v1.UpdateTenantImageResponse\"\x91\b\xbaG\xb7\a\x12*按字段掩码修改指定租户的镜像\x1a\xb0\x04Requires image:platform:tenant-registration:update and an IMAGE subscription on the target tenant's plan. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field in the mask must be present; a field outside the mask must be absent. description may be cleared with an empty string. expectedVersion and idempotencyKey are control fields outside the mask. A stale expectedVersion returns 409 VERSION_CONFLICT.B\xc3\x02\x12F\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02B:\x01*\"=/api/v1/admin/tenants/{target_tenant_id}/images/registrations\x12\xfd\b\n" +
+	"\x11UpdateTenantImage\x12*.admin.service.v1.UpdateTenantImageRequest\x1a+.admin.service.v1.UpdateTenantImageResponse\"\x8e\b\xbaG\xb7\a\x12*按字段掩码修改指定租户的镜像\x1a\xb0\x04Requires image:platform:tenant-registration:update and an IMAGE subscription on the target tenant's plan. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field in the mask must be present; a field outside the mask must be absent. description may be cleared with an empty string. expectedVersion and idempotencyKey are control fields outside the mask. A stale expectedVersion returns 409 VERSION_CONFLICT.B\xc3\x02\x12F\n" +
 	"\x03400\x12?\n" +
 	"=\n" +
 	";Invalid target tenant, mask, patched value or control field\x122\n" +
@@ -1437,8 +1437,8 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02P:\x01*2K/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}\x12\xa2\a\n" +
-	"\x15UnregisterTenantImage\x12..admin.service.v1.UnregisterTenantImageRequest\x1a/.admin.service.v1.UnregisterTenantImageResponse\"\xa7\x06\xbaG\xc2\x05\x12!注销指定租户的镜像登记\x1a\xd9\x02Requires image:platform:tenant-registration:unregister. A disabled or downgraded target tenant can still be unregistered so the registration can be reclaimed. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory and repeating the same key replays the first result.B\xae\x02\x12F\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02M:\x01*2H/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}\x12\x9f\a\n" +
+	"\x15UnregisterTenantImage\x12..admin.service.v1.UnregisterTenantImageRequest\x1a/.admin.service.v1.UnregisterTenantImageResponse\"\xa4\x06\xbaG\xc2\x05\x12!注销指定租户的镜像登记\x1a\xd9\x02Requires image:platform:tenant-registration:unregister. A disabled or downgraded target tenant can still be unregistered so the registration can be reclaimed. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory and repeating the same key replays the first result.B\xae\x02\x12F\n" +
 	"\x03400\x12?\n" +
 	"=\n" +
 	";Invalid target tenant, image id, version or idempotency key\x122\n" +
@@ -1459,7 +1459,7 @@ const file_admin_service_v1_i_admin_tenant_image_proto_rawDesc = "" +
 	"\x19Image backend unavailableZ\x10\n" +
 	"\x0e\n" +
 	"\n" +
-	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02[:\x01*\"V/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregisterB\xc3\x01\n" +
+	"BearerAuth\x12\x00\x82\xd3\xe4\x93\x02X:\x01*\"S/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}:unregisterB\xc3\x01\n" +
 	"\x14com.admin.service.v1B\x16IAdminTenantImageProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 
 var (

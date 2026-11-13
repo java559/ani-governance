@@ -517,9 +517,9 @@ const file_admin_service_v1_i_platform_component_proto_rawDesc = "" +
 	"\x04mode\x18\x01 \x01(\tR\x04mode\x12\x1a\n" +
 	"\bprovider\x18\x02 \x01(\tR\bprovider\x12#\n" +
 	"\rreal_provider\x18\x03 \x01(\bR\frealProvider\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason2\x9b\x02\n" +
-	"\x18PlatformComponentService\x12\x88\x01\n" +
-	"\x16ListPlatformComponents\x12\x16.google.protobuf.Empty\x1a1.admin.service.v1.PlatformComponentStatusResponse\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/platform/components\x12t\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason2\xa1\x02\n" +
+	"\x18PlatformComponentService\x12\x8e\x01\n" +
+	"\x16ListPlatformComponents\x12\x16.google.protobuf.Empty\x1a1.admin.service.v1.PlatformComponentStatusResponse\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/admin/platform/components\x12t\n" +
 	"\x13StreamComponentLogs\x12..admin.service.v1.PlatformComponentLogsRequest\x1a+.admin.service.v1.PlatformComponentLogFrame0\x01B\xc4\x01\n" +
 	"\x14com.admin.service.v1B\x17IPlatformComponentProtoP\x01Z1go-wind-admin/api/gen/go/admin/service/v1;adminpb\xa2\x02\x03ASX\xaa\x02\x10Admin.Service.V1\xca\x02\x10Admin\\Service\\V1\xe2\x02\x1cAdmin\\Service\\V1\\GPBMetadata\xea\x02\x12Admin::Service::V1b\x06proto3"
 

@@ -7,11 +7,11 @@ import (
 
 // PlatformComponentsPath 是 BOSS「组件状态」页的组件清单路由；入口权限码
 // component:status:read，仅平台身份可访问（tenant_id=0 + 平台角色）。
-const PlatformComponentsPath = "/api/v1/platform/components"
+const PlatformComponentsPath = "/api/v1/admin/platform/components"
 
 // PlatformComponentLogStreamPath 是组件日志流的对外路由模板（GET SSE），
 // 入口权限码 component:log:read。与状态接口共用同一份受控组件清单。
-const PlatformComponentLogStreamPath = "/api/v1/platform/components/{component}/logs/stream"
+const PlatformComponentLogStreamPath = "/api/v1/admin/platform/components/{component}/logs/stream"
 
 // PlatformComponentLogStreamOperation 是日志流的 HTTP operation 名，供鉴权
 // 中间件按 operation 取权限码，也供手写 handler 写审计痕迹。

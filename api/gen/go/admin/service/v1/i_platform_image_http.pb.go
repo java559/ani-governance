@@ -47,17 +47,17 @@ type PlatformImageServiceHTTPServer interface {
 
 func RegisterPlatformImageServiceHTTPServer(s *http.Server, srv PlatformImageServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/api/v1/platform/images/space", _PlatformImageService_GetPlatformSpace0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/images/space:enable", _PlatformImageService_InitializePlatform0_HTTP_Handler(srv))
-	r.GET("/api/v1/platform/images/publisher-credential", _PlatformImageService_GetPlatformPublisherCredential0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/images/publisher-credential:issue", _PlatformImageService_IssuePlatformPublisherCredential0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/images/publisher-credential:reset", _PlatformImageService_ResetPlatformPublisherCredential0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/images/publisher-credential:disable", _PlatformImageService_DisablePlatformPublisherCredential0_HTTP_Handler(srv))
-	r.GET("/api/v1/platform/images/registrations", _PlatformImageService_ListPlatformImages0_HTTP_Handler(srv))
-	r.GET("/api/v1/platform/images/registrations/{image_id}", _PlatformImageService_GetPlatformImage0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/images/registrations", _PlatformImageService_RegisterPlatformImage0_HTTP_Handler(srv))
-	r.PATCH("/api/v1/platform/images/registrations/{image_id}", _PlatformImageService_UpdatePlatformImage0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/images/registrations/{image_id}:unregister", _PlatformImageService_UnregisterPlatformImage0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/images/space", _PlatformImageService_GetPlatformSpace0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/images/space:enable", _PlatformImageService_InitializePlatform0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/images/publisher-credential", _PlatformImageService_GetPlatformPublisherCredential0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/images/publisher-credential:issue", _PlatformImageService_IssuePlatformPublisherCredential0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/images/publisher-credential:reset", _PlatformImageService_ResetPlatformPublisherCredential0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/images/publisher-credential:disable", _PlatformImageService_DisablePlatformPublisherCredential0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/images/registrations", _PlatformImageService_ListPlatformImages0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/images/registrations/{image_id}", _PlatformImageService_GetPlatformImage0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/images/registrations", _PlatformImageService_RegisterPlatformImage0_HTTP_Handler(srv))
+	r.PATCH("/api/v1/admin/images/registrations/{image_id}", _PlatformImageService_UpdatePlatformImage0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/images/registrations/{image_id}:unregister", _PlatformImageService_UnregisterPlatformImage0_HTTP_Handler(srv))
 }
 
 func _PlatformImageService_GetPlatformSpace0_HTTP_Handler(srv PlatformImageServiceHTTPServer) func(ctx http.Context) error {
@@ -323,7 +323,7 @@ func NewPlatformImageServiceHTTPClient(client *http.Client) PlatformImageService
 
 func (c *PlatformImageServiceHTTPClientImpl) DisablePlatformPublisherCredential(ctx context.Context, in *DisablePlatformPublisherCredentialRequest, opts ...http.CallOption) (*DisablePlatformPublisherCredentialResponse, error) {
 	var out DisablePlatformPublisherCredentialResponse
-	pattern := "/api/v1/platform/images/publisher-credential:disable"
+	pattern := "/api/v1/admin/images/publisher-credential:disable"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceDisablePlatformPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -336,7 +336,7 @@ func (c *PlatformImageServiceHTTPClientImpl) DisablePlatformPublisherCredential(
 
 func (c *PlatformImageServiceHTTPClientImpl) GetPlatformImage(ctx context.Context, in *GetPlatformImageRequest, opts ...http.CallOption) (*GetPlatformImageResponse, error) {
 	var out GetPlatformImageResponse
-	pattern := "/api/v1/platform/images/registrations/{image_id}"
+	pattern := "/api/v1/admin/images/registrations/{image_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceGetPlatformImage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -349,7 +349,7 @@ func (c *PlatformImageServiceHTTPClientImpl) GetPlatformImage(ctx context.Contex
 
 func (c *PlatformImageServiceHTTPClientImpl) GetPlatformPublisherCredential(ctx context.Context, in *GetPlatformPublisherCredentialRequest, opts ...http.CallOption) (*GetPlatformPublisherCredentialResponse, error) {
 	var out GetPlatformPublisherCredentialResponse
-	pattern := "/api/v1/platform/images/publisher-credential"
+	pattern := "/api/v1/admin/images/publisher-credential"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceGetPlatformPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -362,7 +362,7 @@ func (c *PlatformImageServiceHTTPClientImpl) GetPlatformPublisherCredential(ctx 
 
 func (c *PlatformImageServiceHTTPClientImpl) GetPlatformSpace(ctx context.Context, in *GetPlatformSpaceRequest, opts ...http.CallOption) (*GetPlatformSpaceResponse, error) {
 	var out GetPlatformSpaceResponse
-	pattern := "/api/v1/platform/images/space"
+	pattern := "/api/v1/admin/images/space"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceGetPlatformSpace))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -375,7 +375,7 @@ func (c *PlatformImageServiceHTTPClientImpl) GetPlatformSpace(ctx context.Contex
 
 func (c *PlatformImageServiceHTTPClientImpl) InitializePlatform(ctx context.Context, in *InitializePlatformRequest, opts ...http.CallOption) (*InitializePlatformResponse, error) {
 	var out InitializePlatformResponse
-	pattern := "/api/v1/platform/images/space:enable"
+	pattern := "/api/v1/admin/images/space:enable"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceInitializePlatform))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -388,7 +388,7 @@ func (c *PlatformImageServiceHTTPClientImpl) InitializePlatform(ctx context.Cont
 
 func (c *PlatformImageServiceHTTPClientImpl) IssuePlatformPublisherCredential(ctx context.Context, in *IssuePlatformPublisherCredentialRequest, opts ...http.CallOption) (*IssuePlatformPublisherCredentialResponse, error) {
 	var out IssuePlatformPublisherCredentialResponse
-	pattern := "/api/v1/platform/images/publisher-credential:issue"
+	pattern := "/api/v1/admin/images/publisher-credential:issue"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceIssuePlatformPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -401,7 +401,7 @@ func (c *PlatformImageServiceHTTPClientImpl) IssuePlatformPublisherCredential(ct
 
 func (c *PlatformImageServiceHTTPClientImpl) ListPlatformImages(ctx context.Context, in *ListPlatformImagesRequest, opts ...http.CallOption) (*ListPlatformImagesResponse, error) {
 	var out ListPlatformImagesResponse
-	pattern := "/api/v1/platform/images/registrations"
+	pattern := "/api/v1/admin/images/registrations"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceListPlatformImages))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -414,7 +414,7 @@ func (c *PlatformImageServiceHTTPClientImpl) ListPlatformImages(ctx context.Cont
 
 func (c *PlatformImageServiceHTTPClientImpl) RegisterPlatformImage(ctx context.Context, in *RegisterPlatformImageRequest, opts ...http.CallOption) (*RegisterPlatformImageResponse, error) {
 	var out RegisterPlatformImageResponse
-	pattern := "/api/v1/platform/images/registrations"
+	pattern := "/api/v1/admin/images/registrations"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceRegisterPlatformImage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -427,7 +427,7 @@ func (c *PlatformImageServiceHTTPClientImpl) RegisterPlatformImage(ctx context.C
 
 func (c *PlatformImageServiceHTTPClientImpl) ResetPlatformPublisherCredential(ctx context.Context, in *ResetPlatformPublisherCredentialRequest, opts ...http.CallOption) (*ResetPlatformPublisherCredentialResponse, error) {
 	var out ResetPlatformPublisherCredentialResponse
-	pattern := "/api/v1/platform/images/publisher-credential:reset"
+	pattern := "/api/v1/admin/images/publisher-credential:reset"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceResetPlatformPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -440,7 +440,7 @@ func (c *PlatformImageServiceHTTPClientImpl) ResetPlatformPublisherCredential(ct
 
 func (c *PlatformImageServiceHTTPClientImpl) UnregisterPlatformImage(ctx context.Context, in *UnregisterPlatformImageRequest, opts ...http.CallOption) (*UnregisterPlatformImageResponse, error) {
 	var out UnregisterPlatformImageResponse
-	pattern := "/api/v1/platform/images/registrations/{image_id}:unregister"
+	pattern := "/api/v1/admin/images/registrations/{image_id}:unregister"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceUnregisterPlatformImage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -453,7 +453,7 @@ func (c *PlatformImageServiceHTTPClientImpl) UnregisterPlatformImage(ctx context
 
 func (c *PlatformImageServiceHTTPClientImpl) UpdatePlatformImage(ctx context.Context, in *UpdatePlatformImageRequest, opts ...http.CallOption) (*UpdatePlatformImageResponse, error) {
 	var out UpdatePlatformImageResponse
-	pattern := "/api/v1/platform/images/registrations/{image_id}"
+	pattern := "/api/v1/admin/images/registrations/{image_id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationPlatformImageServiceUpdatePlatformImage))
 	opts = append(opts, http.PathTemplate(pattern))

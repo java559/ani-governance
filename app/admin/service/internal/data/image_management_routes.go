@@ -7,25 +7,25 @@ package data
 // router matches what the HTTP handlers register, and the API catalog stores the
 // same value.
 const (
-	PlatformImageSpacePath             = "/api/v1/platform/images/space"
-	PlatformImageSpaceEnablePath       = "/api/v1/platform/images/space:enable"
-	PlatformImageCredentialPath        = "/api/v1/platform/images/publisher-credential"
-	PlatformImageCredentialIssuePath   = "/api/v1/platform/images/publisher-credential:issue"
-	PlatformImageCredentialResetPath   = "/api/v1/platform/images/publisher-credential:reset"
-	PlatformImageCredentialDisablePath = "/api/v1/platform/images/publisher-credential:disable"
-	PlatformImageCollectionPath        = "/api/v1/platform/images/registrations"
-	PlatformImageGetPath               = "/api/v1/platform/images/registrations/{image_id}"
-	PlatformImageUnregisterPath        = "/api/v1/platform/images/registrations/{image_id}:unregister"
+	PlatformImageSpacePath             = "/api/v1/admin/images/space"
+	PlatformImageSpaceEnablePath       = "/api/v1/admin/images/space:enable"
+	PlatformImageCredentialPath        = "/api/v1/admin/images/publisher-credential"
+	PlatformImageCredentialIssuePath   = "/api/v1/admin/images/publisher-credential:issue"
+	PlatformImageCredentialResetPath   = "/api/v1/admin/images/publisher-credential:reset"
+	PlatformImageCredentialDisablePath = "/api/v1/admin/images/publisher-credential:disable"
+	PlatformImageCollectionPath        = "/api/v1/admin/images/registrations"
+	PlatformImageGetPath               = "/api/v1/admin/images/registrations/{image_id}"
+	PlatformImageUnregisterPath        = "/api/v1/admin/images/registrations/{image_id}:unregister"
 
-	ManagedTenantImageSpacePath             = "/api/v1/platform/tenants/{target_tenant_id}/images/space"
-	ManagedTenantImageSpaceEnablePath       = "/api/v1/platform/tenants/{target_tenant_id}/images/space:enable"
-	ManagedTenantImageCredentialPath        = "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential"
-	ManagedTenantImageCredentialIssuePath   = "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue"
-	ManagedTenantImageCredentialResetPath   = "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset"
-	ManagedTenantImageCredentialDisablePath = "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable"
-	ManagedTenantImageCollectionPath        = "/api/v1/platform/tenants/{target_tenant_id}/images/registrations"
-	ManagedTenantImageGetPath               = "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}"
-	ManagedTenantImageUnregisterPath        = "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister"
+	ManagedTenantImageSpacePath             = "/api/v1/admin/tenants/{target_tenant_id}/images/space"
+	ManagedTenantImageSpaceEnablePath       = "/api/v1/admin/tenants/{target_tenant_id}/images/space:enable"
+	ManagedTenantImageCredentialPath        = "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential"
+	ManagedTenantImageCredentialIssuePath   = "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:issue"
+	ManagedTenantImageCredentialResetPath   = "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:reset"
+	ManagedTenantImageCredentialDisablePath = "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:disable"
+	ManagedTenantImageCollectionPath        = "/api/v1/admin/tenants/{target_tenant_id}/images/registrations"
+	ManagedTenantImageGetPath               = "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}"
+	ManagedTenantImageUnregisterPath        = "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister"
 )
 
 // ImageManagementRoute 是一条平台镜像管理路由的唯一定义。

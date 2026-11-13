@@ -13,7 +13,7 @@ import "catalog/service/v1/image_management.proto";
 
 service PlatformImageService {
   rpc GetPlatformSpace(GetPlatformSpaceRequest) returns (GetPlatformSpaceResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/images/space" };
+    option (google.api.http) = { get: "/api/v1/admin/images/space" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "读取平台镜像空间绑定"
@@ -26,7 +26,7 @@ service PlatformImageService {
     };
   }
   rpc InitializePlatform(InitializePlatformRequest) returns (InitializePlatformResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/images/space:enable" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/images/space:enable" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "开通平台镜像空间"
@@ -41,7 +41,7 @@ service PlatformImageService {
     };
   }
   rpc GetPlatformPublisherCredential(GetPlatformPublisherCredentialRequest) returns (GetPlatformPublisherCredentialResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/images/publisher-credential" };
+    option (google.api.http) = { get: "/api/v1/admin/images/publisher-credential" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "读取平台发布凭据元数据"
@@ -55,7 +55,7 @@ service PlatformImageService {
     };
   }
   rpc IssuePlatformPublisherCredential(IssuePlatformPublisherCredentialRequest) returns (IssuePlatformPublisherCredentialResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/images/publisher-credential:issue" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/images/publisher-credential:issue" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "签发平台发布凭据"
@@ -70,7 +70,7 @@ service PlatformImageService {
     };
   }
   rpc ResetPlatformPublisherCredential(ResetPlatformPublisherCredentialRequest) returns (ResetPlatformPublisherCredentialResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/images/publisher-credential:reset" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/images/publisher-credential:reset" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "重置平台发布凭据"
@@ -85,7 +85,7 @@ service PlatformImageService {
     };
   }
   rpc DisablePlatformPublisherCredential(DisablePlatformPublisherCredentialRequest) returns (DisablePlatformPublisherCredentialResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/images/publisher-credential:disable" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/images/publisher-credential:disable" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "停用平台发布凭据"
@@ -100,7 +100,7 @@ service PlatformImageService {
     };
   }
   rpc ListPlatformImages(ListPlatformImagesRequest) returns (ListPlatformImagesResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/images/registrations" };
+    option (google.api.http) = { get: "/api/v1/admin/images/registrations" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "分页查询平台镜像"
@@ -114,7 +114,7 @@ service PlatformImageService {
     };
   }
   rpc GetPlatformImage(GetPlatformImageRequest) returns (GetPlatformImageResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/images/registrations/{image_id}" };
+    option (google.api.http) = { get: "/api/v1/admin/images/registrations/{image_id}" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "读取单个平台镜像"
@@ -129,7 +129,7 @@ service PlatformImageService {
     };
   }
   rpc RegisterPlatformImage(RegisterPlatformImageRequest) returns (RegisterPlatformImageResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/images/registrations" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/images/registrations" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "登记平台镜像"
@@ -144,7 +144,7 @@ service PlatformImageService {
     };
   }
   rpc UpdatePlatformImage(UpdatePlatformImageRequest) returns (UpdatePlatformImageResponse) {
-    option (google.api.http) = { patch: "/api/v1/platform/images/registrations/{image_id}" body: "*" };
+    option (google.api.http) = { patch: "/api/v1/admin/images/registrations/{image_id}" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "按字段掩码修改平台镜像"
@@ -160,7 +160,7 @@ service PlatformImageService {
     };
   }
   rpc UnregisterPlatformImage(UnregisterPlatformImageRequest) returns (UnregisterPlatformImageResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/images/registrations/{image_id}:unregister" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/images/registrations/{image_id}:unregister" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "注销平台镜像登记"

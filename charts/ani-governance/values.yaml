@@ -29,7 +29,7 @@ rbac:
   # validates scheduling options through the Kubernetes API.
   create: true
 
-# 平台组件健康快照（BOSS 组件状态页，GET /api/v1/platform/components）。
+# 平台组件健康快照（BOSS 组件状态页，GET /api/v1/admin/platform/components）。
 # prometheusURL 留空 = 不查询抓取可达性，service 组 scrape_status 恒 unknown。
 platformComponents:
   prometheusURL: ""
@@ -38,7 +38,7 @@ platformComponents:
     # 目标集群未装 Operator 时保持 false。
     enabled: false
 
-# 平台组件日志流（GET /api/v1/platform/components/{component}/logs/stream）。
+# 平台组件日志流（GET /api/v1/admin/platform/components/{component}/logs/stream）。
 # 默认关闭：不注入 ANI_COMPONENT_LOGS_CONFIG 时接口返回 503，组件状态接口不受影响。
 # 打开前必须先创建 Secret（CA 与只读凭据）与 ConfigMap（无秘密配置），
 # 见 deploy/component-logs/config.example.json 与 docs/deployment.md。

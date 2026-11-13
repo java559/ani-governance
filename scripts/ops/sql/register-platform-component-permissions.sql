@@ -18,7 +18,7 @@ BEGIN
   -- 1) 目录校验：admin sync-apis 必须已同步且仅同步一次本路由
   --    （module 来自 OpenAPI tag，business_module 来自 ServiceTagToBusinessModule）。
   SELECT count(*),min(id) INTO route_count,aid FROM sys_apis
-   WHERE path='/api/v1/platform/components' AND method='GET'
+   WHERE path='/api/v1/admin/platform/components' AND method='GET'
      AND module='PlatformComponentService' AND business_module='SYSTEM'
      AND scope='ADMIN' AND status='ON' AND deleted_at IS NULL;
   IF route_count<>1 THEN
@@ -52,7 +52,7 @@ COMMIT;
 -- 回显落库结果
 SELECT code, status FROM sys_permissions WHERE code='component:status:read';
 SELECT a.path, a.method, a.module, a.business_module FROM sys_apis a
- WHERE a.path='/api/v1/platform/components' AND a.method='GET' AND a.deleted_at IS NULL;
+ WHERE a.path='/api/v1/admin/platform/components' AND a.method='GET' AND a.deleted_at IS NULL;
 SELECT rp.tenant_id, rp.role_id, p.code FROM sys_role_permissions rp
  JOIN sys_permissions p ON p.id=rp.permission_id
  WHERE p.code='component:status:read' AND rp.deleted_at IS NULL

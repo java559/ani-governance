@@ -12,7 +12,7 @@ import "catalog/service/v1/image_management.proto";
 
 service AdminTenantImageService {
   rpc GetTenantImageSpace(GetTenantImageSpaceRequest) returns (GetTenantImageSpaceResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/space" };
+    option (google.api.http) = { get: "/api/v1/admin/tenants/{target_tenant_id}/images/space" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "读取指定租户的镜像空间"
@@ -27,7 +27,7 @@ service AdminTenantImageService {
     };
   }
   rpc EnsureTenantImageSpace(EnsureTenantImageSpaceRequest) returns (EnsureTenantImageSpaceResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/space:enable" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/tenants/{target_tenant_id}/images/space:enable" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "为指定租户开通镜像空间"
@@ -42,7 +42,7 @@ service AdminTenantImageService {
     };
   }
   rpc GetTenantPublisherCredential(GetTenantPublisherCredentialRequest) returns (GetTenantPublisherCredentialResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential" };
+    option (google.api.http) = { get: "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "读取指定租户的发布凭据元数据"
@@ -57,7 +57,7 @@ service AdminTenantImageService {
     };
   }
   rpc IssueTenantPublisherCredential(IssueTenantPublisherCredentialRequest) returns (IssueTenantPublisherCredentialResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:issue" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "为指定租户签发发布凭据"
@@ -72,7 +72,7 @@ service AdminTenantImageService {
     };
   }
   rpc ResetTenantPublisherCredential(ResetTenantPublisherCredentialRequest) returns (ResetTenantPublisherCredentialResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:reset" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "重置指定租户的发布凭据"
@@ -87,7 +87,7 @@ service AdminTenantImageService {
     };
   }
   rpc DisableTenantPublisherCredential(DisableTenantPublisherCredentialRequest) returns (DisableTenantPublisherCredentialResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:disable" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "停用指定租户的发布凭据"
@@ -102,7 +102,7 @@ service AdminTenantImageService {
     };
   }
   rpc ListTenantImages(ListTenantImagesRequest) returns (ListTenantImagesResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations" };
+    option (google.api.http) = { get: "/api/v1/admin/tenants/{target_tenant_id}/images/registrations" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "分页查询指定租户的镜像"
@@ -116,7 +116,7 @@ service AdminTenantImageService {
     };
   }
   rpc GetTenantImage(GetTenantImageRequest) returns (GetTenantImageResponse) {
-    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}" };
+    option (google.api.http) = { get: "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "读取指定租户的单个镜像"
@@ -131,7 +131,7 @@ service AdminTenantImageService {
     };
   }
   rpc RegisterTenantImage(RegisterTenantImageRequest) returns (RegisterTenantImageResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/tenants/{target_tenant_id}/images/registrations" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "为指定租户登记镜像"
@@ -146,7 +146,7 @@ service AdminTenantImageService {
     };
   }
   rpc UpdateTenantImage(UpdateTenantImageRequest) returns (UpdateTenantImageResponse) {
-    option (google.api.http) = { patch: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}" body: "*" };
+    option (google.api.http) = { patch: "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "按字段掩码修改指定租户的镜像"
@@ -162,7 +162,7 @@ service AdminTenantImageService {
     };
   }
   rpc UnregisterTenantImage(UnregisterTenantImageRequest) returns (UnregisterTenantImageResponse) {
-    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister" body: "*" };
+    option (google.api.http) = { post: "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister" body: "*" };
     option (gnostic.openapi.v3.operation) = {
       security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
       summary: "注销指定租户的镜像登记"

@@ -105,7 +105,7 @@ func componentLogPlatformPrincipal(permissions ...string) *auth.Principal {
 }
 
 func componentLogStreamURL(base, component, query string) string {
-	target := base + "/api/v1/platform/components/" + component + "/logs/stream"
+	target := base + "/api/v1/admin/platform/components/" + component + "/logs/stream"
 	if query != "" {
 		target += "?" + query
 	}

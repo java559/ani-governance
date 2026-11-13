@@ -47,17 +47,17 @@ type AdminTenantImageServiceHTTPServer interface {
 
 func RegisterAdminTenantImageServiceHTTPServer(s *http.Server, srv AdminTenantImageServiceHTTPServer) {
 	r := s.Route("/")
-	r.GET("/api/v1/platform/tenants/{target_tenant_id}/images/space", _AdminTenantImageService_GetTenantImageSpace0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/tenants/{target_tenant_id}/images/space:enable", _AdminTenantImageService_EnsureTenantImageSpace0_HTTP_Handler(srv))
-	r.GET("/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential", _AdminTenantImageService_GetTenantPublisherCredential0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue", _AdminTenantImageService_IssueTenantPublisherCredential0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset", _AdminTenantImageService_ResetTenantPublisherCredential0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable", _AdminTenantImageService_DisableTenantPublisherCredential0_HTTP_Handler(srv))
-	r.GET("/api/v1/platform/tenants/{target_tenant_id}/images/registrations", _AdminTenantImageService_ListTenantImages0_HTTP_Handler(srv))
-	r.GET("/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}", _AdminTenantImageService_GetTenantImage0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/tenants/{target_tenant_id}/images/registrations", _AdminTenantImageService_RegisterTenantImage0_HTTP_Handler(srv))
-	r.PATCH("/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}", _AdminTenantImageService_UpdateTenantImage0_HTTP_Handler(srv))
-	r.POST("/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister", _AdminTenantImageService_UnregisterTenantImage0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/{target_tenant_id}/images/space", _AdminTenantImageService_GetTenantImageSpace0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants/{target_tenant_id}/images/space:enable", _AdminTenantImageService_EnsureTenantImageSpace0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential", _AdminTenantImageService_GetTenantPublisherCredential0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:issue", _AdminTenantImageService_IssueTenantPublisherCredential0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:reset", _AdminTenantImageService_ResetTenantPublisherCredential0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:disable", _AdminTenantImageService_DisableTenantPublisherCredential0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/{target_tenant_id}/images/registrations", _AdminTenantImageService_ListTenantImages0_HTTP_Handler(srv))
+	r.GET("/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}", _AdminTenantImageService_GetTenantImage0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants/{target_tenant_id}/images/registrations", _AdminTenantImageService_RegisterTenantImage0_HTTP_Handler(srv))
+	r.PATCH("/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}", _AdminTenantImageService_UpdateTenantImage0_HTTP_Handler(srv))
+	r.POST("/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister", _AdminTenantImageService_UnregisterTenantImage0_HTTP_Handler(srv))
 }
 
 func _AdminTenantImageService_GetTenantImageSpace0_HTTP_Handler(srv AdminTenantImageServiceHTTPServer) func(ctx http.Context) error {
@@ -347,7 +347,7 @@ func NewAdminTenantImageServiceHTTPClient(client *http.Client) AdminTenantImageS
 
 func (c *AdminTenantImageServiceHTTPClientImpl) DisableTenantPublisherCredential(ctx context.Context, in *DisableTenantPublisherCredentialRequest, opts ...http.CallOption) (*DisableTenantPublisherCredentialResponse, error) {
 	var out DisableTenantPublisherCredentialResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:disable"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceDisableTenantPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -360,7 +360,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) DisableTenantPublisherCredential
 
 func (c *AdminTenantImageServiceHTTPClientImpl) EnsureTenantImageSpace(ctx context.Context, in *EnsureTenantImageSpaceRequest, opts ...http.CallOption) (*EnsureTenantImageSpaceResponse, error) {
 	var out EnsureTenantImageSpaceResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/space:enable"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/space:enable"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceEnsureTenantImageSpace))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -373,7 +373,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) EnsureTenantImageSpace(ctx conte
 
 func (c *AdminTenantImageServiceHTTPClientImpl) GetTenantImage(ctx context.Context, in *GetTenantImageRequest, opts ...http.CallOption) (*GetTenantImageResponse, error) {
 	var out GetTenantImageResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceGetTenantImage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -386,7 +386,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) GetTenantImage(ctx context.Conte
 
 func (c *AdminTenantImageServiceHTTPClientImpl) GetTenantImageSpace(ctx context.Context, in *GetTenantImageSpaceRequest, opts ...http.CallOption) (*GetTenantImageSpaceResponse, error) {
 	var out GetTenantImageSpaceResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/space"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/space"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceGetTenantImageSpace))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -399,7 +399,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) GetTenantImageSpace(ctx context.
 
 func (c *AdminTenantImageServiceHTTPClientImpl) GetTenantPublisherCredential(ctx context.Context, in *GetTenantPublisherCredentialRequest, opts ...http.CallOption) (*GetTenantPublisherCredentialResponse, error) {
 	var out GetTenantPublisherCredentialResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceGetTenantPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -412,7 +412,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) GetTenantPublisherCredential(ctx
 
 func (c *AdminTenantImageServiceHTTPClientImpl) IssueTenantPublisherCredential(ctx context.Context, in *IssueTenantPublisherCredentialRequest, opts ...http.CallOption) (*IssueTenantPublisherCredentialResponse, error) {
 	var out IssueTenantPublisherCredentialResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:issue"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceIssueTenantPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -425,7 +425,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) IssueTenantPublisherCredential(c
 
 func (c *AdminTenantImageServiceHTTPClientImpl) ListTenantImages(ctx context.Context, in *ListTenantImagesRequest, opts ...http.CallOption) (*ListTenantImagesResponse, error) {
 	var out ListTenantImagesResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/registrations"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/registrations"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceListTenantImages))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -438,7 +438,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) ListTenantImages(ctx context.Con
 
 func (c *AdminTenantImageServiceHTTPClientImpl) RegisterTenantImage(ctx context.Context, in *RegisterTenantImageRequest, opts ...http.CallOption) (*RegisterTenantImageResponse, error) {
 	var out RegisterTenantImageResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/registrations"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/registrations"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceRegisterTenantImage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -451,7 +451,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) RegisterTenantImage(ctx context.
 
 func (c *AdminTenantImageServiceHTTPClientImpl) ResetTenantPublisherCredential(ctx context.Context, in *ResetTenantPublisherCredentialRequest, opts ...http.CallOption) (*ResetTenantPublisherCredentialResponse, error) {
 	var out ResetTenantPublisherCredentialResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/publisher-credential:reset"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceResetTenantPublisherCredential))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -464,7 +464,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) ResetTenantPublisherCredential(c
 
 func (c *AdminTenantImageServiceHTTPClientImpl) UnregisterTenantImage(ctx context.Context, in *UnregisterTenantImageRequest, opts ...http.CallOption) (*UnregisterTenantImageResponse, error) {
 	var out UnregisterTenantImageResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceUnregisterTenantImage))
 	opts = append(opts, http.PathTemplate(pattern))
@@ -477,7 +477,7 @@ func (c *AdminTenantImageServiceHTTPClientImpl) UnregisterTenantImage(ctx contex
 
 func (c *AdminTenantImageServiceHTTPClientImpl) UpdateTenantImage(ctx context.Context, in *UpdateTenantImageRequest, opts ...http.CallOption) (*UpdateTenantImageResponse, error) {
 	var out UpdateTenantImageResponse
-	pattern := "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}"
+	pattern := "/api/v1/admin/tenants/{target_tenant_id}/images/registrations/{image_id}"
 	path := binding.EncodeURL(pattern, in, false)
 	opts = append(opts, http.Operation(OperationAdminTenantImageServiceUpdateTenantImage))
 	opts = append(opts, http.PathTemplate(pattern))

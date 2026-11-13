@@ -12,15 +12,15 @@ func TestImageWriteRouteMatchCoversUnregister(t *testing.T) {
 		path   string
 		want   bool
 	}{
-		{"平台注销", "POST", "/api/v1/platform/images/registrations/img_0123456789abcdef0123456789abcdef:unregister", true},
-		{"代管注销", "POST", "/api/v1/platform/tenants/2/images/registrations/img_0123456789abcdef0123456789abcdef:unregister", true},
+		{"平台注销", "POST", "/api/v1/admin/images/registrations/img_0123456789abcdef0123456789abcdef:unregister", true},
+		{"代管注销", "POST", "/api/v1/admin/tenants/2/images/registrations/img_0123456789abcdef0123456789abcdef:unregister", true},
 		{"旧租户注销", "POST", "/api/v1/images/registrations/img_0123456789abcdef0123456789abcdef:unregister", true},
-		{"平台 PATCH", "PATCH", "/api/v1/platform/images/registrations/img_0123456789abcdef0123456789abcdef", true},
-		{"平台登记", "POST", "/api/v1/platform/images/registrations", true},
-		{"空格启用", "POST", "/api/v1/platform/images/space:enable", true},
-		{"平台列表 GET 不命中", "GET", "/api/v1/platform/images/registrations", false},
-		{"未知后缀不命中", "POST", "/api/v1/platform/images/registrations/img_0123456789abcdef0123456789abcdef:publish", false},
-		{"缺 id 不命中", "POST", "/api/v1/platform/images/registrations/:unregister", false},
+		{"平台 PATCH", "PATCH", "/api/v1/admin/images/registrations/img_0123456789abcdef0123456789abcdef", true},
+		{"平台登记", "POST", "/api/v1/admin/images/registrations", true},
+		{"空格启用", "POST", "/api/v1/admin/images/space:enable", true},
+		{"平台列表 GET 不命中", "GET", "/api/v1/admin/images/registrations", false},
+		{"未知后缀不命中", "POST", "/api/v1/admin/images/registrations/img_0123456789abcdef0123456789abcdef:publish", false},
+		{"缺 id 不命中", "POST", "/api/v1/admin/images/registrations/:unregister", false},
 		{"其他业务不命中", "POST", "/api/v1/instances", false},
 	}
 	for _, c := range cases {

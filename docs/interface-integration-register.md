@@ -2262,7 +2262,7 @@ Obs先计算全租户时间对齐统计，Gov再排序/搜索/分页，全平台
 
 ## PLAT-COMP-20261028：平台组件健康快照（PLAT-COMP-01）
 
-BOSS「组件状态」页数据源：`GET /api/v1/platform/components`。Proto 合同
+BOSS「组件状态」页数据源：`GET /api/v1/admin/platform/components`。Proto 合同
 `api/protos/admin/service/v1/i_platform_component.proto`；HTTP 由 server 层手写
 snake_case JSON（`platform_component_http.go`），不是 protojson。
 响应顶层 `observed_at`（UTC RFC3339 秒级）+ 固定三组 `groups`（service/dependency/platform，
@@ -2281,7 +2281,7 @@ unknown+reason，仅 K8s client 未配置时 500 `COMPONENT_STATUS_FAILED`。
 
 ## PLAT-COMP-20261028-LOG：平台组件日志流（PLAT-COMP-02）
 
-BOSS 日志窗口数据源：`GET /api/v1/platform/components/{component}/logs/stream`（GET + SSE）。
+BOSS 日志窗口数据源：`GET /api/v1/admin/platform/components/{component}/logs/stream`（GET + SSE）。
 Proto 合同 `api/protos/admin/service/v1/i_platform_component.proto` 内声明 `StreamComponentLogs`
 流 RPC（无 `google.api.http` 注解），HTTP 由 `server/platform_component_logs.go` 手写注册。
 组件清单与 `PLAT-COMP-01` 共用 `data/platform_component_catalog.go` 的 26 项注册表，不维护第二份。
@@ -2299,7 +2299,7 @@ Proto 合同 `api/protos/admin/service/v1/i_platform_component.proto` 内声明 
 `pod`（`kubernetes.pod_name`）、`stream`（保留 stdout/stderr，缺失为空串、不编造）、
 `timestamp`（UTC RFC3339 **毫秒**精度，取自 `@timestamp`；缺失或不可解析则跳条并计数）。
 与旧版四处取值差异：`level` 不再恒为 `info`；`timestamp` 由纳秒降为毫秒（不得用作去重键）；
-组件名取值域换成新环境 26 项（前端必须从 `GET /api/v1/platform/components` 取，不得硬编码）；
+组件名取值域换成新环境 26 项（前端必须从 `GET /api/v1/admin/platform/components` 取，不得硬编码）；
 `message` 来源由 Loki 行内容换成 OpenSearch `log` 字段（存量记录可能只有 `log_payload`）。
 
 错误体为本登记唯一例外：不走全局「数字 code + reason」编码器，改为旧版
@@ -2482,19 +2482,19 @@ Gov 新增 22 条平台镜像管理路由，分两组：平台侧 11 条维护�
 
 | 编号 | HTTP | RPC | 权限码 | 范围 |
 | --- | --- | --- | --- | --- |
-| IMG-MGMT-01 | GET `/api/v1/platform/images/space` | PlatformImageService.GetPlatformSpace | `image:platform:space:get` | platform |
-| IMG-MGMT-02 | POST `/api/v1/platform/images/space:enable` | PlatformImageService.InitializePlatform | `image:platform:space:enable` | platform |
-| IMG-MGMT-03 | GET `/api/v1/platform/images/publisher-credential` | PlatformImageService.GetPlatformPublisherCredential | `image:platform:credential:get` | platform |
-| IMG-MGMT-04 | POST `/api/v1/platform/images/publisher-credential:issue` | PlatformImageService.IssuePlatformPublisherCredential | `image:platform:credential:issue` | platform |
-| IMG-MGMT-05 | POST `/api/v1/platform/images/publisher-credential:reset` | PlatformImageService.ResetPlatformPublisherCredential | `image:platform:credential:reset` | platform |
-| IMG-MGMT-06 | POST `/api/v1/platform/images/publisher-credential:disable` | PlatformImageService.DisablePlatformPublisherCredential | `image:platform:credential:disable` | platform |
-| IMG-MGMT-07 | GET `/api/v1/platform/images/registrations` | PlatformImageService.ListPlatformImages | `image:platform:registration:list` | platform |
-| IMG-MGMT-08 | GET `/api/v1/platform/images/registrations/{image_id}` | PlatformImageService.GetPlatformImage | `image:platform:registration:get` | platform |
-| IMG-MGMT-09 | POST `/api/v1/platform/images/registrations` | PlatformImageService.RegisterPlatformImage | `image:platform:registration:create` | platform |
-| IMG-MGMT-10 | PATCH `/api/v1/platform/images/registrations/{image_id}` | PlatformImageService.UpdatePlatformImage | `image:platform:registration:update` | platform |
-| IMG-MGMT-11 | POST `/api/v1/platform/images/registrations/{image_id}:unregister` | PlatformImageService.UnregisterPlatformImage | `image:platform:registration:unregister` | platform |
-| IMG-MGMT-12 | GET `/api/v1/platform/tenants/{target_tenant_id}/images/space` | AdminTenantImageService.GetTenantImageSpace | `image:platform:tenant-space:get` | tenant |
-| IMG-MGMT-13 | POST `/api/v1/platform/tenants/{target_tenant_id}/images/space:enable` | AdminTenantImageService.EnsureTenantImageSpace | `image:platform:tenant-space:enable` | tenant |
+| IMG-MGMT-01 | GET `/api/v1/admin/images/space` | PlatformImageService.GetPlatformSpace | `image:platform:space:get` | platform |
+| IMG-MGMT-02 | POST `/api/v1/admin/images/space:enable` | PlatformImageService.InitializePlatform | `image:platform:space:enable` | platform |
+| IMG-MGMT-03 | GET `/api/v1/admin/images/publisher-credential` | PlatformImageService.GetPlatformPublisherCredential | `image:platform:credential:get` | platform |
+| IMG-MGMT-04 | POST `/api/v1/admin/images/publisher-credential:issue` | PlatformImageService.IssuePlatformPublisherCredential | `image:platform:credential:issue` | platform |
+| IMG-MGMT-05 | POST `/api/v1/admin/images/publisher-credential:reset` | PlatformImageService.ResetPlatformPublisherCredential | `image:platform:credential:reset` | platform |
+| IMG-MGMT-06 | POST `/api/v1/admin/images/publisher-credential:disable` | PlatformImageService.DisablePlatformPublisherCredential | `image:platform:credential:disable` | platform |
+| IMG-MGMT-07 | GET `/api/v1/admin/images/registrations` | PlatformImageService.ListPlatformImages | `image:platform:registration:list` | platform |
+| IMG-MGMT-08 | GET `/api/v1/admin/images/registrations/{image_id}` | PlatformImageService.GetPlatformImage | `image:platform:registration:get` | platform |
+| IMG-MGMT-09 | POST `/api/v1/admin/images/registrations` | PlatformImageService.RegisterPlatformImage | `image:platform:registration:create` | platform |
+| IMG-MGMT-10 | PATCH `/api/v1/admin/images/registrations/{image_id}` | PlatformImageService.UpdatePlatformImage | `image:platform:registration:update` | platform |
+| IMG-MGMT-11 | POST `/api/v1/admin/images/registrations/{image_id}:unregister` | PlatformImageService.UnregisterPlatformImage | `image:platform:registration:unregister` | platform |
+| IMG-MGMT-12 | GET `/api/v1/admin/tenants/{target_tenant_id}/images/space` | AdminTenantImageService.GetTenantImageSpace | `image:platform:tenant-space:get` | tenant |
+| IMG-MGMT-13 | POST `/api/v1/admin/tenants/{target_tenant_id}/images/space:enable` | AdminTenantImageService.EnsureTenantImageSpace | `image:platform:tenant-space:enable` | tenant |
 | IMG-MGMT-14 | GET `.../tenants/{target_tenant_id}/images/publisher-credential` | AdminTenantImageService.GetTenantPublisherCredential | `image:platform:tenant-credential:get` | tenant |
 | IMG-MGMT-15 | POST `.../images/publisher-credential:issue` | AdminTenantImageService.IssueTenantPublisherCredential | `image:platform:tenant-credential:issue` | tenant |
 | IMG-MGMT-16 | POST `.../images/publisher-credential:reset` | AdminTenantImageService.ResetTenantPublisherCredential | `image:platform:tenant-credential:reset` | tenant |
@@ -2565,7 +2565,7 @@ Gov 新增 22 条平台镜像管理路由，分两组：平台侧 11 条维护�
 
 2026-11-12 按 Res PR #76 审核意见修复后重新构建并部署（Res `imgmgmt-20261112-r3`，镜像 digest `sha256:15f2d94cc74267014b4fd626b9077f66535b977372d4e8147d28751e5c120ee9`；Gov 未变动），补验两条此前没有实测证据的路径：
 
-- **未开通镜像空间的租户查询列表**：`GET /api/v1/platform/tenants/{target_tenant_id}/images/registrations` 对租户 17 / 23 / 50 均返回 `200` + `items=[]`、`total="0"`；已开通空间的租户 2 仍返回数据，未退化为空页。
+- **未开通镜像空间的租户查询列表**：`GET /api/v1/admin/tenants/{target_tenant_id}/images/registrations` 对租户 17 / 23 / 50 均返回 `200` + `items=[]`、`total="0"`；已开通空间的租户 2 仍返回数据，未退化为空页。
 - **注销与重注册的真实写入**：租户 2 的 `example-busybox` 依次执行 PATCH（`expectedVersion=1` → `version=2`）→ `:unregister`（`version=3`，写入 `unregisteredAt`）→ 同 `idempotencyKey`、同 body 重放 PATCH，返回 **200 与首次结果**（而不是 404）→ 注销后换新 `idempotencyKey` 写入返回 `404 IMAGE_NOT_FOUND`；最后以同一 `imageReference` 重新注册恢复为 active（新 `image_id`，活跃登记条数不变）。
 
 **未验证**，不能由本登记推出可用结论：

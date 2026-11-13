@@ -33,8 +33,8 @@ var modelDevRegistrationHTTPPath = regexp.MustCompile(`^/api/v1/modeldev/executi
 var modelUploadHTTPPath = regexp.MustCompile(`^/api/v1/models/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/upload-url$`)
 
 // 组件日志流是第三类 SSE 通道：它自己持有 8 秒契约生命周期，普通 1 秒
-// HTTP 超时不能覆盖它。只豁免这一个 GET 路径，不按 /api/v1/platform/ 前缀放行。
-var platformComponentLogStreamHTTPPath = regexp.MustCompile(`^/api/v1/platform/components/[^/]+/logs/stream$`)
+// HTTP 超时不能覆盖它。只豁免这一个 GET 路径，不按 /api/v1/admin/platform/ 前缀放行。
+var platformComponentLogStreamHTTPPath = regexp.MustCompile(`^/api/v1/admin/platform/components/[^/]+/logs/stream$`)
 
 // Kratos' one server timeout also covers streaming handlers. Disable that
 // global timer and retain its configured deadline here for ordinary requests.
@@ -133,7 +133,7 @@ var imageWriteLegacyRoutes = [][2]string{
 }
 
 // imageWritePathMatch 做整段匹配：模板里 {name} 段匹配任意非空段，其余段必须
-// 字面量相等。不按 /api/v1/platform/ 或 /api/v1/images/ 前缀放行。
+// 字面量相等。不按 /api/v1/admin/ 或 /api/v1/images/ 前缀放行。
 // “参数段 + 固定后缀”（如 {image_id}:unregister）按前后缀分别比对：整段形式
 // 既不以 '{' 开头也不以 '}' 结尾，若按字面量比较，三条注销路由都永远不命中。
 func imageWritePathMatch(pattern, path string) bool {

@@ -12,7 +12,7 @@ service PlatformComponentService {
   // 未配置时返回 500 COMPONENT_STATUS_FAILED。
   rpc ListPlatformComponents (google.protobuf.Empty) returns (PlatformComponentStatusResponse) {
     option (google.api.http) = {
-      get: "/api/v1/platform/components"
+      get: "/api/v1/admin/platform/components"
     };
   }
 
