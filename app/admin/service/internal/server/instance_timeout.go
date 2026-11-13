@@ -134,6 +134,8 @@ var imageWriteLegacyRoutes = [][2]string{
 
 // imageWritePathMatch 做整段匹配：模板里 {name} 段匹配任意非空段，其余段必须
 // 字面量相等。不按 /api/v1/platform/ 或 /api/v1/images/ 前缀放行。
+// “参数段 + 固定后缀”（如 {image_id}:unregister）按前后缀分别比对：整段形式
+// 既不以 '{' 开头也不以 '}' 结尾，若按字面量比较，三条注销路由都永远不命中。
 func imageWritePathMatch(pattern, path string) bool {
 	want := strings.Split(strings.Trim(pattern, "/"), "/")
 	got := strings.Split(strings.Trim(path, "/"), "/")
@@ -147,11 +149,32 @@ func imageWritePathMatch(pattern, path string) bool {
 			}
 			continue
 		}
+		if prefix, suffix, ok := splitParameterSegment(segment); ok {
+			if !strings.HasPrefix(got[i], prefix) || !strings.HasSuffix(got[i], suffix) || len(got[i]) <= len(prefix)+len(suffix) {
+				return false
+			}
+			continue
+		}
 		if segment != got[i] {
 			return false
 		}
 	}
 	return true
+}
+
+// splitParameterSegment 把 "{image_id}:unregister" 拆成 "{image_id}/", "/unregister"
+// 形式的字面前缀与后缀；不是“参数 + 固定后缀”形态时返回 false。
+func splitParameterSegment(segment string) (prefix, suffix string, ok bool) {
+	open := strings.Index(segment, "{")
+	if open < 0 {
+		return "", "", false
+	}
+	close := strings.Index(segment, "}")
+	if close < open {
+		return "", "", false
+	}
+	prefix, suffix = segment[:open], segment[close+1:]
+	return prefix, suffix, true
 }
 
 // imageWriteRouteMatch 判断请求是否命中 21 条镜像写路由：14 条新管理写

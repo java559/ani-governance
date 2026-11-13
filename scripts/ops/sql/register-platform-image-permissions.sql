@@ -10,8 +10,18 @@ BEGIN;
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='45s';
 LOCK TABLE sys_permissions,sys_apis,sys_permission_apis IN SHARE ROW EXCLUSIVE MODE;
+
+-- 只记录本次真正插入的行：用 INSERT ... RETURNING 捕获，不按路径/码前缀反查。
+-- 反查会在重复执行时把上次已存在的行也算进来，回退时误删历史授权。
+-- 两张表必须活过 COMMIT（下面的清单查询在事务外执行），因此不用 ON COMMIT DROP；
+-- 它们只在本次 psql 会话内可见，会话结束即消失。
+DROP TABLE IF EXISTS _new_image_permissions;
+DROP TABLE IF EXISTS _new_image_permission_apis;
+CREATE TEMP TABLE _new_image_permissions (id bigint PRIMARY KEY);
+CREATE TEMP TABLE _new_image_permission_apis (id bigint PRIMARY KEY);
+
 DO $$
-DECLARE r record; aid bigint; pid bigint;
+DECLARE r record; aid bigint; pid bigint; created_pid bigint; created_link bigint;
 BEGIN
  FOR r IN SELECT * FROM (VALUES
   ('GET','/api/v1/platform/images/space','image:platform:space:get','PlatformImageService'),
@@ -42,7 +52,11 @@ BEGIN
   SELECT id INTO STRICT aid FROM sys_apis WHERE path=r.path AND method=r.method
    AND module=r.service AND business_module='IMAGE' AND scope='ADMIN'
    AND status='ON' AND deleted_at IS NULL;
-  INSERT INTO sys_permissions(name,code,status,created_at) VALUES(r.code,r.code,'ON',now()) ON CONFLICT(code) DO NOTHING;
+  INSERT INTO sys_permissions(name,code,status,created_at) VALUES(r.code,r.code,'ON',now())
+   ON CONFLICT(code) DO NOTHING RETURNING id INTO created_pid;
+  IF created_pid IS NOT NULL THEN
+   INSERT INTO _new_image_permissions(id) VALUES(created_pid) ON CONFLICT DO NOTHING;
+  END IF;
   SELECT id INTO STRICT pid FROM sys_permissions WHERE code=r.code AND deleted_at IS NULL;
   IF EXISTS(SELECT 1 FROM sys_permission_apis WHERE api_id=aid AND permission_id<>pid AND deleted_at IS NULL) THEN
    RAISE EXCEPTION 'platform image route % % has a foreign permission; review existing grants', r.method, r.path;
@@ -50,19 +64,24 @@ BEGIN
   IF EXISTS(SELECT 1 FROM sys_permission_apis WHERE api_id=aid AND permission_id=pid AND deleted_at IS NOT NULL) THEN
    RAISE EXCEPTION 'platform image route permission was deleted; explicit recovery required';
   END IF;
-  INSERT INTO sys_permission_apis(permission_id,api_id,created_at) VALUES(pid,aid,now()) ON CONFLICT(permission_id,api_id) DO NOTHING;
+  INSERT INTO sys_permission_apis(permission_id,api_id,created_at) VALUES(pid,aid,now())
+   ON CONFLICT(permission_id,api_id) DO NOTHING RETURNING id INTO created_link;
+  IF created_link IS NOT NULL THEN
+   INSERT INTO _new_image_permission_apis(id) VALUES(created_link) ON CONFLICT DO NOTHING;
+  END IF;
+  created_pid := NULL;
+  created_link := NULL;
  END LOOP;
 END $$;
 COMMIT;
 
--- Identifiers created by this catalog, for exact reversal. Capture them with
+-- Identifiers created by this run, for exact reversal. Capture them with
 --   psql -X -A -t -v ON_ERROR_STOP=1 -f this-file.sql > register-output.txt
+-- Re-running when nothing is left to insert returns empty arrays, so the rollback
+-- of a repeat run cannot revoke rows that existed before it.
 SELECT json_build_object(
-  'permissions', (SELECT json_agg(json_build_object('id',id,'code',code) ORDER BY id)
-             FROM sys_permissions WHERE code LIKE 'image:platform:%' AND deleted_at IS NULL),
+  'permissions', (SELECT json_agg(json_build_object('id',p.id,'code',p.code) ORDER BY p.id)
+             FROM _new_image_permissions n JOIN sys_permissions p ON p.id=n.id),
   'permission_apis', (SELECT json_agg(pa.id ORDER BY pa.id)
-             FROM sys_permission_apis pa
-             JOIN sys_permissions p ON p.id=pa.permission_id
-             JOIN sys_apis a ON a.id=pa.api_id
-             WHERE p.code LIKE 'image:platform:%' AND a.path LIKE '/api/v1/platform/%/images%' AND pa.deleted_at IS NULL)
+             FROM _new_image_permission_apis n JOIN sys_permission_apis pa ON pa.id=n.id)
 );

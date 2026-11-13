@@ -94,8 +94,12 @@ func validateImageCredential(v *imagev1.PublisherCredential, tenant string) erro
 		return nil
 	}
 	// An interrupted first issuance has a durable candidate row but no active
-	// generation yet. Its safe metadata remains readable while the command resumes.
-	if v.State == "issuing" && v.Generation == 0 && v.Version > 0 && v.Username == "" && v.ExpiresAt == nil {
+	// generation yet. Its safe metadata remains readable while the command
+	// resumes, and also after an expired-candidate recovery has frozen the same
+	// row as blocked: Res keeps generation/username/expiresAt from the empty
+	// predecessor and only bumps state and version. Refusing the blocked form
+	// would hide the expectedVersion the operator needs to issue again.
+	if (v.State == "issuing" || v.State == "blocked") && v.Generation == 0 && v.Version > 0 && v.Username == "" && v.ExpiresAt == nil {
 		return nil
 	}
 	if v.Generation < 1 || v.Version < 1 || v.Username == "" || len(v.Username) > 256 || strings.ContainsAny(v.Username, "\r\n\x00") {

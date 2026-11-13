@@ -17,6 +17,12 @@
 -- Atomic and repeatable. Run with psql -v ON_ERROR_STOP=1 -f this file, then
 -- restart every Governance instance so the in-memory Casbin policies are rebuilt;
 -- logged-in operators must re-login to obtain the new JWT permission codes.
+-- 只记录本次真正插入的授权行，供精确回退。按「角色 + 码前缀」反查会把执行前
+-- 就存在的历史授权一并列出，照清单回退会误撤它们。临时表只在本次 psql 会话内
+-- 可见，会话结束即消失。
+DROP TABLE IF EXISTS _new_image_grants;
+CREATE TEMP TABLE _new_image_grants (id bigint PRIMARY KEY);
+
 DO $grant$
 DECLARE
   target record;
@@ -24,6 +30,7 @@ DECLARE
   admin_role_id bigint;
   secondary record;
   secondary_role_id bigint;
+  created_rp bigint;
 BEGIN
   PERFORM pg_advisory_xact_lock(71919014);
 
@@ -82,7 +89,12 @@ BEGIN
      WHERE NOT EXISTS (
        SELECT 1 FROM sys_role_permissions
         WHERE tenant_id=0 AND role_id=admin_role_id AND permission_id=target_permission_id
-     );
+     )
+    RETURNING id INTO created_rp;
+    IF created_rp IS NOT NULL THEN
+      INSERT INTO _new_image_grants(id) VALUES(created_rp) ON CONFLICT DO NOTHING;
+      created_rp := NULL;
+    END IF;
 
     target_permission_id := NULL;
   END LOOP;  -- all 22 codes for platform:admin
@@ -139,7 +151,12 @@ BEGIN
        WHERE NOT EXISTS (
          SELECT 1 FROM sys_role_permissions
           WHERE tenant_id=0 AND role_id=secondary_role_id AND permission_id=target_permission_id
-       );
+       )
+      RETURNING id INTO created_rp;
+      IF created_rp IS NOT NULL THEN
+        INSERT INTO _new_image_grants(id) VALUES(created_rp) ON CONFLICT DO NOTHING;
+        created_rp := NULL;
+      END IF;
 
       target_permission_id := NULL;
     END LOOP;  -- 8 read codes for the secondary role
@@ -147,15 +164,13 @@ BEGIN
 END
 $grant$;
 
--- Identifiers this grant depends on, for exact reversal. Reversal is NOT part of the
+-- Identifiers this run created, for exact reversal. Reversal is NOT part of the
 -- normal rollback of a feature batch: see grant-platform-image-permissions.rollback.sql.
+-- A repeat run with nothing left to grant returns an empty list.
 SELECT json_build_object(
   'admin_role_id', (SELECT id FROM sys_roles WHERE code='platform:admin' AND type='SYSTEM' AND deleted_at IS NULL),
   'role_permissions', (SELECT json_agg(json_build_object('id',rp.id,'role_id',rp.role_id,'tenant_id',rp.tenant_id,'permission_code',p.code) ORDER BY rp.id)
-      FROM sys_role_permissions rp
-      JOIN sys_roles r ON r.id=rp.role_id
-      JOIN sys_permissions p ON p.id=rp.permission_id
-      WHERE r.code IN ('platform:admin','platform:readonly','platform:ops')
-        AND p.code LIKE 'image:platform:%'
-        AND rp.deleted_at IS NULL)
+      FROM _new_image_grants n
+      JOIN sys_role_permissions rp ON rp.id=n.id
+      JOIN sys_permissions p ON p.id=rp.permission_id)
 );

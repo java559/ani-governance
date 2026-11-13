@@ -86,9 +86,10 @@ func requireImageManagementClient(c ImageManagementClient) error {
 }
 
 // validatePlatformSpace 校验平台空间回包：平台域没有 tenant，项目名是平台项目
-// 而非 t- 前缀的租户项目，因此不能复用租户侧校验。
+// 而非 t- 前缀的租户项目，因此不能复用租户侧校验。项目名上限与 Res 的
+// PlatformProject 校验一致（3–48 字符），比租户项目（t- 前缀 + 40）更长。
 func validatePlatformSpace(v *imagev1.ImageSpace) error {
-	if v == nil || v.TenantId != "" || !imageUUID(v.SpaceId) || !imagePlatformProjectPattern.MatchString(v.ProjectName) || len(v.ProjectName) > 42 {
+	if v == nil || v.TenantId != "" || !imageUUID(v.SpaceId) || !imagePlatformProjectPattern.MatchString(v.ProjectName) || len(v.ProjectName) > 48 {
 		return imageInvalidReply()
 	}
 	if v.RegistryAuthority == "" || strings.ContainsAny(v.RegistryAuthority, "/@?#%\\ \r\n") || v.Version < 1 || !imageTime(v.CreatedAt) || !imageTime(v.UpdatedAt) {

@@ -110,7 +110,9 @@ func (s *AdminTenantImageService) EnsureTenantImageSpace(ctx context.Context, r 
 	if r == nil || r.GetData() == nil || !imageIdempotencyKey(r.GetData().GetIdempotencyKey()) {
 		return nil, imageBadRequest()
 	}
-	if slug := strings.TrimSpace(r.GetData().GetSlug()); slug == "" || len(slug) > 32 || strings.ToLower(slug) != slug {
+	// slug 上限与 Res 的 ParseSlug 一致（3–40 字符）：Gov 提前拒绝会让 Res 本可
+	// 开通的空间在入口就被挡下。
+	if slug := strings.TrimSpace(r.GetData().GetSlug()); slug == "" || len(slug) > 40 || strings.ToLower(slug) != slug {
 		return nil, imageBadRequest()
 	}
 	tenant, actor, err := s.resolveManagedImageTenant(ctx, r.GetTargetTenantId(), "tenant-space-enable", true)
