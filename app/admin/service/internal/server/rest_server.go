@@ -227,6 +227,7 @@ func NewRestServer(
 	inferenceService *service.InferenceService,
 	modelService *service.ModelService,
 	computeService *service.ComputePresetService,
+	imageWriteBudget time.Duration,
 	services ...any,
 ) (*http.Server, error) {
 	cfg := ctx.GetConfig()
@@ -254,7 +255,7 @@ func NewRestServer(
 	// errorEncoder 在记录真实原错之后才合并 trace_id，保持既有错误协议不变。
 	observability := httpObservabilityFilter(ctx.GetLogger())
 	srv, err := rpc.CreateRestServerWithOuterFilter(streamConfig, observability, traceErrorEncoder(nil),
-		[]http.FilterFunc{instanceHTTPTimeoutFilter(ordinaryTimeout, modeldevConfig.Timeout, modelConfig.Timeout, modeldevConfig.ModelResolutionTimeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, clusterOpsHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, gpuHTTPFilter, storageQueryHTTPFilter},
+		[]http.FilterFunc{imageWriteTimeoutFilter(ordinaryTimeout, imageWriteBudget, modeldevConfig.Timeout, modelConfig.Timeout, modeldevConfig.ModelResolutionTimeout), auth.ImageHTTPFilter, auth.NetworkHTTPFilter, clusterOpsHTTPFilter, acceleratorInitializationHTTPFilter, modelQueryHTTPFilter, gpuHTTPFilter, storageQueryHTTPFilter},
 		middlewares...,
 	)
 	if err != nil {

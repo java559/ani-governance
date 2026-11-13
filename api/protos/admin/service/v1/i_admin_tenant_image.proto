@@ -1,0 +1,354 @@
+// Container image management v1.2 (2026-11-11). Platform-side managed tenant
+// surface. target_tenant_id is a numeric tenant id that exists only in the path;
+// it is mapped to the canonical Resource tenant UUID by the service layer.
+syntax = "proto3";
+package admin.service.v1;
+import "google/api/annotations.proto";
+import "gnostic/openapi/v3/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "catalog/service/v1/image.proto";
+import "catalog/service/v1/image_management.proto";
+
+service AdminTenantImageService {
+  rpc GetTenantImageSpace(GetTenantImageSpaceRequest) returns (GetTenantImageSpaceResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/space" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "读取指定租户的镜像空间"
+      description: "Requires the platform user JWT and image:platform:tenant-space:get. target_tenant_id comes only from the path. The operator identity is preserved in the audit trail; the tenant is only the target. Reading is allowed for an existing but disabled tenant so its state can still be inspected."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant id" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Target tenant or image space not found" } } },
+        { name: "503" value: { response: { description: "Image backend or tenant mapping unavailable" } } }
+      ] }
+    };
+  }
+  rpc EnsureTenantImageSpace(EnsureTenantImageSpaceRequest) returns (EnsureTenantImageSpaceResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/space:enable" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "为指定租户开通镜像空间"
+      description: "Requires image:platform:tenant-space:enable and an IMAGE subscription on the target tenant's plan. The slug is immutable once the space exists. Idempotent per idempotency_key and actor; it never issues a publisher credential."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, slug or idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role, permission or target subscription denied" } } },
+        { name: "409" value: { response: { description: "Idempotency conflict or space binding mismatch" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc GetTenantPublisherCredential(GetTenantPublisherCredentialRequest) returns (GetTenantPublisherCredentialResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "读取指定租户的发布凭据元数据"
+      description: "Requires image:platform:tenant-credential:get. Never returns a secret. state=not_issued means never issued; blocked with generation 0 and an empty username is the safe read-only state after an expired candidate recovery."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant id" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Target tenant or image space not found" } } },
+        { name: "503" value: { response: { description: "Image backend or tenant mapping unavailable" } } }
+      ] }
+    };
+  }
+  rpc IssueTenantPublisherCredential(IssueTenantPublisherCredentialRequest) returns (IssueTenantPublisherCredentialResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "为指定租户签发发布凭据"
+      description: "Requires image:platform:tenant-credential:issue and an IMAGE subscription on the target tenant's plan. expectedVersion is mandatory. This is one of only four routes that return a secret; the response is Cache-Control: no-store and replay_until bounds the replay window."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, idempotency key or expected version" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role, permission or target subscription denied" } } },
+        { name: "409" value: { response: { description: "Version conflict, already active or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc ResetTenantPublisherCredential(ResetTenantPublisherCredentialRequest) returns (ResetTenantPublisherCredentialResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "重置指定租户的发布凭据"
+      description: "Requires image:platform:tenant-credential:reset and an IMAGE subscription on the target tenant's plan. Rotates an already issued publisher; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED. Returns a secret exactly once with a bounded replay_until and Cache-Control: no-store."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, idempotency key or expected version" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role, permission or target subscription denied" } } },
+        { name: "409" value: { response: { description: "Version conflict, not issued or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc DisableTenantPublisherCredential(DisableTenantPublisherCredentialRequest) returns (DisableTenantPublisherCredentialResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "停用指定租户的发布凭据"
+      description: "Requires image:platform:tenant-credential:disable. A disabled or downgraded target tenant can still be disabled here so the identity can be reclaimed. Never returns a secret; a credential that was never issued returns 409 CREDENTIAL_NOT_ISSUED."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, idempotency key or expected version" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "409" value: { response: { description: "Version conflict, not issued or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc ListTenantImages(ListTenantImagesRequest) returns (ListTenantImagesResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "分页查询指定租户的镜像"
+      description: "Requires image:platform:tenant-registration:list. page defaults to 1 and pageSize to 20, pageSize max 100; repeated, unknown, zero, negative, decimal or leading-zero values are rejected with 400. Ordering is fixed created_at DESC, image_id DESC. An authorized tenant without an image space returns items=[] and total=0; the response has no next_cursor."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, page, purposes or accelerator" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "503" value: { response: { description: "Image backend or tenant mapping unavailable" } } }
+      ] }
+    };
+  }
+  rpc GetTenantImage(GetTenantImageRequest) returns (GetTenantImageResponse) {
+    option (google.api.http) = { get: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "读取指定租户的单个镜像"
+      description: "Requires image:platform:tenant-registration:get. image_id comes only from the path and must match ^img_[a-f0-9]{32}$. A missing image and an image owned by another tenant are indistinguishable and both return 404."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant or image id" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Image not found in the target tenant" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc RegisterTenantImage(RegisterTenantImageRequest) returns (RegisterTenantImageResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "为指定租户登记镜像"
+      description: "Requires image:platform:tenant-registration:create and an IMAGE subscription on the target tenant's plan. image_reference must already exist in the target tenant's own Harbor project; a reference in any other project returns 403 IMAGE_PROJECT_DENIED. purposes is 1..5 and is normalized. The same idempotency_key with the same body replays the first result."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, reference, metadata or idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role, permission, target subscription or project denied" } } },
+        { name: "409" value: { response: { description: "Idempotency conflict, already registered, binding mismatch or space not ready" } } },
+        { name: "503" value: { response: { description: "Image backend or Harbor unavailable" } } }
+      ] }
+    };
+  }
+  rpc UpdateTenantImage(UpdateTenantImageRequest) returns (UpdateTenantImageResponse) {
+    option (google.api.http) = { patch: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "按字段掩码修改指定租户的镜像"
+      description: "Requires image:platform:tenant-registration:update and an IMAGE subscription on the target tenant's plan. update_mask is a comma-separated camelCase list relative to data and only displayName, description, purposes and accelerator are accepted; an empty mask, '*', an unknown or a repeated path returns 400. A field in the mask must be present; a field outside the mask must be absent. description may be cleared with an empty string. expectedVersion and idempotencyKey are control fields outside the mask. A stale expectedVersion returns 409 VERSION_CONFLICT."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, mask, patched value or control field" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role, permission or target subscription denied" } } },
+        { name: "404" value: { response: { description: "Image not found in the target tenant" } } },
+        { name: "409" value: { response: { description: "Version or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+  rpc UnregisterTenantImage(UnregisterTenantImageRequest) returns (UnregisterTenantImageResponse) {
+    option (google.api.http) = { post: "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister" body: "*" };
+    option (gnostic.openapi.v3.operation) = {
+      security: [{ additional_properties: [{ name: "BearerAuth" value: {} }] }]
+      summary: "注销指定租户的镜像登记"
+      description: "Requires image:platform:tenant-registration:unregister. A disabled or downgraded target tenant can still be unregistered so the registration can be reclaimed. Only the ANI registration is removed: the Harbor artifact is kept and running workloads are not stopped. expectedVersion is mandatory and repeating the same key replays the first result."
+      responses: { response_or_reference: [
+        { name: "400" value: { response: { description: "Invalid target tenant, image id, version or idempotency key" } } },
+        { name: "401" value: { response: { description: "Missing, invalid or expired credentials" } } },
+        { name: "403" value: { response: { description: "Platform role or permission denied" } } },
+        { name: "404" value: { response: { description: "Image not found in the target tenant" } } },
+        { name: "409" value: { response: { description: "Version or idempotency conflict" } } },
+        { name: "503" value: { response: { description: "Image backend unavailable" } } }
+      ] }
+    };
+  }
+}
+
+message GetTenantImageSpaceRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+}
+
+message GetTenantImageSpaceResponse {
+
+  catalog.service.v1.ImageSpace space = 1;
+
+}
+
+message EnsureTenantImageSpaceRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  catalog.service.v1.ImageManagementEnableData data = 2;
+
+}
+
+message EnsureTenantImageSpaceResponse {
+
+  catalog.service.v1.ImageSpace space = 1;
+
+}
+
+message GetTenantPublisherCredentialRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+}
+
+message GetTenantPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+}
+
+message IssueTenantPublisherCredentialRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  catalog.service.v1.ImageManagementCredentialData data = 2;
+
+}
+
+message IssueTenantPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+  string secret = 2;
+
+  google.protobuf.Timestamp replay_until = 3;
+
+}
+
+message ResetTenantPublisherCredentialRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  catalog.service.v1.ImageManagementCredentialData data = 2;
+
+}
+
+message ResetTenantPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+  string secret = 2;
+
+  google.protobuf.Timestamp replay_until = 3;
+
+}
+
+message DisableTenantPublisherCredentialRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  catalog.service.v1.ImageManagementCredentialData data = 2;
+
+}
+
+message DisableTenantPublisherCredentialResponse {
+
+  catalog.service.v1.PublisherCredential credential = 1;
+
+}
+
+message ListTenantImagesRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  string search = 2;
+
+  repeated string purposes = 3;
+
+  string accelerator = 4;
+
+  optional uint32 page = 5;
+
+  optional uint32 page_size = 6;
+
+}
+
+message ListTenantImagesResponse {
+
+  repeated catalog.service.v1.ImageRegistration items = 1;
+
+  int64 total = 2 [json_name = "total"];
+
+}
+
+message GetTenantImageRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  string image_id = 2 [json_name = "image_id"];
+
+}
+
+message GetTenantImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}
+
+message RegisterTenantImageRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  catalog.service.v1.ImageManagementRegisterData data = 2;
+
+}
+
+message RegisterTenantImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}
+
+message UpdateTenantImageRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  string image_id = 2 [json_name = "image_id"];
+
+  catalog.service.v1.ImageManagementPatchData data = 3;
+
+  google.protobuf.FieldMask update_mask = 4 [json_name = "update_mask"];
+
+}
+
+message UpdateTenantImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}
+
+message UnregisterTenantImageRequest {
+
+  uint32 target_tenant_id = 1 [json_name = "target_tenant_id"];
+
+  string image_id = 2 [json_name = "image_id"];
+
+  catalog.service.v1.ImageManagementUnregisterData data = 3;
+
+}
+
+message UnregisterTenantImageResponse {
+
+  catalog.service.v1.ImageRegistration image = 1;
+
+}

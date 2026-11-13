@@ -795,6 +795,182 @@
       ]
     },
     {
+      "code": "image:platform:credential:disable",
+      "name": "停用平台镜像发布凭据",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:credential:get",
+      "name": "查询平台镜像发布凭据状态",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:credential:issue",
+      "name": "签发平台镜像发布凭据",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:credential:reset",
+      "name": "重置平台镜像发布凭据",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:registration:create",
+      "name": "登记平台镜像",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:registration:get",
+      "name": "查询平台镜像详情",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:registration:list",
+      "name": "查询平台镜像列表",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:registration:unregister",
+      "name": "取消平台镜像登记",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:registration:update",
+      "name": "更新平台镜像信息",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:space:enable",
+      "name": "初始化平台镜像空间",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:space:get",
+      "name": "查询平台镜像空间",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-credential:disable",
+      "name": "停用代管租户镜像发布凭据",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-credential:get",
+      "name": "查询代管租户镜像发布凭据状态",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-credential:issue",
+      "name": "签发代管租户镜像发布凭据",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-credential:reset",
+      "name": "重置代管租户镜像发布凭据",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-registration:create",
+      "name": "登记代管租户镜像",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-registration:get",
+      "name": "查询代管租户镜像详情",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-registration:list",
+      "name": "查询代管租户镜像列表",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-registration:unregister",
+      "name": "取消代管租户镜像登记",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-registration:update",
+      "name": "更新代管租户镜像信息",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-space:enable",
+      "name": "开通代管租户镜像空间",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
+      "code": "image:platform:tenant-space:get",
+      "name": "查询代管租户镜像空间",
+      "group": "console.registry",
+      "roles": [
+        "platform"
+      ]
+    },
+    {
       "code": "image:registration:create",
       "name": "登记镜像",
       "group": "console.registry",
@@ -7346,6 +7522,204 @@
       "module": "SYSTEM",
       "permissions": [
         "component:log:read"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/images/publisher-credential",
+      "operation": "PlatformImageService_GetPlatformPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:credential:get"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/images/publisher-credential:disable",
+      "operation": "PlatformImageService_DisablePlatformPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:credential:disable"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/images/publisher-credential:issue",
+      "operation": "PlatformImageService_IssuePlatformPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:credential:issue"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/images/publisher-credential:reset",
+      "operation": "PlatformImageService_ResetPlatformPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:credential:reset"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/images/registrations",
+      "operation": "PlatformImageService_ListPlatformImages",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:registration:list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/images/registrations",
+      "operation": "PlatformImageService_RegisterPlatformImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:registration:create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/images/registrations/{image_id}",
+      "operation": "PlatformImageService_GetPlatformImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:registration:get"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/platform/images/registrations/{image_id}",
+      "operation": "PlatformImageService_UpdatePlatformImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:registration:update"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/images/registrations/{image_id}:unregister",
+      "operation": "PlatformImageService_UnregisterPlatformImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:registration:unregister"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/images/space",
+      "operation": "PlatformImageService_GetPlatformSpace",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:space:get"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/images/space:enable",
+      "operation": "PlatformImageService_InitializePlatform",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:space:enable"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential",
+      "operation": "AdminTenantImageService_GetTenantPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-credential:get"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:disable",
+      "operation": "AdminTenantImageService_DisableTenantPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-credential:disable"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:issue",
+      "operation": "AdminTenantImageService_IssueTenantPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-credential:issue"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/publisher-credential:reset",
+      "operation": "AdminTenantImageService_ResetTenantPublisherCredential",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-credential:reset"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations",
+      "operation": "AdminTenantImageService_ListTenantImages",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-registration:list"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations",
+      "operation": "AdminTenantImageService_RegisterTenantImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-registration:create"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}",
+      "operation": "AdminTenantImageService_GetTenantImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-registration:get"
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}",
+      "operation": "AdminTenantImageService_UpdateTenantImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-registration:update"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/registrations/{image_id}:unregister",
+      "operation": "AdminTenantImageService_UnregisterTenantImage",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-registration:unregister"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/space",
+      "operation": "AdminTenantImageService_GetTenantImageSpace",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-space:get"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/platform/tenants/{target_tenant_id}/images/space:enable",
+      "operation": "AdminTenantImageService_EnsureTenantImageSpace",
+      "module": "IMAGE",
+      "permissions": [
+        "image:platform:tenant-space:enable"
       ]
     },
     {

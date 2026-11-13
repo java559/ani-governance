@@ -1,0 +1,108 @@
+// Container image management v1.2 (2026-11-11). Shared management DTOs.
+// Tenant identity is deliberately absent from every message here: the platform
+// operator comes from the authenticated principal and the managed target tenant
+// from the URL path.
+syntax = "proto3";
+package catalog.service.v1;
+import "google/protobuf/timestamp.proto";
+import "catalog/service/v1/image.proto";
+
+message ImageManagementInitializeData {
+
+  string idempotency_key = 1;
+
+}
+
+message ImageManagementEnableData {
+
+  string slug = 1;
+
+  string idempotency_key = 2;
+
+}
+
+message ImageManagementCredentialData {
+
+  string idempotency_key = 1;
+
+  optional int64 expected_version = 2;
+
+}
+
+message ImageManagementRegisterData {
+
+  string image_reference = 1;
+
+  string display_name = 2;
+
+  string description = 3;
+
+  repeated string purposes = 4;
+
+  string accelerator = 5;
+
+  string idempotency_key = 6;
+
+}
+
+// ImageManagementPatchData carries only the requested presence. A field is read
+// exclusively when its path appears in the sibling update_mask.
+message ImageManagementPatchData {
+
+  optional string display_name = 1;
+
+  optional string description = 2;
+
+  repeated string purposes = 3;
+
+  optional string accelerator = 4;
+
+  optional int64 expected_version = 5;
+
+  string idempotency_key = 6;
+
+}
+
+message ImageManagementUnregisterData {
+
+  optional int64 expected_version = 1;
+
+  string idempotency_key = 2;
+
+}
+
+// PlatformSpaceView is the read-only platform binding projection; space is
+// absent only when no platform space has ever been reserved.
+message PlatformSpaceView {
+
+  ImageSpace space = 1;
+
+  string configured_project = 2;
+
+  string configured_registry_authority = 3;
+
+  // uninitialized, ready, provisioning, blocked or configuration_mismatch.
+  string binding_status = 4;
+
+}
+
+// ManagementImagePage is the offset page of the management surfaces; it has no
+// cursor and never publishes next_cursor.
+message ManagementImagePage {
+
+  repeated ImageRegistration items = 1;
+
+  int64 total = 2;
+
+}
+
+// CredentialDelivery is returned only by the four Issue/Reset methods.
+message CredentialDelivery {
+
+  PublisherCredential credential = 1;
+
+  string secret = 2;
+
+  google.protobuf.Timestamp replay_until = 3;
+
+}

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/transport"
@@ -424,6 +425,20 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		imageClient = client
 	}
 	imageService := service.NewImageService(imageClient, tenantRepo)
+	// 平台镜像管理客户端与两个入口服务；未配置 Res 地址时保持 nil，
+	// service 层会把请求折叠成 503 IMAGE_MANAGEMENT_UNAVAILABLE。
+	var imageManagementClient *data.ImageManagementClient
+	if imageConfig.Address != "" {
+		client, closeManagement, err := data.NewImageManagementClient(imageConfig)
+		if err != nil {
+			rollback()
+			return nil, nil, err
+		}
+		cleanups = append(cleanups, closeManagement)
+		imageManagementClient = client
+	}
+	platformImageService := service.NewPlatformImageService(imageManagementClient)
+	adminTenantImageService := service.NewAdminTenantImageService(imageManagementClient, tenantRepo, planModuleRepo)
 	storageConfig, err := data.StorageConfigFromEnv()
 	if err != nil {
 		rollback()
@@ -568,6 +583,13 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 	restMiddlewares := server.NewRestMiddleware(ctx, accessTokenChecker, accessKeyRepo, tenantAccessChecker, authz,
 		apiAuditLogRepo, loginAuditLogRepo, operationAuditLogRepo, permissionAuditLogRepo, dataAccessAuditLogRepo, policyEvaluationLogRepo, instanceOwner)
 
+	// 镜像写路由的 HTTP 预算：B_http = B_rpc + 5s；B_rpc 就是 Res 客户端的
+	// Timeout（<= 45s）。未配置 Res 时预算为 0，过滤器退化为普通超时。
+	var imageWriteBudget time.Duration
+	if imageConfig.Timeout > 0 {
+		imageWriteBudget = imageConfig.Timeout + 5*time.Second
+	}
+
 	restServer, err := server.NewRestServer(ctx, restMiddlewares, authz,
 		authenticationService, mfaService, loginPolicyService,
 		adminPortalService, taskService,
@@ -592,6 +614,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		inferenceService,
 		modelService,
 		computeService,
+		imageWriteBudget,
 		sandboxService,
 		overviewService,
 		platformComponentService,
@@ -606,6 +629,7 @@ func initApp(ctx *bootstrap.Context) (*kratos.App, func(), error) {
 		server.RegisterVMHTTPServer(restServer, vmService)
 		server.RegisterVMLogsHTTP(restServer, vmService)
 		server.RegisterVMImageHTTPServer(restServer, vmImageService)
+		server.RegisterImageManagementHTTPServer(restServer, platformImageService, adminTenantImageService)
 		gpuMonitoringService := service.NewGpuMonitoringService(acceleratorService, observabilityClient, data.NewGpuResourceReadAuthorizationRepo(entClient))
 		server.RegisterGpuHTTPServer(restServer, gpuMonitoringService)
 		server.RegisterGpuTenantHTTPServer(restServer, service.NewGpuTenantAdminService(quotaAdminRepo, gpuMonitoringService))

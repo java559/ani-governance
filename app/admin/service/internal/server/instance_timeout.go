@@ -119,3 +119,98 @@ func instanceHTTPTimeoutFilter(ordinary time.Duration, ownerBudgets ...time.Dura
 		})
 	}
 }
+
+// imageWriteLegacyRoutes 是既有租户镜像通道的 7 条写路由（method + path 模板），
+// 与 14 条新管理写路由共用同一个 B_http 预算。
+var imageWriteLegacyRoutes = [][2]string{
+	{"POST", "/api/v1/images/space:enable"},
+	{"POST", "/api/v1/images/publisher-credential:issue"},
+	{"POST", "/api/v1/images/publisher-credential:reset"},
+	{"POST", "/api/v1/images/publisher-credential:disable"},
+	{"POST", "/api/v1/images/registrations"},
+	{"PATCH", "/api/v1/images/registrations/{image_id}"},
+	{"POST", "/api/v1/images/registrations/{image_id}:unregister"},
+}
+
+// imageWritePathMatch 做整段匹配：模板里 {name} 段匹配任意非空段，其余段必须
+// 字面量相等。不按 /api/v1/platform/ 或 /api/v1/images/ 前缀放行。
+// “参数段 + 固定后缀”（如 {image_id}:unregister）按前后缀分别比对：整段形式
+// 既不以 '{' 开头也不以 '}' 结尾，若按字面量比较，三条注销路由都永远不命中。
+func imageWritePathMatch(pattern, path string) bool {
+	want := strings.Split(strings.Trim(pattern, "/"), "/")
+	got := strings.Split(strings.Trim(path, "/"), "/")
+	if len(want) != len(got) {
+		return false
+	}
+	for i, segment := range want {
+		if strings.HasPrefix(segment, "{") && strings.HasSuffix(segment, "}") {
+			if got[i] == "" {
+				return false
+			}
+			continue
+		}
+		if prefix, suffix, ok := splitParameterSegment(segment); ok {
+			if !strings.HasPrefix(got[i], prefix) || !strings.HasSuffix(got[i], suffix) || len(got[i]) <= len(prefix)+len(suffix) {
+				return false
+			}
+			continue
+		}
+		if segment != got[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// splitParameterSegment 把 "{image_id}:unregister" 拆成 "{image_id}/", "/unregister"
+// 形式的字面前缀与后缀；不是“参数 + 固定后缀”形态时返回 false。
+func splitParameterSegment(segment string) (prefix, suffix string, ok bool) {
+	open := strings.Index(segment, "{")
+	if open < 0 {
+		return "", "", false
+	}
+	close := strings.Index(segment, "}")
+	if close < open {
+		return "", "", false
+	}
+	prefix, suffix = segment[:open], segment[close+1:]
+	return prefix, suffix, true
+}
+
+// imageWriteRouteMatch 判断请求是否命中 21 条镜像写路由：14 条新管理写
+// （来自 ImageManagementWriteActions）加 7 条旧租户写。GET 与其它业务不命中。
+func imageWriteRouteMatch(method, path string) bool {
+	for action := range data.ImageManagementWriteActions {
+		if route, ok := data.ImageManagementActionRoute(action); ok && route.Method == method && imageWritePathMatch(route.Path, path) {
+			return true
+		}
+	}
+	for _, route := range imageWriteLegacyRoutes {
+		if route[0] == method && imageWritePathMatch(route[1], path) {
+			return true
+		}
+	}
+	return false
+}
+
+// imageWriteTimeoutFilter 在普通超时之上给镜像写路由单独的预算（B_http），
+// 其余请求委托给 instanceHTTPTimeoutFilter 的既有分支。imageWriteBudget <= 0
+// 表示镜像分支未配置，整个过滤器退化为原过滤器，0 不会被当成无限预算。
+func imageWriteTimeoutFilter(ordinary time.Duration, imageWriteBudget time.Duration, ownerBudgets ...time.Duration) func(http.Handler) http.Handler {
+	inner := instanceHTTPTimeoutFilter(ordinary, ownerBudgets...)
+	if imageWriteBudget <= 0 {
+		return inner
+	}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if imageWriteRouteMatch(r.Method, r.URL.Path) {
+				// 既有父 deadline/客户端取消仍然优先：WithTimeout 只提前不放宽。
+				ctx, cancel := context.WithTimeout(r.Context(), imageWriteBudget)
+				defer cancel()
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+			inner(next).ServeHTTP(w, r)
+		})
+	}
+}

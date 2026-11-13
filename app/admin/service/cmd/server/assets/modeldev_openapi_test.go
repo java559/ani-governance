@@ -30,11 +30,12 @@ func TestModelDevCreateOpenAPIContract(t *testing.T) {
 	require.Equal(t, "object", request["type"])
 	require.ElementsMatch(t, []any{"name", "kind", "implementation_id", "compute_preset_id", "dataset_version_id", "parameters", "idempotency_key"}, request["required"])
 	fields := object(request["properties"])
-	require.Len(t, fields, 12, "only the canonical implementation and compute intent fields are public")
+	// 14 个字段：12 个原有意图字段 + dev 上新增的训练镜像目录选择两字段。
+	require.Len(t, fields, 14, "only the canonical implementation and compute intent fields are public")
 	for _, forbidden := range []string{"data", "tenant_id", "actor", "namespace", "command", "snapshot", "gpu", "preset_id", "image_version_id", "general_parameters", "source_execution_id", "finetuning"} {
 		require.NotContains(t, fields, forbidden)
 	}
-	for _, name := range []string{"name", "kind", "implementation_id", "compute_preset_id", "dataset_version_id", "idempotency_key", "base_model_version_id", "target_model_id", "new_model_name", "finetuning_template"} {
+	for _, name := range []string{"name", "kind", "implementation_id", "compute_preset_id", "dataset_version_id", "idempotency_key", "base_model_version_id", "target_model_id", "new_model_name", "finetuning_template", "training_image_id", "training_image_scope"} {
 		require.Equal(t, "string", object(fields[name])["type"], name)
 	}
 	timeout := object(fields["timeout_seconds"])

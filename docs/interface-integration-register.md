@@ -32,7 +32,7 @@ Gov → Resource 使用已管理的 Resource mTLS 连接，调用身份 `ani-gov
 读操作无业务幂等键；四个写方法沿用上述请求幂等键，更新/删除沿用版本检查。
 Resource 承担对象归属、持久幂等、源盘/上传生命周期及原生系统副作用。
 
-总体状态：**进行中，未结项**。最后更新：2026-10-13。
+总体状态：**进行中，未结项**。最后更新：2026-11-11。
 
 本文件覆盖所有后续对接功能。每次用户对接一个新功能时，AI 先排查真实调用链，将涉及的接口、请求和响应、鉴权条件、现有问题追加到对应功能组。先累计登记，等用户指定某个批次后，再统一修改该批接口的路径、字段和响应风格；不能因排查或登记就自动改接口风格。
 
@@ -2468,3 +2468,112 @@ ModelDev 专属 IAM 或第二条直连 REST。
 本条覆盖上述历史GPU接入记录中的旧Binding/Usage同步、F=1固定编码和Inference/ModelDev GPU已启用描述。当前新GPU仅Res容器Owner；Gov冻结BusinessSpec与Execution并逐项核对完整受管引用，真实配额与原charge退款不变。CPU原canonical及原键重放保持；ModelDev/Inference GPU在占额前明确未接入。
 
 资源GPU历史查询以当前资源读授权及Gov原CREATE身份直接调用Obs，不要求实时Owner/Pod或未退款charge。租户汇总只展示EXPORTER_OBSERVED及ani-resource-service范围的实际观测和真实quota，不再读取ACC bindings。接口与切换分别见[Owner合同](contracts/gpu-owner-integration-guide.md)、[监控合同](contracts/gpu-monitoring.md)、[切换步骤](operations/gpu-contract-v11-cutover.md)。本登记不声明现场验收。
+
+## IMG-MGMT-01～IMG-MGMT-22：容器镜像管理（平台侧 + 代管租户侧，2026-11-11）
+
+Gov 新增 22 条平台镜像管理路由，分两组：平台侧 11 条维护平台自己的 Harbor 项目，代管侧 11 条由平台管理员操作某个具体租户的项目。两组共用同一套 Res 领域实现，差异只在作用域与目标租户来源。
+
+- 公开合同：`api/protos/admin/service/v1/i_platform_image.proto`、`api/protos/admin/service/v1/i_admin_tenant_image.proto`
+- 请求 DTO：`api/protos/catalog/service/v1/image_management.proto`（新增 6 类 `data` + `PlatformSpaceView` + `ManagementImagePage`）
+- 下游：Res `image.v1.PlatformImageService` / `image.v1.AdminTenantImageService`
+- 权限码：`image:platform:*`（方案 V05 一次性命名决定，不使用 `platform:image:*`）
+
+### 编号与路由
+
+| 编号 | HTTP | RPC | 权限码 | 范围 |
+| --- | --- | --- | --- | --- |
+| IMG-MGMT-01 | GET `/api/v1/platform/images/space` | PlatformImageService.GetPlatformSpace | `image:platform:space:get` | platform |
+| IMG-MGMT-02 | POST `/api/v1/platform/images/space:enable` | PlatformImageService.InitializePlatform | `image:platform:space:enable` | platform |
+| IMG-MGMT-03 | GET `/api/v1/platform/images/publisher-credential` | PlatformImageService.GetPlatformPublisherCredential | `image:platform:credential:get` | platform |
+| IMG-MGMT-04 | POST `/api/v1/platform/images/publisher-credential:issue` | PlatformImageService.IssuePlatformPublisherCredential | `image:platform:credential:issue` | platform |
+| IMG-MGMT-05 | POST `/api/v1/platform/images/publisher-credential:reset` | PlatformImageService.ResetPlatformPublisherCredential | `image:platform:credential:reset` | platform |
+| IMG-MGMT-06 | POST `/api/v1/platform/images/publisher-credential:disable` | PlatformImageService.DisablePlatformPublisherCredential | `image:platform:credential:disable` | platform |
+| IMG-MGMT-07 | GET `/api/v1/platform/images/registrations` | PlatformImageService.ListPlatformImages | `image:platform:registration:list` | platform |
+| IMG-MGMT-08 | GET `/api/v1/platform/images/registrations/{image_id}` | PlatformImageService.GetPlatformImage | `image:platform:registration:get` | platform |
+| IMG-MGMT-09 | POST `/api/v1/platform/images/registrations` | PlatformImageService.RegisterPlatformImage | `image:platform:registration:create` | platform |
+| IMG-MGMT-10 | PATCH `/api/v1/platform/images/registrations/{image_id}` | PlatformImageService.UpdatePlatformImage | `image:platform:registration:update` | platform |
+| IMG-MGMT-11 | POST `/api/v1/platform/images/registrations/{image_id}:unregister` | PlatformImageService.UnregisterPlatformImage | `image:platform:registration:unregister` | platform |
+| IMG-MGMT-12 | GET `/api/v1/platform/tenants/{target_tenant_id}/images/space` | AdminTenantImageService.GetTenantImageSpace | `image:platform:tenant-space:get` | tenant |
+| IMG-MGMT-13 | POST `/api/v1/platform/tenants/{target_tenant_id}/images/space:enable` | AdminTenantImageService.EnsureTenantImageSpace | `image:platform:tenant-space:enable` | tenant |
+| IMG-MGMT-14 | GET `.../tenants/{target_tenant_id}/images/publisher-credential` | AdminTenantImageService.GetTenantPublisherCredential | `image:platform:tenant-credential:get` | tenant |
+| IMG-MGMT-15 | POST `.../images/publisher-credential:issue` | AdminTenantImageService.IssueTenantPublisherCredential | `image:platform:tenant-credential:issue` | tenant |
+| IMG-MGMT-16 | POST `.../images/publisher-credential:reset` | AdminTenantImageService.ResetTenantPublisherCredential | `image:platform:tenant-credential:reset` | tenant |
+| IMG-MGMT-17 | POST `.../images/publisher-credential:disable` | AdminTenantImageService.DisableTenantPublisherCredential | `image:platform:tenant-credential:disable` | tenant |
+| IMG-MGMT-18 | GET `.../images/registrations` | AdminTenantImageService.ListTenantImages | `image:platform:tenant-registration:list` | tenant |
+| IMG-MGMT-19 | GET `.../images/registrations/{image_id}` | AdminTenantImageService.GetTenantImage | `image:platform:tenant-registration:get` | tenant |
+| IMG-MGMT-20 | POST `.../images/registrations` | AdminTenantImageService.RegisterTenantImage | `image:platform:tenant-registration:create` | tenant |
+| IMG-MGMT-21 | PATCH `.../images/registrations/{image_id}` | AdminTenantImageService.UpdateTenantImage | `image:platform:tenant-registration:update` | tenant |
+| IMG-MGMT-22 | POST `.../images/registrations/{image_id}:unregister` | AdminTenantImageService.UnregisterTenantImage | `image:platform:tenant-registration:unregister` | tenant |
+
+写路由 14 条（02、04、05、06、09、10、11、13、15、16、17、20、21、22），读路由 8 条。只有 04、05、15、16 四条返回 `secret`。
+
+### 报文约定
+
+| 项 | 约定 |
+| --- | --- |
+| 写请求 | `{ "data": { ... } }`，`data` 必须是对象；body 里不含租户，代管目标只在路径 |
+| PATCH | 顶层 `update_mask`（字段名 snake_case，**取值必须 camelCase**：`displayName`/`description`/`purposes`/`accelerator`）；服务端归一化为规范蛇形写库 |
+| 分页 | `page` 默认 1、`pageSize` 默认 20、上限 100；无 `next_cursor`；`total` 与 `items` 同快照；排序固定 `created_at DESC, image_id DESC` |
+| 过滤 | `search` 单值，`purposes` 可重复最多 5 次，`accelerator` 单值 |
+| 整数 | `int64`/`uint32` 响应为十进制字符串；请求数字或字符串均可 |
+| 请求体 | 上限 16384 字节；`Content-Type` 必须 `application/json`；未知字段、同义字段双写一律 400 |
+| query | 写路由带任何 query（含裸 `?`）→ 400；GET 只接受上表白名单，未知/重复/空值/0/前导零/负数/小数 → 400 |
+| 路径参数 | `image_id` 必须匹配 `^img_[a-f0-9]{32}$`；`target_tenant_id` 为 1..4294967295 的十进制正整数 |
+| 响应头 | 22 条全部 `Cache-Control: no-store` + `Pragma: no-cache`，覆盖 401/403/解码/CAS/下游错误 |
+| 响应形状 | 平台 `space` 是 `PlatformSpaceView`（含 `configuredProject`/`configuredRegistryAuthority`/`bindingStatus`）；`space:enable` 与代管 `space` 返回扁平 `ImageSpace`，二者不可互换 |
+
+### 身份与委托
+
+1. 公网入口只接受**平台用户 JWT**：Principal 为 `SubjectUser`、`ID != 0`、`TenantID == 0`、Claims 租户为 0 且用户 ID 一致、角色含平台角色、且 Claims 的 `pms` 含该路由权限码。AK、sandbox token、runtime 身份一律拒绝。`TenantID == 0` 不能代替角色与权限判断。
+2. 代管目标解析顺序：`target_tenant_id != 0` → 租户存在且 `status=ON`、未过期、未删除 → `ResourceTenantResolver.ResourceTenantID` 映射为规范 UUID。开通/扩张类（13、15、16、20、21）额外要求目标租户套餐含 `IMAGE`（proto Module 14）；查看、停用、注销不要求，便于收回。
+3. Gov → Res 只发三项可信 metadata：`x-ani-scope: platform`、`x-ani-actor`（由平台 Principal 推导）、新 `x-ani-request-id`。**不发 `x-ani-tenant-id`**：Res 治理解析器把 `scope=platform` 与 `tenant` 视为互斥，代管目标只写在请求体的 `target_tenant_id`。`NewOutgoingContext` 会替换而非合并，Authorization/Cookie/公网身份不会跨这一跳。
+4. Res 侧 22 个方法全部登记在 `imagePlatformGovernanceMethods`，`governanceUnary` 把它们并入平台作用域判定（与原 `platformMethod` 同一分支，先于 EgressCaller），命中后注入 `imagebiz.PlatformCaller`。代管服务内部再用 `withManagedTenant` 把目标租户绑定到 `GovernanceCaller`，不伪造登录身份。
+5. 回包逐项校验：平台回包 `tenant` 必须为空、`scope=PLATFORM`；代管回包 `tenant` 必须等于映射后的 UUID、`scope=TENANT`；列表校验条数 ≤ `pageSize`、item 唯一、`total` 非负。错身份或错 scope 拒绝整个回包（`503 IMAGE_INVALID_RESPONSE`），不信任下游。
+
+### 错误码与 HTTP 状态
+
+| 状态 | 典型 reason | 场景 |
+| --- | --- | --- |
+| 400 | `INVALID_ARGUMENT` | 参数/掩码/body/query 不合法（`metadata` 为空表示在 Gov 解码阶段被拒） |
+| 401 | `INVALID_LOGIN` | 未登录或身份不可用 |
+| 403 | `IMAGE_PLATFORM_DENIED`、`IMAGE_MODULE_REQUIRED`；租户 token 调用时为框架 `FORBIDDEN` | 无平台角色或缺少该路由权限；目标租户无 IMAGE 套餐；用租户账号调用平台管理能力 |
+| 404 | `IMAGE_NOT_FOUND` / `SPACE_NOT_FOUND` / `IMAGE_TENANT_NOT_FOUND` | 对象不存在；跨 scope 的 `image_id` 同样 404 |
+| 409 | `VERSION_CONFLICT`、`IDEMPOTENCY_CONFLICT`、`SPACE_NOT_READY`、`IMAGE_SPACE_BINDING_MISMATCH`、`CANDIDATE_RECOVERY_COMPLETED`、`CREDENTIAL_ALREADY_ACTIVE`、`CREDENTIAL_NOT_ISSUED`、`CREDENTIAL_DELIVERY_EXPIRED`、`IMAGE_ALREADY_REGISTERED`、`SPACE_NAME_CONFLICT`、`SPACE_NAME_IMMUTABLE`、`UNSUPPORTED_ARTIFACT`、`PLATFORM_MISMATCH` | 状态或版本不允许本次写入 |
+| 503 | `IMAGE_UNAVAILABLE`、`IMAGE_MANAGEMENT_UNAVAILABLE`、`DEPENDENCY_UNAVAILABLE`、`REQUEST_IN_PROGRESS` | 下游未配置/不可用；同一空间已有外部写在执行 |
+| 504 | `DEADLINE_EXCEEDED` | 超时 |
+
+未登记的 reason 一律折叠为 `503 IMAGE_UNAVAILABLE`，不回显 Res 原文；`secret` 不进入日志、审计、trace、缓存或错误字符串。
+
+### 超时预算
+
+21 条写路由（14 条新管理写 + 7 条旧租户写）单独使用 `B_http = B_rpc + 5s`（默认 35s，上限 50s），由 `imageWriteTimeoutFilter` 按精确 path + method 匹配；`B_rpc <= 0` 时整个过滤器退化为原 `instanceHTTPTimeoutFilter`，0 不等于无限预算。GET、未知路径与其它业务不受影响；既有父 deadline/客户端取消仍然优先。前端镜像写请求单独设 60s，网关最低预算由运维核对。
+
+### 权限与部署
+
+- 权威表：`docs/contracts/permission-code-capability-map.tsv` 新增 22 行（`domain=image`、`scope_kind=platform`、`business_module=IMAGE`、`catalog_status=adopted`）；`python scripts/permcode/gen-go-maps.py --check` 校验通过。
+- 目录文件：`pkg/constants/module_mapping.go` 新增 `PlatformImageService`、`AdminTenantImageService`（→ `IMAGE`）；`sql/bootstrap/api_descriptions_zh.json` 由 510 增至 532；`sql/bootstrap/console_boss_initial.json` 的 routes 504 → 526、permissions 379 → 401，`initial_seed.go` 的 `504` 与 `initial_seed_test.go` 的同批断言已同步。三者缺一，`sync-apis` 或 `admin init` 会直接失败。
+- 发布顺序固定：
+  1. `admin sync-apis --dry-run` → `admin sync-apis`（应出现 22 条 `sys_apis`，module 为两个新 service，`business_module='IMAGE'`）；
+  2. `scripts/ops/sql/register-platform-image-permissions.sql`（22 个 `sys_permissions` 与 `sys_permission_apis`）；
+  3. `scripts/ops/sql/grant-platform-image-permissions.sql`（`platform:admin` 授满 22 个；若存在 `platform:readonly`/`platform:ops` 只授 8 个读码，角色不存在不创建）；
+  4. 重启 Gov，平台管理员**重新登录**后 JWT 才带新权限码。
+- 回滚：`register-*.rollback.sql` 与 `grant-*.rollback.sql` 只撤 `sys_permission_apis`/`sys_role_permissions` 与权限码，不删 API 目录；不恢复旧 Secret，不删除 Harbor 制品，不恢复已停用的 Robot。
+
+### 已验证与未验证
+
+已在 kcn `10.10.1.66` 真实部署（Res `imgmgmt-20261111`、Gov 同批次）并逐条验证：22 条路由可达性、租户 token 越权 403、严格输入负向用例、PATCH 掩码语义与幂等/版本冲突、平台 `space:enable` 幂等、凭据 `reset → 窗口内重放 → 窗口外重放 → disable → issue` 全链路（13 条用例），并用新旧凭据做真实 registry v2 认证（新 200、旧 401）。共 60 条用例通过。
+
+2026-11-12 按 Res PR #76 审核意见修复后重新构建并部署（Res `imgmgmt-20261112-r3`，镜像 digest `sha256:15f2d94cc74267014b4fd626b9077f66535b977372d4e8147d28751e5c120ee9`；Gov 未变动），补验两条此前没有实测证据的路径：
+
+- **未开通镜像空间的租户查询列表**：`GET /api/v1/platform/tenants/{target_tenant_id}/images/registrations` 对租户 17 / 23 / 50 均返回 `200` + `items=[]`、`total="0"`；已开通空间的租户 2 仍返回数据，未退化为空页。
+- **注销与重注册的真实写入**：租户 2 的 `example-busybox` 依次执行 PATCH（`expectedVersion=1` → `version=2`）→ `:unregister`（`version=3`，写入 `unregisteredAt`）→ 同 `idempotencyKey`、同 body 重放 PATCH，返回 **200 与首次结果**（而不是 404）→ 注销后换新 `idempotencyKey` 写入返回 `404 IMAGE_NOT_FOUND`；最后以同一 `imageReference` 重新注册恢复为 active（新 `image_id`，活跃登记条数不变）。
+
+**未验证**，不能由本登记推出可用结论：
+
+- `unregister` / 重新注册对下游 ModelDev 镜像选择面的实际影响（写路径本身已于 2026-11-12 实测通过，见上；未验证的是消费侧表现）；
+- `IMAGE_SPACE_BINDING_MISMATCH`、`CANDIDATE_RECOVERY_COMPLETED` 与 `bindingStatus=uninitialized/configuration_mismatch/blocked` 的实机触发（代码在位，无实测证据）；
+- CLI `terminate-expired-candidate` 的端到端恢复（过期候选的业务层判定已有单测，数据层 CAS 与 CLI 实机触发仍无实测证据）；
+- 多副本下的幂等收敛与并发压测（当前 Res/Gov 副本数均为 1）；
+- Gov 侧单测：两个新 service、HTTP 严格输入与 `imageWriteTimeoutFilter` 目前没有自动化覆盖，只有 `image_patch_mask_test.go` 三条掩码用例。
+
+另注：`permission-code-capability-map.tsv` 的 `source_sha` 列当前写的是 `working-tree`，合入前应替换为实际提交 SHA。
